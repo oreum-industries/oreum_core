@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import patsy as pt
 
+RANDOM_SEED = 42
+rng = np.random.default_rng(seed=RANDOM_SEED)
 
 def model_desc(fml):
     """ Convenience: return patsy modeldesc

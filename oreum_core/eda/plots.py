@@ -5,6 +5,9 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+RANDOM_SEED = 42
+rng = np.random.default_rng(seed=RANDOM_SEED)
+
 
 def plot_cat_count(df, fts, topn=10, vsize=2):
     """ Conv fn: plot group counts for cats """
