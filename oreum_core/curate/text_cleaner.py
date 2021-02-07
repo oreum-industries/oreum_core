@@ -53,7 +53,6 @@ class SnakeyLowercaser():
         return s4
 
 
-
 class TextCleaner():
 
     def __init__(self):

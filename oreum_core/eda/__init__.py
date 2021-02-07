@@ -1,5 +1,4 @@
 # copyright 2021 Oreum OÜ
-
 from oreum_core.eda.general import (
     custom_describe, 
     display_fw, 
@@ -19,4 +18,3 @@ from oreum_core.eda.calcs import (
     fit_fn,
     get_gini
     )
-print('pens')
