@@ -1,4 +1,5 @@
 # copyright 2021 Oreum OÜ
+from oreum_core.curate.data_loader import PandasParquetIO
 from oreum_core.curate.text_cleaner import (
     SnakeyLowercaser, 
     TextCleaner,
