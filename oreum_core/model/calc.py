@@ -87,3 +87,52 @@ def calc_ppc_coverage(y, yhat, crs=np.arange(0, 1.01, .1)):
         coverage.append((cr, np.sum((y >= lower_bounds[i]) * (y <= upper_bounds[i])) / len(y)))
 
     return pd.DataFrame(coverage, columns=['cr', 'coverage'])
+
+
+# TODO fix this at source
+# Minor edit to a math fn to prevent annoying deprecation warnings
+# Jon Sedar 2020-03-31
+# Users/jon/anaconda/envs/instechex/lib/python3.6/site-packages/theano/tensor/subtensor.py:2339: FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated; use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index, `arr[np.array(seq)]`, which will result either in an error or a different result.
+#   out[0][inputs[2:]] = inputs[1]
+
+import theano.tensor as tt
+
+def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
+    R"""Convert a packed triangular matrix into a two dimensional array.
+    Triangular matrices can be stored with better space efficiancy by
+    storing the non-zero values in a one-dimensional array. We number
+    the elements by row like this (for lower or upper triangular matrices):
+        [[0 - - -]     [[0 1 2 3]
+         [1 2 - -]      [- 4 5 6]
+         [3 4 5 -]      [- - 7 8]
+         [6 7 8 9]]     [- - - 9]
+    Parameters
+    ----------
+    n: int
+        The number of rows of the triangular matrix.
+    packed: theano.vector
+        The matrix in packed format.
+    lower: bool, default=True
+        If true, assume that the matrix is lower triangular.
+    diagonal_only: bool
+        If true, return only the diagonal of the matrix.
+    """
+    if packed.ndim != 1:
+        raise ValueError('Packed triagular is not one dimensional.')
+    if not isinstance(n, int):
+        raise TypeError('n must be an integer')
+
+    if diagonal_only and lower:
+        diag_idxs = np.arange(1, n + 1).cumsum() - 1
+        return packed[diag_idxs]
+    elif diagonal_only and not lower:
+        diag_idxs = np.arange(2, n + 2)[::-1].cumsum() - n - 1
+        return packed[diag_idxs]
+    elif lower:
+        out = tt.zeros((n, n), dtype=theano.config.floatX)
+        idxs = np.tril_indices(n)
+        return tt.set_subtensor(out[idxs], packed)
+    elif not lower:
+        out = tt.zeros((n, n), dtype=theano.config.floatX)
+        idxs = np.triu_indices(n)
+        return tt.set_subtensor(out[idxs], packed)
