@@ -1,4 +1,4 @@
-# eda.plots.py
+# eda.plot.py
 # copyright 2021 Oreum OÜ
 import matplotlib.pyplot as plt
 import numpy as np

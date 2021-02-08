@@ -1,4 +1,4 @@
-# data_transformer.py
+# curate.data_transform.py
 # copyright 2021 Oreum OÜ
 import re
 import numpy as np
@@ -6,7 +6,7 @@ import pandas as pd
 import patsy as pt
 import string
 from sklearn.model_selection import train_test_split
-from .text_cleaner import SnakeyLowercaser
+from .text_clean import SnakeyLowercaser
 
 
 class DatatypeConverter():

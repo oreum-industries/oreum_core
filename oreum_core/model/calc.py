@@ -1,69 +1,14 @@
-# model_tools.py
+# model.calc.py
 # copyright 2021 Oreum OÜ
-import os
 import arviz as az
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import patsy as pt
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
-def model_desc(fml):
-    """ Convenience: return patsy modeldesc
-        NOTE minor issue: `describe()` doesn't return the `1 +` (intercept)
-        term correctly.
-    """
-    t = pt.ModelDesc.from_formula(fml).describe()[2:]
-    return f'model desc: \n1 + {t}\n'
-
-
-def read_azid(dir_traces=[], fn='azid'):
-    """Convenience: read azid from file"""
-    return az.from_netcdf(os.path.join(*dir_traces, f'{fn}.netcdf'))       
-
-
-def create_azid(model, save=False, dir_traces=[], fn='azid',
-                prior=None, trace=None, ppc=None):
-    """Convenience: create azid structure"""
     
-    azid = az.from_pymc3(model=model, prior=prior, trace=trace,
-                        posterior_predictive=ppc)
-    if save:
-        azid.to_netcdf(os.path.join(*dir_traces, f'{fn}.netcdf'))
-        del azid
-        azid = az.from_netcdf(os.path.join(*dir_traces, f'{fn}.netcdf'))       
-    return azid
-
-
-def facetplot_azid_dist(azid, rvs, rvs_hack_extra=0, group='posterior', ref_vals=None):
-    """Convenience: plot Krushke style in facets """
-    # TODO unpack the compressed rvs from the azid
-    
-    # m, n = 2, (len(rvs) // 2) + (len(rvs) % 2)
-    m, n = 2, ((len(rvs)+rvs_hack_extra) // 2) + ((len(rvs)+rvs_hack_extra) % 2)
-    f, ax1d = plt.subplots(n, m, figsize=(m*6, 2.2*n))
-    kw = {}
-    if ref_vals is not None:
-        kw['ref_vals'] = ref_vals
-    _ = az.plot_posterior(azid, group=group, ax=ax1d, var_names=rvs, **kw)
-    f.suptitle(group, y=0.9 + n*0.005)
-    f.tight_layout()
-
-    
-def extract_yobs_yhat(azid, obs='y', pred='yhat'):
-    """Convenience: extract y_obs, y_hat from azid
-        get yhat in the shape (nsamples, nobs)
-    """
-    nsamp = np.product(azid.posterior_predictive[pred].shape[:-1])    
-    yobs = azid.constant_data[obs].values                            # (nobs,)
-    yhat = azid.posterior_predictive[pred].values.reshape(nsamp, -1) # (nsamp, nobs)
-    
-    return yobs, yhat
-
-    
-def compute_mse(y, yhat):
+def calc_mse(y, yhat):
     r""" Convenience: Calculate MSE using all samples
         shape (nsamples, nobservations)
    
@@ -100,7 +45,7 @@ def compute_mse(y, yhat):
     return mse, s_mse_pct
 
 
-def compute_rmse(y, yhat):
+def calc_rmse(y, yhat):
     """ Convenience: Calculate RMSE """
     mse, s_mse_pct = compute_mse(y, yhat)
     s_rmse_pct = s_mse_pct.map(np.sqrt)
@@ -109,7 +54,7 @@ def compute_rmse(y, yhat):
     return np.sqrt(mse), s_rmse_pct
 
 
-def compute_r2(y, yhat):
+def calc_r2(y, yhat):
     """ Calculate R2, 
         return mean r2 and via summary stats of yhat
         NOTE: shape (nsamples, nobservations)
@@ -130,7 +75,7 @@ def compute_r2(y, yhat):
     return r2_mean, r2_pct 
 
     
-def ppc_coverage(y, yhat, crs=np.arange(0, 1.01, .1)):
+def calc_ppc_coverage(y, yhat, crs=np.arange(0, 1.01, .1)):
     """ Calc the proportion of coverage from full yhat ppc 
         shape (nsamples, nobservations)
     """
