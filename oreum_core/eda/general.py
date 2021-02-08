@@ -5,6 +5,10 @@ import pandas as pd
 from IPython.display import display
 from scipy import stats
 
+RANDOM_SEED = 42
+rng = np.random.default_rng(seed=RANDOM_SEED)
+
+
 def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False):
     """ Concat transposed topN rows, numerical desc & dtypes 
         Beware a dataframe full of bools or categoricals will error 

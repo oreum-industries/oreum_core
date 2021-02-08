@@ -8,6 +8,9 @@ import pandas as pd
 import seaborn as sns
 from scipy import stats
 
+RANDOM_SEED = 42
+rng = np.random.default_rng(seed=RANDOM_SEED)
+
 # TODO see issue #2
 def fit_fn(obs, dist_names=['invgamma'], title_insert=None, plot=True):
     """
