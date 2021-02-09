@@ -1,4 +1,4 @@
-# model.dist.py
+# model.distributions.py
 # copyright 2021 Oreum OÜ
 import numpy as np
 import pymc3 as pm
@@ -14,7 +14,124 @@ from pymc3.util import get_variable_name
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
+
+
+class Gamma(pm.Gamma):
+    """Inherit the pymc class, clobber it and add logcdf and loginversecdf
+    """
+    pass
+
+class GammaNumpy():
+    """Gamma manual numpy
+       Used to compare my formulations vs scipy
+    """
+    def __init__(self):
+        pass
+
+    def pdf(x, a, b):
+        """Gamma PDF"""
         
+        return None
+
+    def logpdf(x, a, b):
+        """Gamma log PDF"""
+        
+        return None
+
+
+class Gumbel(pm.Gumbel):
+    """Inherit the pymc class, clobber it and add logcdf and loginversecdf
+    """    
+
+    def test(self):
+        raise ValueError('Inside distributions.Gumbel')
+    
+    def logp(self, value):
+        """
+        JS patch refactored code to align with other distributions
+        
+        Calculate log-probability of Gumbel distribution at specified value.
+            
+        z = (x - mu) / b
+        pdf = (1 / b) * exp(-z - exp(-z))
+        logpdf = -log(b) - z - exp(-z)
+            
+        Parameters
+        ----------
+        value: numeric
+            Value(s) for which log-probability is calculated. If the 
+            log probabilities for multiple values are desired the values must 
+            be provided in a numpy array or theano tensor
+        
+        Returns
+        -------
+        TensorVariable
+        """
+        
+        mu = self.mu
+        beta = self.beta       
+        z = (value - mu) / beta
+
+        logp = -tt.log(beta) - z - tt.exp(-z)
+        
+        return bound(logp, beta > 0)    
+    
+    def logcdf(self, value):
+        """
+        JS patch refactored code to align with other distributions
+
+        cdf = exp(-exp(-(X - mu) / b))
+        logcdf = -exp(-(X-mu)/b)
+
+        Compute the log of the cumulative distribution function for 
+        Gumbel distribution at the specified value.
+        
+        Parameters
+        ----------
+        value: numeric
+            Value(s) for which log CDF is calculated. If the log CDF for 
+            multiple values are desired the values must be provided in a 
+            numpy array or theano tensor.
+        
+        Returns
+        -------
+        TensorVariable
+        """
+        beta = self.beta
+        mu = self.mu
+        
+        logcdf = -tt.exp(-(value - mu)/beta)
+
+        return bound(logcdf, beta > 0)
+    
+    def loginvcdf(self, value):
+        """ 
+        JS new function
+            
+        invcdf = mu - b * log(-log(u))
+        loginvcdf = log(mu) + log(1 - (b * log(-log(u))/mu))
+            
+        Parameters
+        ----------
+        value: numeric
+            Value(s) for which log-probability is calculated. If the 
+            log probabilities for multiple values are desired the values must 
+            be provided in a numpy array or theano tensor
+       
+        Returns
+        -------
+        TensorVariable
+        """
+
+        beta = self.beta
+        mu = self.mu
+
+        loginvcdf = tt.log(mu) + tt.log(1 - (beta * tt.log(-tt.log(value))/mu))
+
+        return bound(loginvcdf, beta > 0)
+
+
+
 class InverseWeibull(PositiveContinuous):
     r"""
     Inverse Weibull log-likelihood, the reciprocal of the Weibull distribution,
@@ -126,38 +243,41 @@ class InverseWeibull(PositiveContinuous):
             )
 
 
-class InverseWeibullNumpyTest():
-
+class InverseWeibullNumpy():
+    """ Inverse Weibull manual numpy
+        Used to compare my formulations vs scipy
+    """
     def __init__(self):
         pass
 
-    def my_pdf(x, a, s):
+    def pdf(x, a, s):
+        """Inverse Weibull PDF
+            forcing m=1
+        """
         i = a/s
         j = np.power(x/s, -1. - a)
         k = np.power(x/s, -a)
         k = np.exp(-k)
         return i * j * k
 
-    def my_logpdf(x, a, s):
-        return (
-            np.log(a) + 
+    def logpdf(x, a, s):
+        """Inverse Weibull log PDF
+            forcing m=1
+        """
+        ret = np.log(a) + 
             (-1. - a) * np.log(x) + 
             a * np.log(s) - 
             np.power(x/s, -a)
-        )
+        
+        return ret
     
-import pymc3 as pm
-import theano.tensor as tt
-
-from pymc3.distributions.dist_math import bound
-from pymc3.util import get_variable_name
-
 
 class Kumaraswamy(pm.Kumaraswamy):
-    # Inherit the pymc class, clobber it and add logcdf and loginversecdf
+    """Inherit the pymc class, clobber it and add logcdf and loginversecdf
+    """
 
     def test(self):
-        raise ValueError('yo this is a test!')
+        raise ValueError('Inside distributions.Kumaraswamy')
 
     def logcdf(self, value):
         """ 
@@ -211,90 +331,3 @@ class Kumaraswamy(pm.Kumaraswamy):
         return bound(loginvcdf, value >= 0, value <= 1, a > 0, b > 0)
         
 
-class Gumbel(pm.Gumbel):
-    # Inherit the pymc class, clobber it and add logcdf and loginversecdf
-    
-    
-    def logp(self, value):
-        """
-        JS patch refactored code to align with other distributions
-        
-        Calculate log-probability of Gumbel distribution at specified value.
-            
-        z = (x - mu) / b
-        pdf = (1 / b) * exp(-z - exp(-z))
-        logpdf = -log(b) - z - exp(-z)
-            
-        Parameters
-        ----------
-        value: numeric
-            Value(s) for which log-probability is calculated. If the 
-            log probabilities for multiple values are desired the values must 
-            be provided in a numpy array or theano tensor
-        
-        Returns
-        -------
-        TensorVariable
-        """
-        
-        mu = self.mu
-        beta = self.beta       
-        z = (value - mu) / beta
-
-        logp = -tt.log(beta) - z - tt.exp(-z)
-        
-        return bound(logp, beta > 0)    
-    
-    def logcdf(self, value):
-        """
-        JS patch refactored code to align with other distributions
-
-        cdf = exp(-exp(-(X - mu) / b))
-        logcdf = -exp(-(X-mu)/b)
-
-        Compute the log of the cumulative distribution function for 
-        Gumbel distribution at the specified value.
-        
-        Parameters
-        ----------
-        value: numeric
-            Value(s) for which log CDF is calculated. If the log CDF for 
-            multiple values are desired the values must be provided in a 
-            numpy array or theano tensor.
-        
-        Returns
-        -------
-        TensorVariable
-        """
-        beta = self.beta
-        mu = self.mu
-        
-        logcdf = -tt.exp(-(value - mu)/beta)
-
-        return bound(logcdf, beta > 0)
-    
-    def loginvcdf(self, value):
-        """ 
-        JS new function
-            
-        invcdf = mu - b * log(-log(u))
-        loginvcdf = log(mu) + log(1 - (b * log(-log(u))/mu))
-            
-        Parameters
-        ----------
-        value: numeric
-            Value(s) for which log-probability is calculated. If the 
-            log probabilities for multiple values are desired the values must 
-            be provided in a numpy array or theano tensor
-       
-        Returns
-        -------
-        TensorVariable
-        """
-
-        beta = self.beta
-        mu = self.mu
-
-        loginvcdf = tt.log(mu) + tt.log(1 - (beta * tt.log(-tt.log(value))/mu))
-
-        return bound(loginvcdf, beta > 0)
