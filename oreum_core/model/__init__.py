@@ -7,7 +7,9 @@ from oreum_core.model.calc import (
     calc_mse,
     calc_rmse,
     calc_r2,
-    calc_ppc_coverage
+    calc_ppc_coverage,
+    calc_dist_fns_over_x,
+    calc_logdist_fns_over_x
 )
 from oreum_core.model.describe import (
     model_desc,
@@ -24,5 +26,6 @@ from oreum_core.model.distributions import (
     LognormalNumpy
 )
 from oreum_core.model.plot import (
-    facetplot_azid_dist
+    facetplot_azid_dist,
+    plot_dist_fns_over_x
 )
