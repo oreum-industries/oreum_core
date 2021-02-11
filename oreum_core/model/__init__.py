@@ -11,14 +11,17 @@ from oreum_core.model.calc import (
 )
 from oreum_core.model.describe import (
     model_desc,
-    extract_yobs_yhat
+    extract_yobs_yhat,
+    describe_dist
 )
 from oreum_core.model.distributions import (
     Gamma,
+    GammaNumpy,
     Gumbel,
     InverseWeibull,
-    InverseWeibullNumpyTest,
+    InverseWeibullNumpy,
     Kumaraswamy,
+    LognormalNumpy
 )
 from oreum_core.model.plot import (
     facetplot_azid_dist

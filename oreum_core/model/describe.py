@@ -25,3 +25,19 @@ def extract_yobs_yhat(azid, obs='y', pred='yhat'):
     yhat = azid.posterior_predictive[pred].values.reshape(nsamp, -1) # (nsamp, nobs)
     
     return yobs, yhat
+
+
+def describe_dist(mdl, log=False, inc_summary=False):
+    """ Convenience: get distribution descriptions from distributions.DistNumpy 
+        and return for printing or Markdown
+    """
+    title = f'{mdl.name}: Natural Distributions'
+    dist = mdl.dist_natural 
+    if log:
+        title = f'{mdlname}: Logged Distributions'
+        dist = mdl.dist_log
+
+    if inc_summary:
+        return title, {**mdl.notation, **dist, **mdl.conditions, **mdl.summary_stats}     
+
+    return title, {**dist}

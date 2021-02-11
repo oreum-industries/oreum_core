@@ -2,7 +2,7 @@
 # copyright 2021 Oreum OÜ
 import numpy as np
 import pymc3 as pm
-from scipy import stats
+from scipy import stats, special
 import theano.tensor as tt
 
 from pymc3.distributions import transforms
@@ -16,27 +16,112 @@ RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
 
-class Gamma(pm.Gamma):
-    """Inherit the pymc class, clobber it and add logcdf and loginversecdf
-    """
-    pass
+class NumpyCopiesOfPymcFns():
+    """Just to keep namespace clean"""
 
-class GammaNumpy():
-    """Gamma manual numpy
-       Used to compare my formulations vs scipy
-    """
     def __init__(self):
         pass
 
-    def pdf(x, a, b):
-        """Gamma PDF"""
-        
-        return None
+    def alltrue_elemwise(self, conditions):
+        """Copy from pymc3
+            pymc3.distributions.dist_math.py
+        """
+        ret = 1
+        for c in conditions:
+            ret = ret * (1 * c)
+        return ret
 
-    def logpdf(x, a, b):
-        """Gamma log PDF"""
+    def bound(self, vals, *conditions):
+        """Copy from pymc.bound
+            pymc3.distributions.dist_math.py
+        """
+        return np.where(self.alltrue_elemwise(conditions), vals, 0)
+
+    def logpow(self, x, m):
+        """ Copy from pymc3
+            Safe calc log(x**m) since m*log(x) will fail when m, x = 0.
+        """
+        return np.where(x == 0, np.where(m == 0, 0.0, -np.inf), m * np.log(x))
+
+
+class Gamma(pm.Gamma):
+    """Inherit the pymc class, clobber it and add logcdf and loginversecdf
+    """
+    # TODO: consider that invCDF is hard to calculate and scipy uses C functions
+    # Likely use different dist in practice
+    pass
+
+class GammaNumpy():
+    """Gamma PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
+        Manual implementations used in pymc3 custom distributions
+        Helpful to compare these to scipy to confirm my correct implementation
+        Ref: https://en.wikipedia.org/wiki/Gamma_distribution
+        Params: x > 0, u in [0, 1], a (shape) > 0, b (rate) > 0
+    """
+    def __init__(self):
+        self.npc = NumpyCopiesOfPymcFns()
+        self.name = 'Gamma'
+        self.notation = {'notation': r'x \sim Gamma(\alpha, \beta)'}
+        self.dist_natural = {
+            'pdf': r'f(x \mid \alpha, \beta) = \frac{1}{\Gamma(\alpha)} \beta^{\alpha} x^{\alpha-1} e^{- \beta x}',
+            'cdf': r'F(x \mid \alpha, \beta) = \frac{1}{\Gamma(\alpha)} \gamma(\alpha, \beta x)',
+            'invcdf': r'F^{-1}(u \mid \alpha, \beta) = '}
+        self.dist_log = {
+            'logpdf': r'\log f(x \mid \alpha, \beta) = -\log \Gamma(\alpha) + \log \beta^{\alpha} + \log x^{\alpha-1} - \beta x',
+            'logcdf': r'\log F(x \mid \alpha, \beta) = -\log \Gamma(\alpha) + \log \gamma(\alpha, \beta x)',
+            'loginvcdf': r'\log F^{-1}(u \mid \alpha, \beta) = '}
+        self.conditions = {
+            'parameters': r'\alpha > 0 \, \text{(shape)}, \; \beta > 0 \, \text{(rate)}',
+            'support': r'x \in (0, \infty), \; u \sim \text{Uniform([0, 1])}'}
+        self.summary_stats = {
+            'mean': r'\frac{\alpha}{\beta}',
+            'mode': r'\frac{\alpha - 1}{\beta}, \; \text{for} \alpha \geq 1',
+            'variance': r'\frac{\alpha}{\beta^{2}}'
+        }
+
+    def pdf(self, x, a, b):
+        """Gamma PDF
+        compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2595
+        """
+        fn = (1 / special.gamma(a)) * np.power(b, a) * np.power(x, a-1) * np.exp(-b * x)
+        return self.npc.bound(fn, a > 0, b > 0, x >= 0)
+    
+    def cdf(self, x, a, b):
+        """Gamma CDF: 
+            where $\gamma(a, bx)$ is lower incomplete gamma function [0, lim)
+            compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2602
+        """
+        # fn = (1 / special.gamma(a)) * special.gammainc(a, b * x)
+        fn = special.gammainc(a, b * x)
+        return self.npc.bound(fn, a > 0, b > 0, x >= 0)
+
+    def invcdf(self, u, a, b):
+        """Gamma Inverse CDF aka PPF:
+            compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2608
+            see sc.gammainc()
+        """
+        raise NotImplementedError('TODO gamma inverse CDF')
+
+    def logpdf(self, x, a, b):
+        """Gamma log PDF
+            compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2599
+        """
+        fn = -special.gammaln(a) + npc.logpow(b, a) + npc.logpow(x, a-1) - b * x
+        return self.npc.bound(fn, a > 0, b > 0, x > 0)
+
+    def logcdf(self, x, a, b):
+        """Gamma log CDF: 
+            where $\gamma(a, bx)$ is lower incomplete gamma function [0, lim)
+            compare to https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L2614
+        """
+        return self.npc.bound((-special.gammaln(a)) + special.gammainc(a, b * x), 
+                                a > 0, b > 0, x > 0)
         
-        return None
+    def loginvcdf(self, u, a, b):
+        """Gamma log Inverse CDF aka log PPF:
+            see sc.gammaincinv()
+        """
+        raise NotImplementedError('TODO gamma log inverse CDF')
 
 
 class Gumbel(pm.Gumbel):
@@ -129,7 +214,6 @@ class Gumbel(pm.Gumbel):
         loginvcdf = tt.log(mu) + tt.log(1 - (beta * tt.log(-tt.log(value))/mu))
 
         return bound(loginvcdf, beta > 0)
-
 
 
 class InverseWeibull(PositiveContinuous):
@@ -250,7 +334,7 @@ class InverseWeibullNumpy():
     def __init__(self):
         pass
 
-    def pdf(x, a, s):
+    def pdf(self, x, a, s):
         """Inverse Weibull PDF
             forcing m=1
         """
@@ -260,15 +344,11 @@ class InverseWeibullNumpy():
         k = np.exp(-k)
         return i * j * k
 
-    def logpdf(x, a, s):
+    def logpdf(self, x, a, s):
         """Inverse Weibull log PDF
             forcing m=1
         """
-        ret = np.log(a) + 
-            (-1. - a) * np.log(x) + 
-            a * np.log(s) - 
-            np.power(x/s, -a)
-        
+        ret = (np.log(a) + (-1. - a) * np.log(x) + a * np.log(s) - np.power(x/s, -a))
         return ret
     
 
@@ -329,5 +409,75 @@ class Kumaraswamy(pm.Kumaraswamy):
         loginvcdf = (1/a) * tt.log(1 - (1-value)**(1/b))
 
         return bound(loginvcdf, value >= 0, value <= 1, a > 0, b > 0)
+
+
+class LognormalNumpy():
+    """Lognormal PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
+        Manual implementations used in pymc3 custom distributions
+        Helpful to compare these to scipy to confirm my correct implementation
+        Ref: https://en.wikipedia.org/wiki/Log-normal_distribution
+        Params: x > 0, u in [0, 1], mu (location) > 0, sigma (variance) > 0
+    """
+    def __init__(self):
+        self.npc = NumpyCopiesOfPymcFns()
+        self.name = 'Lognormal'
+        self.notation = {'notation': r'x \sim Lognormal(\mu, \sigma^{2})'}
+        self.dist_natural = {
+            'pdf': r'f(x \mid \mu, \sigma) = \frac{1}{x \sigma{\sqrt{2 \pi}}} \exp \left( -{ \frac{(\log{x} - \mu)^{2}}{2 \sigma ^{2}}} \right)',
+            'cdf': r'F(x \mid \mu, \sigma) = \frac{1}{2} + \frac{1}{2} erf\left(\frac{ \log{x} -\mu }{\sqrt{2} \sigma} \right)',
+            'invcdf': r'F^{-1}(u \mid \mu, \sigma) = \exp \left( \mu + \sigma * \text{normal_invcdf}(u) \right)'}
+        self.dist_log = {
+            'logpdf': r'\log f(x \mid \mu, \sigma) = ',
+            'logcdf': r'\log F(x \mid \mu, \sigma) = ',
+            'loginvcdf': r'\log F^{-1}(u \mid \mu, \sigma) = '}
+        self.conditions = {
+            'parameters': r'\mu \in (-\infty, \infty) \text{(location)}, \; \sigma > 0 \text{(variance)}',
+            'support': r'x \in (0, \infty), \; u \sim \text{Uniform([0, 1])}'}
+        self.summary_stats = {
+            'mean': r'\exp \left( \mu +\frac{\sigma^{2}}{2} \right)',
+            'mode': r'\exp ( \mu +\sigma^{2} )',
+            'variance': r'[\exp (\sigma^{2}) - 1] \exp (2 \mu + \sigma^{2})'
+        }
+
+    def pdf(self, x, mu, sigma):
+        """Lognormal PDF
+        compare to 
+        """
+        fn = x
+        return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, x >= 0)
+    
+    def cdf(self, x, mu, sigma):
+        """Lognormal CDF: 
+            compare to 
+        """
+        fn = x
+        return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, x >= 0)
+
+    def invcdf(self, u, mu, sigma):
+        """Lognormal Inverse CDF aka PPF:
+            compare to 
+        """
+        fn = x
+        return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, x >= 0)
+
+    def logpdf(self, x, a, b):
+        """Lognormal log PDF
+            compare to 
+        """
+        fn = 0
+        return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, u >= 0, u <= 1)
+
+    def logcdf(self, x, a, b):
+        """Lognormal log CDF: 
+            compare to 
+        """
+        fn = x
+        return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, u >= 0, u <= 1)
         
+    def loginvcdf(self, u, a, b):
+        """Lognormal log Inverse CDF aka log PPF:
+        """
+        fn = x
+        return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, u >= 0, u <= 1)
+
 
