@@ -424,14 +424,16 @@ class LognormalNumpy():
         self.notation = {'notation': r'x \sim Lognormal(\mu, \sigma^{2})'}
         self.dist_natural = {
             'pdf': r'f(x \mid \mu, \sigma) = \frac{1}{x \sigma{\sqrt{2 \pi}}} \exp \left( -{ \frac{(\log{x} - \mu)^{2}}{2 \sigma ^{2}}} \right)',
-            'cdf': r'F(x \mid \mu, \sigma) = \frac{1}{2} + \frac{1}{2} erf\left(\frac{ \log{x} -\mu }{\sqrt{2} \sigma} \right)',
-            'invcdf': r'F^{-1}(u \mid \mu, \sigma) = \exp \left( \mu + \sigma * \text{normal_invcdf}(u) \right)'}
+            'cdf': r"""F(x \mid \mu, \sigma) = \frac{1}{2} \left[ 1 + \text{erf} \left(\frac{\log{(x)}-\mu}{\sigma \sqrt{2}} \right) \right]
+                                             = \frac{1}{2} \text{erfc} \left( \frac{\log{(x)} -\mu}{\sigma \sqrt{2}} \right)""",
+            'invcdf': r"""F^{-1}(u \mid \mu, \sigma) = \exp \left( \mu + \sigma * \text{normal_invcdf}(u) \right)
+                                                     = \exp \left( \mu - \sigma \sqrt{2} \text{erfcinv}(2u) \right)"""}
         self.dist_log = {
-            'logpdf': r'\log f(x \mid \mu, \sigma) = ',
-            'logcdf': r'\log F(x \mid \mu, \sigma) = ',
-            'loginvcdf': r'\log F^{-1}(u \mid \mu, \sigma) = '}
+            'logpdf': r'\log f(x \mid \mu, \sigma) = - \frac{1}{2 \sigma^2} \log{(x-\mu)^{2}} + \frac{1}{2} \log{\frac{1}{2 \pi \sigma^{2}}} -\log{x}',
+            'logcdf': r'\log F(x \mid \mu, \sigma) = \log \left[\frac{1}{2} \text{erfc} \left( \frac{\log{(x)} -\mu}{\sigma \sqrt{2}} \right) \right]',
+            'loginvcdf': r'\log F^{-1}(u \mid \mu, \sigma) = \mu - \sigma \sqrt{2} \text{erfcinv}(2u)'}
         self.conditions = {
-            'parameters': r'\mu \in (-\infty, \infty) \text{(location)}, \; \sigma > 0 \text{(variance)}',
+            'parameters': r'\mu \in (-\infty, \infty) \, \text{(location)}, \; \sigma > 0 \, \text{(variance)}',
             'support': r'x \in (0, \infty), \; u \sim \text{Uniform([0, 1])}'}
         self.summary_stats = {
             'mean': r'\exp \left( \mu +\frac{\sigma^{2}}{2} \right)',
@@ -441,41 +443,44 @@ class LognormalNumpy():
 
     def pdf(self, x, mu, sigma):
         """Lognormal PDF
-        compare to 
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5050
         """
         fn = x
         return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, x >= 0)
     
     def cdf(self, x, mu, sigma):
-        """Lognormal CDF: 
-            compare to 
+        """Lognormal CDF
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5057
         """
         fn = x
         return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, x >= 0)
 
     def invcdf(self, u, mu, sigma):
         """Lognormal Inverse CDF aka PPF:
-            compare to 
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5063
         """
         fn = x
         return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, x >= 0)
 
-    def logpdf(self, x, a, b):
+    def logpdf(self, x, mu, sigma):
         """Lognormal log PDF
-            compare to 
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5054
+            ref: https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L1887
         """
         fn = 0
         return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, u >= 0, u <= 1)
 
-    def logcdf(self, x, a, b):
-        """Lognormal log CDF: 
-            compare to 
+    def logcdf(self, x, mu, sigma):
+        """Lognormal log CDF
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5060
+            ref: https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L1913
         """
         fn = x
         return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, u >= 0, u <= 1)
         
-    def loginvcdf(self, u, a, b):
-        """Lognormal log Inverse CDF aka log PPF:
+    def loginvcdf(self, u, mu, sigma):
+        """Lognormal log Inverse CDF aka log PPF
+            ref:
         """
         fn = x
         return self.npc.bound(fn, mu > -np.inf, mu < np.inf, sigma > 0, u >= 0, u <= 1)

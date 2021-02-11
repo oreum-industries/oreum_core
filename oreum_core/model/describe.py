@@ -34,7 +34,7 @@ def describe_dist(mdl, log=False, inc_summary=False):
     title = f'{mdl.name}: Natural Distributions'
     dist = mdl.dist_natural 
     if log:
-        title = f'{mdlname}: Logged Distributions'
+        title = f'{mdl.name}: Logged Distributions'
         dist = mdl.dist_log
 
     if inc_summary:
