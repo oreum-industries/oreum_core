@@ -166,3 +166,4 @@ def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
                                 'scipy': fd_scipy.ppf(u), 'u': u}).set_index('u')
             
     return dfpdf, dfcdf, dfinvcdf
+

@@ -413,7 +413,7 @@ class InverseWeibullNumpy():
 
     def logpdf(self, x, a, s):
         """InverseWeibull log PDF
-            ref: ?
+            ref: ? manually calced and confirmed vs scipy
         """
         a = np.float(a)
         s = np.float(s)
@@ -426,7 +426,7 @@ class InverseWeibullNumpy():
 
     def logcdf(self, x, a, s):
         """InverseWeibull log CDF
-            ref: ?
+            ref: ? manually calced and confirmed vs scipy
         """
         a = np.float(a)
         s = np.float(s)
@@ -435,7 +435,7 @@ class InverseWeibullNumpy():
         
     def loginvcdf(self, u, a, s):
         """InverseWeibull log Inverse CDF aka log PPF
-            ref: ?
+            ref: ? manually calced and confirmed vs scipy
         """
         a = np.float(a)
         s = np.float(s)
