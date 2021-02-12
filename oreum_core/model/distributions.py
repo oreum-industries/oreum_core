@@ -353,12 +353,12 @@ class InverseWeibullNumpy():
                                                   \left( \frac{x}{s} \right)^{-1-\alpha} \;
                                                   \exp \left( -\left( \frac{x}{s} \right)^{-\alpha} \right)""",
             'cdf': r'F(x \mid \alpha, s, m=0) = \exp \left( -\left( \frac{x}{s} \right)^{-\alpha} \right)',
-            'invcdf': r"""F^{-1}(u \mid \alpha, s, m=0) = -s \log(u)^{-\frac{1}{\alpha}}"""}
+            'invcdf': r"""F^{-1}(u \mid \alpha, s, m=0) = s \log(u)^{-\frac{1}{\alpha}}"""}
         self.dist_log = {
             'logpdf': r"""\log f(x \mid \alpha, s, m=0) = \log{\alpha} - (1+\alpha)\log{x} + 
-                        \alpha \log{s} - \left( \frac{s}{x} \right)^{\alpha}""",
-            'logcdf': r'\log F(x \mid \alpha, s, m=0) = - \left( \frac{s}{x} \right)^{\alpha}',
-            'loginvcdf': r'\log F^{-1}(u \mid \alpha, s, m=0) = - \log(s) - \frac{1}{\alpha} * \log(-\log(u))'}
+                        \alpha \log{s} - \left( \frac{x}{s} \right)^{-\alpha}""",
+            'logcdf': r'\log F(x \mid \alpha, s, m=0) = - \left( \frac{x}{s} \right)^{-\alpha}',
+            'loginvcdf': r'\log F^{-1}(u \mid \alpha, s, m=0) = \log(s) - \frac{1}{\alpha} * \log(-\log(u))'}
         self.conditions = {
             'parameters': r"""\alpha > 0 \, \text{(shape)}, \; 
                             s > 0 \, \text{(scale, default } s=1 \text{)}, \; 
@@ -388,7 +388,7 @@ class InverseWeibullNumpy():
         s = np.float(s)
         fn = (
             (a/s) *
-            np.power(x/s, -1. - a) *
+            np.power(x/s, -1.-a) *
             np.exp(-np.power(x/s, -a))
             )
         return self.npc.bound(fn, a > 0, s > 0, x > 0)
@@ -400,7 +400,7 @@ class InverseWeibullNumpy():
         a = np.float(a)
         s = np.float(s)
         fn = np.exp(-np.power(x/s, -a))
-        return self.npc.bound(fn, a > 0, s > 0, x >= 0)
+        return self.npc.bound(fn, a > 0, s > 0, x > 0)
 
     def invcdf(self, u, a, s):
         """InverseWeibull Inverse CDF aka PPF:
@@ -408,7 +408,7 @@ class InverseWeibullNumpy():
         """
         a = np.float(a)
         s = np.float(s)
-        fn = s * np.power(-np.log(u), -1/a)
+        fn = s * np.power(-np.log(u), -1./a)
         return self.npc.bound(fn, a > 0, s > 0, u >= 0, u <= 1)
 
     def logpdf(self, x, a, s):
@@ -419,8 +419,8 @@ class InverseWeibullNumpy():
         s = np.float(s)
         fn = (
             np.log(a) - np.log(s) + 
-            self.npc.logpow(s/x, 1.+a) - 
-            np.power(s/x, a)         # this term grossly dominates if a >> 2
+            self.npc.logpow(x/s, -1.-a) - 
+            np.power(x/s, -a)         # this term grossly dominates if a >> 2
             ) 
         return self.npc.boundlog(fn, a > 0, s > 0, x >= 0)
 
@@ -430,7 +430,7 @@ class InverseWeibullNumpy():
         """
         a = np.float(a)
         s = np.float(s)
-        fn = -np.power(s/x, a)
+        fn = -np.power(x/s, -a)
         return self.npc.boundlog(fn, a > 0, s > 0, x >= 0)
         
     def loginvcdf(self, u, a, s):
@@ -439,8 +439,7 @@ class InverseWeibullNumpy():
         """
         a = np.float(a)
         s = np.float(s)
-        # fn = np.log(s) + 1/a * np.log(-1/np.log(u))
-        fn = - np.log(s) - 1/a * np.log(-np.log(u))
+        fn = np.log(s) - (1./a) * np.log(-np.log(u))
         return self.npc.boundlog(fn, a > 0, s > 0, u >= 0, u <= 1)
 
 
