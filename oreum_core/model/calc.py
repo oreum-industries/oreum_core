@@ -142,36 +142,27 @@ def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
     """ Test my manual model PDF, CDF, InvCDF vs 
         a scipy fixed dist over range x 
     """
+    logdist = kwargs.get('logdist', False)
     upper = kwargs.get('upper', 1)
+    lower = kwargs.get('lower', 0)
     nsteps = kwargs.get('nsteps', 500)
-    x = np.linspace(0, upper, nsteps)
+    x = np.linspace(lower, upper, nsteps)
     u = np.linspace(0, 1, nsteps)
+
+    if logdist:
+        dfpdf = pd.DataFrame({'manual': d_manual.logpdf(x, **params),
+                          'scipy': fd_scipy.logpdf(x), 'x': x}).set_index('x')
+        dfcdf = pd.DataFrame({'manual': d_manual.logcdf(x, **params),
+                            'scipy': fd_scipy.logcdf(x), 'x': x}).set_index('x')
+        dfinvcdf = pd.DataFrame({'manual': d_manual.loginvcdf(u, **params),
+                                'scipy': np.log(fd_scipy.ppf(u)), 'u': u}).set_index('u')
     
-    dfpdf = pd.DataFrame({'manual': d_manual.pdf(x, **params),
-                          'scipy': fd_scipy.pdf(x), 'x': x}).set_index('x')
-    dfcdf = pd.DataFrame({'manual': d_manual.cdf(x, **params),
-                          'scipy': fd_scipy.cdf(x), 'x': x}).set_index('x')
-    dfinvcdf = pd.DataFrame({'manual': d_manual.invcdf(u, **params),
-                             'scipy': fd_scipy.ppf(u), 'u': u}).set_index('u')
+    else:
+        dfpdf = pd.DataFrame({'manual': d_manual.pdf(x, **params),
+                            'scipy': fd_scipy.pdf(x), 'x': x}).set_index('x')
+        dfcdf = pd.DataFrame({'manual': d_manual.cdf(x, **params),
+                            'scipy': fd_scipy.cdf(x), 'x': x}).set_index('x')
+        dfinvcdf = pd.DataFrame({'manual': d_manual.invcdf(u, **params),
+                                'scipy': fd_scipy.ppf(u), 'u': u}).set_index('u')
             
     return dfpdf, dfcdf, dfinvcdf
-
-
-def calc_logdist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
-    """ Test my manual model logPDF, logCDF, logInvCDF vs 
-        a scipy fixed dist over range x 
-    """
-    upper = kwargs.get('upper', 1)
-    nsteps = kwargs.get('nsteps', 500)
-    x = np.linspace(0, upper, nsteps)
-    u = np.linspace(0, 1, nsteps)
-    
-    dflogpdf = pd.DataFrame({'manual': d_manual.logpdf(x, **params),
-                          'scipy': fd_scipy.logpdf(x), 'x': x}).set_index('x')
-    dflogcdf = pd.DataFrame({'manual': d_manual.logcdf(x, **params),
-                          'scipy': fd_scipy.logcdf(x), 'x': x}).set_index('x')
-    dfloginvcdf = pd.DataFrame({'manual': d_manual.loginvcdf(u, **params),
-                             'scipy': np.log(fd_scipy.ppf(u)), 'u': u}).set_index('u')
-            
-    return dflogpdf, dflogcdf, dfloginvcdf
-

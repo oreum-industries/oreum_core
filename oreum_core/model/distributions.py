@@ -32,10 +32,16 @@ class NumpyCopiesOfPymcFns():
         return ret
 
     def bound(self, vals, *conditions):
-        """Copy from pymc.bound
-            pymc3.distributions.dist_math.py
+        """ Bound natural unit distribution params, return 0 for out-of-bounds
+            Copy from pymc.bound pymc3.distributions.dist_math.py
         """
         return np.where(self.alltrue_elemwise(conditions), vals, 0)
+
+    def boundlog(self, vals, *conditions):
+        """ Bound log unit distribution params, return -inf for out-of-bounds
+            Copy from pymc.bound pymc3.distributions.dist_math.py
+        """
+        return np.where(self.alltrue_elemwise(conditions), vals, -np.inf)
 
     def logpow(self, x, m):
         """ Copy from pymc3
@@ -50,6 +56,7 @@ class Gamma(pm.Gamma):
     # TODO: consider that invCDF is hard to calculate and scipy uses C functions
     # Likely use different dist in practice
     pass
+
 
 class GammaNumpy():
     """Gamma PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
@@ -107,14 +114,14 @@ class GammaNumpy():
             compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2599
         """
         fn = -special.gammaln(a) + npc.logpow(b, a) + npc.logpow(x, a-1) - b * x
-        return self.npc.bound(fn, a > 0, b > 0, x > 0)
+        return self.npc.boundlog(fn, a > 0, b > 0, x > 0)
 
     def logcdf(self, x, a, b):
         """Gamma log CDF: 
             where $\gamma(a, bx)$ is lower incomplete gamma function [0, lim)
             compare to https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L2614
         """
-        return self.npc.bound((-special.gammaln(a)) + special.gammainc(a, b * x), 
+        return self.npc.boundlog((-special.gammaln(a)) + special.gammainc(a, b * x), 
                                 a > 0, b > 0, x > 0)
         
     def loginvcdf(self, u, a, b):
@@ -328,29 +335,114 @@ class InverseWeibull(PositiveContinuous):
 
 
 class InverseWeibullNumpy():
-    """ Inverse Weibull manual numpy
-        Used to compare my formulations vs scipy
+    """Inverse Weibull PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
+        Manual implementations potentially used if needed in pymc3 custom distributions
+        Helpful to compare these to scipy to confirm my correct implementation
+        NOTE: I'm lazy and have set m=0 throughout: this suits my usecase anyhow
+        Ref: https://en.wikipedia.org/wiki/Fréchet_distribution
+        Ref: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.invweibull.html?highlight=inverse%20weibull
+        Params: alpha (shape) > 0, s (scale) > 0, m (location of minimum) = 0
+        Support: x > 0, u in [0, 1]
     """
     def __init__(self):
-        pass
+        self.npc = NumpyCopiesOfPymcFns()
+        self.name = 'InverseWeibull'
+        self.notation = {'notation': r'x \sim InverseWeibull(\alpha, s, m=0)'}
+        self.dist_natural = {
+            'pdf': r"""f(x \mid \alpha, s, m=0) = \frac{\alpha}{s} \;
+                                                  \left( \frac{x}{s} \right)^{-1-\alpha} \;
+                                                  \exp \left( -\left( \frac{x}{s} \right)^{-\alpha} \right)""",
+            'cdf': r'F(x \mid \alpha, s, m=0) = \exp \left( -\left( \frac{x}{s} \right)^{-\alpha} \right)',
+            'invcdf': r"""F^{-1}(u \mid \alpha, s, m=0) = -s \log(u)^{-\frac{1}{\alpha}}"""}
+        self.dist_log = {
+            'logpdf': r"""\log f(x \mid \alpha, s, m=0) = \log{\alpha} - (1+\alpha)\log{x} + 
+                        \alpha \log{s} - \left( \frac{s}{x} \right)^{\alpha}""",
+            'logcdf': r'\log F(x \mid \alpha, s, m=0) = - \left( \frac{s}{x} \right)^{\alpha}',
+            'loginvcdf': r'\log F^{-1}(u \mid \alpha, s, m=0) = - \log(s) - \frac{1}{\alpha} * \log(-\log(u))'}
+        self.conditions = {
+            'parameters': r"""\alpha > 0 \, \text{(shape)}, \; 
+                            s > 0 \, \text{(scale, default } s=1 \text{)}, \; 
+                            m \in (-\infty, \infty) \, \text{(location of minimum, default } m=0 \text{)}""",
+            'support': r'x \in (m, \infty), \; u \sim \text{Uniform([0, 1])}'}
+        self.summary_stats = {
+            'mean': r"""
+                \begin{cases}
+                m + s \Gamma \left( 1 - \frac{1}{\alpha} \right) & \text{for } \alpha > 1 \\
+                \infty & \text{otherwise} \\
+                \end{cases}""",
+            'mode': r'm + s \left( \frac{\alpha}{1+\alpha} \right)^{1/\alpha}',
+            'variance': r"""
+                \begin{cases}
+                s^{2} \left( \Gamma \left( 1-\frac{2}{\alpha} \right) - 
+                            \left( \Gamma \left( 1-\frac{1}{\alpha} \right) \right)^{2} 
+                    \right) & \text{for } \alpha > 2 \\
+                \infty & \text{otherwise}
+                \end{cases}"""
+        }
 
     def pdf(self, x, a, s):
-        """Inverse Weibull PDF
-            forcing m=1
+        """InverseWeibull PDF
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L3919
         """
-        i = a/s
-        j = np.power(x/s, -1. - a)
-        k = np.power(x/s, -a)
-        k = np.exp(-k)
-        return i * j * k
+        a = np.float(a)
+        s = np.float(s)
+        fn = (
+            (a/s) *
+            np.power(x/s, -1. - a) *
+            np.exp(-np.power(x/s, -a))
+            )
+        return self.npc.bound(fn, a > 0, s > 0, x > 0)
+    
+    def cdf(self, x, a, s):
+        """InverseWeibull CDF
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L3926
+        """
+        a = np.float(a)
+        s = np.float(s)
+        fn = np.exp(-np.power(x/s, -a))
+        return self.npc.bound(fn, a > 0, s > 0, x >= 0)
+
+    def invcdf(self, u, a, s):
+        """InverseWeibull Inverse CDF aka PPF:
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L3930
+        """
+        a = np.float(a)
+        s = np.float(s)
+        fn = s * np.power(-np.log(u), -1/a)
+        return self.npc.bound(fn, a > 0, s > 0, u >= 0, u <= 1)
 
     def logpdf(self, x, a, s):
-        """Inverse Weibull log PDF
-            forcing m=1
+        """InverseWeibull log PDF
+            ref: ?
         """
-        ret = (np.log(a) + (-1. - a) * np.log(x) + a * np.log(s) - np.power(x/s, -a))
-        return ret
-    
+        a = np.float(a)
+        s = np.float(s)
+        fn = (
+            np.log(a) - np.log(s) + 
+            self.npc.logpow(s/x, 1.+a) - 
+            np.power(s/x, a)         # this term grossly dominates if a >> 2
+            ) 
+        return self.npc.boundlog(fn, a > 0, s > 0, x >= 0)
+
+    def logcdf(self, x, a, s):
+        """InverseWeibull log CDF
+            ref: ?
+        """
+        a = np.float(a)
+        s = np.float(s)
+        fn = -np.power(s/x, a)
+        return self.npc.boundlog(fn, a > 0, s > 0, x >= 0)
+        
+    def loginvcdf(self, u, a, s):
+        """InverseWeibull log Inverse CDF aka log PPF
+            ref: ?
+        """
+        a = np.float(a)
+        s = np.float(s)
+        # fn = np.log(s) + 1/a * np.log(-1/np.log(u))
+        fn = - np.log(s) - 1/a * np.log(-np.log(u))
+        return self.npc.boundlog(fn, a > 0, s > 0, u >= 0, u <= 1)
+
 
 class Kumaraswamy(pm.Kumaraswamy):
     """Inherit the pymc class, clobber it and add logcdf and loginversecdf
@@ -413,10 +505,12 @@ class Kumaraswamy(pm.Kumaraswamy):
 
 class LognormalNumpy():
     """Lognormal PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
-        Manual implementations used in pymc3 custom distributions
+        Manual implementations potentially used if needed in pymc3 custom distributions
         Helpful to compare these to scipy to confirm my correct implementation
         Ref: https://en.wikipedia.org/wiki/Log-normal_distribution
-        Params: x > 0, u in [0, 1], mu (location) > 0, sigma (variance) > 0
+        Ref: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.lognorm.html?highlight=lognorm#scipy.stats.lognorm
+        Params: mu (location) > 0, sigma (variance) > 0
+        Support: x > 0, u in [0, 1], 
     """
     def __init__(self):
         self.npc = NumpyCopiesOfPymcFns()
@@ -434,7 +528,7 @@ class LognormalNumpy():
             'logcdf': r'\log F(x \mid \mu, \sigma) = \log \left[\frac{1}{2} \text{erfc} \left( \frac{\log{(x)} -\mu}{\sigma \sqrt{2}} \right) \right]',
             'loginvcdf': r'\log F^{-1}(u \mid \mu, \sigma) = \mu - \sigma \sqrt{2} \text{erfcinv}(2u)'}
         self.conditions = {
-            'parameters': r'\mu \in (-\infty, \infty) \, \text{(location)}, \; \sigma > 0 \, \text{(variance)}',
+            'parameters': r'\mu \in (-\infty, \infty) \, \text{(location)}, \; \sigma > 0 \, \text{(std. dev.)}',
             'support': r'x \in (0, \infty), \; u \sim \text{Uniform([0, 1])}'}
         self.summary_stats = {
             'mean': r'\exp \left( \mu +\frac{\sigma^{2}}{2} \right)',
@@ -478,7 +572,7 @@ class LognormalNumpy():
         mu = np.float(mu)
         sigma = np.float(sigma)
         fn = - np.power(np.log(x)-mu,2) / (2 * np.power(sigma, 2)) + .5 * np.log(1 / (2 * np.pi * np.power(sigma, 2))) - np.log(x)
-        return self.npc.bound(fn, sigma > 0, x >= 0)
+        return self.npc.boundlog(fn, sigma > 0, x >= 0)
 
     def logcdf(self, x, mu, sigma):
         """Lognormal log CDF
@@ -488,7 +582,7 @@ class LognormalNumpy():
         mu = np.float(mu)
         sigma = np.float(sigma)
         fn = np.log(self.cdf(x, mu, sigma))
-        return self.npc.bound(fn, sigma > 0, x >= 0)
+        return self.npc.boundlog(fn, sigma > 0, x >= 0)
         
     def loginvcdf(self, u, mu, sigma):
         """Lognormal log Inverse CDF aka log PPF
@@ -497,6 +591,99 @@ class LognormalNumpy():
         mu = np.float(mu)
         sigma = np.float(sigma)
         fn = mu - sigma * np.sqrt(2) * special.erfcinv(2 * u)
+        return self.npc.boundlog(fn, sigma > 0, u >= 0, u <= 1)
+
+
+class NormalNumpy():
+    """ Normal PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
+        Manual implementations potentially used if needed in pymc3 custom distributions
+        Helpful to compare these to scipy to confirm my correct implementation
+        Ref: https://en.wikipedia.org/wiki/Normal_distribution
+        Ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L274
+        Params: mu (location) > 0, sigma (variance) > 0
+        Support: x > 0, u in [0, 1], 
+    """
+    def __init__(self):
+        self.npc = NumpyCopiesOfPymcFns()
+        self.name = 'Normal'
+        self.notation = {'notation': r'x \sim Normal(\mu, \sigma)'}
+        self.dist_natural = {
+            'pdf': r'f(x \mid \mu, \sigma) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2} \left( (x-\mu) / \sigma \right)^{2}}',
+            'cdf': r"""F(x \mid \mu, \sigma) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{x} e^{-t^{2}/2} dt 
+                                             = \frac{1}{2} \big[1 + \text{erf} \big( \frac{x - \mu}{\sigma \sqrt{2}} \big) \big]
+                                             = \frac{1}{2} \text{erfc} \big(- \frac{x - \mu}{\sigma \sqrt{2}} \big)""",
+            'invcdf': r'F^{-1}(u \mid \mu, \sigma) = \mu - \sigma \sqrt{2} \text{erfcinv}(2u)'}
+        self.dist_log = {
+            'logpdf': r'\log f(x \mid \mu, \sigma) = - \log(\sigma \sqrt{2 \pi}) - \frac{1}{2} \left( \frac{x - \mu}{\sigma} \right)^{2}',
+            'logcdf': r'\log F(x \mid \mu, \sigma) = \log{(\frac{1}{2})} + \log{\left[ \text{erfc} \left(- \frac{x - \mu}{\sigma \sqrt{2}} \right) \right]}',
+            'loginvcdf': r'\log F^{-1}(u \mid \mu, \sigma) = \log \left[ \mu - \sigma \sqrt{2} \text{erfcinv}(2u) \right]'}
+        self.conditions = {
+            'parameters': r'\mu \in (-\infty, \infty) \, \text{(location)}, \; \sigma > 0 \, \text{(std. dev.)}',
+            'support': r'x \in (-\infty, \infty), \; u \sim \text{Uniform([0, 1])}'}
+        self.summary_stats = {
+            'mean': r'\mu',
+            'mode': r'\mu',
+            'variance': r'\sigma^{2}'
+        }
+
+    def pdf(self, x, mu, sigma):
+        """Normal PDF
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L300
+        """
+        mu = np.float(mu)
+        sigma = np.float(sigma)
+        z = (x - mu) / sigma
+        fn = 1 / (sigma * np.sqrt(2*np.pi)) * np.exp(-.5 * np.power(z, 2))
+        return self.npc.bound(fn, sigma > 0)
+    
+    def cdf(self, x, mu, sigma):
+        """Normal CDF
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L307
+        """
+        mu = np.float(mu)
+        sigma = np.float(sigma)
+        z = (x - mu) / sigma
+        fn = .5 * special.erfc( -z / np.sqrt(2))  # or equiv = .5 * (1 + special.erf( z / np.sqrt(2)))
+        return self.npc.bound(fn, sigma > 0)
+
+    def invcdf(self, u, mu, sigma):
+        """Normal Inverse CDF aka PPF:
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L319
+            ref: 
+        """
+        mu = np.float(mu)
+        sigma = np.float(sigma)
+        fn = mu - sigma * np.sqrt(2.) * special.erfcinv(2 * u)
         return self.npc.bound(fn, sigma > 0, u >= 0, u <= 1)
 
+    def logpdf(self, x, mu, sigma):
+        """Normal log PDF
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L304
+            ref: 
+        """
+        mu = np.float(mu)
+        sigma = np.float(sigma)
+        z = (x - mu) / sigma
+        fn = -np.log(sigma * np.sqrt(2 * np.pi)) - .5 * np.power(z, 2)
+        return self.npc.boundlog(fn, sigma > 0)
+
+    def logcdf(self, x, mu, sigma):
+        """Normal log CDF
+            ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L310
+            ref: 
+        """
+        mu = np.float(mu)
+        sigma = np.float(sigma)
+        z = (x - mu) / sigma
+        fn = np.log(.5) + np.log(special.erfc( -z / np.sqrt(2)))
+        return self.npc.boundlog(fn, sigma > 0)
+        
+    def loginvcdf(self, u, mu, sigma):
+        """Normal log Inverse CDF aka log PPF
+            ref: ?
+        """
+        mu = np.float(mu)
+        sigma = np.float(sigma)
+        fn = np.log(mu - sigma * np.sqrt(2.) * special.erfcinv(2 * u))
+        return self.npc.boundlog(fn, sigma > 0, u >= 0, u <= 1)
 

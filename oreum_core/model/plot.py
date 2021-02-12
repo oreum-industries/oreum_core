@@ -32,15 +32,17 @@ def plot_dist_fns_over_x(dfpdf, dfcdf, dfinvcdf, **kwargs):
     f, axs = plt.subplots(1, 3, figsize=(16, 4), sharex=False, sharey=False)
     f.suptitle(f'Comparisons manual vs scipy for {l}{name}', y=1.02)
     n = len(dfpdf)
+    is_close = {k: np.sum(np.isclose(v['manual'], v['scipy'], equal_nan=True))
+        for k, v in zip(['p','c','i'], [dfpdf, dfcdf, dfinvcdf])}
 
     dfm = dfpdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
     ax0 = sns.lineplot(x='x', y='density', hue='method', style='method',data=dfm, ax=axs[0])
-    _ = ax0.set_title(f"{l}PDF: match {np.sum(np.isclose(dfpdf['manual'], dfpdf['scipy'])) / n :.1%}")
+    _ = ax0.set_title(f"{l}PDF: match {is_close['p'] / n :.1%}")
 
     dfm = dfcdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
     ax1 = sns.lineplot(x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1])
-    _ = ax1.set_title(f"{l}CDF: match {np.sum(np.isclose(dfcdf['manual'], dfcdf['scipy'])) / n :.1%}")
+    _ = ax1.set_title(f"{l}CDF: match {is_close['c'] / n :.1%}")
 
     dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='density', var_name='method')
     ax2 = sns.lineplot(x='u', y='density', hue='method', style='method', data=dfm, ax=axs[2])
-    _ = ax2.set_title(f"{l}InvCDF: match {np.sum(np.isclose(dfinvcdf['manual'], dfinvcdf['scipy'])) / n:.1%}")
+    _ = ax2.set_title(f"{l}InvCDF: match {is_close['i'] / n :.1%}")
