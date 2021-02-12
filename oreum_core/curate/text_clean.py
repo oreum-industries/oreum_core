@@ -1,4 +1,4 @@
-# text_cleaner.py
+# curate.text_clean.py
 # copyright 2021 Oreum OÜ
 import ftfy
 import itertools

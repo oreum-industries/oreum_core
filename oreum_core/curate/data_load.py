@@ -1,4 +1,4 @@
-# data_loader.py
+# curate.data_load.py
 # copyright 2021 Oreum OÜ
 import os
 import pyarrow

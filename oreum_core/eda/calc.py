@@ -1,4 +1,4 @@
-# eda.calcs.py
+# eda.calc.py
 # copyright 2021 Oreum OÜ
 import re
 import string
