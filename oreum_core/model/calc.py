@@ -3,6 +3,8 @@
 import arviz as az
 import numpy as np
 import pandas as pd
+import pymc3 as pm
+import theano.tensor as tt
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
@@ -95,8 +97,6 @@ def calc_ppc_coverage(y, yhat, crs=np.arange(0, 1.01, .1)):
 # Users/jon/anaconda/envs/instechex/lib/python3.6/site-packages/theano/tensor/subtensor.py:2339: FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated; use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index, `arr[np.array(seq)]`, which will result either in an error or a different result.
 #   out[0][inputs[2:]] = inputs[1]
 
-import theano.tensor as tt
-
 def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
     R"""Convert a packed triangular matrix into a two dimensional array.
     Triangular matrices can be stored with better space efficiancy by
@@ -167,3 +167,10 @@ def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
             
     return dfpdf, dfcdf, dfinvcdf
 
+
+def jacobian_det(f_inv_x, x):
+    """ Calc log of Jacobian determinant 
+        used to aid minimization of copula model 
+    """
+    grad = tt.reshape(pm.theanof.gradient(tt.sum(f_inv_x), [x]), x.shape)
+    return tt.log(tt.abs_(grad))
