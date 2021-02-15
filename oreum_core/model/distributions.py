@@ -405,8 +405,8 @@ class InverseWeibullNumpy():
         """InverseWeibull Inverse CDF aka PPF:
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L3930
         """
-        a = np.float(a)
-        s = np.float(s)
+        # a = np.float(a)
+        # s = np.float(s)
         fn = s * np.power(-np.log(u), -1./a)
         return boundzero_numpy(fn, a > 0, s > 0, u >= 0, u <= 1)
 
@@ -510,9 +510,9 @@ class Lognormal(pm.Lognormal):
         """
         mu = self.mu
         sigma = self.sigma
-        fn = pm.math.invprobit( (tt.log(value) - mu) / sigma)
-        # z = (tt.log(value) - mu) / sigma
-        # fn = .5 * tt.erfc( -z / tt.sqrt(2))
+        z = (tt.log(value) - mu) / sigma
+        fn = .5 * tt.erfc( -z / tt.sqrt(2.))
+        # fn = pm.math.invprobit( (tt.log(value) - mu) / sigma) # or can use this for convenience
         return boundzero_theano(fn, sigma > 0, value > 0)
 
 
@@ -566,14 +566,17 @@ class LognormalNumpy():
         sigma = np.float(sigma)
         z = (np.log(x) - mu) / sigma
         fn = .5 * special.erfc( -z / np.sqrt(2))
-        return boundzero_numpy(fn, sigma > 0, x >= 0)
+        return boundzero_numpy(fn, sigma > 0, x > 0)
 
     def invcdf(self, u, mu, sigma):
         """Lognormal Inverse CDF aka PPF:
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5063
         """
-        mu = np.float(mu)
-        sigma = np.float(sigma)
+        # mu = np.float(mu)
+        # sigma = np.float(sigma)
+        # clip u here too
+        clip = 1e-18
+        u = np.maximum(np.minimum(u, 1-clip), clip)
         fn = np.exp(mu - sigma * np.sqrt(2) * special.erfcinv(2 * u))
         return boundzero_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
@@ -616,12 +619,12 @@ class Normal(pm.Normal):
         sigma = self.sigma
 
         # NOTE hack to clip value away from {0, 1}
-        # Whilst value = {0, 1} is theoretically allows, is seems to cause a 
-        # numeric compuational issue somewhere in tt.erfcinv which throws infs
-        # this of course screws up the downstream, so we clip slightly away
+        # Whilst value = {0, 1} is theoretically allowed, is seems to cause a 
+        # numeric compuational issue somewhere in tt.erfcinv which throws infs.
+        # This screws up the downstream, so clip slightly away from {0, 1}
         clip_val = 1e-15
         value = tt.clip(value, clip_val, 1-clip_val) 
-        fn = mu - sigma * tt.sqrt(2.) * tt.erfcinv(2 * value)       
+        fn = mu - sigma * tt.sqrt(2.) * tt.erfcinv(2. * value)       
         return boundzero_theano(fn , value>=0, value<=1)
 
     

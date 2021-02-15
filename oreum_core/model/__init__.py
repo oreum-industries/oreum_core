@@ -9,7 +9,7 @@ from oreum_core.model.calc import (
     calc_r2,
     calc_ppc_coverage,
     calc_dist_fns_over_x,
-    jacobian_det
+    log_jacobian_det
 )
 from oreum_core.model.describe import (
     model_desc,

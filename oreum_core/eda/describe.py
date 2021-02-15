@@ -9,7 +9,7 @@ RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
 
-def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False):
+def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, round_numerics=False):
     """ Concat transposed topN rows, numerical desc & dtypes 
         Beware a dataframe full of bools or categoricals will error 
         thanks to pandas.describe() being too clever
@@ -27,8 +27,9 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False):
 
     # start with pandas and round numerics
     dfdesc = df.describe().T
-    for ft in dfdesc.columns[1:]:
-        dfdesc[ft] = dfdesc[ft].apply(lambda x: np.round(x,2))
+    if round_numerics:
+        for ft in dfdesc.columns[1:]:
+            dfdesc[ft] = dfdesc[ft].apply(lambda x: np.round(x,3))
 
     # prepend random rows for example cases
     rndidx = np.random.randint(0,len(df),nrows)

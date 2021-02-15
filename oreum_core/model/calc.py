@@ -168,9 +168,9 @@ def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
     return dfpdf, dfcdf, dfinvcdf
 
 
-def jacobian_det(f_inv_x, x):
+def log_jacobian_det(f_inv_x, x):
     """ Calc log of Jacobian determinant 
-        used to aid minimization of copula model 
+        used to aid log-likelihood maximisation of copula marginals
     """
     grad = tt.reshape(pm.theanof.gradient(tt.sum(f_inv_x), [x]), x.shape)
     return tt.log(tt.abs_(grad))
