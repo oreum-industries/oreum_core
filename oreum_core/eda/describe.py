@@ -37,14 +37,15 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False):
     dfout.rename(columns={0:'dtype'}, inplace=True)
 
     # add count, min, max for string cols (note the not very clever overwrite of count)
-    dfout['count_notnull'] = df.shape[0] - df.isnull().sum()
+    # dfout['count_notnull'] = df.shape[0] - df.isnull().sum()
     dfout['count_null'] = df.isnull().sum()
+    dfout['count_inf'] = np.isinf(df).sum()
     dfout['min'] = df.min().apply(lambda x: x[:8] if type(x) == str else x)
     dfout['max'] = df.max().apply(lambda x: x[:8] if type(x) == str else x)
     dfout.index.name = 'ft'
 
-    fts_out = ['dtype', 'count_notnull', 'count_null', 'mean', 'std', 
-                'min', '25%', '50%', '75%', 'max']
+    fts_out = ['dtype', 'count_null', 'count_inf', 
+                'mean', 'std', 'min', '25%', '50%', '75%', 'max']
 
     # add mode and mode count
     # WARNING takes forever for large (>10k row) arrays

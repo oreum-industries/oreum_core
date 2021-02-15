@@ -30,5 +30,6 @@ from oreum_core.model.distributions import (
 )
 from oreum_core.model.plot import (
     facetplot_azid_dist,
+    facetplot_df_dist,
     plot_dist_fns_over_x
 )

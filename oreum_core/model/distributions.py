@@ -614,12 +614,16 @@ class Normal(pm.Normal):
         """ Normal inverse cdf $F^{-1}(u | \mu,\sigma) -\sqrt{2} * \text{erfcinv}(2u)$ """
         mu = self.mu
         sigma = self.sigma
-        fn = mu - sigma * tt.sqrt(2.) * tt.erfcinv(2 * value)
-        # note alt for value: tt.maximum(tt.minimum(value, (1-1e-6)), 1e-6) 
-        # numeric issue? u ={0,1} causes infs
+
+        # NOTE hack to clip value away from {0, 1}
+        # Whilst value = {0, 1} is theoretically allows, is seems to cause a 
+        # numeric compuational issue somewhere in tt.erfcinv which throws infs
+        # this of course screws up the downstream, so we clip slightly away
+        clip_val = 1e-15
+        value = tt.clip(value, clip_val, 1-clip_val) 
+        fn = mu - sigma * tt.sqrt(2.) * tt.erfcinv(2 * value)       
         return boundzero_theano(fn , value>=0, value<=1)
-        # return fn
-    
+
     
 class NormalNumpy():
     """ Normal PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF

@@ -8,18 +8,31 @@ import patsy as pt
 import seaborn as sns
 
 
-def facetplot_azid_dist(azid, rvs, rvs_hack_extra=0, group='posterior', ref_vals=None):
-    """Convenience: plot Krushke style in facets """
+def facetplot_azid_dist(azid, rvs, rvs_hack_extra=0, group='posterior', **kwargs):
+    """Control facet positioning of Arviz Krushke style plots, data in azid
+        Pass-through kwargs to az.plot_posterior, e.g. ref_val
+    """
     # TODO unpack the compressed rvs from the azid
     
-    # m, n = 2, (len(rvs) // 2) + (len(rvs) % 2)
     m, n = 2, ((len(rvs)+rvs_hack_extra) // 2) + ((len(rvs)+rvs_hack_extra) % 2)
-    f, ax1d = plt.subplots(n, m, figsize=(m*6, 2.2*n))
-    kw = {}
-    if ref_vals is not None:
-        kw['ref_vals'] = ref_vals
-    _ = az.plot_posterior(azid, group=group, ax=ax1d, var_names=rvs, **kw)
+    f, axs = plt.subplots(n, m, figsize=(m*6, 2.2*n))
+    _ = az.plot_posterior(azid, group=group, ax=axs, var_names=rvs, **kwargs)
     f.suptitle(group, y=0.9 + n*0.005)
+    f.tight_layout()
+
+
+def facetplot_df_dist(df, rvs, rvs_hack_extra=0, **kwargs):
+    """Control facet positioning of Arviz Krushke style plots, data in df
+        Pass-through kwargs to az.plot_posterior, e.g. ref_val
+    """  
+    m, n = 2, ((len(rvs)+rvs_hack_extra) // 2) + ((len(rvs)+rvs_hack_extra) % 2)
+    f, axs = plt.subplots(n, m, figsize=(m*6, 2.2*n))
+    ref_val = kwargs.get('ref_val', None)
+    for i, ft in enumerate(df.columns):
+        axarr = az.plot_posterior(df[ft].values, ax=axs.flatten()[i], 
+                                ref_val=ref_val[i])
+        axarr.set_title(ft) 
+    f.suptitle(rvs, y=0.9 + n*0.005)
     f.tight_layout()
 
 
