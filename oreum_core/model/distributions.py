@@ -647,8 +647,8 @@ class ZeroInflatedLognormal(PositiveContinuous):
  
         f(x \mid \psi, \mu, \sigma) = \left\{
             \begin{array}{l}
-                \psi, & \text{if } x = 0 \\
-                (1-\psi) \text{Lognormal}(\mu, \sigma), & \text{if } x > 0
+                \(1 - psi), & \text{if } x = 0 \\
+                \psi \text{Lognormal}(\mu, \sigma), & \text{if } x > 0
             \end{array} 
             \right.
 
@@ -704,8 +704,8 @@ class ZeroInflatedLognormal(PositiveContinuous):
     def logp(self, value):
         psi = self.psi
         logp_ = tt.switch(value > 0,
-                         tt.log(1 - psi) + self.lognorm.logp(value),
-                         tt.log(psi))
+                         tt.log(psi) + self.lognorm.logp(value),
+                         tt.log(1 - psi))
         return bound(logp_, value >=0, psi >= 0, psi <= 1)
 
 
