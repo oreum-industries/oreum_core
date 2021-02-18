@@ -702,11 +702,26 @@ class ZeroInflatedLognormal(PositiveContinuous):
 
 
     def logp(self, value):
+        """LogPDF"""
         psi = self.psi
-        logp_ = tt.switch(value > 0,
-                         tt.log(psi) + self.lognorm.logp(value),
-                         tt.log(1 - psi))
+        logp_ = tt.switch(tt.gt(value, 0),
+                          tt.log(psi) + self.lognorm.logp(value),
+                          tt.log1p(-psi))
         return bound(logp_, value >=0, psi >= 0, psi <= 1)
+
+
+    def cdf(self, value):
+        """CDF"""
+        psi = self.psi
+        cdf_ = (1-psi) + psi * self.lognorm.cdf(value)
+        return boundzero_theano(cdf_, value >=0, psi >= 0, psi <= 1)
+
+
+    def invcdf(self, value):
+        """InvCDF aka PPF"""
+        psi = self.psi
+        invcdf_ = self.lognorm.invcdf((value + psi - 1) / psi)
+        return boundzero_theano(invcdf_, value>=0, value<=1, psi >= 0, psi <= 1)
 
 
 class Normal(pm.Normal):
