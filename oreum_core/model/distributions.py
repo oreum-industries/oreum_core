@@ -594,9 +594,10 @@ class LognormalNumpy():
         """Lognormal Inverse CDF aka PPF:
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5063
         """
-        # mu = np.float(mu)
-        # sigma = np.float(sigma)
-        u = np.maximum(np.minimum(u, 1-CLIP_U_NOT_ZERO_ONE), CLIP_U_NOT_ZERO_ONE)
+        mu = np.float(mu)
+        sigma = np.float(sigma)
+        # dont use: causes disagreement with scipy
+        # u = np.maximum(np.minimum(u, 1-CLIP_U_NOT_ZERO_ONE), CLIP_U_NOT_ZERO_ONE)
         fn = np.exp(mu - sigma * np.sqrt(2) * special.erfcinv(2 * u))
         return boundzero_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
@@ -722,6 +723,96 @@ class ZeroInflatedLognormal(PositiveContinuous):
         psi = self.psi
         invcdf_ = self.lognorm.invcdf((value + psi - 1) / psi)
         return boundzero_theano(invcdf_, value>=0, value<=1, psi >= 0, psi <= 1)
+
+
+
+class ZeroInflatedLognormalNumpy():
+    """Zero-inlfated Lognormal PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
+        Manual implementations potentially used if needed in pymc3 custom distributions
+        Helpful to compare these to ? (seems to be quite rare)
+        Ref: https://royalsocietypublishing.org/doi/10.1098/rspb.2013.1210
+        Ref: 
+        Params: 0 < psi < 1 (prop lognormal), mu (location) > 0, sigma (variance) > 0
+        Support: x > 0, u in [0, 1], 
+    """
+    def __init__(self):
+        self.name = 'ZeroInflatedLognormal'
+        self.notation = {'notation': r'x \sim ZILognormal(\psi, \mu, \sigma)'}
+        self.dist_natural = {
+            'pdf': r"""f(x \mid \psi, \mu, \sigma) = 
+                        \left\{ \begin{array}{l}
+                            (1 - \psi), & \text{if } x = 0 \\
+                            \psi \text{LognormalPDF}(\mu, \sigma, x), & \text{if } x > 0 
+                        \end{array} \right""",
+            'cdf': r"""F(x \mid \psi, \mu, \sigma) = (1 - \psi) + \psi \text{LognormalCDF}(\mu, \sigma)""",
+            'invcdf': r"""F^{-1}(u \mid \psi, \mu, \sigma) = \text{LognormalInvCDF} \left( \frac{u + \psi - 1}{\psi}, \mu, \sigma \right)"""}
+        self.dist_log = {
+            'logpdf': r"""\log f(x \mid \psi, \mu, \sigma) = 
+                        \left\{\begin{array}{l}
+                            \log(1 - \psi), & \text{if } x = 0 \\
+                            \log(\psi) + \text{LognormalLogPDF}(\mu, \sigma, x), & \text{if } x > 0
+                        \end{array} \right""",
+            'logcdf': r"""\log F(x \mid \psi, \mu, \sigma) = \log((1 - \psi) + \psi \text{LognormalLogCDF}(\mu, \sigma, x))""",
+            'loginvcdf': r"""\log F^{-1}(u \mid \psi, \mu, \sigma) = \log(\text{LognormalLogInvCDF} \left( \frac{u + \psi - 1}{\psi}), \mu, \sigma) \right)"""}
+        self.conditions = {
+            'parameters': r"""\psi \in [0, 1]\, \text{(prop. lognormal)}, \;
+                              \mu \in (-\infty, \infty) \, \text{(location)}, \; 
+                              \sigma > 0 \, \text{(std. dev.)}""",
+            'support': r'x \in [0, \infty), \; u \sim \text{Uniform([0, 1])}'}
+        self.summary_stats = {
+            'mean': r'TODO',
+            'mode': r'TODO',
+            'variance': r'TODO'}
+        self.lognorm = LognormalNumpy()
+
+    def pdf(self, x, psi, mu, sigma):
+        """ZILognormal PDF"""
+        psi = np.float(psi)
+        mu = np.float(mu)
+        sigma = np.float(sigma)
+        pdf_ = np.where(x > 0, psi * self.lognorm.pdf(x, mu, sigma), 1. - psi)
+        return boundzero_numpy(pdf_, psi >= 0., psi <= 1., sigma > 0., x > 0.)
+    
+    def cdf(self, x, psi, mu, sigma):
+        """ZILognormal CDF """
+        psi = np.float(psi)
+        mu = np.float(mu)
+        sigma = np.float(sigma)
+        cdf_ = (1-psi) + psi * self.lognorm.cdf(x, mu, sigma)
+        return boundzero_numpy(cdf_, psi >= 0, psi <= 1, sigma > 0, x > 0)
+
+    def invcdf(self, u, psi, mu, sigma):
+        """ZILognormal Inverse CDF aka PPF:"""
+        psi = np.float(psi)
+        mu = np.float(mu)
+        sigma = np.float(sigma)
+        #u = np.maximum(np.minimum(u, 1-CLIP_U_NOT_ZERO_ONE), CLIP_U_NOT_ZERO_ONE)
+        z = (u + psi - 1.) / psi
+        # TODO fix this
+        invcdf_ = self.lognorm.invcdf(np.minimum(z, 1.), mu, sigma)
+        return invcdf_
+        #return boundzero_numpy(invcdf_, psi >= 0, psi <= 1, sigma > 0, u >= 0, u <= 1)
+
+    # def logpdf(self, x, mu, sigma):
+    #     """ZILognormal log PDF"""
+    #     mu = np.float(mu)
+    #     sigma = np.float(sigma)
+    #     fn = - np.power(np.log(x)-mu,2) / (2 * np.power(sigma, 2)) + .5 * np.log(1 / (2 * np.pi * np.power(sigma, 2))) - np.log(x)
+    #     return boundlog_numpy(fn, sigma > 0, x > 0)
+
+    # def logcdf(self, x, mu, sigma):
+    #     """ZILognormal log CDF"""
+    #     mu = np.float(mu)
+    #     sigma = np.float(sigma)
+    #     fn = np.log(self.cdf(x, mu, sigma))
+    #     return boundlog_numpy(fn, sigma > 0, x > 0)
+        
+    # def loginvcdf(self, u, mu, sigma):
+    #     """ZILognormal log Inverse CDF aka log PPF"""
+    #     mu = np.float(mu)
+    #     sigma = np.float(sigma)
+    #     fn = mu - sigma * np.sqrt(2) * special.erfcinv(2 * u)
+    #     return boundlog_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
 
 class Normal(pm.Normal):

@@ -145,25 +145,58 @@ def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
     logdist = kwargs.get('logdist', False)
     upper = kwargs.get('upper', 1)
     lower = kwargs.get('lower', 0)
-    nsteps = kwargs.get('nsteps', 500)
+    nsteps = kwargs.get('nsteps', 200)
     x = np.linspace(lower, upper, nsteps)
     u = np.linspace(0, 1, nsteps)
 
     if logdist:
         dfpdf = pd.DataFrame({'manual': d_manual.logpdf(x, **params),
-                          'scipy': fd_scipy.logpdf(x), 'x': x}).set_index('x')
+                              'scipy': fd_scipy.logpdf(x), 
+                              'x': x}).set_index('x')
         dfcdf = pd.DataFrame({'manual': d_manual.logcdf(x, **params),
-                            'scipy': fd_scipy.logcdf(x), 'x': x}).set_index('x')
+                              'scipy': fd_scipy.logcdf(x), 
+                              'x': x}).set_index('x')
         dfinvcdf = pd.DataFrame({'manual': d_manual.loginvcdf(u, **params),
-                                'scipy': np.log(fd_scipy.ppf(u)), 'u': u}).set_index('u')
-    
+                                 'scipy': np.log(fd_scipy.ppf(u)), 
+                                 'u': u}).set_index('u')
     else:
         dfpdf = pd.DataFrame({'manual': d_manual.pdf(x, **params),
-                            'scipy': fd_scipy.pdf(x), 'x': x}).set_index('x')
+                             'scipy': fd_scipy.pdf(x), 
+                             'x': x}).set_index('x')
         dfcdf = pd.DataFrame({'manual': d_manual.cdf(x, **params),
-                            'scipy': fd_scipy.cdf(x), 'x': x}).set_index('x')
+                              'scipy': fd_scipy.cdf(x), 
+                              'x': x}).set_index('x')
         dfinvcdf = pd.DataFrame({'manual': d_manual.invcdf(u, **params),
-                                'scipy': fd_scipy.ppf(u), 'u': u}).set_index('u')
+                                 'scipy': fd_scipy.ppf(u), 
+                                 'u': u}).set_index('u')
+            
+    return dfpdf, dfcdf, dfinvcdf
+
+
+def calc_dist_fns_over_x_manual_only(d_manual, params, **kwargs):
+    """ Test my manual model PDF, CDF, InvCDF over range x 
+    """
+    logdist = kwargs.get('logdist', False)
+    upper = kwargs.get('upper', 1)
+    lower = kwargs.get('lower', 0)
+    nsteps = kwargs.get('nsteps', 200)
+    x = np.linspace(lower, upper, nsteps)
+    u = np.linspace(0, 1, nsteps)
+
+    if logdist:
+        dfpdf = pd.DataFrame({'manual': d_manual.logpdf(x, **params),
+                              'x': x}).set_index('x')
+        dfcdf = pd.DataFrame({'manual': d_manual.logcdf(x, **params),
+                              'x': x}).set_index('x')
+        dfinvcdf = pd.DataFrame({'manual': d_manual.loginvcdf(u, **params),
+                                 'u': u}).set_index('u')
+    else:
+        dfpdf = pd.DataFrame({'manual': d_manual.pdf(x, **params),
+                              'x': x}).set_index('x')
+        dfcdf = pd.DataFrame({'manual': d_manual.cdf(x, **params),
+                              'x': x}).set_index('x')
+        dfinvcdf = pd.DataFrame({'manual': d_manual.invcdf(u, **params),
+                                 'u': u}).set_index('u')
             
     return dfpdf, dfcdf, dfinvcdf
 

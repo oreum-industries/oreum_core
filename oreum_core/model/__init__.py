@@ -9,6 +9,7 @@ from oreum_core.model.calc import (
     calc_r2,
     calc_ppc_coverage,
     calc_dist_fns_over_x,
+    calc_dist_fns_over_x_manual_only,
     log_jacobian_det
 )
 from oreum_core.model.describe import (
@@ -26,11 +27,13 @@ from oreum_core.model.distributions import (
     Lognormal,
     LognormalNumpy,
     ZeroInflatedLognormal,
+    ZeroInflatedLognormalNumpy,
     Normal,
     NormalNumpy
 )
 from oreum_core.model.plot import (
     facetplot_azid_dist,
     facetplot_df_dist,
-    plot_dist_fns_over_x
+    plot_dist_fns_over_x,
+    plot_dist_fns_over_x_manual_only
 )
