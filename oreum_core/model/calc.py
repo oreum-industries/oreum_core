@@ -171,6 +171,7 @@ def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
 def log_jacobian_det(f_inv_x, x):
     """ Calc log of Jacobian determinant 
         used to aid log-likelihood maximisation of copula marginals
+        see JPL: https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
     """
     grad = tt.reshape(pm.theanof.gradient(tt.sum(f_inv_x), [x]), x.shape)
     return tt.log(tt.abs_(grad))

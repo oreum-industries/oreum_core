@@ -15,6 +15,12 @@ from pymc3.theanof import floatX
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
+# NOTE hack to clip values away from {0, 1} for invcdfs
+# Whilst value = {0, 1} is theoretically allowed, is seems to cause a 
+# numeric compuational issue somewhere in tt.erfcinv which throws infs.
+# This screws up the downstream, so clip slightly away from {0, 1}
+CLIP_VAL = 1e-12
+
 
 def boundzero_numpy(vals, *conditions):
     """ Bound natural unit distribution params, return 0 for out-of-bounds
@@ -333,6 +339,14 @@ class InverseWeibull(PositiveContinuous):
         fn = tt.exp(-tt.power(value/s, -alpha))
         return boundzero_theano(fn, alpha > 0, s > 0, value > 0)
 
+    def invcdf(self, value):
+        """InverseWeibull Inverse CDF aka PPF"""
+        alpha = self.alpha
+        s = self.s
+        value = tt.clip(value, CLIP_VAL, 1-CLIP_VAL) 
+        fn = s * tt.power(-tt.log(value), -1. / alpha)
+        return boundzero_theano(fn, alpha > 0, s > 0, value >= 0, value <= 1)
+
 
 class InverseWeibullNumpy():
     """Inverse Weibull PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
@@ -502,18 +516,27 @@ class Kumaraswamy(pm.Kumaraswamy):
 
 
 class Lognormal(pm.Lognormal):
-    """Inherit the pymc class, add cdf """
+    """Inherit the pymc class, add cdf and invcdf"""
    
+    def __init__(self, *args, **kwargs):
+        super(Lognormal, self).__init__(*args, **kwargs)
+
     def cdf(self, value):
-        """Lognormal CDF
-            Note can use pymc3's invprobit: (1/2) * (1 = tt.erf((tt.log(x) - mu) / tt.power(s, 0.5))) 
-        """
+        """Lognormal CDF"""
         mu = self.mu
         sigma = self.sigma
         z = (tt.log(value) - mu) / sigma
         fn = .5 * tt.erfc( -z / tt.sqrt(2.))
-        # fn = pm.math.invprobit( (tt.log(value) - mu) / sigma) # or can use this for convenience
+        # convenience alt use pymc3's invprobit: # fn = pm.math.invprobit(z)
         return boundzero_theano(fn, sigma > 0, value > 0)
+
+    def invcdf(self, value):
+        """Lognormal Inverse CDF aka PPF"""
+        mu = self.mu
+        sigma = self.sigma
+        value = tt.clip(value, CLIP_VAL, 1-CLIP_VAL) 
+        fn = tt.exp(mu - sigma * tt.sqrt(2) * tt.erfcinv(2 * value))
+        return boundzero_theano(fn, sigma > 0, value >= 0, value <= 1)
 
 
 class LognormalNumpy():
@@ -574,9 +597,7 @@ class LognormalNumpy():
         """
         # mu = np.float(mu)
         # sigma = np.float(sigma)
-        # clip u here too
-        clip = 1e-18
-        u = np.maximum(np.minimum(u, 1-clip), clip)
+        u = np.maximum(np.minimum(u, 1-CLIP_VAL), CLIP_VAL)
         fn = np.exp(mu - sigma * np.sqrt(2) * special.erfcinv(2 * u))
         return boundzero_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
@@ -617,13 +638,7 @@ class Normal(pm.Normal):
         """ Normal inverse cdf $F^{-1}(u | \mu,\sigma) -\sqrt{2} * \text{erfcinv}(2u)$ """
         mu = self.mu
         sigma = self.sigma
-
-        # NOTE hack to clip value away from {0, 1}
-        # Whilst value = {0, 1} is theoretically allowed, is seems to cause a 
-        # numeric compuational issue somewhere in tt.erfcinv which throws infs.
-        # This screws up the downstream, so clip slightly away from {0, 1}
-        clip_val = 1e-15
-        value = tt.clip(value, clip_val, 1-clip_val) 
+        value = tt.clip(value, CLIP_VAL, 1-CLIP_VAL) 
         fn = mu - sigma * tt.sqrt(2.) * tt.erfcinv(2. * value)       
         return boundzero_theano(fn , value>=0, value<=1)
 
@@ -720,3 +735,19 @@ class NormalNumpy():
         fn = np.log(mu - sigma * np.sqrt(2.) * special.erfcinv(2 * u))
         return boundlog_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
+
+class ZeroInflatedGamma(pm.Continuous):
+    
+    """Inherit the pymc class, add logp and invcdf """
+
+    def __init__(self, alpha, beta, pi, *args, **kwargs):
+        super(ZeroInflatedGamma, self).__init__(*args, **kwargs)
+        self.alpha = alpha
+        self.beta = beta
+        self.pi = pi = tt.as_tensor_variable(pi)
+        self.gamma = Gamma.dist(alpha, beta)
+
+    def logp(self, value):
+        return tt.switch(value > 0,
+                         tt.log(1 - self.pi) + self.gamma.logp(value),
+                         tt.log(self.pi))

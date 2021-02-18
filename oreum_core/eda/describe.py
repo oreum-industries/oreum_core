@@ -26,7 +26,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, round_nu
         return 'Array memsize > 50MB limit, avoid performing descriptions'
 
     # start with pandas and round numerics
-    dfdesc = df.describe().T
+    dfdesc = df.describe(include='all', datetime_is_numeric=True).T
     if round_numerics:
         for ft in dfdesc.columns[1:]:
             dfdesc[ft] = dfdesc[ft].apply(lambda x: np.round(x,3))
@@ -39,8 +39,8 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, round_nu
 
     # add count, min, max for string cols (note the not very clever overwrite of count)
     # dfout['count_notnull'] = df.shape[0] - df.isnull().sum()
-    dfout['count_null'] = df.isnull().sum()
-    dfout['count_inf'] = np.isinf(df).sum()
+    dfout['count_null'] = df.isnull().sum(axis=0)
+    dfout['count_inf'] = np.isinf(df.select_dtypes(np.number)).sum().reindex(df.columns)
     dfout['min'] = df.min().apply(lambda x: x[:8] if type(x) == str else x)
     dfout['max'] = df.max().apply(lambda x: x[:8] if type(x) == str else x)
     dfout.index.name = 'ft'

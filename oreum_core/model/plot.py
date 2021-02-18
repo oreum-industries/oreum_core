@@ -26,7 +26,8 @@ def facetplot_df_dist(df, rvs, rvs_hack_extra=0, **kwargs):
         Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """  
     m, n = 2, ((len(rvs)+rvs_hack_extra) // 2) + ((len(rvs)+rvs_hack_extra) % 2)
-    f, axs = plt.subplots(n, m, figsize=(m*6, 2.2*n))
+    sharex = kwargs.get('sharex', False)
+    f, axs = plt.subplots(n, m, figsize=(m*6, 2.2*n), sharex=sharex)
     ref_val = kwargs.get('ref_val', None)
     for i, ft in enumerate(df.columns):
         axarr = az.plot_posterior(df[ft].values, ax=axs.flatten()[i], 

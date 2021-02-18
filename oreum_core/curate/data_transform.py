@@ -20,7 +20,7 @@ class DatatypeConverter():
         """ Initialise with fts and fts_dtype_pandas_categorical
             The pandas categorical dtype logically sits on top of a str object
             giving it order which is critical for patsy dmatrix transform 
-            and thus model structure
+            and thus model structure.
 
             Use with a fts dict of form:
                 fts = dict(
@@ -38,6 +38,7 @@ class DatatypeConverter():
                         fint=fts.get('fint', []),
                         ffloat=fts.get('ffloat', []))
         self.ftslvlcat = ftslvlcat
+        self.rx_number_junk = re.compile(r'[#$€£₤¥,;%]')
 
     def convert_dtypes(self, df):
         """ Force dtypes for recognised features (fts) in df 
@@ -74,7 +75,8 @@ class DatatypeConverter():
             
         for ft in kwargs.get('fint', []):
             if df.dtypes[ft] == np.object:
-                df[ft] = df[ft].astype(str).str.strip().str.lower().str.replace(r'[#$€£₤¥,]', '')
+                df[ft] = df[ft].astype(str).str.strip().str.lower().map(
+                            lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
             df[ft] = df[ft].astype(np.float64, errors='raise')
             if pd.isnull(df[ft]).sum() == 0:
@@ -82,7 +84,8 @@ class DatatypeConverter():
 
         for ft in kwargs.get('ffloat', []):
             if df.dtypes[ft] == np.object:
-                df[ft] = df[ft].astype(str).str.strip().str.lower().str.replace(r'[#$€£₤¥,]', '')
+                df[ft] = df[ft].astype(str).str.strip().str.lower().map(
+                            lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
             df[ft] = df[ft].astype(np.float64, errors='raise')
                 
