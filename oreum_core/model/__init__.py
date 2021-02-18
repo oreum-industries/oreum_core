@@ -17,7 +17,7 @@ from oreum_core.model.describe import (
     describe_dist
 )
 from oreum_core.model.distributions import (
-    Gamma,
+    # Gamma,
     GammaNumpy,
     Gumbel,
     InverseWeibull,
@@ -25,6 +25,7 @@ from oreum_core.model.distributions import (
     Kumaraswamy,
     Lognormal,
     LognormalNumpy,
+    ZeroInflatedLognormal,
     Normal,
     NormalNumpy
 )

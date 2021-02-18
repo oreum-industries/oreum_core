@@ -19,7 +19,7 @@ rng = np.random.default_rng(seed=RANDOM_SEED)
 # Whilst value = {0, 1} is theoretically allowed, is seems to cause a 
 # numeric compuational issue somewhere in tt.erfcinv which throws infs.
 # This screws up the downstream, so clip slightly away from {0, 1}
-CLIP_VAL = 1e-12
+CLIP_U_NOT_ZERO_ONE = 1e-12
 
 
 def boundzero_numpy(vals, *conditions):
@@ -51,11 +51,13 @@ def logpow_numpy(x, m):
 
 
 class Gamma(pm.Gamma):
-    """Inherit the pymc class, clobber it and add logcdf and loginversecdf
-    """
-    # TODO: consider that invCDF is hard to calculate and scipy uses C functions
-    # Likely use different dist in practice
-    pass
+    """Inherit the pymc class, add cdf and invcdf """
+
+    def __init__(self):
+
+        raise NotImplementedError(
+            """Consider that InvCDF is hard to calculate: even scipy uses C functions
+            Recommend use different dist in practice""")
 
 
 class GammaNumpy():
@@ -131,11 +133,11 @@ class GammaNumpy():
 
 
 class Gumbel(pm.Gumbel):
-    """Inherit the pymc class, clobber it and add logcdf and loginversecdf
+    """Inherit the pymc class, add cdf, logcdf and invcdf, loginvcdf
+        Also clobber logp (!)
     """    
-
-    def test(self):
-        raise ValueError('Inside distributions.Gumbel')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, defaults=("mode",), **kwargs)
     
     def logp(self, value):
         """
@@ -282,7 +284,6 @@ class InverseWeibull(PositiveContinuous):
     def _distr_parameters_for_repr(self):
         return ["alpha", 's']
 
-
     def random(self, point=None, size=None):
         """
         Draw random values from InverseWeibull PDF distribution.
@@ -299,9 +300,8 @@ class InverseWeibull(PositiveContinuous):
         array
         """
         alpha, s = draw_values([self.alpha, self.s], point=point, size=size)
-        return generate_samples(
-            stats.invweibull.rvs, c=alpha, scale=s, loc=0., dist_shape=self.shape, size=size
-        )
+        return generate_samples(stats.invweibull.rvs, c=alpha, scale=s, loc=0., 
+                                dist_shape=self.shape, size=size)
 
     def logp(self, value):
         """
@@ -343,7 +343,7 @@ class InverseWeibull(PositiveContinuous):
         """InverseWeibull Inverse CDF aka PPF"""
         alpha = self.alpha
         s = self.s
-        value = tt.clip(value, CLIP_VAL, 1-CLIP_VAL) 
+        value = tt.clip(value, CLIP_U_NOT_ZERO_ONE, 1-CLIP_U_NOT_ZERO_ONE) 
         fn = s * tt.power(-tt.log(value), -1. / alpha)
         return boundzero_theano(fn, alpha > 0, s > 0, value >= 0, value <= 1)
 
@@ -457,11 +457,10 @@ class InverseWeibullNumpy():
 
 
 class Kumaraswamy(pm.Kumaraswamy):
-    """Inherit the pymc class, clobber it and add logcdf and loginversecdf
-    """
+    """Inherit the pymc class, add cdf, logcdf and invcdf, loginvcdf"""
 
-    def test(self):
-        raise ValueError('Inside distributions.Kumaraswamy')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def logcdf(self, value):
         """ 
@@ -519,7 +518,7 @@ class Lognormal(pm.Lognormal):
     """Inherit the pymc class, add cdf and invcdf"""
    
     def __init__(self, *args, **kwargs):
-        super(Lognormal, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def cdf(self, value):
         """Lognormal CDF"""
@@ -534,7 +533,7 @@ class Lognormal(pm.Lognormal):
         """Lognormal Inverse CDF aka PPF"""
         mu = self.mu
         sigma = self.sigma
-        value = tt.clip(value, CLIP_VAL, 1-CLIP_VAL) 
+        value = tt.clip(value, CLIP_U_NOT_ZERO_ONE, 1-CLIP_U_NOT_ZERO_ONE) 
         fn = tt.exp(mu - sigma * tt.sqrt(2) * tt.erfcinv(2 * value))
         return boundzero_theano(fn, sigma > 0, value >= 0, value <= 1)
 
@@ -597,7 +596,7 @@ class LognormalNumpy():
         """
         # mu = np.float(mu)
         # sigma = np.float(sigma)
-        u = np.maximum(np.minimum(u, 1-CLIP_VAL), CLIP_VAL)
+        u = np.maximum(np.minimum(u, 1-CLIP_U_NOT_ZERO_ONE), CLIP_U_NOT_ZERO_ONE)
         fn = np.exp(mu - sigma * np.sqrt(2) * special.erfcinv(2 * u))
         return boundzero_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
@@ -631,14 +630,96 @@ class LognormalNumpy():
         return boundlog_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
 
+class ZeroInflatedLognormal(PositiveContinuous):
+    r"""
+    ZeroInflatedLognormal log-likelihood
+
+    WIP! Mixture model to allow for observations dominated by zeros such as freq
+
+    also see 
+    + McElreath 2014, http://xcelab.net/rmpubs/Mcelreath%20Koster%202014.pdf, 
+                      https://github.com/rmcelreath/mcelreath-koster-human-nature-2014
+    + Jones 2013, https://royalsocietypublishing.org/doi/10.1098/rspb.2013.1210
+    + https://stackoverflow.com/questions/42409761/pymc3-nuts-has-difficulty-sampling-from-a-hierarchical-zero-inflated-gamma-mode
+
+    The pmf of this distribution is
+    .. math::
+ 
+        f(x \mid \psi, \mu, \sigma) = \left\{
+            \begin{array}{l}
+                \psi, & \text{if } x = 0 \\
+                (1-\psi) \text{Lognormal}(\mu, \sigma), & \text{if } x > 0
+            \end{array} 
+            \right.
+
+    ========  ==========================
+    Support   :math:`x \in \mathbb{N}_0`
+    Mean      :math:`\psi \text{Lognormal}(\mu, \sigma)`
+    Variance  :math: TODO
+    ========  ==========================
+    
+    Parameters
+    ----------
+    psi: float
+        Expected proportion of Lognormal variates (0 <= psi <= 1)
+    mu: float
+    sigma: float
+        
+    """
+
+    def __init__(self, psi, mu, sigma, *args, **kwargs):
+        super().__init__(*args, **kwargs)   # defaults=("mode",)
+
+        self.psi = psi = tt.as_tensor_variable(floatX(psi))
+        self.mu = mu = tt.as_tensor_variable(floatX(mu))
+        self.sigma = sigma = tt.as_tensor_variable(floatX(sigma))
+        self.lognorm = Lognormal.dist(mu, sigma)
+
+        assert_negative_support(sigma, "sigma", "ZeroInflatedLognormal")
+
+    def _random(self, psi, mu, sigma, size=None):
+        rvs_ = stats.lognorm.rvs(s=sigma, scale=np.exp(mu), size=size)
+        return rvs_ * psi
+
+    def random(self, point=None, size=None):
+        """
+        Draw random values from InverseWeibull PDF distribution.
+        Parameters
+        ----------
+        point: dict, optional
+            Dict of variable values on which random values are to be
+            conditioned (uses default point if not specified).
+        size: int, optional
+            Desired size of random sample (returns one sample if not
+            specified).
+        Returns
+        -------
+        array
+        """
+        psi, mu, sigma = draw_values([self.psi, self.mu, self.sigma], point=point, size=size)
+        return generate_samples(self._random, psi, mu, sigma, 
+                                dist_shape=self.shape, size=size)
+
+
+    def logp(self, value):
+        psi = self.psi
+        logp_ = tt.switch(value > 0,
+                         tt.log(1 - psi) + self.lognorm.logp(value),
+                         tt.log(psi))
+        return bound(logp_, value >=0, psi >= 0, psi <= 1)
+
+
 class Normal(pm.Normal):
     """Inherit the pymc class, add invcdf """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)   # defaults=("mode",)
 
     def invcdf(self, value):
         """ Normal inverse cdf $F^{-1}(u | \mu,\sigma) -\sqrt{2} * \text{erfcinv}(2u)$ """
         mu = self.mu
         sigma = self.sigma
-        value = tt.clip(value, CLIP_VAL, 1-CLIP_VAL) 
+        value = tt.clip(value, CLIP_U_NOT_ZERO_ONE, 1-CLIP_U_NOT_ZERO_ONE) 
         fn = mu - sigma * tt.sqrt(2.) * tt.erfcinv(2. * value)       
         return boundzero_theano(fn , value>=0, value<=1)
 
@@ -735,19 +816,3 @@ class NormalNumpy():
         fn = np.log(mu - sigma * np.sqrt(2.) * special.erfcinv(2 * u))
         return boundlog_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
-
-class ZeroInflatedGamma(pm.Continuous):
-    
-    """Inherit the pymc class, add logp and invcdf """
-
-    def __init__(self, alpha, beta, pi, *args, **kwargs):
-        super(ZeroInflatedGamma, self).__init__(*args, **kwargs)
-        self.alpha = alpha
-        self.beta = beta
-        self.pi = pi = tt.as_tensor_variable(pi)
-        self.gamma = Gamma.dist(alpha, beta)
-
-    def logp(self, value):
-        return tt.switch(value > 0,
-                         tt.log(1 - self.pi) + self.gamma.logp(value),
-                         tt.log(self.pi))
