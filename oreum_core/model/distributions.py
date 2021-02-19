@@ -566,7 +566,8 @@ class LognormalNumpy():
             'support': r'x \in (0, \infty), \; u \sim \text{Uniform([0, 1])}'}
         self.summary_stats = {
             'mean': r'\exp \left( \mu +\frac{\sigma^{2}}{2} \right)',
-            'mode': r'\exp ( \mu +\sigma^{2} )',
+            'median': r'\exp ( \mu )',
+            'mode': r'\exp ( \mu  - \sigma^{2} )',
             'variance': r'[\exp (\sigma^{2}) - 1] \exp (2 \mu + \sigma^{2})'
         }
 
@@ -676,9 +677,16 @@ class ZeroInflatedLognormal(PositiveContinuous):
         self.sigma = sigma = tt.as_tensor_variable(floatX(sigma))
         self.lognorm = Lognormal.dist(mu, sigma)
 
+        # TODO
+        self.mean = self.psi * self.lognorm.mean  #tt.exp(self.mu + tt.power(self.sigma, 2) / 2)
+        # self.median = tt.exp(self.mu)
+        # self.mode = self.psi * tt.exp(self.mu - np.power(self.sigma, 2))
+
         assert_negative_support(sigma, "sigma", "ZeroInflatedLognormal")
 
     def _random(self, psi, mu, sigma, size=None):
+        """Note by definition any rvs_ from lognorm that are zero will 
+            correctly remain zero, covering the case x = 0"""
         rvs_ = stats.lognorm.rvs(s=sigma, scale=np.exp(mu), size=size)
         return rvs_ * psi
 
@@ -708,21 +716,23 @@ class ZeroInflatedLognormal(PositiveContinuous):
         logp_ = tt.switch(tt.gt(value, 0),
                           tt.log(psi) + self.lognorm.logp(value),
                           tt.log1p(-psi))
-        return bound(logp_, value >=0, psi >= 0, psi <= 1)
+        return bound(logp_, value >=0, psi > 0, psi < 1)
 
 
     def cdf(self, value):
         """CDF"""
         psi = self.psi
-        cdf_ = (1-psi) + psi * self.lognorm.cdf(value)
-        return boundzero_theano(cdf_, value >=0, psi >= 0, psi <= 1)
+        # cdf_ = (1. - psi) + psi * self.lognorm.cdf(x, mu, sigma)
+        # return boundzero_numpy(cdf_, psi > 0, psi < 1, sigma > 0, x >= 0)
+        cdf_ = (1. - psi) + psi * self.lognorm.cdf(value)
+        return boundzero_theano(cdf_, value >=0, psi > 0, psi < 1)
 
 
     def invcdf(self, value):
         """InvCDF aka PPF"""
         psi = self.psi
         invcdf_ = self.lognorm.invcdf((value + psi - 1) / psi)
-        return boundzero_theano(invcdf_, value>=0, value<=1, psi >= 0, psi <= 1)
+        return boundzero_theano(invcdf_, value>=0, value<=1, psi > 0, psi < 1)
 
 
 
@@ -790,27 +800,6 @@ class ZeroInflatedLognormalNumpy():
         # return invcdf_
         return boundzero_numpy(invcdf_, psi > 0, psi < 1, sigma > 0, u >= 0, u <= 1)
 
-    # def logpdf(self, x, mu, sigma):
-    #     """ZILognormal log PDF"""
-    #     mu = np.float(mu)
-    #     sigma = np.float(sigma)
-    #     fn = - np.power(np.log(x)-mu,2) / (2 * np.power(sigma, 2)) + .5 * np.log(1 / (2 * np.pi * np.power(sigma, 2))) - np.log(x)
-    #     return boundlog_numpy(fn, sigma > 0, x > 0)
-
-    # def logcdf(self, x, mu, sigma):
-    #     """ZILognormal log CDF"""
-    #     mu = np.float(mu)
-    #     sigma = np.float(sigma)
-    #     fn = np.log(self.cdf(x, mu, sigma))
-    #     return boundlog_numpy(fn, sigma > 0, x > 0)
-        
-    # def loginvcdf(self, u, mu, sigma):
-    #     """ZILognormal log Inverse CDF aka log PPF"""
-    #     mu = np.float(mu)
-    #     sigma = np.float(sigma)
-    #     fn = mu - sigma * np.sqrt(2) * special.erfcinv(2 * u)
-    #     return boundlog_numpy(fn, sigma > 0, u >= 0, u <= 1)
-
 
 class Normal(pm.Normal):
     """Inherit the pymc class, add invcdf """
@@ -822,7 +811,7 @@ class Normal(pm.Normal):
         """ Normal inverse cdf $F^{-1}(u | \mu,\sigma) -\sqrt{2} * \text{erfcinv}(2u)$ """
         mu = self.mu
         sigma = self.sigma
-        value = tt.clip(value, CLIP_U_NOT_ZERO_ONE, 1-CLIP_U_NOT_ZERO_ONE) 
+        #value = tt.clip(value, CLIP_U_NOT_ZERO_ONE, 1-CLIP_U_NOT_ZERO_ONE) 
         fn = mu - sigma * tt.sqrt(2.) * tt.erfcinv(2. * value)       
         return boundzero_theano(fn , value>=0, value<=1)
 
