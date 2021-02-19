@@ -666,7 +666,6 @@ class ZeroInflatedLognormal(PositiveContinuous):
         Expected proportion of Lognormal variates (0 <= psi <= 1)
     mu: float
     sigma: float
-        
     """
 
     def __init__(self, psi, mu, sigma, *args, **kwargs):
@@ -678,9 +677,9 @@ class ZeroInflatedLognormal(PositiveContinuous):
         self.lognorm = Lognormal.dist(mu, sigma)
 
         # TODO
-        self.mean = self.psi * self.lognorm.mean  #tt.exp(self.mu + tt.power(self.sigma, 2) / 2)
+        self.mean = self.psi * self.lognorm.mean    # lognorm.mean = exp(mu + sigma^2 / 2)
         # self.median = tt.exp(self.mu)
-        # self.mode = self.psi * tt.exp(self.mu - np.power(self.sigma, 2))
+        # self.mode = 0 #self.psi * self.lognorm.mode 
 
         assert_negative_support(sigma, "sigma", "ZeroInflatedLognormal")
 

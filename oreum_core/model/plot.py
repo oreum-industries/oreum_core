@@ -17,7 +17,7 @@ def facetplot_azid_dist(azid, rvs, rvs_hack_extra=0, group='posterior', **kwargs
     m, n = 2, ((len(rvs)+rvs_hack_extra) // 2) + ((len(rvs)+rvs_hack_extra) % 2)
     f, axs = plt.subplots(n, m, figsize=(m*6, 2.2*n))
     _ = az.plot_posterior(azid, group=group, ax=axs, var_names=rvs, **kwargs)
-    f.suptitle(f'{group} {rvs}', y=0.9 + n*0.005)
+    f.suptitle(f'{group} {rvs}', y=0.93 + n*0.005)
     f.tight_layout()
 
 
@@ -34,7 +34,7 @@ def facetplot_df_dist(df, rvs, rvs_hack_extra=0, **kwargs):
                                 ref_val=ref_val[i])
         axarr.set_title(ft) 
     title = kwargs.get('title', '')
-    f.suptitle(f'{title} {rvs}', y=0.9 + n*0.005)
+    f.suptitle(f'{title} {rvs}', y=0.93 + n*0.005)
     f.tight_layout()
 
 
