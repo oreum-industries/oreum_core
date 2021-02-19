@@ -739,23 +739,21 @@ class ZeroInflatedLognormalNumpy():
         self.name = 'ZeroInflatedLognormal'
         self.notation = {'notation': r'x \sim ZILognormal(\psi, \mu, \sigma)'}
         self.dist_natural = {
-            'pdf': r"""f(x \mid \psi, \mu, \sigma) = 
-                        \left\{ \begin{array}{l}
-                            (1 - \psi), & \text{if } x = 0 \\
-                            \psi \text{LognormalPDF}(\mu, \sigma, x), & \text{if } x > 0 
-                        \end{array} \right""",
+            'pdf': r"""f(x \mid \psi, \mu, \sigma) = \left\{ \begin{array}{l}
+                    (1 - \psi), & \text{if } x = 0 \\
+                    \psi \text{LognormalPDF}(\mu, \sigma, x), & \text{if } x > 0 \\
+                    \end{array} \right.""",
             'cdf': r"""F(x \mid \psi, \mu, \sigma) = (1 - \psi) + \psi \text{LognormalCDF}(\mu, \sigma)""",
-            'invcdf': r"""F^{-1}(u \mid \psi, \mu, \sigma) = \text{LognormalInvCDF} \left( \frac{u + \psi - 1}{\psi}, \mu, \sigma \right)"""}
+            'invcdf': r"""F^{-1}(u \mid \psi, \mu, \sigma) = \text{LognormalInvCDF} \left( \frac{u - 1}{\psi} + 1, \mu, \sigma \right)"""}
         self.dist_log = {
-            'logpdf': r"""\log f(x \mid \psi, \mu, \sigma) = 
-                        \left\{\begin{array}{l}
+            'logpdf': r"""\log f(x \mid \psi, \mu, \sigma) = \left\{\begin{array}{l}
                             \log(1 - \psi), & \text{if } x = 0 \\
-                            \log(\psi) + \text{LognormalLogPDF}(\mu, \sigma, x), & \text{if } x > 0
-                        \end{array} \right""",
+                            \log(\psi) + \text{LognormalLogPDF}(\mu, \sigma, x), & \text{if } x > 0 \\
+                        \end{array} \right.""",
             'logcdf': r"""\log F(x \mid \psi, \mu, \sigma) = \log((1 - \psi) + \psi \text{LognormalLogCDF}(\mu, \sigma, x))""",
             'loginvcdf': r"""\log F^{-1}(u \mid \psi, \mu, \sigma) = \log(\text{LognormalLogInvCDF} \left( \frac{u + \psi - 1}{\psi}), \mu, \sigma) \right)"""}
         self.conditions = {
-            'parameters': r"""\psi \in [0, 1]\, \text{(prop. lognormal)}, \;
+            'parameters': r"""\psi \in (0, 1)\, \text{(prop. lognormal)}, \;
                               \mu \in (-\infty, \infty) \, \text{(location)}, \; 
                               \sigma > 0 \, \text{(std. dev.)}""",
             'support': r'x \in [0, \infty), \; u \sim \text{Uniform([0, 1])}'}
@@ -771,27 +769,26 @@ class ZeroInflatedLognormalNumpy():
         mu = np.float(mu)
         sigma = np.float(sigma)
         pdf_ = np.where(x > 0, psi * self.lognorm.pdf(x, mu, sigma), 1. - psi)
-        return boundzero_numpy(pdf_, psi >= 0., psi <= 1., sigma > 0., x > 0.)
+        return boundzero_numpy(pdf_, psi > 0, psi < 1, sigma > 0, x >= 0)
     
     def cdf(self, x, psi, mu, sigma):
         """ZILognormal CDF """
         psi = np.float(psi)
         mu = np.float(mu)
         sigma = np.float(sigma)
-        cdf_ = (1-psi) + psi * self.lognorm.cdf(x, mu, sigma)
-        return boundzero_numpy(cdf_, psi >= 0, psi <= 1, sigma > 0, x > 0)
+        cdf_ = (1. - psi) + psi * self.lognorm.cdf(x, mu, sigma)
+        return boundzero_numpy(cdf_, psi > 0, psi < 1, sigma > 0, x >= 0)
 
     def invcdf(self, u, psi, mu, sigma):
         """ZILognormal Inverse CDF aka PPF:"""
         psi = np.float(psi)
         mu = np.float(mu)
         sigma = np.float(sigma)
-        #u = np.maximum(np.minimum(u, 1-CLIP_U_NOT_ZERO_ONE), CLIP_U_NOT_ZERO_ONE)
-        z = (u + psi - 1.) / psi
-        # TODO fix this
-        invcdf_ = self.lognorm.invcdf(np.minimum(z, 1.), mu, sigma)
-        return invcdf_
-        #return boundzero_numpy(invcdf_, psi >= 0, psi <= 1, sigma > 0, u >= 0, u <= 1)
+        # z = (u + psi - 1.) / psi
+        z = ((u - 1.) / psi) + 1   # better formulation avoid computational issues
+        invcdf_ = self.lognorm.invcdf(z, mu, sigma)
+        # return invcdf_
+        return boundzero_numpy(invcdf_, psi > 0, psi < 1, sigma > 0, u >= 0, u <= 1)
 
     # def logpdf(self, x, mu, sigma):
     #     """ZILognormal log PDF"""

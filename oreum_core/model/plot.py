@@ -57,6 +57,7 @@ def plot_dist_fns_over_x(dfpdf, dfcdf, dfinvcdf, **kwargs):
     dfm = dfcdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
     ax1 = sns.lineplot(x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1])
     _ = ax1.set_title(f"{l}CDF: match {is_close['c'] / n :.1%}")
+    _ = ax1.set(ylim=(0, None))
 
     dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
     ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])
@@ -81,6 +82,7 @@ def plot_dist_fns_over_x_manual_only(dfpdf, dfcdf, dfinvcdf, **kwargs):
     dfm = dfcdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
     ax1 = sns.lineplot(x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1])
     _ = ax1.set_title(f"{l}CDF")
+    _ = ax1.set(ylim=(0, None))
 
     dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
     ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])
