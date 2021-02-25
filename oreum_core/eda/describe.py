@@ -33,19 +33,25 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, round_nu
 
     # prepend random rows for example cases
     rndidx = np.random.randint(0,len(df),nrows)
-    dfout = pd.concat((df.iloc[rndidx].T, dfdesc, df.dtypes), axis=1,join='outer', sort=True)
+    dfout = pd.concat((df.iloc[rndidx].T, dfdesc, df.dtypes), 
+                      axis=1, join='outer', sort=True)
     dfout = dfout.loc[df.columns.values]
     dfout.rename(columns={0:'dtype'}, inplace=True)
+    dfout.index.name = 'ft'
 
-    # add count, min, max for string cols (note the not very clever overwrite of count)
+    # add null counts for all
     # dfout['count_notnull'] = df.shape[0] - df.isnull().sum()
     dfout['count_null'] = df.isnull().sum(axis=0)
     dfout['count_inf'] = np.isinf(df.select_dtypes(np.number)).sum().reindex(df.columns)
-    dfout['min'] = df.min().apply(lambda x: x[:8] if type(x) == str else x)
-    dfout['max'] = df.max().apply(lambda x: x[:8] if type(x) == str else x)
-    dfout.index.name = 'ft'
+    
+    # add min, max for string cols (note the not very clever overwrite of count)
+    idxs = dfout['dtype'] == 'object'
+    for ft in dfout.loc[idxs].index.values:
+        dfout.loc[ft, 'min'] = df[ft].value_counts().index.min()
+        dfout.loc[ft, 'max'] = df[ft].value_counts().index.max()
 
     fts_out = ['dtype', 'count_null', 'count_inf', 
+                'unique', 'top', 'freq',
                 'mean', 'std', 'min', '25%', '50%', '75%', 'max']
 
     # add mode and mode count
@@ -58,7 +64,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, round_nu
         fts_out.append(['mode', 'mode_count'])
     
     dfout = dfout[fts_out].copy()
-    return dfout.iloc[:nfeats,:]
+    return dfout.iloc[:nfeats,:].fillna('')
 
 
 def display_fw(df, max_rows=20):

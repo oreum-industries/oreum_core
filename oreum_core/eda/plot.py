@@ -68,12 +68,14 @@ def plot_int_dist(df, fts, log=False, vsize=2.5):
     vert = int(np.ceil(len(fts)))
     f, ax1d = plt.subplots(len(fts), 1, figsize=(14, vert*vsize), squeeze=False)
     for i, ft in enumerate(fts):
+        n_nans = pd.isnull(df[ft]).sum()
+        n_zeros = (df[ft] == 0).sum()
         ax = sns.histplot(df.loc[df[ft].notnull(), ft], 
                             kde=False, stat='density', ax=ax1d[i][0],
-                            label='{} NaNs'.format(pd.isnull(df[ft]).sum()), 
+                            label=f'{n_nans} NaNs, {n_zeros} zeros', 
                             color=sns.color_palette()[i%4])
         if log:
-            _ = ax.set(yscale='log', title=ft, ylabel='log10(count)')
+            _ = ax.set(yscale='log', title=ft, ylabel='log(count)')
         _ = ax.set(title=ft, ylabel='count', xlabel='value')
         _ = ax.legend(loc='upper right')
     f.tight_layout()

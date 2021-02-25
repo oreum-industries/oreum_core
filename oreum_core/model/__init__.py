@@ -23,6 +23,7 @@ from oreum_core.model.distributions import (
     Gumbel,
     InverseWeibull,
     InverseWeibullNumpy,
+    ZeroInflatedInverseWeibull,
     Kumaraswamy,
     Lognormal,
     LognormalNumpy,

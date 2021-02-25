@@ -28,6 +28,7 @@ class DatatypeConverter():
                     fcat = [],
                     fbool = [],
                     fdate = [],
+                    fyear = [],
                     fint = [],
                     ffloat =[])
         """
@@ -35,6 +36,7 @@ class DatatypeConverter():
                         fcat=fts.get('fcat', []), 
                         fbool=fts.get('fbool', []),
                         fdate=fts.get('fdate', []),
+                        fyear=fts.get('fyear', []),
                         fint=fts.get('fint', []),
                         ffloat=fts.get('ffloat', []))
         self.ftslvlcat = ftslvlcat

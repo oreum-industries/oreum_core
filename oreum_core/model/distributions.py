@@ -397,8 +397,8 @@ class InverseWeibullNumpy():
         """InverseWeibull PDF
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L3919
         """
-        a = np.float(a)
-        s = np.float(s)
+        a = np.array(a).astype(np.float, casting='no')
+        s = np.array(s).astype(np.float, casting='no')
         fn = (
             (a/s) *
             np.power(x/s, -1.-a) *
@@ -410,8 +410,8 @@ class InverseWeibullNumpy():
         """InverseWeibull CDF
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L3926
         """
-        a = np.float(a)
-        s = np.float(s)
+        a = np.array(a).astype(np.float, casting='no')
+        s = np.array(s).astype(np.float, casting='no')
         fn = np.exp(-np.power(x/s, -a))
         return boundzero_numpy(fn, a > 0, s > 0, x > 0)
 
@@ -419,8 +419,8 @@ class InverseWeibullNumpy():
         """InverseWeibull Inverse CDF aka PPF:
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L3930
         """
-        # a = np.float(a)
-        # s = np.float(s)
+        a = np.array(a).astype(np.float, casting='no')
+        s = np.array(s).astype(np.float, casting='no')
         fn = s * np.power(-np.log(u), -1./a)
         return boundzero_numpy(fn, a > 0, s > 0, u >= 0, u <= 1)
 
@@ -428,8 +428,8 @@ class InverseWeibullNumpy():
         """InverseWeibull log PDF
             ref: ? manually calced and confirmed vs scipy
         """
-        a = np.float(a)
-        s = np.float(s)
+        a = np.array(a).astype(np.float, casting='no')
+        s = np.array(s).astype(np.float, casting='no')
         fn = (
             np.log(a) - np.log(s) + 
             logpow_numpy(x/s, -1.-a) - 
@@ -441,8 +441,8 @@ class InverseWeibullNumpy():
         """InverseWeibull log CDF
             ref: ? manually calced and confirmed vs scipy
         """
-        a = np.float(a)
-        s = np.float(s)
+        a = np.array(a).astype(np.float, casting='no')
+        s = np.array(s).astype(np.float, casting='no')
         fn = -np.power(x/s, -a)
         return boundlog_numpy(fn, a > 0, s > 0, x >= 0)
         
@@ -450,10 +450,117 @@ class InverseWeibullNumpy():
         """InverseWeibull log Inverse CDF aka log PPF
             ref: ? manually calced and confirmed vs scipy
         """
-        a = np.float(a)
-        s = np.float(s)
+        a = np.array(a).astype(np.float, casting='no')
+        s = np.array(s).astype(np.float, casting='no')
         fn = np.log(s) - (1./a) * np.log(-np.log(u))
         return boundlog_numpy(fn, a > 0, s > 0, u >= 0, u <= 1)
+
+
+class ZeroInflatedInverseWeibull(PositiveContinuous):
+    r"""
+    ZeroInflatedInvserseWeibull log-likelihood
+
+    WIP! Mixture model to allow for observations dominated by zeros such as sev
+
+    also see 
+    + McElreath 2014, http://xcelab.net/rmpubs/Mcelreath%20Koster%202014.pdf, 
+                      https://github.com/rmcelreath/mcelreath-koster-human-nature-2014
+    + Jones 2013, https://royalsocietypublishing.org/doi/10.1098/rspb.2013.1210
+    + https://stackoverflow.com/questions/42409761/pymc3-nuts-has-difficulty-sampling-from-a-hierarchical-zero-inflated-gamma-mode
+
+    The pmf of this distribution is
+    .. math::
+ 
+        f(x \mid \psi, \alpha, s) = \left\{
+            \begin{array}{l}
+                \(1 - psi), & \text{if } x = 0 \\
+                \psi \text{InverseWeibull}(\alpha, s), & \text{if } x > 0
+            \end{array} 
+            \right.
+
+    ========  ==========================
+    Support   :math:`x \in \mathbb{N}_0`
+    Mean      :math:`\psi \text{InverseWeibull}(\mu, \sigma)`
+    Variance  :math: TODO
+    ========  ==========================
+    
+    Parameters
+    ----------
+    psi: float
+        Expected proportion of InverseWeibull variates (0 <= psi <= 1)
+    alpha: float
+    s: float
+    """
+
+    def __init__(self, psi, alpha, s, *args, **kwargs):
+        super().__init__(*args, defaults=("mode",), **kwargs)
+
+        self.psi = psi = tt.as_tensor_variable(floatX(psi))
+        self.alpha = alpha = tt.as_tensor_variable(floatX(alpha))
+        self.s = s = tt.as_tensor_variable(floatX(s))
+        self.invweibull = InverseWeibull.dist(alpha=alpha, s=s)
+
+        # TODO
+        #self.mean = self.psi * self.invweibull.mean
+        self.mode = self.psi * self.invweibull.mode 
+
+        assert_negative_support(alpha, "alpha", "ZeroInflatedInverseWeibull")
+        assert_negative_support(s, "s", "ZeroInflatedInverseWeibull")
+
+    # def _random(self, psi, size=None):
+    #     """Note by definition any rvs_ from invweibull that are zero will 
+    #         correctly remain zero, covering the case x = 0"""
+    #     rvs_ = self.invweibull.random(size=size)
+    #     return rvs_ * psi
+
+    def _random(self, psi, size=None):
+        """Inputs are numpy arrays"""
+        rvs_ = self.invweibull.random(size=size)
+        pi = stats.binom(n=np.repeat([1], len(psi)), p=psi).rvs(len(psi))
+        return rvs_ * pi
+
+    def random(self, point=None, size=None):
+        """
+        Draw random values from ZeroInflatedInverseWeibull PDF distribution.
+        Parameters
+        ----------
+        point: dict, optional
+            Dict of variable values on which random values are to be
+            conditioned (uses default point if not specified).
+        size: int, optional
+            Desired size of random sample (returns one sample if not
+            specified).
+        Returns
+        -------
+        array
+        """
+        psi, alpha, s = draw_values([self.psi, self.alpha, self.s], 
+                                     point=point, size=size)
+        return generate_samples(self._random, psi, 
+                                dist_shape=self.shape, size=size)
+
+
+    def logp(self, value):
+        """LogPDF"""
+        psi = self.psi
+        logp_ = tt.switch(tt.gt(value, 0),
+                          tt.log(psi) + self.invweibull.logp(value),
+                          tt.log1p(-psi))
+        return bound(logp_, value >=0, psi > 0, psi < 1)
+
+
+    def cdf(self, value):
+        """CDF"""
+        psi = self.psi
+        cdf_ = (1. - psi) * 1 + psi * self.invweibull.cdf(value)
+        return boundzero_theano(cdf_, value >=0, psi > 0, psi < 1)
+
+
+    def invcdf(self, value):
+        """InvCDF aka PPF"""
+        psi = self.psi
+        invcdf_ = self.invweibull.invcdf((value + psi - 1) / psi)
+        return boundzero_theano(invcdf_, value>=0, value<=1, psi > 0, psi < 1)
 
 
 class Kumaraswamy(pm.Kumaraswamy):
@@ -533,7 +640,7 @@ class Lognormal(pm.Lognormal):
         """Lognormal Inverse CDF aka PPF"""
         mu = self.mu
         sigma = self.sigma
-        value = tt.clip(value, CLIP_U_NOT_ZERO_ONE, 1-CLIP_U_NOT_ZERO_ONE) 
+        # value = tt.clip(value, CLIP_U_NOT_ZERO_ONE, 1-CLIP_U_NOT_ZERO_ONE) 
         fn = tt.exp(mu - sigma * tt.sqrt(2) * tt.erfcinv(2 * value))
         return boundzero_theano(fn, sigma > 0, value >= 0, value <= 1)
 
@@ -575,8 +682,8 @@ class LognormalNumpy():
         """Lognormal PDF
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5050
         """
-        mu = np.float(mu)
-        sigma = np.float(sigma)
+        mu = np.array(mu).astype(np.float, casting='no')
+        sigma = np.array(sigma).astype(np.float, casting='no')
         fn = ((1 / (x * sigma * np.sqrt(2 * np.pi))) * 
              np.exp( -np.power( (np.log(x) - mu) / (sigma * np.sqrt(2)), 2) ))
         return boundzero_numpy(fn, sigma > 0, x > 0)
@@ -585,8 +692,8 @@ class LognormalNumpy():
         """Lognormal CDF
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5057
         """
-        mu = np.float(mu)
-        sigma = np.float(sigma)
+        mu = np.array(mu).astype(np.float, casting='no')
+        sigma = np.array(sigma).astype(np.float, casting='no')
         z = (np.log(x) - mu) / sigma
         fn = .5 * special.erfc( -z / np.sqrt(2))
         return boundzero_numpy(fn, sigma > 0, x > 0)
@@ -595,9 +702,8 @@ class LognormalNumpy():
         """Lognormal Inverse CDF aka PPF:
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5063
         """
-        mu = np.float(mu)
-        sigma = np.float(sigma)
-        # dont use: causes disagreement with scipy
+        mu = np.array(mu).astype(np.float, casting='no')
+        sigma = np.array(sigma).astype(np.float, casting='no')
         # u = np.maximum(np.minimum(u, 1-CLIP_U_NOT_ZERO_ONE), CLIP_U_NOT_ZERO_ONE)
         fn = np.exp(mu - sigma * np.sqrt(2) * special.erfcinv(2 * u))
         return boundzero_numpy(fn, sigma > 0, u >= 0, u <= 1)
@@ -607,8 +713,8 @@ class LognormalNumpy():
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5054
             ref: https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L1887
         """
-        mu = np.float(mu)
-        sigma = np.float(sigma)
+        mu = np.array(mu).astype(np.float, casting='no')
+        sigma = np.array(sigma).astype(np.float, casting='no')
         fn = - np.power(np.log(x)-mu,2) / (2 * np.power(sigma, 2)) + .5 * np.log(1 / (2 * np.pi * np.power(sigma, 2))) - np.log(x)
         return boundlog_numpy(fn, sigma > 0, x > 0)
 
@@ -617,8 +723,8 @@ class LognormalNumpy():
             ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5060
             ref: https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L1913
         """
-        mu = np.float(mu)
-        sigma = np.float(sigma)
+        mu = np.array(mu).astype(np.float, casting='no')
+        sigma = np.array(sigma).astype(np.float, casting='no')
         fn = np.log(self.cdf(x, mu, sigma))
         return boundlog_numpy(fn, sigma > 0, x > 0)
         
@@ -626,8 +732,8 @@ class LognormalNumpy():
         """Lognormal log Inverse CDF aka log PPF
             ref: ?
         """
-        mu = np.float(mu)
-        sigma = np.float(sigma)
+        mu = np.array(mu).astype(np.float, casting='no')
+        sigma = np.array(sigma).astype(np.float, casting='no')
         fn = mu - sigma * np.sqrt(2) * special.erfcinv(2 * u)
         return boundlog_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
@@ -675,6 +781,7 @@ class ZeroInflatedLognormal(PositiveContinuous):
         self.mu = mu = tt.as_tensor_variable(floatX(mu))
         self.sigma = sigma = tt.as_tensor_variable(floatX(sigma))
         self.lognorm = Lognormal.dist(mu, sigma)
+        #self.bernoulli = stats.binom()
 
         # TODO
         self.mean = self.psi * self.lognorm.mean    # lognorm.mean = exp(mu + sigma^2 / 2)
@@ -683,11 +790,19 @@ class ZeroInflatedLognormal(PositiveContinuous):
 
         assert_negative_support(sigma, "sigma", "ZeroInflatedLognormal")
 
+    # def _random(self, psi, mu, sigma, size=None):
+    #     """ Not sure 2021-02-21
+    #         `Note by definition any rvs_ from lognorm that are zero will 
+    #         correctly remain zero, covering the case x = 0`
+    #     """
+    #     rvs_ = stats.lognorm.rvs(s=sigma, scale=np.exp(mu), size=size)
+    #     return rvs_ * psi
+
     def _random(self, psi, mu, sigma, size=None):
-        """Note by definition any rvs_ from lognorm that are zero will 
-            correctly remain zero, covering the case x = 0"""
+        """ Inputs are numpy arrays """
         rvs_ = stats.lognorm.rvs(s=sigma, scale=np.exp(mu), size=size)
-        return rvs_ * psi
+        pi = stats.binom(n=np.repeat([1], len(psi)), p=psi).rvs(len(psi))
+        return rvs_ * pi
 
     def random(self, point=None, size=None):
         """
@@ -708,7 +823,6 @@ class ZeroInflatedLognormal(PositiveContinuous):
         return generate_samples(self._random, psi, mu, sigma, 
                                 dist_shape=self.shape, size=size)
 
-
     def logp(self, value):
         """LogPDF"""
         psi = self.psi
@@ -721,9 +835,7 @@ class ZeroInflatedLognormal(PositiveContinuous):
     def cdf(self, value):
         """CDF"""
         psi = self.psi
-        # cdf_ = (1. - psi) + psi * self.lognorm.cdf(x, mu, sigma)
-        # return boundzero_numpy(cdf_, psi > 0, psi < 1, sigma > 0, x >= 0)
-        cdf_ = (1. - psi) + psi * self.lognorm.cdf(value)
+        cdf_ = (1. - psi) * 1 + psi * self.lognorm.cdf(value)
         return boundzero_theano(cdf_, value >=0, psi > 0, psi < 1)
 
 
@@ -732,7 +844,6 @@ class ZeroInflatedLognormal(PositiveContinuous):
         psi = self.psi
         invcdf_ = self.lognorm.invcdf((value + psi - 1) / psi)
         return boundzero_theano(invcdf_, value>=0, value<=1, psi > 0, psi < 1)
-
 
 
 class ZeroInflatedLognormalNumpy():
