@@ -81,6 +81,32 @@ def plot_int_dist(df, fts, log=False, vsize=2.5):
     f.tight_layout()
 
 
+def plot_float_dist(df, fts, log=False):
+    """ Plot distributions for floats, annotate count of nans and zeros """
+
+    def _annotate_facets(data, **kwargs):
+        """ Func to be mapped to the dataframe (named `data` by seaborn) 
+            used per facet. Assume `data` is the simple result of a melt() 
+            and has two fts: variable, value
+        """ 
+        n_nans = pd.isnull(data['value']).sum()
+        n_zeros = (data['value'] == 0).sum()
+        ax = plt.gca()
+        ax.text(.95, .85, f'{n_nans} NaNs, {n_zeros} zeros', 
+                transform=ax.transAxes, ha='right')
+    
+    if len(fts) == 0:
+        return None
+
+    dfm = df[sorted(fts)].melt()
+    g = sns.catplot(x='value', row='variable', data=dfm, kind='violin', cut=0, 
+                    height=1.8, aspect=6, sharex=False)
+
+    _ = g.map_dataframe(_annotate_facets)
+
+    if log:
+        _ = g.set(xscale='log') #, title=ft, ylabel='log(count)')
+
 def plot_mincovdet(df, mcd, thresh=0.99):
     """ Interactive plot of MDC delta results """
     

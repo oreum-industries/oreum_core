@@ -8,6 +8,7 @@ from oreum_core.eda.plot import (
     plot_cat_count,
     plot_date_count,
     plot_int_dist,
+    plot_float_dist,    
     plot_mincovdet,
     plot_rmse_range,
     plot_rmse_range_pair,
