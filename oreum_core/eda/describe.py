@@ -50,12 +50,12 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, round_nu
         dfout.loc[ft, 'min'] = df[ft].value_counts().index.min()
         dfout.loc[ft, 'max'] = df[ft].value_counts().index.max()
 
-    fts_out = ['dtype', 'count_null', 'count_inf', 
-                'unique', 'top', 'freq',
-                'mean', 'std', 'min', '25%', '50%', '75%', 'max']
+    fts_out_all = ['dtype', 'count_null', 'count_inf', 
+                   'unique', 'top', 'freq',
+                   'mean', 'std', 'min', '25%', '50%', '75%', 'max']
+    fts_out = [f for f in fts_out_all if f in dfout.columns.values]
 
-    # add mode and mode count
-    # WARNING takes forever for large (>10k row) arrays
+    # add mode and mode count WARNING takes forever for large arrays (>10k row)
     if get_mode:
         dfnn = df.select_dtypes(exclude=np.number).copy()
         r = stats.mode(dfnn, axis=0, nan_policy='omit')
