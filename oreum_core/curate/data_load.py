@@ -39,8 +39,7 @@ class PandasParquetIO:
 
 def copy_csv2md(fqn):
     """ Convenience to copy csv 'path/x.csv' to markdown 'path/x.md' """
-    r = subprocess.run(['csv2md', f'{fqn}', '>', f'{fqn[:-3] + "md"}'])
-    # if r == 0:
-    #     return f'Created files {fqn}.csv and {fqn}.md'
-    # else:
-    #     return r
+    r = subprocess.run(['csv2md', f'{fqn}'], capture_output=True)
+    with open(f'{fqn[:-3] + "md"}', 'wb') as f:
+        f.write(r.stdout)
+    return f'Created files {fqn}.csv and {fqn}.md'

@@ -13,5 +13,6 @@ from oreum_core.curate.data_transform import (
     DatatypeConverter,
     DatasetReshaper,
     Transformer,
-    Standardizer
+    Standardizer,
+    compress_factor_levels
 )
