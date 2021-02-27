@@ -17,6 +17,11 @@ def fit_fn(obs, dist_names=['invgamma'], title_insert=None, plot=True):
     Fit `dists` to 1d array of `observations`, report MSE and plot the fits
     # see https://stackoverflow.com/a/37616966 
     """
+
+    import warnings
+    # warnings.filterwarnings("error") # handle RuntimeWarning as error so can catch
+    # warnings.simplefilter(action='ignore', category='RuntimeWarning')
+
     dists_options = {'invgamma':stats.invgamma, 
                      'gamma':stats.gamma, 
                      'lognorm': stats.lognorm,
@@ -41,7 +46,9 @@ def fit_fn(obs, dist_names=['invgamma'], title_insert=None, plot=True):
         ax = sns.histplot(x=obs, bins=nbins, stat='density', kde=False, label='data', ax=ax1d)
 
     for i, (d, dist) in enumerate(dists.items()):
-        ps = dist.fit(obs, floc=0)
+        with warnings.catch_warnings():
+            warnings.simplefilter(action='ignore')
+            ps = dist.fit(obs, floc=0)   # can throw RuntimeWarnings which we will ignore
         shape, loc, scale = ps[:-2], ps[-2], ps[-1]
         params[d] = dict(shape=shape, loc=loc, scale=scale)
 

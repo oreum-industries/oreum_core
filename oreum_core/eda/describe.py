@@ -9,8 +9,16 @@ RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
 
-def custom_describe(df, nrows=3, nfeats=30, limit=50e6, 
-                    get_mode=False, round_numerics=False, reset_index=True):
+def display_fw(df, max_rows=20):
+    """ Conv fn: contextually display max rows """
+    with pd.option_context('display.max_rows', max_rows, 
+                           'display.max_columns', None, 
+                           'display.max_colwidth', 200):
+        display(df)
+
+
+def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, 
+                    round_numerics=False, reset_index=True):
     """ Concat transposed topN rows, numerical desc & dtypes 
         Beware a dataframe full of bools or categoricals will error 
         thanks to pandas.describe() being too clever
@@ -72,15 +80,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6,
         fts_out.append(['mode', 'mode_count'])
     
     dfout = dfout[fts_out].copy()
-    return dfout.iloc[:nfeats+len_index,:].fillna('')
-
-
-def display_fw(df, max_rows=20):
-    """ Conv fn: contextually display max rows """
-    with pd.option_context('display.max_rows', max_rows, 
-                           'display.max_columns', None, 
-                           'display.max_colwidth', 200):
-        display(df)
+    display_fw(dfout.iloc[:nfeats+len_index,:].fillna(''), max_rows=nfeats)
 
 
 def get_fts_by_dtype(df):
@@ -102,3 +102,4 @@ def get_fts_by_dtype(df):
         raise ValueError(f'Failed to match a dtype to {n} fts. Check again.' +
                          f'\nThese fts did match correctly: {fts}')
     return fts
+
