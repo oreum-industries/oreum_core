@@ -9,21 +9,29 @@ RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
 
-def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, round_numerics=False):
+def custom_describe(df, nrows=3, nfeats=30, limit=50e6, 
+                    get_mode=False, round_numerics=False, reset_index=True):
     """ Concat transposed topN rows, numerical desc & dtypes 
         Beware a dataframe full of bools or categoricals will error 
         thanks to pandas.describe() being too clever
+        Assume df has index. I
     """
     
+    len_index = df.index.nlevels
     note = ''
-    if nfeats < df.shape[1]:
-        note = '\nNOTE: nfeats shown {} < width {}'.format(nfeats, df.shape[1])
+    if nfeats + len_index < df.shape[1]:
+        note = 'NOTE: nfeats+index shown {} < width {}'.format(nfeats + len_index, df.shape[1])
 
-    print('Array shape: {}{}'.format(df.shape, note))
-    print('Array memsize: {:,} bytes'.format(df.values.nbytes))
+    print(f'Array shape: {df.shape}')
+    print(f'Array memsize: {df.values.nbytes // 1000:,} kB')
+    print(f'Index levels: {df.index.names}')
+    print(f'{note}')
 
     if (df.values.nbytes > limit):
         return 'Array memsize > 50MB limit, avoid performing descriptions'
+
+    if reset_index:
+        df.reset_index(inplace=True)
 
     # start with pandas and round numerics
     dfdesc = df.describe(include='all', datetime_is_numeric=True).T
@@ -64,7 +72,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, round_nu
         fts_out.append(['mode', 'mode_count'])
     
     dfout = dfout[fts_out].copy()
-    return dfout.iloc[:nfeats,:].fillna('')
+    return dfout.iloc[:nfeats+len_index,:].fillna('')
 
 
 def display_fw(df, max_rows=20):

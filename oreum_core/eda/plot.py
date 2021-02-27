@@ -91,21 +91,23 @@ def plot_float_dist(df, fts, log=False):
         """ 
         n_nans = pd.isnull(data['value']).sum()
         n_zeros = (data['value'] == 0).sum()
+        mean = data['value'].mean()
         ax = plt.gca()
-        ax.text(.95, .85, f'{n_nans} NaNs, {n_zeros} zeros', 
+        ax.text(.95, .85, f'NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}', 
                 transform=ax.transAxes, ha='right')
     
     if len(fts) == 0:
         return None
 
     dfm = df[sorted(fts)].melt()
-    g = sns.catplot(x='value', row='variable', data=dfm, kind='violin', cut=0, 
-                    height=1.8, aspect=6, sharex=False)
-
+    g = sns.FacetGrid(row='variable', data=dfm, height=1.8, aspect=6, sharex=False)
+    _ = g.map(sns.violinplot, 'value', order='variable', cut=0)
+    _ = g.map(sns.pointplot, 'value', order='variable', color='C3')
     _ = g.map_dataframe(_annotate_facets)
 
     if log:
         _ = g.set(xscale='log') #, title=ft, ylabel='log(count)')
+
 
 def plot_mincovdet(df, mcd, thresh=0.99):
     """ Interactive plot of MDC delta results """
