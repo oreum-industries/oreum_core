@@ -31,7 +31,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6,
         return 'Array memsize > 50MB limit, avoid performing descriptions'
 
     if reset_index:
-        df.reset_index(inplace=True)
+        df = df.copy().reset_index()
 
     # start with pandas and round numerics
     dfdesc = df.describe(include='all', datetime_is_numeric=True).T
