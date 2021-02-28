@@ -8,7 +8,9 @@ from oreum_core.model.calc import (
     calc_rmse,
     calc_r2,
     calc_ppc_coverage,
-    calc_dist_fns_over_x
+    calc_dist_fns_over_x,
+    calc_dist_fns_over_x_manual_only,
+    log_jacobian_det
 )
 from oreum_core.model.describe import (
     model_desc,
@@ -16,16 +18,23 @@ from oreum_core.model.describe import (
     describe_dist
 )
 from oreum_core.model.distributions import (
-    Gamma,
+    # Gamma,
     GammaNumpy,
     Gumbel,
     InverseWeibull,
     InverseWeibullNumpy,
+    ZeroInflatedInverseWeibull,
     Kumaraswamy,
+    Lognormal,
     LognormalNumpy,
+    ZeroInflatedLognormal,
+    ZeroInflatedLognormalNumpy,
+    Normal,
     NormalNumpy
 )
 from oreum_core.model.plot import (
     facetplot_azid_dist,
-    plot_dist_fns_over_x
+    facetplot_df_dist,
+    plot_dist_fns_over_x,
+    plot_dist_fns_over_x_manual_only
 )

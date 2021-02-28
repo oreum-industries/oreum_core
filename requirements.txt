@@ -1,5 +1,7 @@
 arviz>=0.11.*
+csv2md>=1.1.2
 ftfy>=5.8
+ipython
 matplotlib>=3.3.*
 nltk>=3.5
 numpy>=1.19.2

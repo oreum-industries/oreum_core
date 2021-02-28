@@ -4,6 +4,8 @@ import os
 import pyarrow
 import pandas as pd
 import pyarrow.parquet as pq
+import subprocess
+from time import sleep
 
 class PandasParquetIO:
     """ Helper class to convert pandas to parquet and save to local path
@@ -33,3 +35,11 @@ class PandasParquetIO:
         except FileNotFoundError as e:
             raise e
         return f'Written to {fqn}'
+
+
+def copy_csv2md(fqn):
+    """ Convenience to copy csv 'path/x.csv' to markdown 'path/x.md' """
+    r = subprocess.run(['csv2md', f'{fqn}'], capture_output=True)
+    with open(f'{fqn[:-3] + "md"}', 'wb') as f:
+        f.write(r.stdout)
+    return f'Created files {fqn} and {fqn[:-3]}md'

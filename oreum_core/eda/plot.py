@@ -59,7 +59,7 @@ def plot_date_count(df, fts, fmt='%Y-%m', vsize=2):
     f.tight_layout()
         
 
-def plot_int_dist(df, fts, log=False, vsize=2.5):
+def plot_int_dist(df, fts, log=False, vsize=2):
     """ Plot group counts (optionally logged) for ints """
 
     if len(fts) == 0:
@@ -68,15 +68,51 @@ def plot_int_dist(df, fts, log=False, vsize=2.5):
     vert = int(np.ceil(len(fts)))
     f, ax1d = plt.subplots(len(fts), 1, figsize=(14, vert*vsize), squeeze=False)
     for i, ft in enumerate(fts):
-        ax = sns.histplot(df.loc[df[ft].notnull(), ft], 
-                            kde=False, stat='density', ax=ax1d[i][0],
-                            label='{} NaNs'.format(pd.isnull(df[ft]).sum()), 
-                            color=sns.color_palette()[i%4])
+        n_nans = pd.isnull(df[ft]).sum()
+        mean = df[ft].mean()
+        n_zeros = (df[ft] == 0).sum()
+        ax = sns.histplot(df.loc[df[ft].notnull(), ft], kde=False, stat='density', 
+                    label=f'NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}', 
+                    color=sns.color_palette()[i%7], ax=ax1d[i][0])
         if log:
-            _ = ax.set(yscale='log', title=ft, ylabel='log10(count)')
-        _ = ax.set(title=ft, ylabel='count', xlabel='value')
+            _ = ax.set(yscale='log', title=ft, ylabel='log(count)')
+        _ = ax.set(title=ft, ylabel='count', xlabel=None) #'value'
         _ = ax.legend(loc='upper right')
-    f.tight_layout()
+    f.tight_layout(pad=0.8)
+
+
+def plot_float_dist(df, fts, log=False):
+    """ Plot distributions for floats, annotate count of nans and zeros """
+
+    def _annotate_facets(data, **kwargs):
+        """ Func to be mapped to the dataframe (named `data` by seaborn) 
+            used per facet. Assume `data` is the simple result of a melt() 
+            and has two fts: variable, value
+        """ 
+        n_nans = pd.isnull(data['value']).sum()
+        n_zeros = (data['value'] == 0).sum()
+        mean = data['value'].mean()
+        ax = plt.gca()
+        ax.text(.993, .93, f'NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}', 
+                transform=ax.transAxes, ha='right', va='top', 
+                backgroundcolor='w', fontsize=10)
+    
+    if len(fts) == 0:
+        return None
+
+    dfm = df[sorted(fts)].melt()
+    g = sns.FacetGrid(row='variable', hue='variable', palette=sns.color_palette(),
+                      data=dfm, height=1.8, aspect=6, sharex=False)
+    _ = g.map(sns.violinplot, 'value', order='variable', cut=0)
+    _ = g.map(sns.pointplot, 'value', order='variable', color='C3', 
+                estimator=np.mean, ci=94)
+                # https://stackoverflow.com/q/33486613/1165112
+                # scatter_kws=(dict(edgecolor='k', edgewidth=100)))
+    _ = g.map_dataframe(_annotate_facets)
+
+    if log:
+        _ = g.set(xscale='log') #, title=ft, ylabel='log(count)')
+    g.fig.tight_layout(pad=0.8)
 
 
 def plot_mincovdet(df, mcd, thresh=0.99):

@@ -23,7 +23,8 @@ class SnakeyLowercaser():
     """
 
     def __init__(self):
-        punct_to_remove = string.punctuation.replace('_', '')
+        punct_to_remove = re.sub(r'_', '', string.punctuation)
+        self.rx_to_underscore = re.compile(r'[-/]')
         self.rx_punct = re.compile('[{}]'.format(re.escape(punct_to_remove)))
         self.rx_splitter1 = re.compile(r'([A-Za-z0-9])([A-Z][a-z]+)')
         self.rx_patsy_factor = re.compile(r'^(.*)(\[T\.|\[)(.*)(\])(.*)$')
@@ -31,7 +32,7 @@ class SnakeyLowercaser():
         self.rx_patsy_interaction = re.compile(r':')
 
     def clean(self, s):
-        s0 = str(s).replace('-', '_')
+        s0 = self.rx_to_underscore.sub('_', str(s))
         s1 = self.rx_punct.sub('', s0)
         s2 = self.rx_splitter1.sub(r'\1_\2 ', s1)
         s3 = '_'.join(s2.lower().split())

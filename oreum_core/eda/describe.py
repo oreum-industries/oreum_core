@@ -9,45 +9,69 @@ RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
 
-def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False):
+def display_fw(df, max_rows=20):
+    """ Conv fn: contextually display max rows """
+    with pd.option_context('display.max_rows', max_rows, 
+                           'display.max_columns', None, 
+                           'display.max_colwidth', 200):
+        display(df)
+
+
+def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, 
+                    round_numerics=False, reset_index=True):
     """ Concat transposed topN rows, numerical desc & dtypes 
         Beware a dataframe full of bools or categoricals will error 
         thanks to pandas.describe() being too clever
+        Assume df has index. I
     """
     
+    len_index = df.index.nlevels
     note = ''
-    if nfeats < df.shape[1]:
-        note = '\nNOTE: nfeats shown {} < width {}'.format(nfeats, df.shape[1])
+    if nfeats + len_index < df.shape[1]:
+        note = 'NOTE: nfeats+index shown {} < width {}'.format(nfeats + len_index, df.shape[1])
 
-    print('Array shape: {}{}'.format(df.shape, note))
-    print('Array memsize: {:,} bytes'.format(df.values.nbytes))
+    print(f'Array shape: {df.shape}')
+    print(f'Array memsize: {df.values.nbytes // 1000:,} kB')
+    print(f'Index levels: {df.index.names}')
+    print(f'{note}')
 
     if (df.values.nbytes > limit):
         return 'Array memsize > 50MB limit, avoid performing descriptions'
 
+    if reset_index:
+        df = df.copy().reset_index()
+
     # start with pandas and round numerics
-    dfdesc = df.describe().T
-    for ft in dfdesc.columns[1:]:
-        dfdesc[ft] = dfdesc[ft].apply(lambda x: np.round(x,2))
+    dfdesc = df.describe(include='all', datetime_is_numeric=True).T
+    if round_numerics:
+        for ft in dfdesc.columns[1:]:
+            dfdesc[ft] = dfdesc[ft].apply(lambda x: np.round(x,3))
 
     # prepend random rows for example cases
     rndidx = np.random.randint(0,len(df),nrows)
-    dfout = pd.concat((df.iloc[rndidx].T, dfdesc, df.dtypes), axis=1,join='outer', sort=True)
+    dfout = pd.concat((df.iloc[rndidx].T, dfdesc, df.dtypes), 
+                      axis=1, join='outer', sort=True)
     dfout = dfout.loc[df.columns.values]
     dfout.rename(columns={0:'dtype'}, inplace=True)
-
-    # add count, min, max for string cols (note the not very clever overwrite of count)
-    dfout['count_notnull'] = df.shape[0] - df.isnull().sum()
-    dfout['count_null'] = df.isnull().sum()
-    dfout['min'] = df.min().apply(lambda x: x[:8] if type(x) == str else x)
-    dfout['max'] = df.max().apply(lambda x: x[:8] if type(x) == str else x)
     dfout.index.name = 'ft'
 
-    fts_out = ['dtype', 'count_notnull', 'count_null', 'mean', 'std', 
-                'min', '25%', '50%', '75%', 'max']
+    # add null counts for all
+    # dfout['count_notnull'] = df.shape[0] - df.isnull().sum()
+    dfout['count_null'] = df.isnull().sum(axis=0)
+    dfout['count_inf'] = np.isinf(df.select_dtypes(np.number)).sum().reindex(df.columns)
+    
+    # add min, max for string cols (note the not very clever overwrite of count)
+    idxs = dfout['dtype'] == 'object'
+    for ft in dfout.loc[idxs].index.values:
+        dfout.loc[ft, 'min'] = df[ft].value_counts().index.min()
+        dfout.loc[ft, 'max'] = df[ft].value_counts().index.max()
 
-    # add mode and mode count
-    # WARNING takes forever for large (>10k row) arrays
+    fts_out_all = ['dtype', 'count_null', 'count_inf', 
+                   'unique', 'top', 'freq',
+                   'mean', 'std', 'min', '25%', '50%', '75%', 'max']
+    fts_out = [f for f in fts_out_all if f in dfout.columns.values]
+
+    # add mode and mode count WARNING takes forever for large arrays (>10k row)
     if get_mode:
         dfnn = df.select_dtypes(exclude=np.number).copy()
         r = stats.mode(dfnn, axis=0, nan_policy='omit')
@@ -56,15 +80,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False):
         fts_out.append(['mode', 'mode_count'])
     
     dfout = dfout[fts_out].copy()
-    return dfout.iloc[:nfeats,:]
-
-
-def display_fw(df, max_rows=20):
-    """ Conv fn: contextually display max rows """
-    with pd.option_context('display.max_rows', max_rows, 
-                           'display.max_columns', None, 
-                           'display.max_colwidth', 200):
-        display(df)
+    display_fw(dfout.iloc[:nfeats+len_index,:].fillna(''), max_rows=nfeats)
 
 
 def get_fts_by_dtype(df):
@@ -86,3 +102,4 @@ def get_fts_by_dtype(df):
         raise ValueError(f'Failed to match a dtype to {n} fts. Check again.' +
                          f'\nThese fts did match correctly: {fts}')
     return fts
+

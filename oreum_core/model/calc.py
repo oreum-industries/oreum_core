@@ -3,6 +3,8 @@
 import arviz as az
 import numpy as np
 import pandas as pd
+import pymc3 as pm
+import theano.tensor as tt
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
@@ -95,8 +97,6 @@ def calc_ppc_coverage(y, yhat, crs=np.arange(0, 1.01, .1)):
 # Users/jon/anaconda/envs/instechex/lib/python3.6/site-packages/theano/tensor/subtensor.py:2339: FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated; use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index, `arr[np.array(seq)]`, which will result either in an error or a different result.
 #   out[0][inputs[2:]] = inputs[1]
 
-import theano.tensor as tt
-
 def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
     R"""Convert a packed triangular matrix into a two dimensional array.
     Triangular matrices can be stored with better space efficiancy by
@@ -145,25 +145,66 @@ def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
     logdist = kwargs.get('logdist', False)
     upper = kwargs.get('upper', 1)
     lower = kwargs.get('lower', 0)
-    nsteps = kwargs.get('nsteps', 500)
+    nsteps = kwargs.get('nsteps', 200)
     x = np.linspace(lower, upper, nsteps)
     u = np.linspace(0, 1, nsteps)
 
     if logdist:
         dfpdf = pd.DataFrame({'manual': d_manual.logpdf(x, **params),
-                          'scipy': fd_scipy.logpdf(x), 'x': x}).set_index('x')
+                              'scipy': fd_scipy.logpdf(x), 
+                              'x': x}).set_index('x')
         dfcdf = pd.DataFrame({'manual': d_manual.logcdf(x, **params),
-                            'scipy': fd_scipy.logcdf(x), 'x': x}).set_index('x')
+                              'scipy': fd_scipy.logcdf(x), 
+                              'x': x}).set_index('x')
         dfinvcdf = pd.DataFrame({'manual': d_manual.loginvcdf(u, **params),
-                                'scipy': np.log(fd_scipy.ppf(u)), 'u': u}).set_index('u')
-    
+                                 'scipy': np.log(fd_scipy.ppf(u)), 
+                                 'u': u}).set_index('u')
     else:
         dfpdf = pd.DataFrame({'manual': d_manual.pdf(x, **params),
-                            'scipy': fd_scipy.pdf(x), 'x': x}).set_index('x')
+                             'scipy': fd_scipy.pdf(x), 
+                             'x': x}).set_index('x')
         dfcdf = pd.DataFrame({'manual': d_manual.cdf(x, **params),
-                            'scipy': fd_scipy.cdf(x), 'x': x}).set_index('x')
+                              'scipy': fd_scipy.cdf(x), 
+                              'x': x}).set_index('x')
         dfinvcdf = pd.DataFrame({'manual': d_manual.invcdf(u, **params),
-                                'scipy': fd_scipy.ppf(u), 'u': u}).set_index('u')
+                                 'scipy': fd_scipy.ppf(u), 
+                                 'u': u}).set_index('u')
             
     return dfpdf, dfcdf, dfinvcdf
 
+
+def calc_dist_fns_over_x_manual_only(d_manual, params, **kwargs):
+    """ Test my manual model PDF, CDF, InvCDF over range x 
+    """
+    logdist = kwargs.get('logdist', False)
+    upper = kwargs.get('upper', 1)
+    lower = kwargs.get('lower', 0)
+    nsteps = kwargs.get('nsteps', 200)
+    x = np.linspace(lower, upper, nsteps)
+    u = np.linspace(0, 1, nsteps)
+
+    if logdist:
+        dfpdf = pd.DataFrame({'manual': d_manual.logpdf(x, **params),
+                              'x': x}).set_index('x')
+        dfcdf = pd.DataFrame({'manual': d_manual.logcdf(x, **params),
+                              'x': x}).set_index('x')
+        dfinvcdf = pd.DataFrame({'manual': d_manual.loginvcdf(u, **params),
+                                 'u': u}).set_index('u')
+    else:
+        dfpdf = pd.DataFrame({'manual': d_manual.pdf(x, **params),
+                              'x': x}).set_index('x')
+        dfcdf = pd.DataFrame({'manual': d_manual.cdf(x, **params),
+                              'x': x}).set_index('x')
+        dfinvcdf = pd.DataFrame({'manual': d_manual.invcdf(u, **params),
+                                 'u': u}).set_index('u')
+            
+    return dfpdf, dfcdf, dfinvcdf
+
+
+def log_jacobian_det(f_inv_x, x):
+    """ Calc log of Jacobian determinant 
+        used to aid log-likelihood maximisation of copula marginals
+        see JPL: https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
+    """
+    grad = tt.reshape(pm.theanof.gradient(tt.sum(f_inv_x), [x]), x.shape)
+    return tt.log(tt.abs_(grad))

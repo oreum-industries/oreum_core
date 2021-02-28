@@ -20,7 +20,7 @@ class DatatypeConverter():
         """ Initialise with fts and fts_dtype_pandas_categorical
             The pandas categorical dtype logically sits on top of a str object
             giving it order which is critical for patsy dmatrix transform 
-            and thus model structure
+            and thus model structure.
 
             Use with a fts dict of form:
                 fts = dict(
@@ -28,6 +28,7 @@ class DatatypeConverter():
                     fcat = [],
                     fbool = [],
                     fdate = [],
+                    fyear = [],
                     fint = [],
                     ffloat =[])
         """
@@ -35,9 +36,11 @@ class DatatypeConverter():
                         fcat=fts.get('fcat', []), 
                         fbool=fts.get('fbool', []),
                         fdate=fts.get('fdate', []),
+                        fyear=fts.get('fyear', []),
                         fint=fts.get('fint', []),
                         ffloat=fts.get('ffloat', []))
         self.ftslvlcat = ftslvlcat
+        self.rx_number_junk = re.compile(r'[#$€£₤¥,;%]')
 
     def convert_dtypes(self, df):
         """ Force dtypes for recognised features (fts) in df 
@@ -74,7 +77,8 @@ class DatatypeConverter():
             
         for ft in kwargs.get('fint', []):
             if df.dtypes[ft] == np.object:
-                df[ft] = df[ft].astype(str).str.strip().str.lower().str.replace(r'[#$€£₤¥,]', '')
+                df[ft] = df[ft].astype(str).str.strip().str.lower().map(
+                            lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
             df[ft] = df[ft].astype(np.float64, errors='raise')
             if pd.isnull(df[ft]).sum() == 0:
@@ -82,7 +86,8 @@ class DatatypeConverter():
 
         for ft in kwargs.get('ffloat', []):
             if df.dtypes[ft] == np.object:
-                df[ft] = df[ft].astype(str).str.strip().str.lower().str.replace(r'[#$€£₤¥,]', '')
+                df[ft] = df[ft].astype(str).str.strip().str.lower().map(
+                            lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
             df[ft] = df[ft].astype(np.float64, errors='raise')
                 
@@ -310,3 +315,21 @@ class Standardizer():
         self.means = means_sdevs['means'].values
         self.sdevs = means_sdevs['sdevs'].values
         self.scale = scale
+
+
+
+def compress_factor_levels(df, fts, topn=20):
+    """ Crude compression for factor levels, into the topn + 1 (other)
+        Return new dataframe for fts
+    """
+    newdf = pd.DataFrame(index=df.index)
+    for ft in fts:
+        vc = df[ft].value_counts(dropna=False)
+        # print(f'{ft}: compress {vc[:topn].sum()} ({vc[:topn].sum()/vc.sum():.1%})')
+        print(f'{ft}: compressed {len(vc)}-{topn} ({len(vc)-topn}) levels into `other`, ' + 
+              f'{vc[topn:].sum()} rows ({vc[topn:].sum() / len(df):.1%}) affected')
+        vc_map = {k: (k if i < topn else 'other') 
+                    for i, (k, v) in enumerate(vc.to_dict().items())}
+        newdf[f'{ft}_topn'] = df[ft].map(vc_map)
+        
+    return newdf
