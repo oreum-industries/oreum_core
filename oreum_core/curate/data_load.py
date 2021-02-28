@@ -42,4 +42,4 @@ def copy_csv2md(fqn):
     r = subprocess.run(['csv2md', f'{fqn}'], capture_output=True)
     with open(f'{fqn[:-3] + "md"}', 'wb') as f:
         f.write(r.stdout)
-    return f'Created files {fqn}.csv and {fqn}.md'
+    return f'Created files {fqn} and {fqn[:-3]}md'
