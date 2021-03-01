@@ -473,14 +473,14 @@ class ZeroInflatedInverseWeibull(PositiveContinuous):
  
         f(x \mid \psi, \alpha, s) = \left\{
             \begin{array}{l}
-                \(1 - psi), & \text{if } x = 0 \\
+                (1 - \psi), & \text{if } x = 0 \\
                 \psi \text{InverseWeibull}(\alpha, s), & \text{if } x > 0
             \end{array} 
             \right.
 
     ========  ==========================
     Support   :math:`x \in \mathbb{N}_0`
-    Mean      :math:`\psi \text{InverseWeibull}(\mu, \sigma)`
+    Mean      :math:`\psi \, \text{InverseWeibull}(\mu, \sigma)`
     Variance  :math: TODO
     ========  ==========================
     
@@ -755,8 +755,8 @@ class ZeroInflatedLognormal(PositiveContinuous):
  
         f(x \mid \psi, \mu, \sigma) = \left\{
             \begin{array}{l}
-                \(1 - psi), & \text{if } x = 0 \\
-                \psi \text{Lognormal}(\mu, \sigma), & \text{if } x > 0
+                (1 - \psi), & \text{if } x = 0 \\
+                \psi \, \text{Lognormal}(\mu, \sigma), & \text{if } x > 0
             \end{array} 
             \right.
 

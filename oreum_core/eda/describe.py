@@ -62,9 +62,10 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
     
     # add min, max for string cols (note the not very clever overwrite of count)
     idxs = dfout['dtype'] == 'object'
-    for ft in dfout.loc[idxs].index.values:
-        dfout.loc[ft, 'min'] = df[ft].value_counts().index.min()
-        dfout.loc[ft, 'max'] = df[ft].value_counts().index.max()
+    if sum(idxs) > 0:
+        for ft in dfout.loc[idxs].index.values:
+            dfout.loc[ft, 'min'] = df[ft].value_counts().index.min()
+            dfout.loc[ft, 'max'] = df[ft].value_counts().index.max()
 
     fts_out_all = ['dtype', 'count_null', 'count_inf', 
                    'unique', 'top', 'freq',
