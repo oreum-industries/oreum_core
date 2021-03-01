@@ -58,7 +58,8 @@ def plot_dist_fns_over_x(dfpdf, dfcdf, dfinvcdf, **kwargs):
     ax1 = sns.lineplot(x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1])
     _ = ax1.set_title(f"{l}CDF: match {is_close['c'] / n :.1%}")
     if not islog:
-        _ = ax1.set(ylim=(0, None))
+        ylimmin = ax1.get_ylim()[0]
+        _ = ax1.set(ylim=(min(0, ylimmin), None))
 
     dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
     ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])

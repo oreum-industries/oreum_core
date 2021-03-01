@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pymc3 as pm
 import theano.tensor as tt
+import theano
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
@@ -49,7 +50,7 @@ def calc_mse(y, yhat):
 
 def calc_rmse(y, yhat):
     """ Convenience: Calculate RMSE """
-    mse, s_mse_pct = compute_mse(y, yhat)
+    mse, s_mse_pct = calc_mse(y, yhat)
     s_rmse_pct = s_mse_pct.map(np.sqrt)
     s_rmse_pct._set_name('rmse', inplace=True)
        
@@ -61,6 +62,7 @@ def calc_r2(y, yhat):
         return mean r2 and via summary stats of yhat
         NOTE: shape (nsamples, nobservations)
         $$R^{2} = 1 - \frac{\sum e_{model}^{2}}{\sum e_{mean}^{2}}$$
+        R2 normal range [0, 1]
     """
     sse_mean = np.sum((y - y.mean(axis=0))**2)
 

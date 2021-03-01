@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+from scipy import stats
+
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
@@ -115,6 +117,20 @@ def plot_float_dist(df, fts, log=False):
     g.fig.tight_layout(pad=0.8)
 
 
+def plot_joint_ft_x_tgt(df, ft, tgt, subtitle=None, colori=1):
+    """ Jointplot of ft vs tgt distributions. Suitable for int or float """
+    kde_kws = dict(zorder=0, levels=7, cut=0)
+    g = sns.JointGrid(x=ft, y=tgt, 
+                      data=df.sample(200, random_state=RANDOM_SEED), height=6)
+    _ = g.plot_joint(sns.kdeplot, **kde_kws, fill=True, color=f'C{colori%5}')
+    _ = g.plot_marginals(sns.histplot, color=f'C{colori%5}')
+    _ = g.ax_joint.text(.95, .95, 
+            f"pearsonr = {stats.pearsonr(df[ft], df[tgt])[0]:.4g}", 
+            transform=g.ax_joint.transAxes, ha='right')
+    t = ('', 0.0) if subtitle is None else (f'\n{subtitle}', 0.04)
+    _ = g.fig.suptitle(f'Joint dist: {ft} x {tgt}{t[0]}', y=1.02 + t[1])
+
+
 def plot_mincovdet(df, mcd, thresh=0.99):
     """ Interactive plot of MDC delta results """
     
@@ -164,7 +180,7 @@ def plot_mincovdet(df, mcd, thresh=0.99):
     return None
 
 
-def plot_rmse_range(rmse, rmse_pct, lims=(0, 80)):
+def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
     """ Convenience to plot RMSE range with mins """
     dfp = rmse_pct.reset_index()
     dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
@@ -174,18 +190,18 @@ def plot_rmse_range(rmse, rmse_pct, lims=(0, 80)):
     f, axs = plt.subplots(1, 1, figsize=(12, 6))
     ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs)
     #     _ = ax.set_yscale('log')
-    _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.0f}')
-    _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.0f}')
-    _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.0f}')
-    _ = f.suptitle('RMSE ranges', y=.95)
+    _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.2f}')
+    _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.2f}')
+    _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.2f}')
+    _ = f.suptitle(f'RMSE ranges {yhat_name}', y=.95)
     _ = ax.legend()
         
 
-def plot_rmse_range_pair(rmse_t, rmse_pct_t, rmse_h, rmse_pct_h, lims=(0, 80)):
+def plot_rmse_range_pair(rmse_t, rmse_pct_t, rmse_h, rmse_pct_h, lims=(0, 80), yhat_name=''):
     """ Convenience to plot two rmse pct results """
     f, axs = plt.subplots(1, 2, figsize=(14, 6))
     t = ['train', 'holdout']
-    _ = f.suptitle('RMSE ranges', y=.97)
+    _ = f.suptitle('RMSE ranges {yhat_name}', y=.97)
 
     for i, (rmse, rmse_pct) in enumerate(zip([rmse_t, rmse_h], [rmse_pct_t, rmse_pct_h])):
         dfp = rmse_pct.reset_index()
@@ -194,15 +210,15 @@ def plot_rmse_range_pair(rmse_t, rmse_pct_t, rmse_h, rmse_pct_h, lims=(0, 80)):
         min_rmse_pct = rmse_pct.index[rmse_pct.argmin()]
         
         ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs[i])
-        _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.0f}')
-        _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.0f}')
-        _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.0f}')
+        _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.2f}')
+        _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.2f}')
+        _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.2f}')
         _ = ax.legend()
         _ = ax.set_title(t[i])
     _ = f.tight_layout()
 
 
-def plot_r2_range(r2, r2_pct, lims=(0, 80)):
+def plot_r2_range(r2, r2_pct, lims=(0, 80), yhat_name=''):
     """ Convenience to plot R2 range with max 
     """
     dfp = r2_pct.reset_index()
@@ -215,7 +231,7 @@ def plot_r2_range(r2, r2_pct, lims=(0, 80)):
     _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
     _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.2f}')
     _ = ax.axhline(max_r2, c='g', ls='--', label=f'max @ pct {max_r2_pct} @ {max_r2:,.2f}')
-    _ = f.suptitle('$R^{2}$ ranges', y=.95)
+    _ = f.suptitle(f'$R^{2}$ ranges {yhat_name}', y=.95)
     _ = ax.legend()
 
 
