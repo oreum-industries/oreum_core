@@ -73,15 +73,16 @@ class DatatypeConverter():
             if pd.isnull(df[ft]).sum() == 0:
                 df[ft] = df[ft].astype(np.int64, errors='raise')
 
-        for ft in self['ffloat']:
+        for ft in self.fts['ffloat']:
             if df.dtypes[ft] == np.object:
                 df[ft] = df[ft].astype(str).str.strip().str.lower().map(
                             lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
             df[ft] = df[ft].astype(np.float64, errors='raise')
 
-        # for ft in (elf.fts['fverbatim]:
-        #    print(f'kept verbatim: {ft}')
+        # TODO as/when add logging
+        # for ft in self.fts['fverbatim]:
+        #    log(f'kept verbatim: {ft}')
                 
         return df
 
@@ -91,7 +92,8 @@ class DatatypeConverter():
         dfclean = self._force_dtypes(df)
 
         for ft, lvls in self.ftslvlcat.items():
-            dfclean[ft] = pd.Categorical(dfclean[ft].values, categories=lvls, ordered=True)
+            dfclean[ft] = pd.Categorical(dfclean[ft].values, 
+                                        categories=lvls, ordered=True)
         
         return dfclean
 
