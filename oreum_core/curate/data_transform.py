@@ -10,11 +10,7 @@ from .text_clean import SnakeyLowercaser
 
 
 class DatatypeConverter():
-    """ Force correct datatypes according to what model expects 
-        Have created this as a class because it knows about the model
-        And just reuse the generic function data_cleaner.force_dtypes 
-        which you might potentially want to use elsewhere
-    """
+    """ Force correct datatypes according to what model expects """
 
     def __init__(self, fts, ftslvlcat={}):
         """ Initialise with fts and fts_dtype_pandas_categorical
@@ -24,7 +20,8 @@ class DatatypeConverter():
 
             Use with a fts dict of form:
                 fts = dict(
-                    fid = [],
+                    fverbatim = [],        # maintain in current dtype
+                    fid = [],             
                     fcat = [],
                     fbool = [],
                     fdate = [],
@@ -38,44 +35,36 @@ class DatatypeConverter():
                         fdate=fts.get('fdate', []),
                         fyear=fts.get('fyear', []),
                         fint=fts.get('fint', []),
-                        ffloat=fts.get('ffloat', []))
+                        ffloat=fts.get('ffloat', []),
+                        fverbatim=fts.get('fverbatim', [])   # keep verbatim
+                        )
         self.ftslvlcat = ftslvlcat
         self.rx_number_junk = re.compile(r'[#$€£₤¥,;%]')
 
-    def convert_dtypes(self, df):
-        """ Force dtypes for recognised features (fts) in df 
-        """
-        dfclean = self._force_dtypes(df, **self.fts)
-
-        for ft, lvls in self.ftslvlcat.items():
-            dfclean[ft] = pd.Categorical(dfclean[ft].values, categories=lvls, ordered=True)
-        
-        return dfclean
-
-    def _force_dtypes(self, dfraw, **kwargs):
+    def _force_dtypes(self, dfraw):
         """ Select fts and convert dtypes. Return cleaned df 
         """
         snl = SnakeyLowercaser()
 
         #subselect desired fts
-        fts_all = [v for l in kwargs.values() for v in l]
+        fts_all = [w for k, v in self.fts.items() for w in v]
         df = dfraw[fts_all].copy()
         
-        for ft in kwargs.get('fid', []) + kwargs.get('fcat', []):
+        for ft in (self.fts['fid'] + self.fts['fcat']):
             idx = df[ft].notnull()
             df.loc[idx, ft] = df.loc[idx, ft].astype(str, errors='raise').apply(snl.clean)
             
-        for ft in kwargs.get('fbool', []):
+        for ft in self.fts['fbool']:
             if pd.isnull(df[ft]).sum() == 0:
                 df[ft] = df[ft].astype(np.bool)
 
-        for ft in kwargs.get('fyear', []):
+        for ft in self.fts['fyear']:
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y')
 
-        for ft in kwargs.get('fdate', []):
+        for ft in self.fts['fdate']:
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y-%m-%d')
             
-        for ft in kwargs.get('fint', []):
+        for ft in self.fts['fint']:
             if df.dtypes[ft] == np.object:
                 df[ft] = df[ft].astype(str).str.strip().str.lower().map(
                             lambda x: self.rx_number_junk.sub('', x))
@@ -84,14 +73,27 @@ class DatatypeConverter():
             if pd.isnull(df[ft]).sum() == 0:
                 df[ft] = df[ft].astype(np.int64, errors='raise')
 
-        for ft in kwargs.get('ffloat', []):
+        for ft in self['ffloat']:
             if df.dtypes[ft] == np.object:
                 df[ft] = df[ft].astype(str).str.strip().str.lower().map(
                             lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
             df[ft] = df[ft].astype(np.float64, errors='raise')
+
+        # for ft in (elf.fts['fverbatim]:
+        #    print(f'kept verbatim: {ft}')
                 
         return df
+
+    def convert_dtypes(self, df):
+        """ Force dtypes for recognised features (fts) in df 
+        """
+        dfclean = self._force_dtypes(df)
+
+        for ft, lvls in self.ftslvlcat.items():
+            dfclean[ft] = pd.Categorical(dfclean[ft].values, categories=lvls, ordered=True)
+        
+        return dfclean
 
 
 class DatasetReshaper():
