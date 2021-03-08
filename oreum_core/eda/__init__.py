@@ -17,6 +17,6 @@ from oreum_core.eda.plot import (
     plot_r2_range_pair,
     )
 from oreum_core.eda.calc import (
-    fit_fn,
+    fit_and_plot_fn,
     get_gini
     )

@@ -543,7 +543,7 @@ class ZeroInflatedInverseWeibull(PositiveContinuous):
     def logp(self, value):
         """LogPDF"""
         psi = self.psi
-        logp_ = tt.switch(tt.gt(value, 0),
+        logp_ = tt.switch(tt.neq(value, 0), # or use tt.gt(value, 0), dunno which faster
                           tt.log(psi) + self.invweibull.logp(value),
                           tt.log1p(-psi))
         return bound(logp_, value >=0, psi > 0, psi < 1)

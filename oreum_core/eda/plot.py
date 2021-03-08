@@ -120,8 +120,9 @@ def plot_float_dist(df, fts, log=False):
 def plot_joint_ft_x_tgt(df, ft, tgt, subtitle=None, colori=1):
     """ Jointplot of ft vs tgt distributions. Suitable for int or float """
     kde_kws = dict(zorder=0, levels=7, cut=0)
+    nsamp = min(len(df), 200)
     g = sns.JointGrid(x=ft, y=tgt, 
-                      data=df.sample(200, random_state=RANDOM_SEED), height=6)
+                      data=df.sample(nsamp, random_state=RANDOM_SEED), height=6)
     _ = g.plot_joint(sns.kdeplot, **kde_kws, fill=True, color=f'C{colori%5}')
     _ = g.plot_marginals(sns.histplot, color=f'C{colori%5}')
     _ = g.ax_joint.text(.95, .95, 
