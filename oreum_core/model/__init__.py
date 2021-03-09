@@ -1,4 +1,5 @@
 # copyright 2021 Oreum OÜ
+from oreum_core.model.base import BasePYMC3Model
 from oreum_core.model.azid_load import (
     read_azid,
     create_azid
@@ -37,4 +38,8 @@ from oreum_core.model.plot import (
     facetplot_df_dist,
     plot_dist_fns_over_x,
     plot_dist_fns_over_x_manual_only
+)
+
+from oreum_core.model.base import (
+    BasePYMC3Model,
 )

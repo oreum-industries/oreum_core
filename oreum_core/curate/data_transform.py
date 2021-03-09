@@ -268,9 +268,9 @@ class Standardizer():
 
     def __init__(self, design_info, stop_standardizing_numerics_at_ft=''):
         self.design_info = design_info
-        self.stdz_start = (1 + 
-                                sum([1 for n in self.design_info.column_names 
+        self.stdz_start = (1 + sum([1 for n in self.design_info.column_names 
                                                 if re.search(r'\[T\.', n)]))
+
         self.stdz_stop = self.design_info.column_name_indexes.get(
                                     stop_standardizing_numerics_at_ft, 
                                     len(self.design_info.column_names))

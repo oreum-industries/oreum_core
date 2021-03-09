@@ -38,7 +38,7 @@ def plot_cat_count(df, fts, topn=10, vsize=2):
     f.tight_layout()
         
 
-def plot_date_count(df, fts, fmt='%Y-%m', vsize=2):
+def plot_date_count(df, fts, fmt='%Y-%m', vsize=1.8):
     """ Plot group sizes for dates by strftime format """
 
     if len(fts) == 0:
@@ -61,7 +61,7 @@ def plot_date_count(df, fts, fmt='%Y-%m', vsize=2):
     f.tight_layout()
         
 
-def plot_int_dist(df, fts, log=False, vsize=2):
+def plot_int_dist(df, fts, log=False, vsize=1.8):
     """ Plot group counts (optionally logged) for ints """
 
     if len(fts) == 0:
