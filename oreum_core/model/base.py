@@ -11,7 +11,8 @@ class BasePYMC3Model():
 
     random_seed = 42
 
-    def __init__(self, obs: pd.DataFrame, **kwargs):
+    def __init__(self, obs:pd.DataFrame=None, **kwargs):
+        """ Expect obs as dfx pd.DataFrame(mx_en, mx_exs) """
         self.model = None
         self._trace = None
         self._trace_prior = None
@@ -30,7 +31,7 @@ class BasePYMC3Model():
         assert self._trace != None, "Must run sample() first!"
         return self._trace["diverging"].nonzero()[0].size
 
-    # mot needed, see oreum_core.model.create_azid
+    # not needed, see oreum_core.model.create_azid
     # @property
     # def inference_data(self):
     #     """ Returns an Arviz InferenceData object """

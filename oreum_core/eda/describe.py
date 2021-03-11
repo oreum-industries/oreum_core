@@ -88,6 +88,7 @@ def get_fts_by_dtype(df):
     """Return a dictionary of lists of feats within df according to dtype 
     """
     fts = dict(
+        categorical = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'cat'], #category
         cat = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'obj'],
         bool = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'boo'],
         date = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'dat'],
