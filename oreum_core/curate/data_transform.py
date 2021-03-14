@@ -228,6 +228,7 @@ class Transformer():
         self.design_info = None
         self.col_idx_numerics = None
         self.rx_get_f_components = re.compile(r'(F\(([a-z_]+?)\))')
+        self.fts_fact_mapping = {}
 
     def fit_transform(self, fml, df):
         """ Fit a new design_info attribute for this instance according to 
@@ -241,12 +242,11 @@ class Transformer():
         # deal with any fml components marked F()
         fts_fact = self.rx_get_f_components.findall(fml)
         if len(fts_fact) > 0:
-            self.fts_fact_mapping = {}
             df = df.copy()
             for ft_fact in fts_fact:
                 dt = df[ft_fact[1]].dtype.name
                 if dt != 'category':
-                    raise AttributeError(f'fml contains F({ft_fact[1]}), dtype={dt}, but must be categorical')
+                    raise AttributeError(f'fml contains F({ft_fact[1]}), dtype={dt}, but it must be categorical')
                     
                 # map feature to int based on its preexisting catgorical order
                 # https://stackoverflow.com/a/55304375/1165112
@@ -257,14 +257,18 @@ class Transformer():
                 
                 # replace F() in fml so that patsy can work as normal with out new int ft
                 fml = self.rx_get_f_components.sub(ft_fact[1], fml)
-
-        # TODO add option to output dataframe
+        
+        # TODO add option to output matrix   # np.asarray(mx_ex)
         # TODO add check for fml contains `~` and handle accordingly
-        mx_ex = pt.dmatrix(fml, df, NA_action='raise', return_type='matrix')
-        self.design_info = mx_ex.design_info
-        self.col_idx_numerics = 1 + sum([1 for n in self.design_info.column_names 
-                                                if re.search(r'\[T\.', n)])
-        return np.asarray(mx_ex)
+        df_ex = pt.dmatrix(fml, df, NA_action='raise', return_type='dataframe')
+        self.design_info = df_ex.design_info
+
+        #force patsy transform of an index feature back to int! there might be a better way to do this
+        fts_to_force_to_int = list(self.fts_fact_mapping.keys())
+        if len(fts_to_force_to_int) > 0:
+            df_ex[fts_to_force_to_int] = df_ex[fts_to_force_to_int].astype(np.int64)
+        
+        return df_ex 
 
     def transform(self, df):
         """ Transform input `df` to dmatrix according to pre-fitted 
