@@ -3,21 +3,26 @@
 import arviz as az
 import numpy as np
 import patsy as pt
+import re
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
 def model_desc(fml):
     """ Convenience: return patsy modeldesc
-        NOTE: `describe()` doesn't return the `1 +` (intercept) term correctly.
+        NOTE: `.describe()` doesn't return the `1 +` (intercept) term in the 
+              case that it's present. check and add if needed
     """
-    fmls = fml.split('~')
+    fmls = fml.split(' ~ ')
+    add_intercept = False if re.match(r'1 \+', fml) is None else True
     r = pt.ModelDesc.from_formula(fml).describe()
     if len(fmls) == 2:
         rs = r.split(' ~ ')
-        r = f'{rs[0]} ~ 1 + {rs[1]}'
+        if add_intercept:
+            r = f'{rs[0]} ~ 1 + {rs[1]}'
     elif len(fmls) == 1:
-        r = f'1 + {r[2:]}'
+        if add_intercept:
+            r = f'1 + {r[2:]}'
     else:
         raise ValueError('fml must have only a single tilde `~`')
     return f'patsy linear model desc:\n{r}\n'

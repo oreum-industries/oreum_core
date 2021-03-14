@@ -20,9 +20,8 @@ class BasePYMC3Model():
         self.obs = obs
         self.sample_prior_predictive_kws = dict(samples=500)
         self.sample_kws = dict(init='jitter+adapt_diag', 
-                                random_seed=self.random_seed, 
-                                tune=1000, draws=500, chains=4, cores=4, 
-                                target_accept=0.8)
+                            random_seed=self.random_seed, tune=1000, draws=500, 
+                            chains=4, cores=4, target_accept=0.8)
         self.rvs_for_posterior_plots = []
 
     @property
@@ -62,9 +61,10 @@ class BasePYMC3Model():
 
     @property
     def posterior_predictive(self):
-        """ Returns the posterior predictive from a sample() call """
-        assert self._posterior_predictive, "Must run sample() first!"
+        """ Returns the posterior predictive from a previous sample_posterior_predictive() """
+        assert self._posterior_predictive, "Must run sample_posterior_predictive() first!"
         return self._posterior_predictive   
+
 
     def build(self):
         try:
@@ -74,6 +74,7 @@ class BasePYMC3Model():
             raise NotImplementedError('You must create a method _build()' + 
                             ' in your subclass, containing your model definition')
         
+
     def sample_prior_predictive(self, **kwargs):
         """ Sample prior predictive, use base class defaults 
             self.sample_prior_predictive_kws or passed kwargs for
@@ -88,7 +89,8 @@ class BasePYMC3Model():
         with self.model:
             self._trace_prior = pm.sample_prior_predictive(samples=samples, 
                                             random_seed=random_seed, **kwargs)
-        return None #self.trace_prior
+        return None
+
 
     def sample(self, **kwargs):
         """ Sample posterior, use base class defaults self.sample_kws
@@ -114,29 +116,24 @@ class BasePYMC3Model():
         return None 
 
 
-    def sample_posterior_predictive(self, fast=True, **kwargs):
-        raise NotImplementedError('Not needed right now, so WIP')
-    #     """ Sample posterior predictive, use base class defaults 
-    #         self.sample_posterior_predictive_kws or passed kwargs for
-    #         pm.{fast}sample_posteriors_predictive()
-    #     """
-    #     samples = kwargs.get('samples', self.sample_posterior_predictive_kws['samples'])
-    #     random_seed = kwargs.get('random_seed', self.sample_kws['random_seed'])
+    def sample_posterior_predictive(self, fast=False, **kwargs):
+        """ Sample posterior predictive, use base class defaults 
+            self.sample_posterior_predictive_kws or passed kwargs for
+            pm.{fast}sample_posteriors_predictive()
+        """
+        random_seed = kwargs.get('random_seed', self.sample_kws['random_seed'])
         
-    #     if self.model is None:
-    #         self.build()
+        if self.model is None:
+            self.build()
 
-    #     with self.model:
-    #         if fast:
-    #             self._trace_posterior = pm.fast_sample_posterior_predictive(
-    #                                 samples=samples, random_seed=random_seed, 
-    #                                 **kwargs)
-    #         else:
-    #             self._trace_prior = pm.sample_prior_predictive(
-    #                                 samples=samples, random_seed=random_seed, 
-    #                                 **kwargs)
-
-    #     return None 
+        with self.model:
+            if fast:
+                self._posterior_predictive = pm.fast_sample_posterior_predictive(
+                                self.trace, random_seed=random_seed, **kwargs)
+            else:
+                self._posterior_predictive = pm.sample_posterior_predictive(
+                                self.trace, random_seed=random_seed, **kwargs)
+        return None 
 
 
     def replace_obs(self, new_obs):
