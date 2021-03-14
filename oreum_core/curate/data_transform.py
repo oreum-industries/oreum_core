@@ -230,7 +230,7 @@ class Transformer():
         self.rx_get_f_components = re.compile(r'(F\(([a-z_]+?)\))')
         self.fts_fact_mapping = {}
 
-    def fit_transform(self, fml, df):
+    def fit_transform(self, fml, df: pd.DataFrame):
         """ Fit a new design_info attribute for this instance according to 
             `fml` acting upon `df`. Return the transformed dmatrix (np.array)
             Use this for a new training set or to initialise the transfomer
@@ -270,7 +270,7 @@ class Transformer():
         
         return df_ex 
 
-    def transform(self, df):
+    def transform(self, df: pd.DataFrame):
         """ Transform input `df` to dmatrix according to pre-fitted 
             `design_info`. Return transformed dmatrix (np.array)
 
@@ -290,9 +290,19 @@ class Transformer():
             # simply because no F() in fml
             pass
         
-        # TODO add option to output dataframe
-        mx_ex = pt.dmatrix(self.design_info, df, NA_action='raise', return_type='matrix')
-        return np.asarray(mx_ex)
+        # TODO add option to output matrix
+        # mx_ex = pt.dmatrix(self.design_info, df, NA_action='raise', return_type='matrix')
+        # return np.asarray(mx_ex)
+
+        df_ex = pt.dmatrix(self.design_info, df, NA_action='raise', return_type='dataframe')
+        self.design_info = df_ex.design_info
+
+        #force patsy transform of an index feature back to int! there might be a better way to do this
+        fts_to_force_to_int = list(self.fts_fact_mapping.keys())
+        if len(fts_to_force_to_int) > 0:
+            df_ex[fts_to_force_to_int] = df_ex[fts_to_force_to_int].astype(np.int64)
+        
+        return df_ex 
 
 
 class Standardizer():
@@ -307,6 +317,8 @@ class Standardizer():
         NEW FUNCTIONALITY: 2021-03-11 
             apply standardization using a mask. allows us to exclude any col 
             from standardization
+
+        2021-04-14 rework to io dataframes
     """
 
     def __init__(self, design_info, fts_exclude=[]):
@@ -324,7 +336,32 @@ class Standardizer():
         self.scale = None
 
 
-    def standardize(self, mx):
+    def standardize(self, df: pd.DataFrame):
+        """ Standardize input df to mean-centered, 2sd unit variance,
+            Retain the fitted means and sdevs for later use in standardize()
+        """
+        if any([v is None for v in [self.means, self.sdevs, self.scale]]):
+            raise AttributeError('No mns, sdevs or scale, ' + 
+                                 'run `fit_standardize()` on training set first')
+
+        df_s = ((df - self.means) / (self.sdevs * self.scale))
+        mask = np.tile(self.row_mask, (len(df), 1))
+        # fill original df w/ standardized to more easily preseve dtype of ints
+        df_exs = df.mask(~mask, df_s)   
+        return df_exs
+
+
+    def fit_standardize(self, df:pd.DataFrame, scale=2):
+        """ Standardize numeric features of df with variable scale
+            Retain the fitted means and sdevs for later use in standardize()
+        """
+        self.means = np.where(self.row_mask, np.nan, np.nanmean(df, axis=0))
+        self.sdevs = np.where(self.row_mask, np.nan, np.nanstd(df, axis=0))
+        self.scale = scale
+        return self.standardize(df)
+
+
+    def standardize_mx(self, mx):
         """ Standardize input mx to mean-centered, 2sd unit variance,
             Retain the fitted means and sdevs for later use in standardize()
         """
@@ -338,7 +375,7 @@ class Standardizer():
         return mxs
 
 
-    def fit_standardize(self, mx, scale=2):
+    def fit_standardize_mx(self, mx:np.ndarray, scale=2):
         """ Standardize numeric features of mx with variable scale
             Retain the fitted means and sdevs for later use in standardize()
         """
