@@ -116,10 +116,11 @@ class BasePYMC3Model():
         return None 
 
 
-    def sample_posterior_predictive(self, fast=False, **kwargs):
-        """ Sample posterior predictive, use base class defaults 
-            self.sample_posterior_predictive_kws or passed kwargs for
-            pm.{fast}sample_posteriors_predictive()
+    def sample_posterior_predictive(self, kind='pymc', fast=False, **kwargs):
+        """ Sample posterior predictive for 
+            base class self.sample_posterior_predictive_kws or passed kwargs 
+            
+            Option to use pm.fast_sample_posterior_predictive()
         """
         random_seed = kwargs.get('random_seed', self.sample_kws['random_seed'])
         
