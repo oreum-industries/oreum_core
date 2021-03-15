@@ -343,7 +343,8 @@ class InverseWeibull(PositiveContinuous):
         """InverseWeibull Inverse CDF aka PPF"""
         alpha = self.alpha
         s = self.s
-        value = tt.clip(value, CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS, 1-CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS) 
+        value = tt.clip(value, CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS, 
+                               1-CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS) 
         fn = s * tt.power(-tt.log(value), -1. / alpha)
         return boundzero_theano(fn, alpha > 0, s > 0, value >= 0, value <= 1)
 
@@ -671,7 +672,6 @@ class ZeroInflatedInverseWeibullNumpy():
         return boundlog_numpy(fn, a > 0, s > 0, u >= 0, u <= 1)
 
 
-
 class Kumaraswamy(pm.Kumaraswamy):
     """Inherit the pymc class, add cdf, logcdf and invcdf, loginvcdf"""
 
@@ -731,7 +731,7 @@ class Kumaraswamy(pm.Kumaraswamy):
 
 
 class Lognormal(pm.Lognormal):
-    """Inherit the pymc class, add cdf and invcdf"""
+    """ Inherit the pymc class, add cdf and invcdf """
    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
