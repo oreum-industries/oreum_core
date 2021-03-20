@@ -10,7 +10,8 @@ def read_azid(dir_traces=[], fn='azid'):
 
 def create_azid(model, save=False, dir_traces=[], fn='azid',
                 prior=None, trace=None, ppc=None):
-    """Convenience: create azid structure"""
+    """ Convenience: create azid structure """
+    print('Will deprecate this in v0.2.0. Functionality to extend now exists in arviz')
     
     azid = az.from_pymc3(model=model, prior=prior, trace=trace,
                         posterior_predictive=ppc)

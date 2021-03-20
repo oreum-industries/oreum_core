@@ -5,6 +5,9 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+from matplotlib.lines import Line2D
+from scipy import stats, integrate
+
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
@@ -36,7 +39,7 @@ def plot_cat_count(df, fts, topn=10, vsize=2):
     f.tight_layout()
         
 
-def plot_date_count(df, fts, fmt='%Y-%m', vsize=2):
+def plot_date_count(df, fts, fmt='%Y-%m', vsize=1.8):
     """ Plot group sizes for dates by strftime format """
 
     if len(fts) == 0:
@@ -59,7 +62,7 @@ def plot_date_count(df, fts, fmt='%Y-%m', vsize=2):
     f.tight_layout()
         
 
-def plot_int_dist(df, fts, log=False, vsize=2):
+def plot_int_dist(df, fts, log=False, vsize=1.8):
     """ Plot group counts (optionally logged) for ints """
 
     if len(fts) == 0:
@@ -115,6 +118,21 @@ def plot_float_dist(df, fts, log=False):
     g.fig.tight_layout(pad=0.8)
 
 
+def plot_joint_ft_x_tgt(df, ft, tgt, subtitle=None, colori=1):
+    """ Jointplot of ft vs tgt distributions. Suitable for int or float """
+    kde_kws = dict(zorder=0, levels=7, cut=0)
+    nsamp = min(len(df), 200)
+    g = sns.JointGrid(x=ft, y=tgt, 
+                      data=df.sample(nsamp, random_state=RANDOM_SEED), height=6)
+    _ = g.plot_joint(sns.kdeplot, **kde_kws, fill=True, color=f'C{colori%5}')
+    _ = g.plot_marginals(sns.histplot, color=f'C{colori%5}')
+    _ = g.ax_joint.text(.95, .95, 
+            f"pearsonr = {stats.pearsonr(df[ft], df[tgt])[0]:.4g}", 
+            transform=g.ax_joint.transAxes, ha='right')
+    t = ('', 0.0) if subtitle is None else (f'\n{subtitle}', 0.04)
+    _ = g.fig.suptitle(f'Joint dist: {ft} x {tgt}{t[0]}', y=1.02 + t[1])
+
+
 def plot_mincovdet(df, mcd, thresh=0.99):
     """ Interactive plot of MDC delta results """
     
@@ -164,28 +182,133 @@ def plot_mincovdet(df, mcd, thresh=0.99):
     return None
 
 
-def plot_rmse_range(rmse, rmse_pct, lims=(0, 80)):
+def plot_roc_precrec(df):
+    """ Plot ROC and PrecRec, also calc and return AUC
+        Pass perf df from calc.calc_binary_performance_measures
+    """
+
+    roc_auc = integrate.trapezoid(y=df['tpr'], x=df['fpr'])
+    prec_rec_auc = integrate.trapezoid(y=df['precision'], x=df['recall'])
+
+    f, axs = plt.subplots(1, 2, figsize=(11.5, 6), sharex=True, sharey=True)
+    _ = f.suptitle('ROC and Precision Recall Curves', y=1.0)
+
+    _ = axs[0].plot(df['fpr'], df['tpr'], lw=2, marker='d', alpha=0.8,
+                    label=f"ROC (auc={roc_auc:.2f})")
+    _ = axs[0].plot((0, 1), (0, 1), '--', c='#cccccc', label='line of equiv')
+    _ = axs[0].legend(loc='upper left')
+    _ = axs[0].set(title='ROC curve', xlabel='FPR', ylabel='TPR')
+    
+    _ = axs[1].plot(df['recall'], df['precision'], lw=2, marker='o', alpha=0.8,
+                    color='C3', label=f"PrecRec (auc={prec_rec_auc:.2f})")
+    _ = axs[1].legend(loc='upper right')
+    _ = axs[1].set(title='Precision Recall curve', xlabel='Recall', ylabel='Precision')
+
+    f.tight_layout()
+
+    return roc_auc, prec_rec_auc
+
+
+def plot_f_measure(df):
+    """ Plot F-measures (F0.5, F1, F2) at different percentiles """
+
+    f1_at = df['f1'].argmax()
+    dfm = df.reset_index()[['pct', 'f0.5', 'f1', 'f2']].melt(
+                id_vars='pct', var_name='f-measure', value_name='f-score')
+    f, axs = plt.subplots(1, 1, figsize=(6, 4))
+    ax = sns.lineplot(x='pct', y='f-score', hue='f-measure', data=dfm, palette='Greens', lw=2, ax=axs)
+    _ = ax.set_ylim(0, 1)
+    _ = f.suptitle('F-scores across the percentage range of PPC' + 
+            f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct', y=1.03)
+
+
+def plot_accuracy(df):
+    """ Plot accuracy at different percentiles """
+
+    acc_at = df['accuracy'].argmax()
+    f, axs = plt.subplots(1, 1, figsize=(6, 4))
+    ax = sns.lineplot(x='pct', y='accuracy', color='C1', data=df, lw=2, ax=axs)
+    _ = ax.set_ylim(0, 1)
+    _ = f.suptitle('Accuracy across the percentage range of PPC' + 
+            f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct', y=1.03)
+
+
+def plot_binary_performance(df):
+    """ Plot ROC, PrecRec, F-score, Accuracy
+        Pass perf df from calc.calc_binary_performance_measures
+        Return summary stats
+    """
+
+    roc_auc = integrate.trapezoid(y=df['tpr'], x=df['fpr'])
+    prec_rec_auc = integrate.trapezoid(y=df['precision'], x=df['recall'])
+
+    f, axs = plt.subplots(1, 4, figsize=(18, 5), sharex=False, sharey=True)
+    _ = f.suptitle('Evaluations of Binary Classifier across PPC pct samples', y=1.0)
+
+    _ = axs[0].plot(df['fpr'], df['tpr'], lw=2, marker='d', alpha=0.8,
+                    label=f"ROC (auc={roc_auc:.2f})")
+    _ = axs[0].plot((0, 1), (0, 1), '--', c='#cccccc', label='line of equiv')
+    _ = axs[0].legend(loc='upper left')
+    _ = axs[0].set(title='ROC curve', xlabel='FPR', ylabel='TPR')
+    
+    _ = axs[1].plot(df['recall'], df['precision'], lw=2, marker='o', alpha=0.8,
+                    color='C3', label=f"PrecRec (auc={prec_rec_auc:.2f})")
+    _ = axs[1].legend(loc='upper right')
+    _ = axs[1].set(title='Precision Recall curve', xlabel='Recall', ylabel='Precision')
+
+    f1_at = df['f1'].argmax()
+    dfm = df.reset_index()[['pct', 'f0.5', 'f1', 'f2']].melt(
+                id_vars='pct', var_name='f-measure', value_name='f-score')
+
+    _ = sns.lineplot(x='pct', y='f-score', hue='f-measure', data=dfm, 
+                        palette='Greens', lw=2, ax=axs[2])
+    _ = axs[2].set_ylim(0, 1)
+    _ = axs[2].legend(loc='upper left')
+    _ = axs[2].set(title='F-scores across the PPC pcts' +
+            f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct')
+
+    acc_at = df['accuracy'].argmax()
+    _ = sns.lineplot(x='pct', y='accuracy', color='C1', data=df, lw=2, ax=axs[3])
+    _ = axs[3].set_ylim(0, 1)
+    _ = axs[3].set(title='Accuracy across the PPC pcts' +
+            f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct')
+
+    f.tight_layout()
+    return None
+
+
+def plot_coverage(df):
+    """ Convenience plot coverage from mt.calc_ppc_coverage """
+
+    g = sns.lmplot(x='cr', y='coverage', data=df, fit_reg=False, height=5, 
+                   scatter_kws={'s':70})
+    _ = [g.axes[0][i].plot((0,1),(0,1),ls='--',color='#FFA555') for i in range(1)]
+
+    return None
+
+
+def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
     """ Convenience to plot RMSE range with mins """
     dfp = rmse_pct.reset_index()
     dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
     min_rmse = rmse_pct.min()
     min_rmse_pct = rmse_pct.index[rmse_pct.argmin()]
 
-    f, axs = plt.subplots(1, 1, figsize=(12, 6))
+    f, axs = plt.subplots(1, 1, figsize=(10, 4))
     ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs)
     #     _ = ax.set_yscale('log')
-    _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.0f}')
-    _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.0f}')
-    _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.0f}')
-    _ = f.suptitle('RMSE ranges', y=.95)
+    _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.2f}')
+    _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.2f}')
+    _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.2f}')
+    _ = f.suptitle(f'RMSE ranges {yhat_name}', y=.95)
     _ = ax.legend()
         
 
-def plot_rmse_range_pair(rmse_t, rmse_pct_t, rmse_h, rmse_pct_h, lims=(0, 80)):
+def plot_rmse_range_pair(rmse_t, rmse_pct_t, rmse_h, rmse_pct_h, lims=(0, 80), yhat_name=''):
     """ Convenience to plot two rmse pct results """
-    f, axs = plt.subplots(1, 2, figsize=(14, 6))
+    f, axs = plt.subplots(1, 2, figsize=(14, 4))
     t = ['train', 'holdout']
-    _ = f.suptitle('RMSE ranges', y=.97)
+    _ = f.suptitle('RMSE ranges {yhat_name}', y=.97)
 
     for i, (rmse, rmse_pct) in enumerate(zip([rmse_t, rmse_h], [rmse_pct_t, rmse_pct_h])):
         dfp = rmse_pct.reset_index()
@@ -194,15 +317,15 @@ def plot_rmse_range_pair(rmse_t, rmse_pct_t, rmse_h, rmse_pct_h, lims=(0, 80)):
         min_rmse_pct = rmse_pct.index[rmse_pct.argmin()]
         
         ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs[i])
-        _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.0f}')
-        _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.0f}')
-        _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.0f}')
+        _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.2f}')
+        _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.2f}')
+        _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.2f}')
         _ = ax.legend()
         _ = ax.set_title(t[i])
     _ = f.tight_layout()
 
 
-def plot_r2_range(r2, r2_pct, lims=(0, 80)):
+def plot_r2_range(r2, r2_pct, lims=(0, 80), yhat_name=''):
     """ Convenience to plot R2 range with max 
     """
     dfp = r2_pct.reset_index()
@@ -210,12 +333,12 @@ def plot_r2_range(r2, r2_pct, lims=(0, 80)):
     max_r2 = r2_pct.max()
     max_r2_pct = r2_pct.index[r2_pct.argmax()]
     
-    f, axs = plt.subplots(1, 1, figsize=(12, 6))
+    f, axs = plt.subplots(1, 1, figsize=(10, 4))
     ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs)
     _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
     _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.2f}')
     _ = ax.axhline(max_r2, c='g', ls='--', label=f'max @ pct {max_r2_pct} @ {max_r2:,.2f}')
-    _ = f.suptitle('$R^{2}$ ranges', y=.95)
+    _ = f.suptitle(f'$R^{2}$ ranges {yhat_name}', y=.95)
     _ = ax.legend()
 
 
@@ -223,7 +346,7 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
     """ Convenience to plot two r2 pct results (t)raining vs (h)oldout
     """
 
-    f, axs = plt.subplots(1, 2, figsize=(14, 6))
+    f, axs = plt.subplots(1, 2, figsize=(14, 4))
     t = ['train', 'holdout']
     _ = f.suptitle('$R^{2}$ ranges', y=.97)
 
@@ -240,3 +363,62 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
         _ = ax.legend()
         _ = ax.set_title(t[i])
     _ = f.tight_layout()
+
+
+def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct'):
+    """ Plot bootstrapped loss ratio, no grouping """
+    
+    mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10,8), 
+                    textcoords='offset points', fontsize=8, backgroundcolor='w')
+    pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
+                    marker='d', markersize=10) 
+    mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+    
+    mn = dfboot[['lr']].mean().tolist()                          # boot mean
+    pest_mn = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]  # point est mean
+
+    gd = sns.catplot(x='lr', data=dfboot, kind='violin', cut=0, height=2, aspect=6)
+    _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+
+    elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
+             Line2D([0],[0], label='sample', **pest_mn_kws)]
+    gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
+    
+    title = f'Empirical PDF of Bootstrapped LR vs Point Est LR for Portfolio'
+    _ = gd.fig.suptitle((f'{title}' + f'\n({len(df)} policies, ' + 
+        f"\\${df['prem_total'].sum()/1e6:.1f}M premium, " + 
+        f"{df['claim_ct'].sum():.0f} claims totalling \\${df['total_incurred_sum'].sum()/1e6:.1f}M)" + 
+        f'\nEstimated population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=1.3)
+    
+
+def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim'):
+    """ Plot bootstrapped loss ratio, grouped by grp """
+
+    mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
+                    textcoords='offset points', fontsize=8, backgroundcolor='w')
+    pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
+                    marker='d', markersize=10) 
+    mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+    if dfboot[grp].dtypes != 'object':
+        dfboot = dfboot.copy()
+        dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
+    gd = sns.catplot(x='lr', y=grp, data=dfboot, 
+                     kind='violin', cut=0, scale='count', width=0.6, palette='cubehelix_r',
+                     height=6, aspect=2)
+
+    mn = dfboot.groupby(grp)['lr'].mean().tolist()
+    pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
+    
+    _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+
+    elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
+             Line2D([0],[0], label='sample', **pest_mn_kws)]
+    gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
+    
+    title = (f'Empirical PDFs of Bootstrapped LR vs Point Est LR for Portfolio' + 
+            f'\nGrouped by {grp}')
+    _ = gd.fig.suptitle(f'{title}', y=1.05)

@@ -5,11 +5,49 @@ import numpy as np
 import pandas as pd
 import pymc3 as pm
 import theano.tensor as tt
+import theano
+from scipy import integrate
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
+
+def calc_f_measure(precision, recall, b=1):
+    return (1 + b**2) * (precision * recall) / (b**2 * precision + recall)
+
+
+def calc_binary_performance_measures(y, yhat):
+    f""" Calculate tpr (recall), fpr, precision, accuracy for binary target, 
+        using all samples from PPC, use vectorised calcs
+        shapes y: (nsamples,), yhat: (nsamples, nobservations) 
+    """
+
+    yhat_pct = np.percentile(yhat, np.arange(0, 101, 1), axis=0).T
+    y_mx = np.tile(y.reshape(-1, 1), 101)
+ 
+    # calc tp, fp, tn, fn vectorized
+    tp = np.nansum(np.where(yhat_pct == 1, y_mx, np.nan), axis=0)
+    fp = np.nansum(np.where(yhat_pct == 1, 1-y_mx, np.nan), axis=0)
+    tn = np.nansum(np.where(yhat_pct == 0, 1-y_mx, np.nan), axis=0)
+    fn = np.nansum(np.where(yhat_pct == 0, y_mx, np.nan), axis=0)
     
+    # calc tpr (recall), fpr, precision etc
+    accuracy = (tp + tn) / (tp + tn + fp + fn)
+    tpr = recall = tp / (tp + fn)
+    fpr = fp / (tn + fp)
+    precision = np.nan_to_num(tp / (tp + fp), nan=1) # beware of divide by zero
+
+    perf = pd.DataFrame({'accuracy': accuracy, 'tpr': tpr, 'fpr': fpr, 
+                        'recall': recall, 'precision': precision, 
+                        'f0.5': calc_f_measure(precision, recall, b=0.5),
+                        'f1': calc_f_measure(precision, recall, b=1),
+                        'f2': calc_f_measure(precision, recall, b=2)},
+                        index=np.arange(101))
+    perf.index.set_names('pct', inplace=True)
+    
+    return perf
+
+
 def calc_mse(y, yhat):
     r""" Convenience: Calculate MSE using all samples
         shape (nsamples, nobservations)
@@ -49,7 +87,7 @@ def calc_mse(y, yhat):
 
 def calc_rmse(y, yhat):
     """ Convenience: Calculate RMSE """
-    mse, s_mse_pct = compute_mse(y, yhat)
+    mse, s_mse_pct = calc_mse(y, yhat)
     s_rmse_pct = s_mse_pct.map(np.sqrt)
     s_rmse_pct._set_name('rmse', inplace=True)
        
@@ -61,6 +99,7 @@ def calc_r2(y, yhat):
         return mean r2 and via summary stats of yhat
         NOTE: shape (nsamples, nobservations)
         $$R^{2} = 1 - \frac{\sum e_{model}^{2}}{\sum e_{mean}^{2}}$$
+        R2 normal range [0, 1]
     """
     sse_mean = np.sum((y - y.mean(axis=0))**2)
 
@@ -79,14 +118,14 @@ def calc_r2(y, yhat):
     
 def calc_ppc_coverage(y, yhat, crs=np.arange(0, 1.01, .1)):
     """ Calc the proportion of coverage from full yhat ppc 
-        shape (nsamples, nobservations)
+        shapes: y (nobservations), yhat (nsamples, nobservations)
     """
-    lower_bounds = np.percentile(yhat, 50 - (50 * crs), axis=0)
-    upper_bounds = np.percentile(yhat, 50 + (50 * crs), axis=0)
+    lower_bounds = np.percentile(yhat, 50. - (50. * crs), axis=0)
+    upper_bounds = np.percentile(yhat, 50. + (50. * crs), axis=0)
    
     coverage = []
     for i, cr in enumerate(crs):
-        coverage.append((cr, np.sum((y >= lower_bounds[i]) * (y <= upper_bounds[i])) / len(y)))
+        coverage.append((cr, np.sum(np.int64(y >= lower_bounds[i]) * np.int64(y <= upper_bounds[i])) / len(y)))
 
     return pd.DataFrame(coverage, columns=['cr', 'coverage'])
 

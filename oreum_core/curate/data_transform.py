@@ -4,17 +4,13 @@ import re
 import numpy as np
 import pandas as pd
 import patsy as pt
-import string
+import re
 from sklearn.model_selection import train_test_split
 from .text_clean import SnakeyLowercaser
 
 
 class DatatypeConverter():
-    """ Force correct datatypes according to what model expects 
-        Have created this as a class because it knows about the model
-        And just reuse the generic function data_cleaner.force_dtypes 
-        which you might potentially want to use elsewhere
-    """
+    """ Force correct datatypes according to what model expects """
 
     def __init__(self, fts, ftslvlcat={}):
         """ Initialise with fts and fts_dtype_pandas_categorical
@@ -24,13 +20,14 @@ class DatatypeConverter():
 
             Use with a fts dict of form:
                 fts = dict(
-                    fid = [],
+                    fid = [],             
                     fcat = [],
                     fbool = [],
                     fdate = [],
                     fyear = [],
                     fint = [],
-                    ffloat =[])
+                    ffloat =[],
+                    fverbatim = [],        # maintain in current dtype)
         """
         self.fts = dict(fid=fts.get('fid', []),
                         fcat=fts.get('fcat', []), 
@@ -38,44 +35,36 @@ class DatatypeConverter():
                         fdate=fts.get('fdate', []),
                         fyear=fts.get('fyear', []),
                         fint=fts.get('fint', []),
-                        ffloat=fts.get('ffloat', []))
+                        ffloat=fts.get('ffloat', []),
+                        fverbatim=fts.get('fverbatim', [])   # keep verbatim
+                        )
         self.ftslvlcat = ftslvlcat
         self.rx_number_junk = re.compile(r'[#$€£₤¥,;%]')
 
-    def convert_dtypes(self, df):
-        """ Force dtypes for recognised features (fts) in df 
-        """
-        dfclean = self._force_dtypes(df, **self.fts)
-
-        for ft, lvls in self.ftslvlcat.items():
-            dfclean[ft] = pd.Categorical(dfclean[ft].values, categories=lvls, ordered=True)
-        
-        return dfclean
-
-    def _force_dtypes(self, dfraw, **kwargs):
+    def _force_dtypes(self, dfraw):
         """ Select fts and convert dtypes. Return cleaned df 
         """
         snl = SnakeyLowercaser()
 
         #subselect desired fts
-        fts_all = [v for l in kwargs.values() for v in l]
+        fts_all = [w for k, v in self.fts.items() for w in v]
         df = dfraw[fts_all].copy()
         
-        for ft in kwargs.get('fid', []) + kwargs.get('fcat', []):
+        for ft in (self.fts['fid'] + self.fts['fcat']):
             idx = df[ft].notnull()
             df.loc[idx, ft] = df.loc[idx, ft].astype(str, errors='raise').apply(snl.clean)
             
-        for ft in kwargs.get('fbool', []):
+        for ft in self.fts['fbool']:
             if pd.isnull(df[ft]).sum() == 0:
                 df[ft] = df[ft].astype(np.bool)
 
-        for ft in kwargs.get('fyear', []):
+        for ft in self.fts['fyear']:
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y')
 
-        for ft in kwargs.get('fdate', []):
+        for ft in self.fts['fdate']:
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y-%m-%d')
             
-        for ft in kwargs.get('fint', []):
+        for ft in self.fts['fint']:
             if df.dtypes[ft] == np.object:
                 df[ft] = df[ft].astype(str).str.strip().str.lower().map(
                             lambda x: self.rx_number_junk.sub('', x))
@@ -84,14 +73,29 @@ class DatatypeConverter():
             if pd.isnull(df[ft]).sum() == 0:
                 df[ft] = df[ft].astype(np.int64, errors='raise')
 
-        for ft in kwargs.get('ffloat', []):
+        for ft in self.fts['ffloat']:
             if df.dtypes[ft] == np.object:
                 df[ft] = df[ft].astype(str).str.strip().str.lower().map(
                             lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
             df[ft] = df[ft].astype(np.float64, errors='raise')
+
+        # TODO as/when add logging
+        # for ft in self.fts['fverbatim]:
+        #    log(f'kept verbatim: {ft}')
                 
         return df
+
+    def convert_dtypes(self, df):
+        """ Force dtypes for recognised features (fts) in df 
+        """
+        dfclean = self._force_dtypes(df)
+
+        for ft, lvls in self.ftslvlcat.items():
+            dfclean[ft] = pd.Categorical(dfclean[ft].values, 
+                                        categories=lvls, ordered=True)
+        
+        return dfclean
 
 
 class DatasetReshaper():
@@ -223,30 +227,82 @@ class Transformer():
     def __init__(self):
         self.design_info = None
         self.col_idx_numerics = None
+        self.rx_get_f_components = re.compile(r'(F\(([a-z_]+?)\))')
+        self.fts_fact_mapping = {}
 
-
-    def fit_transform(self, fml, df):
+    def fit_transform(self, fml, df: pd.DataFrame):
         """ Fit a new design_info attribute for this instance according to 
             `fml` acting upon `df`. Return the transformed dmatrix (np.array)
             Use this for a new training set or to initialise the transfomer
             based on dfcmb.
-        """
-        mx_ex = pt.dmatrix(fml, df, NA_action='raise', return_type='matrix')
-        self.design_info = mx_ex.design_info
-        self.col_idx_numerics = 1 + sum([1 for n in self.design_info.column_names 
-                                                if re.search(r'\[T\.', n)])
-        return np.asarray(mx_ex)
 
+            NEW FUNCTIONALITY: 2021-03-11 
+                factorize components marked as F(), must be pd.Categorical
+        """   
+        # deal with any fml components marked F()
+        fts_fact = self.rx_get_f_components.findall(fml)
+        if len(fts_fact) > 0:
+            df = df.copy()
+            for ft_fact in fts_fact:
+                dt = df[ft_fact[1]].dtype.name
+                if dt != 'category':
+                    raise AttributeError(f'fml contains F({ft_fact[1]}), dtype={dt}, but it must be categorical')
+                    
+                # map feature to int based on its preexisting catgorical order
+                # https://stackoverflow.com/a/55304375/1165112
+                map_int_to_fact = dict(enumerate(df[ft_fact[1]].cat.categories)) 
+                map_fact_to_int = {v: k for k, v in map_int_to_fact.items()}
+                self.fts_fact_mapping[ft_fact[1]] = map_fact_to_int
+                df[ft_fact[1]] = df[ft_fact[1]].map(map_fact_to_int).astype(np.int)
+                
+                # replace F() in fml so that patsy can work as normal with out new int ft
+                fml = self.rx_get_f_components.sub(ft_fact[1], fml)
+        
+        # TODO add option to output matrix   # np.asarray(mx_ex)
+        # TODO add check for fml contains `~` and handle accordingly
+        df_ex = pt.dmatrix(fml, df, NA_action='raise', return_type='dataframe')
+        self.design_info = df_ex.design_info
 
-    def transform(self, df):
+        #force patsy transform of an index feature back to int! there might be a better way to do this
+        fts_to_force_to_int = list(self.fts_fact_mapping.keys())
+        if len(fts_to_force_to_int) > 0:
+            df_ex[fts_to_force_to_int] = df_ex[fts_to_force_to_int].astype(np.int64)
+        
+        return df_ex 
+
+    def transform(self, df: pd.DataFrame):
         """ Transform input `df` to dmatrix according to pre-fitted 
             `design_info`. Return transformed dmatrix (np.array)
+
+            NEW FUNCTIONALITY: 2021-03-11 
+                factorize components marked as F(), must be pd.Categorical
         """
         if self.design_info is None:
             raise AttributeError('No design_info, run `fit_transform()` first')
+
+        # map any features noted in fts_fact_mapping
+        try:
+            df = df.copy()
+            for ft, map_fact_to_int in self.fts_fact_mapping.items():
+                df[ft] = df[ft].map(map_fact_to_int).astype(np.int64)
+        except AttributeError: 
+            # self.fts_fact_mapping was never created for this instance
+            # simply because no F() in fml
+            pass
         
-        mx_ex = pt.dmatrix(self.design_info, df, NA_action='raise', return_type='matrix')
-        return np.asarray(mx_ex)
+        # TODO add option to output matrix
+        # mx_ex = pt.dmatrix(self.design_info, df, NA_action='raise', return_type='matrix')
+        # return np.asarray(mx_ex)
+
+        df_ex = pt.dmatrix(self.design_info, df, NA_action='raise', return_type='dataframe')
+        self.design_info = df_ex.design_info
+
+        #force patsy transform of an index feature back to int! there might be a better way to do this
+        fts_to_force_to_int = list(self.fts_fact_mapping.keys())
+        if len(fts_to_force_to_int) > 0:
+            df_ex[fts_to_force_to_int] = df_ex[fts_to_force_to_int].astype(np.int64)
+        
+        return df_ex 
 
 
 class Standardizer():
@@ -257,44 +313,75 @@ class Standardizer():
             + must be initialised with Transformer.design_info, consider refactoring
             + it's reasonable to initialise this per-observation but far more 
               efficient to initialise once and persist in-memory
-            + stop_standardizing_numerics_at_ft is a dirty hack to force ignore 
-              standardizing numerics that you put at the end of the formula
-              because you dont want to standardise them, starting at ft name
+        
+        NEW FUNCTIONALITY: 2021-03-11 
+            apply standardization using a mask. allows us to exclude any col 
+            from standardization
+
+        2021-04-14 rework to io dataframes
     """
 
-    def __init__(self, design_info, stop_standardizing_numerics_at_ft=''):
+    def __init__(self, design_info, fts_exclude=[]):
+        """ Optionally exclude from standardization a list of named fts that 
+            are numeric and would otherwise get standardardized """
+
         self.design_info = design_info
-        self.stdz_start = (1 + 
-                                sum([1 for n in self.design_info.column_names 
-                                                if re.search(r'\[T\.', n)]))
-        self.stdz_stop = self.design_info.column_name_indexes.get(
-                                    stop_standardizing_numerics_at_ft, 
-                                    len(self.design_info.column_names))
+        col_num_excl = [0] + [i for i, n in enumerate(self.design_info.column_names) 
+                                if (n in fts_exclude) or re.search(r'\[T\.', n)]
+        self.row_mask = [True if i in col_num_excl else False 
+                        for i in np.arange(len(self.design_info.column_names))]
+
         self.means = None
         self.sdevs = None
         self.scale = None
 
 
-    def standardize(self, mx):
+    def standardize(self, df: pd.DataFrame):
+        """ Standardize input df to mean-centered, 2sd unit variance,
+            Retain the fitted means and sdevs for later use in standardize()
+        """
+        if any([v is None for v in [self.means, self.sdevs, self.scale]]):
+            raise AttributeError('No mns, sdevs or scale, ' + 
+                                 'run `fit_standardize()` on training set first')
+
+        df_s = ((df - self.means) / (self.sdevs * self.scale))
+        mask = np.tile(self.row_mask, (len(df), 1))
+        # fill original df w/ standardized to more easily preseve dtype of ints
+        df_exs = df.mask(~mask, df_s)   
+        return df_exs
+
+
+    def fit_standardize(self, df:pd.DataFrame, scale=2):
+        """ Standardize numeric features of df with variable scale
+            Retain the fitted means and sdevs for later use in standardize()
+        """
+        self.means = np.where(self.row_mask, np.nan, np.nanmean(df, axis=0))
+        self.sdevs = np.where(self.row_mask, np.nan, np.nanstd(df, axis=0))
+        self.scale = scale
+        return self.standardize(df)
+
+
+    def standardize_mx(self, mx):
         """ Standardize input mx to mean-centered, 2sd unit variance,
             Retain the fitted means and sdevs for later use in standardize()
         """
         if any([v is None for v in [self.means, self.sdevs, self.scale]]):
             raise AttributeError('No mns, sdevs or scale, ' + 
-                                 'run `standardize()` on training set first')
-        mxs = ((mx[:, self.stdz_start:self.stdz_stop] - self.means) /
-               (self.sdevs * self.scale))
-        return np.concatenate((mx[:, :self.stdz_start],
-                               mxs,
-                               mx[:, self.stdz_stop:]), axis=1)
+                                 'run `fit_standardize()` on training set first')
+
+        mxs_all = ((mx - self.means) / (self.sdevs * self.scale))
+        mask = np.tile(self.row_mask, (len(mx), 1))
+        mxs = np.where(mask, mx, mxs_all)
+        return mxs
 
 
-    def fit_standardize(self, mx, scale=2):
+    def fit_standardize_mx(self, mx:np.ndarray, scale=2):
         """ Standardize numeric features of mx with variable scale
             Retain the fitted means and sdevs for later use in standardize()
         """
-        self.means = np.nanmean(mx[:, self.stdz_start:self.stdz_stop], axis=0)
-        self.sdevs = np.nanstd(mx[:, self.stdz_start:self.stdz_stop], axis=0)
+        # TODO add option to output dataframe
+        self.means = np.where(self.row_mask, np.nan, np.nanmean(mx, axis=0))
+        self.sdevs = np.where(self.row_mask, np.nan, np.nanstd(mx, axis=0))
         self.scale = scale
         return self.standardize(mx)
 
@@ -303,7 +390,7 @@ class Standardizer():
         """ Get values followuing fit_standardize. Persist values over time.
         """
         means_sdevs = pd.DataFrame({'means': self.means, 'sdevs':self.sdevs}, 
-                index=self.design_info.column_names[self.stdz_start:self.stdz_stop])
+                index=self.design_info.column_names)
 
         return means_sdevs, self.scale
                 

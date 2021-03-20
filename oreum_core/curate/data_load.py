@@ -37,9 +37,35 @@ class PandasParquetIO:
         return f'Written to {fqn}'
 
 
+class SimpleTxtIO:
+    """ Helper class to read/write simple strings to txt files at relative path
+    """
+
+    def __init__(self, relpath=[]):
+        self.relpath = relpath
+
+    def read_txt(self, fn, relpath=[]):
+        if len(relpath) == 0:
+            relpath = self.relpath
+        fqn = os.path.join(*relpath, f'{fn}.txt')
+        with open(fqn, 'r') as f:
+            s = f.read()
+        return s
+
+    def write_txt(self, s, fn, relpath=[]):       
+        if len(relpath) == 0:
+            relpath = self.relpath
+        fqn = os.path.join(*relpath, f'{fn}.txt')
+        with open(fqn, 'w') as f:
+            f.write(s)
+        return f'Written to {fqn}'
+
+
 def copy_csv2md(fqn):
     """ Convenience to copy csv 'path/x.csv' to markdown 'path/x.md' """
     r = subprocess.run(['csv2md', f'{fqn}'], capture_output=True)
     with open(f'{fqn[:-3] + "md"}', 'wb') as f:
         f.write(r.stdout)
-    return f'Created files {fqn} and {fqn[:-3]}md'
+    return f'Created file {fqn} and {fqn[:-3]}md'
+
+

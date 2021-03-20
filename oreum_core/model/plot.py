@@ -13,7 +13,6 @@ def facetplot_azid_dist(azid, rvs, rvs_hack_extra=0, group='posterior', **kwargs
         Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """
     # TODO unpack the compressed rvs from the azid
-    
     m, n = 2, ((len(rvs)+rvs_hack_extra) // 2) + ((len(rvs)+rvs_hack_extra) % 2)
     f, axs = plt.subplots(n, m, figsize=(m*6, 2.2*n))
     _ = az.plot_posterior(azid, group=group, ax=axs, var_names=rvs, **kwargs)
@@ -28,7 +27,7 @@ def facetplot_df_dist(df, rvs, rvs_hack_extra=0, **kwargs):
     m, n = 2, ((len(rvs)+rvs_hack_extra) // 2) + ((len(rvs)+rvs_hack_extra) % 2)
     sharex = kwargs.get('sharex', False)
     f, axs = plt.subplots(n, m, figsize=(m*6, 2.2*n), sharex=sharex)
-    ref_val = kwargs.get('ref_val', None)
+    ref_val = kwargs.get('ref_val', [None for i in range(len(df))])
     for i, ft in enumerate(df.columns):
         axarr = az.plot_posterior(df[ft].values, ax=axs.flatten()[i], 
                                 ref_val=ref_val[i])
@@ -58,7 +57,8 @@ def plot_dist_fns_over_x(dfpdf, dfcdf, dfinvcdf, **kwargs):
     ax1 = sns.lineplot(x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1])
     _ = ax1.set_title(f"{l}CDF: match {is_close['c'] / n :.1%}")
     if not islog:
-        _ = ax1.set(ylim=(0, None))
+        ylimmin = ax1.get_ylim()[0]
+        _ = ax1.set(ylim=(min(0, ylimmin), None))
 
     dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
     ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])
