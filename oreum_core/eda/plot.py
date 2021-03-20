@@ -401,13 +401,11 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim'):
     pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
                     marker='d', markersize=10) 
     mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
-
-
-
-    dfboot = dfboot.copy()
-    dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
+    if dfboot[grp].dtypes != 'object':
+        dfboot = dfboot.copy()
+        dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
     gd = sns.catplot(x='lr', y=grp, data=dfboot, 
-                     kind='violin', cut=0, scale='width', width=0.6, palette='cubehelix_r',
+                     kind='violin', cut=0, scale='count', width=0.6, palette='cubehelix_r',
                      height=6, aspect=2)
 
     mn = dfboot.groupby(grp)['lr'].mean().tolist()
