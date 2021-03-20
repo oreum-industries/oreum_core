@@ -6,9 +6,39 @@ import pandas as pd
 import pymc3 as pm
 import theano.tensor as tt
 import theano
+from scipy import integrate
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
+
+
+def calc_roc_prec_rec(y, yhat):
+    f""" Calculate tpr (recall), fpr, precision for binary target, all samples
+        shapes y: (nsamples,), yhat: (nsamples, nobservations) 
+        use vectorised calcs
+    """
+
+    yhat_pct = np.percentile(yhat, np.arange(0, 101, 1), axis=0).T
+    y_mx = np.tile(y.reshape(-1, 1), 101)
+ 
+    # calc tp, fp, tn, fn vectorized
+    tp = np.nansum(np.where(yhat_pct == 1, y_mx, np.nan), axis=0)
+    fp = np.nansum(np.where(yhat_pct == 1, 1-y_mx, np.nan), axis=0)
+    tn = np.nansum(np.where(yhat_pct == 0, 1-y_mx, np.nan), axis=0)
+    fn = np.nansum(np.where(yhat_pct == 0, y_mx, np.nan), axis=0)
+    
+    # calc tpr (recall), fpr, precision etc
+    tpr = recall = tp / (tp + fn)
+    fpr = fp / (tn + fp)
+    precision = np.nan_to_num(tp / (tp + fp), nan=1)  # beware of divide by zero
+    
+    # summary stats
+    roc_auc = integrate.trapezoid(y=tpr, x=fpr)
+    prec_rec_auc = integrate.trapezoid(y=precision, x=recall)
+
+    return {'tpr': tpr, 'fpr': fpr, 'roc_auc': roc_auc,
+        'recall': recall, 'precision': precision, 'prec_rec_auc': prec_rec_auc}
+
 
     
 def calc_mse(y, yhat):
@@ -81,14 +111,14 @@ def calc_r2(y, yhat):
     
 def calc_ppc_coverage(y, yhat, crs=np.arange(0, 1.01, .1)):
     """ Calc the proportion of coverage from full yhat ppc 
-        shape (nsamples, nobservations)
+        shapes: y (nobservations), yhat (nsamples, nobservations)
     """
-    lower_bounds = np.percentile(yhat, 50 - (50 * crs), axis=0)
-    upper_bounds = np.percentile(yhat, 50 + (50 * crs), axis=0)
+    lower_bounds = np.percentile(yhat, 50. - (50. * crs), axis=0)
+    upper_bounds = np.percentile(yhat, 50. + (50. * crs), axis=0)
    
     coverage = []
     for i, cr in enumerate(crs):
-        coverage.append((cr, np.sum((y >= lower_bounds[i]) * (y <= upper_bounds[i])) / len(y)))
+        coverage.append((cr, np.sum(np.int64(y >= lower_bounds[i]) * np.int64(y <= upper_bounds[i])) / len(y)))
 
     return pd.DataFrame(coverage, columns=['cr', 'coverage'])
 
