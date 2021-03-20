@@ -15,6 +15,7 @@ from oreum_core.eda.plot import (
     plot_f_measure,
     plot_accuracy,
     plot_binary_performance,
+    plot_coverage,
     plot_rmse_range,
     plot_rmse_range_pair,
     plot_r2_range,

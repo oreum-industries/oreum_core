@@ -241,7 +241,7 @@ def plot_binary_performance(df):
     roc_auc = integrate.trapezoid(y=df['tpr'], x=df['fpr'])
     prec_rec_auc = integrate.trapezoid(y=df['precision'], x=df['recall'])
 
-    f, axs = plt.subplots(1, 4, figsize=(20, 6), sharex=False, sharey=True)
+    f, axs = plt.subplots(1, 4, figsize=(18, 5), sharex=False, sharey=True)
     _ = f.suptitle('Evaluations of Binary Classifier across PPC pct samples', y=1.0)
 
     _ = axs[0].plot(df['fpr'], df['tpr'], lw=2, marker='d', alpha=0.8,
@@ -273,6 +273,17 @@ def plot_binary_performance(df):
             f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct')
 
     f.tight_layout()
+    return None
+
+
+def plot_coverage(df):
+    """ Convenience plot coverage from mt.calc_ppc_coverage """
+
+    g = sns.lmplot(x='cr', y='coverage', data=df, fit_reg=False, height=5, 
+                   scatter_kws={'s':70})
+    _ = [g.axes[0][i].plot((0,1),(0,1),ls='--',color='#FFA555') for i in range(1)]
+
+    return None
 
 
 def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
@@ -282,7 +293,7 @@ def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
     min_rmse = rmse_pct.min()
     min_rmse_pct = rmse_pct.index[rmse_pct.argmin()]
 
-    f, axs = plt.subplots(1, 1, figsize=(10, 6))
+    f, axs = plt.subplots(1, 1, figsize=(10, 4))
     ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs)
     #     _ = ax.set_yscale('log')
     _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.2f}')
@@ -294,7 +305,7 @@ def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
 
 def plot_rmse_range_pair(rmse_t, rmse_pct_t, rmse_h, rmse_pct_h, lims=(0, 80), yhat_name=''):
     """ Convenience to plot two rmse pct results """
-    f, axs = plt.subplots(1, 2, figsize=(14, 6))
+    f, axs = plt.subplots(1, 2, figsize=(14, 4))
     t = ['train', 'holdout']
     _ = f.suptitle('RMSE ranges {yhat_name}', y=.97)
 
@@ -321,7 +332,7 @@ def plot_r2_range(r2, r2_pct, lims=(0, 80), yhat_name=''):
     max_r2 = r2_pct.max()
     max_r2_pct = r2_pct.index[r2_pct.argmax()]
     
-    f, axs = plt.subplots(1, 1, figsize=(10, 6))
+    f, axs = plt.subplots(1, 1, figsize=(10, 4))
     ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs)
     _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
     _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.2f}')
@@ -334,7 +345,7 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
     """ Convenience to plot two r2 pct results (t)raining vs (h)oldout
     """
 
-    f, axs = plt.subplots(1, 2, figsize=(14, 6))
+    f, axs = plt.subplots(1, 2, figsize=(14, 4))
     t = ['train', 'holdout']
     _ = f.suptitle('$R^{2}$ ranges', y=.97)
 
