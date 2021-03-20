@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from scipy import stats
+from scipy import stats, integrate
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
@@ -181,6 +181,100 @@ def plot_mincovdet(df, mcd, thresh=0.99):
     return None
 
 
+def plot_roc_precrec(df):
+    """ Plot ROC and PrecRec, also calc and return AUC
+        Pass perf df from calc.calc_binary_performance_measures
+    """
+
+    roc_auc = integrate.trapezoid(y=df['tpr'], x=df['fpr'])
+    prec_rec_auc = integrate.trapezoid(y=df['precision'], x=df['recall'])
+
+    f, axs = plt.subplots(1, 2, figsize=(11.5, 6), sharex=True, sharey=True)
+    _ = f.suptitle('ROC and Precision Recall Curves', y=1.0)
+
+    _ = axs[0].plot(df['fpr'], df['tpr'], lw=2, marker='d', alpha=0.8,
+                    label=f"ROC (auc={roc_auc:.2f})")
+    _ = axs[0].plot((0, 1), (0, 1), '--', c='#cccccc', label='line of equiv')
+    _ = axs[0].legend(loc='upper left')
+    _ = axs[0].set(title='ROC curve', xlabel='FPR', ylabel='TPR')
+    
+    _ = axs[1].plot(df['recall'], df['precision'], lw=2, marker='o', alpha=0.8,
+                    color='C3', label=f"PrecRec (auc={prec_rec_auc:.2f})")
+    _ = axs[1].legend(loc='upper right')
+    _ = axs[1].set(title='Precision Recall curve', xlabel='Recall', ylabel='Precision')
+
+    f.tight_layout()
+
+    return roc_auc, prec_rec_auc
+
+
+def plot_f_measure(df):
+    """ Plot F-measures (F0.5, F1, F2) at different percentiles """
+
+    f1_at = df['f1'].argmax()
+    dfm = df.reset_index()[['pct', 'f0.5', 'f1', 'f2']].melt(
+                id_vars='pct', var_name='f-measure', value_name='f-score')
+    f, axs = plt.subplots(1, 1, figsize=(6, 4))
+    ax = sns.lineplot(x='pct', y='f-score', hue='f-measure', data=dfm, palette='Greens', lw=2, ax=axs)
+    _ = ax.set_ylim(0, 1)
+    _ = f.suptitle('F-scores across the percentage range of PPC' + 
+            f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct', y=1.03)
+
+
+def plot_accuracy(df):
+    """ Plot accuracy at different percentiles """
+
+    acc_at = df['accuracy'].argmax()
+    f, axs = plt.subplots(1, 1, figsize=(6, 4))
+    ax = sns.lineplot(x='pct', y='accuracy', color='C1', data=df, lw=2, ax=axs)
+    _ = ax.set_ylim(0, 1)
+    _ = f.suptitle('Accuracy across the percentage range of PPC' + 
+            f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct', y=1.03)
+
+
+def plot_binary_performance(df):
+    """ Plot ROC, PrecRec, F-score, Accuracy
+        Pass perf df from calc.calc_binary_performance_measures
+        Return summary stats
+    """
+
+    roc_auc = integrate.trapezoid(y=df['tpr'], x=df['fpr'])
+    prec_rec_auc = integrate.trapezoid(y=df['precision'], x=df['recall'])
+
+    f, axs = plt.subplots(1, 4, figsize=(20, 6), sharex=False, sharey=True)
+    _ = f.suptitle('Evaluations of Binary Classifier across PPC pct samples', y=1.0)
+
+    _ = axs[0].plot(df['fpr'], df['tpr'], lw=2, marker='d', alpha=0.8,
+                    label=f"ROC (auc={roc_auc:.2f})")
+    _ = axs[0].plot((0, 1), (0, 1), '--', c='#cccccc', label='line of equiv')
+    _ = axs[0].legend(loc='upper left')
+    _ = axs[0].set(title='ROC curve', xlabel='FPR', ylabel='TPR')
+    
+    _ = axs[1].plot(df['recall'], df['precision'], lw=2, marker='o', alpha=0.8,
+                    color='C3', label=f"PrecRec (auc={prec_rec_auc:.2f})")
+    _ = axs[1].legend(loc='upper right')
+    _ = axs[1].set(title='Precision Recall curve', xlabel='Recall', ylabel='Precision')
+
+    f1_at = df['f1'].argmax()
+    dfm = df.reset_index()[['pct', 'f0.5', 'f1', 'f2']].melt(
+                id_vars='pct', var_name='f-measure', value_name='f-score')
+
+    _ = sns.lineplot(x='pct', y='f-score', hue='f-measure', data=dfm, 
+                        palette='Greens', lw=2, ax=axs[2])
+    _ = axs[2].set_ylim(0, 1)
+    _ = axs[2].legend(loc='upper left')
+    _ = axs[2].set(title='F-scores across the PPC pcts' +
+            f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct')
+
+    acc_at = df['accuracy'].argmax()
+    _ = sns.lineplot(x='pct', y='accuracy', color='C1', data=df, lw=2, ax=axs[3])
+    _ = axs[3].set_ylim(0, 1)
+    _ = axs[3].set(title='Accuracy across the PPC pcts' +
+            f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct')
+
+    f.tight_layout()
+
+
 def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
     """ Convenience to plot RMSE range with mins """
     dfp = rmse_pct.reset_index()
@@ -188,7 +282,7 @@ def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
     min_rmse = rmse_pct.min()
     min_rmse_pct = rmse_pct.index[rmse_pct.argmin()]
 
-    f, axs = plt.subplots(1, 1, figsize=(12, 6))
+    f, axs = plt.subplots(1, 1, figsize=(10, 6))
     ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs)
     #     _ = ax.set_yscale('log')
     _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.2f}')
@@ -227,7 +321,7 @@ def plot_r2_range(r2, r2_pct, lims=(0, 80), yhat_name=''):
     max_r2 = r2_pct.max()
     max_r2_pct = r2_pct.index[r2_pct.argmax()]
     
-    f, axs = plt.subplots(1, 1, figsize=(12, 6))
+    f, axs = plt.subplots(1, 1, figsize=(10, 6))
     ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs)
     _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
     _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.2f}')

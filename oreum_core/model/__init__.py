@@ -5,7 +5,7 @@ from oreum_core.model.azid_load import (
     create_azid
 )
 from oreum_core.model.calc import (
-    calc_roc_prec_rec,
+    calc_binary_performance_measures,
     calc_mse,
     calc_rmse,
     calc_r2,
