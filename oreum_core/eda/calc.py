@@ -5,6 +5,7 @@ import string
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from pandas.core.base import DataError
 import seaborn as sns
 from scipy import stats
 
@@ -103,3 +104,23 @@ def get_gini(r, n):
         g = A / (A+B)
     """
     return 1 - sum(r.sort_values().cumsum() * (2 / n))
+
+
+def bootstrap_lr(df, prm='premium', clm='claim', nboot=1000):
+    """ Calc vectorised bootstrap loss ratios for df
+        Pass a dataframe or group. fts named `'premium', 'claim'`
+        Accept nans in clm
+    """
+    # vectorise via numpy broadcasting random indexs to a larger shape
+    rng = np.random.default_rng(42)
+    sample_idx = rng.integers(0, len(df), size=(len(df), nboot))
+    premium_amt_boot = df[prm].values[sample_idx]
+    claim_amt_boot = np.nan_to_num(df[clm], 0)[sample_idx]
+    
+    dfboot = pd.DataFrame({
+                'premium_sum': premium_amt_boot.sum(axis=0),
+                'claim_sum': claim_amt_boot.sum(axis=0)})
+
+    dfboot['lr'] = dfboot['claim_sum'] / dfboot['premium_sum']
+    
+    return dfboot   

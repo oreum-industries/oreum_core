@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+from matplotlib.lines import Line2D
 from scipy import stats, integrate
 
 RANDOM_SEED = 42
@@ -362,3 +363,64 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
         _ = ax.legend()
         _ = ax.set_title(t[i])
     _ = f.tight_layout()
+
+
+def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct'):
+    """ Plot bootstrapped loss ratio, no grouping """
+    
+    mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10,8), 
+                    textcoords='offset points', fontsize=8, backgroundcolor='w')
+    pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
+                    marker='d', markersize=10) 
+    mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+    
+    mn = dfboot[['lr']].mean().tolist()                          # boot mean
+    pest_mn = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]  # point est mean
+
+    gd = sns.catplot(x='lr', data=dfboot, kind='violin', cut=0, height=2, aspect=6)
+    _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+
+    elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
+             Line2D([0],[0], label='sample', **pest_mn_kws)]
+    gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
+    
+    title = f'Empirical PDF of Bootstrapped LR vs Point Est LR for Portfolio'
+    _ = gd.fig.suptitle((f'{title}' + f'\n({len(df)} policies, ' + 
+        f"\\${df['prem_total'].sum()/1e6:.1f}M premium, " + 
+        f"{df['claim_ct'].sum():.0f} claims totalling \\${df['total_incurred_sum'].sum()/1e6:.1f}M)" + 
+        f'\nEstimated population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=1.3)
+    
+
+def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim'):
+    """ Plot bootstrapped loss ratio, grouped by grp """
+
+    mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
+                    textcoords='offset points', fontsize=8, backgroundcolor='w')
+    pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
+                    marker='d', markersize=10) 
+    mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+
+
+
+    dfboot = dfboot.copy()
+    dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
+    gd = sns.catplot(x='lr', y=grp, data=dfboot, 
+                     kind='violin', cut=0, scale='width', width=0.6, palette='cubehelix_r',
+                     height=6, aspect=2)
+
+    mn = dfboot.groupby(grp)['lr'].mean().tolist()
+    pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
+    
+    _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+
+    elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
+             Line2D([0],[0], label='sample', **pest_mn_kws)]
+    gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
+    
+    title = (f'Empirical PDFs of Bootstrapped LR vs Point Est LR for Portfolio' + 
+            f'\nGrouped by {grp}')
+    _ = gd.fig.suptitle(f'{title}', y=1.05)

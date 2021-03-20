@@ -20,8 +20,11 @@ from oreum_core.eda.plot import (
     plot_rmse_range_pair,
     plot_r2_range,
     plot_r2_range_pair,
+    plot_bootstrap_lr,
+    plot_bootstrap_lr_grp,
     )
 from oreum_core.eda.calc import (
     fit_and_plot_fn,
-    get_gini
+    get_gini,
+    bootstrap_lr,
     )
