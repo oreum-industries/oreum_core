@@ -365,7 +365,8 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
     _ = f.tight_layout()
 
 
-def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct'):
+def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
+                      title_add=''):
     """ Plot bootstrapped loss ratio, no grouping """
     
     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10,8), 
@@ -386,14 +387,19 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct')
              Line2D([0],[0], label='sample', **pest_mn_kws)]
     gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
     
+    ypos = 1.34
+    if title_add != '':
+        ypos = 1.4
+        title_add = f'\n{title_add}'
+
     title = f'Empirical PDF of Bootstrapped LR vs Point Est LR for Portfolio'
-    _ = gd.fig.suptitle((f'{title}' + f'\n({len(df)} policies, ' + 
-        f"\\${df['prem_total'].sum()/1e6:.1f}M premium, " + 
-        f"{df['claim_ct'].sum():.0f} claims totalling \\${df['total_incurred_sum'].sum()/1e6:.1f}M)" + 
-        f'\nEstimated population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=1.3)
+    _ = gd.fig.suptitle((f'{title}{title_add}' + f'\n({len(df)} policies, ' + 
+        f"\\${df[prm].sum()/1e6:.1f}M premium, " + 
+        f"{df[clm_ct].sum():.0f} claims totalling \\${df[clm].sum()/1e6:.1f}M)" + 
+        f'\nEst. population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=ypos)
     
 
-def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim'):
+def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim', title_add=''):
     """ Plot bootstrapped loss ratio, grouped by grp """
 
     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
@@ -419,6 +425,11 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim'):
              Line2D([0],[0], label='sample', **pest_mn_kws)]
     gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
     
+    ypos = 1.05
+    if title_add != '':
+        ypos = 1.08
+        title_add = f'\n{title_add}'
+
     title = (f'Empirical PDFs of Bootstrapped LR vs Point Est LR for Portfolio' + 
-            f'\nGrouped by {grp}')
-    _ = gd.fig.suptitle(f'{title}', y=1.05)
+            f' - grouped by {grp}')
+    _ = gd.fig.suptitle(f'{title}{title_add}', y=ypos)
