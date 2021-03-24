@@ -277,12 +277,19 @@ def plot_binary_performance(df):
     return None
 
 
-def plot_coverage(df):
+def plot_coverage(df, title_add=''):
     """ Convenience plot coverage from mt.calc_ppc_coverage """
+
+    auc = integrate.trapezoid(y=df['coverage'], x=df['cr'])
 
     g = sns.lmplot(x='cr', y='coverage', data=df, fit_reg=False, height=5, 
                    scatter_kws={'s':70})
     _ = [g.axes[0][i].plot((0,1),(0,1),ls='--',color='#FFA555') for i in range(1)]
+
+    if title_add != '':
+        title_add = f': {title_add}'
+    g.fig.suptitle((f'PPC Coverage vs CR{title_add}' + 
+                    f'\nAUC={auc:.2f}'), y=1.05)
 
     return None
 

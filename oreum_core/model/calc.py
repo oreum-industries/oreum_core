@@ -116,7 +116,7 @@ def calc_r2(y, yhat):
     return r2_mean, r2_pct 
 
     
-def calc_ppc_coverage(y, yhat, crs=np.arange(0, 1.01, .1)):
+def calc_ppc_coverage(y, yhat, crs=np.arange(0, 1.01, .05)):
     """ Calc the proportion of coverage from full yhat ppc 
         shapes: y (nobservations), yhat (nsamples, nobservations)
     """
