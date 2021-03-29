@@ -384,9 +384,9 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
 
 def plot_ppc_vs_observed(y, yhat):
     """ Plot (quantile summaries of) yhat_ppc vs y """
-    pcts = [3, 10, 25, 40, 50, 60, 75, 90, 97]
-    df_yhat_qs = pd.DataFrame(np.percentile(yhat, pcts, axis=1).T, 
-                                  columns=[f'p{p}' for p in pcts])
+    ps = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 97]
+    df_yhat_qs = pd.DataFrame(np.percentile(yhat, ps, axis=1).T, 
+                                  columns=[f'q{p/100}' for p in ps])
     
     f, axs = plt.subplots(1, 1, figsize=(14, 5), sharey=True, sharex=True)
     _ = sns.kdeplot(y, cumulative=True, lw=2, c='g', ax=axs,
@@ -394,13 +394,13 @@ def plot_ppc_vs_observed(y, yhat):
 
     if (df_yhat_qs.duplicated().sum() == len(df_yhat_qs) - 1):
         # all dupes: model was intercept only
-        dfm = df_yhat_qs.iloc[:1].melt(var_name='ppc_pct')
-        _ = sns.rugplot(x='value', hue='ppc_pct', data=dfm, 
+        dfm = df_yhat_qs.iloc[:1].melt(var_name='ppc_q')
+        _ = sns.rugplot(x='value', hue='ppc_q', data=dfm, 
                 palette='coolwarm', lw=2, ls='-', height=1, 
                 ax=axs, zorder=-1)
     else:
-        dfm = df_yhat_qs.melt(var_name='ppc_pct')
-        _ = sns.kdeplot(x='value', hue='ppc_pct', data=dfm, 
+        dfm = df_yhat_qs.melt(var_name='ppc_q')
+        _ = sns.kdeplot(x='value', hue='ppc_q', data=dfm, 
                 cumulative=True, palette='coolwarm', lw=2, ls='-', 
                 ax=axs, zorder=-1, common_norm=False, common_grid=True)
 
