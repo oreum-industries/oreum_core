@@ -20,6 +20,7 @@ from oreum_core.eda.plot import (
     plot_rmse_range_pair,
     plot_r2_range,
     plot_r2_range_pair,
+    plot_ppc_vs_observed,
     plot_bootstrap_lr,
     plot_bootstrap_lr_grp,
     )

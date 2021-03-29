@@ -19,6 +19,9 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
     # see https://stackoverflow.com/a/37616966 
     """
 
+    if tail_kind not in set(['right', 'both']):
+        raise ValueError("tail_kind must be in {'right', 'both'}")
+
     import warnings
     # warnings.filterwarnings("error") # handle RuntimeWarning as error so can catch
     # warnings.simplefilter(action='ignore', category='RuntimeWarning')
@@ -26,27 +29,27 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
     dists_discrete = {'poisson': stats.poisson}
 
     dists_cont_right_tail = {'expon': stats.expon,
-                            'invgamma':stats.invgamma, 
                             'gamma':stats.gamma, 
-                            'lognorm': stats.lognorm,
-                            'invgauss': stats.invgauss,
+                            'invgamma':stats.invgamma, 
+                            # 'invgauss': stats.invgauss,
                             'halfnorm': stats.halfnorm,
                             'halfcauchy': stats.halfcauchy,
+                            'lognorm': stats.lognorm,
                             'gumbel': stats.gumbel_r,
                             'invweibull': stats.invweibull}
     # NOTE: not quite true since gumbel and invweibull can go neg
 
     dists_cont_centered = {'norm': stats.norm,
-                            'cauchy': stats.cauchy}
+                           'cauchy': stats.cauchy}
    
-    if tail_kind not in set(['right', 'both']):
-        raise ValueError("tail_kind must be in {'right', 'both'}")
-
     obs_is_discrete = sum(obs == (obs // 1)) == len(obs)
-    nbins = 100
+    nbins = 50
     dist_kind = 'Continuous'
     params = {}
-    f, ax1d = plt.subplots(1, 1, figsize=(16, 5))
+    f, ax1d = plt.subplots(1, 1, figsize=(15, 6))
+    hist_kws = dict(kde=False, label='data', ax=ax1d, alpha=0.5,
+                    color='#aaaaaa', zorder=-1)
+    line_kws = dict(lw=2, ls='--', ax=ax1d)
     
     if obs_is_discrete:
         dist_kind = 'Discrete'
@@ -56,7 +59,7 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
         bin_centers_int = np.round(bin_centers)
         dists = dists_discrete
 
-        ax0 = sns.histplot(x=obs, bins=nbins, stat='count', kde=False, label='data', ax=ax1d)
+        ax0 = sns.histplot(x=obs, bins=nbins, stat='count', **hist_kws)
 
         # TODO fix this hack: only works for poisson right now
         for i, (d, dist) in enumerate(dists.items()):
@@ -67,7 +70,8 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
             # rmse not necessarily good for discrete count models
             # https://stats.stackexchange.com/questions/48811/cost-function-for-validating-poisson-regression-models
             rmse = np.sqrt(np.sum(np.power(obs_count - pmf, 2.0)) / len(obs))
-            ax1 = sns.lineplot(x=bin_centers_int, y=pmf, label=f'{d}: {rmse:.2g}', lw=1, ax=ax1d)
+            ax1 = sns.lineplot(x=bin_centers_int, y=pmf, 
+                               label=f'{d}: {rmse:.2g}', **line_kws)
 
     else:
         obs_density, bin_edges = np.histogram(obs, bins=nbins, density=True)
@@ -78,12 +82,12 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
         elif tail_kind == 'right':
             dists = dists_cont_right_tail
      
-        ax0 = sns.histplot(x=obs, bins=nbins, stat='density', kde=False, label='data', ax=ax1d)
+        ax0 = sns.histplot(x=obs, bins=nbins, stat='density', **hist_kws)
 
         for i, (d, dist) in enumerate(dists.items()):
             with warnings.catch_warnings():
                 warnings.simplefilter(action='ignore')
-                ps = dist.fit(obs, floc=0)   # can throw RuntimeWarnings which we will ignore
+                ps = dist.fit(obs, floc=0)   # can throw RuntimeWarnings which we ignore
             shape, loc, scale = ps[:-2], ps[-2], ps[-1]
             params[d] = dict(shape=shape, loc=loc, scale=scale)
             pdf = dist.pdf(bin_centers, loc=loc, scale=scale, *shape)
@@ -91,10 +95,11 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
             # rmse not necessarily good for discrete count models
             # https://stats.stackexchange.com/questions/48811/cost-function-for-validating-poisson-regression-models
             rmse = np.sqrt(np.sum(np.power(obs_density - pdf, 2.0)) / len(obs))
-            ax1 = sns.lineplot(x=bin_centers, y=pdf, label=f'{d}: {rmse:.2g}', lw=1, ax=ax1d)
+            ax1 = sns.lineplot(x=bin_centers, y=pdf, 
+                               label=f'{d}: {rmse:.2g}', **line_kws)
 
     title = (f'{dist_kind} function approximations to `{title_insert}`')
-    _ = f.suptitle(title, y=1)
+    _ = f.suptitle(title, y=0.97)
     _ = f.axes[0].legend(title='dist: RMSE', title_fontsize=10)
     return f, params
 

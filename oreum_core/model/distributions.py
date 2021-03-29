@@ -237,7 +237,7 @@ class InverseWeibull(PositiveContinuous):
     The pdf of this distribution is
     .. math::
        f(x \mid \alpha, s, m) =
-           \frac{\alpha }{s}}\;\left({\frac  {x-m}{s}}\right)^{{-1-\alpha }}\;e^{{-({\frac  {x-m}{s}})^{{-\alpha }}}
+           \frac{\alpha }{s}} \; \left({\frac{x-m}{s}}\right)^{{-1-\alpha }}\;e^{{-({\frac{x-m}{s}})^{{-\alpha }}}
     .. plot::
         import matplotlib.pyplot as plt
         import numpy as np
@@ -256,7 +256,7 @@ class InverseWeibull(PositiveContinuous):
     ========  ======================================================
     Support   :math:`x \in (-\infty, \infty)`
     Mean      :math:`{\begin{cases}\ m+s\Gamma \left(1-{\frac  {1}{\alpha }}\right)&{\text{for }}\alpha >1\\\ \infty &{\text{otherwise}}\end{cases}}`
-    Variance  :math:`{\begin{cases}\ s^{2}\left(\Gamma \left(1-{\frac  {2}{\alpha }}\right)-\left(\Gamma \left(1-{\frac  {1}{\alpha }}\right)\right)^{2}\right)&{\text{for }}\alpha >2\\\ \infty &{\text{otherwise}}\end{cases}}`
+    Variance  :math:`{\begin{cases}\ s^{2}\left(\Gamma \left(1-{\frac  {2}{\alpha }}\right)-\left(\Gamma \left(1-{\frac{1}{\alpha }}\right)\right)^{2}\right)&{\text{for }}\alpha >2\\\ \infty &{\text{otherwise}}\end{cases}}`
 
     ========  ======================================================
     Parameters
@@ -274,8 +274,6 @@ class InverseWeibull(PositiveContinuous):
 
         self.alpha = alpha = tt.as_tensor_variable(floatX(alpha))
         self.s = s = tt.as_tensor_variable(floatX(s))
-
-        # self.mode = s * tt.power(alpha / (floatX(1.) + alpha), floatX(1.) / alpha)
         self.mode = s * tt.power(alpha / (1. + alpha), 1. / alpha)
         
         assert_negative_support(alpha, "alpha", "InverseWeibull")

@@ -116,18 +116,32 @@ def calc_r2(y, yhat):
     return r2_mean, r2_pct 
 
     
-def calc_ppc_coverage(y, yhat, crs=np.arange(0, 1.01, .05)):
+def calc_ppc_coverage(y, yhat):
     """ Calc the proportion of coverage from full yhat ppc 
         shapes: y (nobservations), yhat (nsamples, nobservations)
     """
-    lower_bounds = np.percentile(yhat, 50. - (50. * crs), axis=0)
-    upper_bounds = np.percentile(yhat, 50. + (50. * crs), axis=0)
-   
-    coverage = []
-    for i, cr in enumerate(crs):
-        coverage.append((cr, np.sum(np.int64(y >= lower_bounds[i]) * np.int64(y <= upper_bounds[i])) / len(y)))
+    
+    crs=np.arange(0, 1.01, .02)
+    bounds = dict(
+            pin_left=dict(
+                lower=np.tile(np.percentile(yhat, 0., axis=0), reps=(len(crs), 1)),
+                upper=np.percentile(yhat, 100. * crs, axis=0)),
+            middle_out=dict(
+                lower=np.percentile(yhat, 50. - (50. * crs), axis=0),
+                upper=np.percentile(yhat, 50. + (50. * crs), axis=0)),
+            # pin_right=dict(       ##just a rotation of pin_left
+            #     lower=np.percentile(yhat, 100. - (100 * crs), axis=0),
+            #     upper=np.tile(np.percentile(yhat, 100., axis=0), reps=(len(crs), 1)))
+            )
+    
+    cov = []
+    y = y.values
+    for k, v in bounds.items():
+        for i, cr in enumerate(crs):
+            cov.append((k, cr, np.sum(np.int64(y >= v['lower'][i]) * 
+                                      np.int64(y <= v['upper'][i])) / len(y)))
 
-    return pd.DataFrame(coverage, columns=['cr', 'coverage'])
+    return pd.DataFrame(cov, columns=['method', 'cr', 'coverage'])
 
 
 # TODO fix this at source

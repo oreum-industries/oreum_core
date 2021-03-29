@@ -122,6 +122,7 @@ class BasePYMC3Model():
             self._trace = pm.sample(init=init, random_seed=random_seed,
                             tune=tune, draws=draws, chains=chains, cores=cores,
                             target_accept=target_accept, 
+                            #step=self.steppers,
                             return_inferencedata=False, **kwargs)
                             # TODO consider return_inferencedata=True
         return None 

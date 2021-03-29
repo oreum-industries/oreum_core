@@ -280,16 +280,26 @@ def plot_binary_performance(df):
 def plot_coverage(df, title_add=''):
     """ Convenience plot coverage from mt.calc_ppc_coverage """
 
-    auc = integrate.trapezoid(y=df['coverage'], x=df['cr'])
+    txt_kws = dict(color='#333333', xycoords='data', xytext=(2,-4), 
+                textcoords='offset points', fontsize=11, backgroundcolor='w')
 
-    g = sns.lmplot(x='cr', y='coverage', data=df, fit_reg=False, height=5, 
-                   scatter_kws={'s':70})
-    _ = [g.axes[0][i].plot((0,1),(0,1),ls='--',color='#FFA555') for i in range(1)]
+    g = sns.lmplot(x='cr', y='coverage', col='method', hue='method', data=df, 
+                   fit_reg=False, height=5, scatter_kws={'s':70})
+    
+    for i, method in enumerate(df['method'].unique()):
+        idx = df['method'] == method
+        y = df.loc[idx, 'coverage'].values
+        x = df.loc[idx, 'cr'].values
+        ae = np.abs(y - x)
+        auc = integrate.trapezoid(ae, x)
+
+        g.axes[0][i].plot((0,1), (0,1), ls='--', color='#aaaaaa', zorder=-1)
+        g.axes[0][i].fill_between(x, y, x, color='#bbbbbb', alpha=0.8, zorder=-1)
+        g.axes[0][i].annotate(f'AUC={auc:.3f}', xy=(0, 1), **txt_kws)
 
     if title_add != '':
         title_add = f': {title_add}'
-    g.fig.suptitle((f'PPC Coverage vs CR{title_add}' + 
-                    f'\nAUC={auc:.2f}'), y=1.05)
+    g.fig.suptitle((f'PPC Coverage vs CR{title_add}' ), y=1.05)
 
     return None
 
@@ -370,6 +380,32 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
         _ = ax.legend()
         _ = ax.set_title(t[i])
     _ = f.tight_layout()
+
+
+def plot_ppc_vs_observed(y, yhat):
+    """ Plot (quantile summaries of) yhat_ppc vs y """
+    pcts = [3, 10, 25, 40, 50, 60, 75, 90, 97]
+    df_yhat_qs = pd.DataFrame(np.percentile(yhat, pcts, axis=1).T, 
+                                  columns=[f'p{p}' for p in pcts])
+    
+    f, axs = plt.subplots(1, 1, figsize=(14, 5), sharey=True, sharex=True)
+    _ = sns.kdeplot(y, cumulative=True, lw=2, c='g', ax=axs,
+            common_norm=False, common_grid=True)
+
+    if (df_yhat_qs.duplicated().sum() == len(df_yhat_qs) - 1):
+        # all dupes: model was intercept only
+        dfm = df_yhat_qs.iloc[:1].melt(var_name='ppc_pct')
+        _ = sns.rugplot(x='value', hue='ppc_pct', data=dfm, 
+                palette='coolwarm', lw=2, ls='-', height=1, 
+                ax=axs, zorder=-1)
+    else:
+        dfm = df_yhat_qs.melt(var_name='ppc_pct')
+        _ = sns.kdeplot(x='value', hue='ppc_pct', data=dfm, 
+                cumulative=True, palette='coolwarm', lw=2, ls='-', 
+                ax=axs, zorder=-1, common_norm=False, common_grid=True)
+
+    _ = axs.set(xlim=(0, np.ceil(y.max())), ylim=(0, 1))
+
 
 
 def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
