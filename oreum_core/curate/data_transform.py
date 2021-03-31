@@ -216,8 +216,8 @@ class DatasetReshaper():
 
 
 class Transformer():
-    """ Model-agnostic transformer from row-wise natural observations into
-        dmatrix according to patsy formula or patsy design_info object
+    """ Model-agnostic patsy transformer from row-wise natural observations 
+        into dmatrix according to patsy formula or patsy design_info object
         NOTES: 
             + design_info is stateful
             + it's reasonable to initialise this per-observation but far more 
@@ -230,7 +230,7 @@ class Transformer():
         self.rx_get_f_components = re.compile(r'(F\(([a-z_]+?)\))')
         self.fts_fact_mapping = {}
 
-    def fit_transform(self, fml, df: pd.DataFrame):
+    def fit_transform(self, fml, df: pd.DataFrame, propagate_nans=False):
         """ Fit a new design_info attribute for this instance according to 
             `fml` acting upon `df`. Return the transformed dmatrix (np.array)
             Use this for a new training set or to initialise the transfomer
@@ -255,12 +255,16 @@ class Transformer():
                 self.fts_fact_mapping[ft_fact[1]] = map_fact_to_int
                 df[ft_fact[1]] = df[ft_fact[1]].map(map_fact_to_int).astype(np.int)
                 
-                # replace F() in fml so that patsy can work as normal with out new int ft
+                # replace F() in fml so that patsy can work as normal with our new int ft
                 fml = self.rx_get_f_components.sub(ft_fact[1], fml)
         
         # TODO add option to output matrix   # np.asarray(mx_ex)
         # TODO add check for fml contains `~` and handle accordingly
-        df_ex = pt.dmatrix(fml, df, NA_action='raise', return_type='dataframe')
+        na_action = 'raise'
+        if propagate_nans:
+             na_action = pt.NAAction(NA_types=[])  # do nothing, see https://stackoverflow.com/a/51641183/1165112
+
+        df_ex = pt.dmatrix(fml, df, NA_action=na_action, return_type='dataframe')
         self.design_info = df_ex.design_info
 
         #force patsy transform of an index feature back to int! there might be a better way to do this
@@ -270,7 +274,7 @@ class Transformer():
         
         return df_ex 
 
-    def transform(self, df: pd.DataFrame):
+    def transform(self, df: pd.DataFrame, propagate_nans=False):
         """ Transform input `df` to dmatrix according to pre-fitted 
             `design_info`. Return transformed dmatrix (np.array)
 
@@ -294,7 +298,11 @@ class Transformer():
         # mx_ex = pt.dmatrix(self.design_info, df, NA_action='raise', return_type='matrix')
         # return np.asarray(mx_ex)
 
-        df_ex = pt.dmatrix(self.design_info, df, NA_action='raise', return_type='dataframe')
+        na_action = 'raise'
+        if propagate_nans:
+             na_action = pt.NAAction(NA_types=[])  # do nothing, see https://stackoverflow.com/a/51641183/1165112
+
+        df_ex = pt.dmatrix(self.design_info, df, NA_action=na_action, return_type='dataframe')
         self.design_info = df_ex.design_info
 
         #force patsy transform of an index feature back to int! there might be a better way to do this

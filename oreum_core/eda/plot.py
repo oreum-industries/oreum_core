@@ -84,7 +84,7 @@ def plot_int_dist(df, fts, log=False, vsize=1.8):
     f.tight_layout(pad=0.8)
 
 
-def plot_float_dist(df, fts, log=False):
+def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
     """ Plot distributions for floats, annotate count of nans and zeros """
 
     def _annotate_facets(data, **kwargs):
@@ -102,11 +102,13 @@ def plot_float_dist(df, fts, log=False):
     
     if len(fts) == 0:
         return None
-
-    dfm = df[sorted(fts)].melt()
+    if sort:
+        dfm = df[sorted(fts)].melt()
+    else:
+        dfm = df[fts].melt()
     g = sns.FacetGrid(row='variable', hue='variable', palette=sns.color_palette(),
-                      data=dfm, height=1.8, aspect=6, sharex=False)
-    _ = g.map(sns.violinplot, 'value', order='variable', cut=0)
+                      data=dfm, height=1.6, aspect=6, sharex=sharex)
+    _ = g.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
     _ = g.map(sns.pointplot, 'value', order='variable', color='C3', 
                 estimator=np.mean, ci=94)
                 # https://stackoverflow.com/q/33486613/1165112
@@ -453,13 +455,14 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim', tit
     if dfboot[grp].dtypes != 'object':
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
-    gd = sns.catplot(x='lr', y=grp, data=dfboot, 
-                     kind='violin', cut=0, scale='count', width=0.6, palette='cubehelix_r',
-                     height=6, aspect=2)
 
     mn = dfboot.groupby(grp)['lr'].mean().tolist()
     pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
-    
+
+    gd = sns.catplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
+                     scale='count', width=0.6, palette='cubehelix_r', 
+                     height=2+(len(mn)*.5), aspect=2+(len(mn)*0.25))
+   
     _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
     _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
     _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]

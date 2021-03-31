@@ -334,8 +334,17 @@ class InverseWeibull(PositiveContinuous):
         """InverseWeibull CDF"""
         alpha = self.alpha
         s = self.s
-        fn = tt.exp(-tt.power(value/s, -alpha))
+        fn = tt.exp(-tt.power(value / s, -alpha))
         return boundzero_theano(fn, alpha > 0, s > 0, value > 0)
+
+    def logcdf(self, value):
+        """InverseWeibull log CDF
+            ref: ? manually calced and confirmed vs scipy
+        """
+        alpha = self.alpha
+        s = self.s
+        fn = -tt.power(value / s, -alpha)
+        return bound(fn, alpha > 0, s > 0, value > 0)
 
     def invcdf(self, value):
         """InverseWeibull Inverse CDF aka PPF"""
@@ -345,6 +354,17 @@ class InverseWeibull(PositiveContinuous):
                                1-CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS) 
         fn = s * tt.power(-tt.log(value), -1. / alpha)
         return boundzero_theano(fn, alpha > 0, s > 0, value >= 0, value <= 1)
+
+    def loginvcdf(self, value):
+        """InverseWeibull log Inverse CDF aka log PPF
+            ref: ? manually calced and confirmed vs scipy
+        """
+        alpha = self.alpha
+        s = self.s
+        fn = tt.log(s) - (1./ alpha ) * tt.log(-tt.log(value))
+        return bound(fn, alpha > 0, s > 0, value >= 0, value <= 1)
+
+        
 
 
 class InverseWeibullNumpy():
@@ -1042,6 +1062,17 @@ class Normal(pm.Normal):
         value = tt.clip(value, CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS, 1-CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS) 
         fn = mu - sigma * tt.sqrt(2.) * tt.erfcinv(2. * value)
         return boundzero_theano(fn , value>=0., value<=1.)
+
+    def loginvcdf(self, value):
+        """Normal log Inverse CDF aka log PPF
+            ref: ?
+        """
+        mu = self.mu
+        sigma = self.sigma
+        fn = np.log(mu - sigma * tt.sqrt(2.) * tt.erfcinv(2. * value))
+        # fn = np.log(mu - sigma * np.sqrt(2.) * special.erfcinv(2 * u))
+        return bound(fn , value>=0., value<=1.)
+
 
     
 class NormalNumpy():
