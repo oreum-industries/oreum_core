@@ -84,7 +84,7 @@ def plot_int_dist(df, fts, log=False, vsize=1.8):
     f.tight_layout(pad=0.8)
 
 
-def plot_float_dist(df, fts, log=False):
+def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
     """ Plot distributions for floats, annotate count of nans and zeros """
 
     def _annotate_facets(data, **kwargs):
@@ -102,11 +102,13 @@ def plot_float_dist(df, fts, log=False):
     
     if len(fts) == 0:
         return None
-
-    dfm = df[sorted(fts)].melt()
+    if sort:
+        dfm = df[sorted(fts)].melt()
+    else:
+        dfm = df[fts].melt()
     g = sns.FacetGrid(row='variable', hue='variable', palette=sns.color_palette(),
-                      data=dfm, height=1.8, aspect=6, sharex=False)
-    _ = g.map(sns.violinplot, 'value', order='variable', cut=0)
+                      data=dfm, height=1.6, aspect=6, sharex=sharex)
+    _ = g.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
     _ = g.map(sns.pointplot, 'value', order='variable', color='C3', 
                 estimator=np.mean, ci=94)
                 # https://stackoverflow.com/q/33486613/1165112
@@ -277,12 +279,29 @@ def plot_binary_performance(df):
     return None
 
 
-def plot_coverage(df):
+def plot_coverage(df, title_add=''):
     """ Convenience plot coverage from mt.calc_ppc_coverage """
 
-    g = sns.lmplot(x='cr', y='coverage', data=df, fit_reg=False, height=5, 
-                   scatter_kws={'s':70})
-    _ = [g.axes[0][i].plot((0,1),(0,1),ls='--',color='#FFA555') for i in range(1)]
+    txt_kws = dict(color='#333333', xycoords='data', xytext=(2,-4), 
+                textcoords='offset points', fontsize=11, backgroundcolor='w')
+
+    g = sns.lmplot(x='cr', y='coverage', col='method', hue='method', data=df, 
+                   fit_reg=False, height=5, scatter_kws={'s':70})
+    
+    for i, method in enumerate(df['method'].unique()):
+        idx = df['method'] == method
+        y = df.loc[idx, 'coverage'].values
+        x = df.loc[idx, 'cr'].values
+        ae = np.abs(y - x)
+        auc = integrate.trapezoid(ae, x)
+
+        g.axes[0][i].plot((0,1), (0,1), ls='--', color='#aaaaaa', zorder=-1)
+        g.axes[0][i].fill_between(x, y, x, color='#bbbbbb', alpha=0.8, zorder=-1)
+        g.axes[0][i].annotate(f'AUC={auc:.3f}', xy=(0, 1), **txt_kws)
+
+    if title_add != '':
+        title_add = f': {title_add}'
+    g.fig.suptitle((f'PPC Coverage vs CR{title_add}' ), y=1.05)
 
     return None
 
@@ -365,7 +384,34 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
     _ = f.tight_layout()
 
 
-def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct'):
+def plot_ppc_vs_observed(y, yhat):
+    """ Plot (quantile summaries of) yhat_ppc vs y """
+    ps = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 97]
+    df_yhat_qs = pd.DataFrame(np.percentile(yhat, ps, axis=1).T, 
+                                  columns=[f'q{p/100}' for p in ps])
+    
+    f, axs = plt.subplots(1, 1, figsize=(14, 5), sharey=True, sharex=True)
+    _ = sns.kdeplot(y, cumulative=True, lw=2, c='g', ax=axs,
+            common_norm=False, common_grid=True)
+
+    if (df_yhat_qs.duplicated().sum() == len(df_yhat_qs) - 1):
+        # all dupes: model was intercept only
+        dfm = df_yhat_qs.iloc[:1].melt(var_name='ppc_q')
+        _ = sns.rugplot(x='value', hue='ppc_q', data=dfm, 
+                palette='coolwarm', lw=2, ls='-', height=1, 
+                ax=axs, zorder=-1)
+    else:
+        dfm = df_yhat_qs.melt(var_name='ppc_q')
+        _ = sns.kdeplot(x='value', hue='ppc_q', data=dfm, 
+                cumulative=True, palette='coolwarm', lw=2, ls='-', 
+                ax=axs, zorder=-1, common_norm=False, common_grid=True)
+
+    _ = axs.set(xlim=(0, np.ceil(y.max())), ylim=(0, 1))
+
+
+
+def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
+                      title_add=''):
     """ Plot bootstrapped loss ratio, no grouping """
     
     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10,8), 
@@ -386,14 +432,19 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct')
              Line2D([0],[0], label='sample', **pest_mn_kws)]
     gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
     
-    title = f'Empirical PDF of Bootstrapped LR vs Point Est LR for Portfolio'
-    _ = gd.fig.suptitle((f'{title}' + f'\n({len(df)} policies, ' + 
-        f"\\${df['prem_total'].sum()/1e6:.1f}M premium, " + 
-        f"{df['claim_ct'].sum():.0f} claims totalling \\${df['total_incurred_sum'].sum()/1e6:.1f}M)" + 
-        f'\nEstimated population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=1.3)
+    ypos = 1.34
+    if title_add != '':
+        ypos = 1.4
+        title_add = f'\n{title_add}'
+
+    title = f'Overall Loss Ratio (Population Estimate via Bootstrapping)'
+    _ = gd.fig.suptitle((f'{title}{title_add}' + f'\n{len(df)} policies, ' + 
+        f"\\${df[prm].sum()/1e6:.1f}M premium, " + 
+        f"{df[clm_ct].sum():.0f} claims totalling \\${df[clm].sum()/1e6:.1f}M" + 
+        f'\nEst. population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=ypos)
     
 
-def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim'):
+def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim', title_add=''):
     """ Plot bootstrapped loss ratio, grouped by grp """
 
     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
@@ -404,13 +455,14 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim'):
     if dfboot[grp].dtypes != 'object':
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
-    gd = sns.catplot(x='lr', y=grp, data=dfboot, 
-                     kind='violin', cut=0, scale='count', width=0.6, palette='cubehelix_r',
-                     height=6, aspect=2)
 
     mn = dfboot.groupby(grp)['lr'].mean().tolist()
     pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
-    
+
+    gd = sns.catplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
+                     scale='count', width=0.6, palette='cubehelix_r', 
+                     height=2+(len(mn)*.5), aspect=2+(len(mn)*0.05))
+   
     _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
     _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
     _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
@@ -419,6 +471,11 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim'):
              Line2D([0],[0], label='sample', **pest_mn_kws)]
     gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
     
-    title = (f'Empirical PDFs of Bootstrapped LR vs Point Est LR for Portfolio' + 
-            f'\nGrouped by {grp}')
-    _ = gd.fig.suptitle(f'{title}', y=1.05)
+    ypos = 1.05
+    if title_add != '':
+        ypos = 1.08
+        title_add = f'\n{title_add}'
+
+    title = (f'Gropued Loss Ratios (Population Estimates via Bootstrapping)' + 
+            f' - grouped by {grp}')
+    _ = gd.fig.suptitle(f'{title}{title_add}', y=ypos)

@@ -68,15 +68,16 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
     # dfout['count_notnull'] = df.shape[0] - df.isnull().sum()
     dfout['count_null'] = df.isnull().sum(axis=0)
     dfout['count_inf'] = np.isinf(df.select_dtypes(np.number)).sum().reindex(df.columns)
+    dfout['count_zero'] = (df.select_dtypes(np.number) == 0).sum(axis=0).reindex(df.columns)
     
     # add min, max for string cols (note the not very clever overwrite of count)
     idxs = dfout['dtype'] == 'object'
-    if np.sum(idxs) > 0:
+    if np.sum(idxs.values) > 0:
         for ft in dfout.loc[idxs].index.values:
             dfout.loc[ft, 'min'] = df[ft].value_counts().index.min()
             dfout.loc[ft, 'max'] = df[ft].value_counts().index.max()
 
-    fts_out_all = ['dtype', 'count_null', 'count_inf', 
+    fts_out_all = ['dtype', 'count_null', 'count_inf', 'count_zero',
                    'unique', 'top', 'freq',
                    'mean', 'std', 'min', '25%', '50%', '75%', 'max']
     fts_out = [f for f in fts_out_all if f in dfout.columns.values]

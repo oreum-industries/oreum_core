@@ -1,7 +1,5 @@
 # model.base.py
 # copyright 2021 Oreum OÜ
-import arviz as az
-import numpy as np
 import pandas as pd
 import pymc3 as pm
 
@@ -47,6 +45,17 @@ class BasePYMC3Model():
 
     #     return _inference_data
 
+
+    # TODO save and check cache e.g
+    # https://discourse.pymc.io/t/jupyter-idiom-for-cached-results/6782
+    # idata_file = "myfilename.nc"
+    # if os.path.exists(idata_file):
+    # idata = az.from_netcdf(idata_file)
+    # else:
+    # idata = <some expensive computation>
+    # if not os.path.exists(idata_file):
+    # az.to_netcdf(idata, idata_file)
+
     @property
     def trace_prior(self):
         """ Returns trace_prior from a previous sample_prior_predictive() """
@@ -80,8 +89,8 @@ class BasePYMC3Model():
             self.sample_prior_predictive_kws or passed kwargs for
             pm.sample_prior_predictive()
         """
-        samples = kwargs.get('samples', self.sample_prior_predictive_kws['samples'])
-        random_seed = kwargs.get('random_seed', self.sample_kws['random_seed'])
+        samples = kwargs.pop('samples', self.sample_prior_predictive_kws['samples'])
+        random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
         
         if self.model is None:
             self.build()
@@ -96,13 +105,13 @@ class BasePYMC3Model():
         """ Sample posterior, use base class defaults self.sample_kws
             or passed pm.sample() kwargs 
         """
-        init = kwargs.get('init', self.sample_kws['init'])
-        random_seed = kwargs.get('random_seed', self.sample_kws['random_seed'])
-        tune = kwargs.get('tune', self.sample_kws['tune'])
-        draws = kwargs.get('draws', self.sample_kws['draws'])
-        chains = kwargs.get('chains', self.sample_kws['chains'])
-        cores = kwargs.get('cores', self.sample_kws['cores'])
-        target_accept = kwargs.get('target_accept', self.sample_kws['target_accept'])
+        init = kwargs.pop('init', self.sample_kws['init'])
+        random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
+        tune = kwargs.pop('tune', self.sample_kws['tune'])
+        draws = kwargs.pop('draws', self.sample_kws['draws'])
+        chains = kwargs.pop('chains', self.sample_kws['chains'])
+        cores = kwargs.pop('cores', self.sample_kws['cores'])
+        target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
 
         if self.model is None:
             self.build()
@@ -111,6 +120,7 @@ class BasePYMC3Model():
             self._trace = pm.sample(init=init, random_seed=random_seed,
                             tune=tune, draws=draws, chains=chains, cores=cores,
                             target_accept=target_accept, 
+                            #step=self.steppers,
                             return_inferencedata=False, **kwargs)
                             # TODO consider return_inferencedata=True
         return None 
@@ -122,7 +132,7 @@ class BasePYMC3Model():
             
             Option to use pm.fast_sample_posterior_predictive()
         """
-        random_seed = kwargs.get('random_seed', self.sample_kws['random_seed'])
+        random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
         
         if self.model is None:
             self.build()
