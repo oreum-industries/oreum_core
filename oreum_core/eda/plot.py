@@ -437,10 +437,10 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
         ypos = 1.4
         title_add = f'\n{title_add}'
 
-    title = f'Empirical PDF of Bootstrapped LR vs Point Est LR for Portfolio'
-    _ = gd.fig.suptitle((f'{title}{title_add}' + f'\n({len(df)} policies, ' + 
+    title = f'Overall Loss Ratio (Population Estimate via Bootstrapping)'
+    _ = gd.fig.suptitle((f'{title}{title_add}' + f'\n{len(df)} policies, ' + 
         f"\\${df[prm].sum()/1e6:.1f}M premium, " + 
-        f"{df[clm_ct].sum():.0f} claims totalling \\${df[clm].sum()/1e6:.1f}M)" + 
+        f"{df[clm_ct].sum():.0f} claims totalling \\${df[clm].sum()/1e6:.1f}M" + 
         f'\nEst. population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=ypos)
     
 
@@ -461,7 +461,7 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim', tit
 
     gd = sns.catplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
                      scale='count', width=0.6, palette='cubehelix_r', 
-                     height=2+(len(mn)*.5), aspect=2+(len(mn)*0.25))
+                     height=2+(len(mn)*.5), aspect=2+(len(mn)*0.05))
    
     _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
     _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
@@ -476,6 +476,6 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim', tit
         ypos = 1.08
         title_add = f'\n{title_add}'
 
-    title = (f'Empirical PDFs of Bootstrapped LR vs Point Est LR for Portfolio' + 
+    title = (f'Gropued Loss Ratios (Population Estimates via Bootstrapping)' + 
             f' - grouped by {grp}')
     _ = gd.fig.suptitle(f'{title}{title_add}', y=ypos)

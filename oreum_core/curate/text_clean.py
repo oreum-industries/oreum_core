@@ -31,13 +31,15 @@ class SnakeyLowercaser():
         self.rx_patsy_factor = re.compile(r'^(.*)(\[T\.|\[)(.*)(\])(.*)$')
         self.rx_patsy_numpy = re.compile(r'^np\.(.*)\((.*)\)$')
         self.rx_patsy_interaction = re.compile(r':')
+        self.rx_multi_underscore = re.compile(r'[_]{2,}')
 
     def clean(self, s):
         s0 = self.rx_to_underscore.sub('_', str(s))
         s1 = self.rx_punct.sub('', s0)
         s2 = self.rx_splitter1.sub(r'\1_\2 ', s1)
         s3 = '_'.join(s2.lower().split())
-        return s3
+        s4 = self.rx_multi_underscore.sub('_', s3)
+        return s4
 
     def clean_patsy(self, s):
         s0 = str(s).replace('-', '_')
@@ -52,7 +54,8 @@ class SnakeyLowercaser():
         s2 = self.rx_punct.sub('', s1)
         s3 = self.rx_splitter1.sub(r'\1_\2 ', s2)
         s4 = '_'.join(s3.lower().split())
-        return s4
+        s5 = self.rx_multi_underscore.sub('_', s4)
+        return s5
 
 
 class TextCleaner():
@@ -119,7 +122,6 @@ class TextCleaner():
         t = self.rx_numbers.sub('', t)
 
         return t
-
 
     def convert_bad_number_representation_to_float(self, s):
         """ Accept a string that represents a number in a shitty way and convert to float

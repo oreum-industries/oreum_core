@@ -321,6 +321,9 @@ class Standardizer():
             + must be initialised with Transformer.design_info, consider refactoring
             + it's reasonable to initialise this per-observation but far more 
               efficient to initialise once and persist in-memory
+            + note these standardizations use nanmean, nanstd, so they're
+              already compatible with recent changes (2021-03-31) to 
+              transformer to propagate nans
         
         NEW FUNCTIONALITY: 2021-03-11 
             apply standardization using a mask. allows us to exclude any col 

@@ -1,7 +1,5 @@
 # model.base.py
 # copyright 2021 Oreum OÜ
-import arviz as az
-import numpy as np
 import pandas as pd
 import pymc3 as pm
 
