@@ -240,17 +240,21 @@ def plot_binary_performance(df):
         Pass perf df from calc.calc_binary_performance_measures
         Return summary stats
     """
-
     roc_auc = integrate.trapezoid(y=df['tpr'], x=df['fpr'])
     prec_rec_auc = integrate.trapezoid(y=df['precision'], x=df['recall'])
 
     f, axs = plt.subplots(1, 4, figsize=(18, 5), sharex=False, sharey=True)
     _ = f.suptitle('Evaluations of Binary Classifier across PPC pct samples', y=1.0)
 
+    minpos = np.argmin(np.sqrt(df['fpr']**2 + (1-df['tpr'])**2))
     _ = axs[0].plot(df['fpr'], df['tpr'], lw=2, marker='d', alpha=0.8,
                     label=f"ROC (auc={roc_auc:.2f})")
     _ = axs[0].plot((0, 1), (0, 1), '--', c='#cccccc', label='line of equiv')
-    _ = axs[0].legend(loc='upper left')
+    _ = axs[0].plot(df.loc[minpos, 'fpr'], df.loc[minpos, 'tpr'], 
+                    lw=2, marker='D', color='w', 
+                    markeredgewidth=1, markeredgecolor='b', markersize=9,
+                    label=f"Optimum ROC @ {minpos} pct")
+    _ = axs[0].legend(loc='lower right')
     _ = axs[0].set(title='ROC curve', xlabel='FPR', ylabel='TPR')
     
     _ = axs[1].plot(df['recall'], df['precision'], lw=2, marker='o', alpha=0.8,
@@ -264,6 +268,10 @@ def plot_binary_performance(df):
 
     _ = sns.lineplot(x='pct', y='f-score', hue='f-measure', data=dfm, 
                         palette='Greens', lw=2, ax=axs[2])
+    _ = axs[2].plot(f1_at, df.loc[f1_at, 'f1'], 
+                    lw=2, marker='D', color='w', 
+                    markeredgewidth=1, markeredgecolor='b', markersize=9,
+                    label=f"Optimum F1 @ {f1_at} pct")
     _ = axs[2].set_ylim(0, 1)
     _ = axs[2].legend(loc='upper left')
     _ = axs[2].set(title='F-scores across the PPC pcts' +
