@@ -235,7 +235,7 @@ def plot_accuracy(df):
             f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct', y=1.03)
 
 
-def plot_binary_performance(df):
+def plot_binary_performance(df, n=1):
     """ Plot ROC, PrecRec, F-score, Accuracy
         Pass perf df from calc.calc_binary_performance_measures
         Return summary stats
@@ -243,8 +243,9 @@ def plot_binary_performance(df):
     roc_auc = integrate.trapezoid(y=df['tpr'], x=df['fpr'])
     prec_rec_auc = integrate.trapezoid(y=df['precision'], x=df['recall'])
 
-    f, axs = plt.subplots(1, 4, figsize=(18, 5), sharex=False, sharey=True)
-    _ = f.suptitle('Evaluations of Binary Classifier across PPC pct samples', y=1.0)
+    f, axs = plt.subplots(1, 4, figsize=(18, 5), sharex=False, sharey=False)
+    _ = f.suptitle(('Evaluations of Binary Classifier made by sweeping across '+ 
+                    f'PPC quantiles\n(requires large n, here n={n})') , y=1.0)
 
     minpos = np.argmin(np.sqrt(df['fpr']**2 + (1-df['tpr'])**2))
     _ = axs[0].plot(df['fpr'], df['tpr'], lw=2, marker='d', alpha=0.8,
@@ -255,12 +256,13 @@ def plot_binary_performance(df):
                     markeredgewidth=1, markeredgecolor='b', markersize=9,
                     label=f"Optimum ROC @ {minpos} pct")
     _ = axs[0].legend(loc='lower right')
-    _ = axs[0].set(title='ROC curve', xlabel='FPR', ylabel='TPR')
+    _ = axs[0].set(title='ROC curve', xlabel='FPR', ylabel='TPR', ylim=(0,1))
     
     _ = axs[1].plot(df['recall'], df['precision'], lw=2, marker='o', alpha=0.8,
                     color='C3', label=f"PrecRec (auc={prec_rec_auc:.2f})")
     _ = axs[1].legend(loc='upper right')
-    _ = axs[1].set(title='Precision Recall curve', xlabel='Recall', ylabel='Precision')
+    _ = axs[1].set(title='Precision Recall curve', ylim=(0,1), 
+                    xlabel='Recall', ylabel='Precision')
 
     f1_at = df['f1'].argmax()
     dfm = df.reset_index()[['pct', 'f0.5', 'f1', 'f2']].melt(
@@ -272,16 +274,22 @@ def plot_binary_performance(df):
                     lw=2, marker='D', color='w', 
                     markeredgewidth=1, markeredgecolor='b', markersize=9,
                     label=f"Optimum F1 @ {f1_at} pct")
-    _ = axs[2].set_ylim(0, 1)
     _ = axs[2].legend(loc='upper left')
     _ = axs[2].set(title='F-scores across the PPC pcts' +
-            f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct')
+            f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct',
+            xlabel='pct', ylabel='F-Score', ylim=(0, 1))
 
     acc_at = df['accuracy'].argmax()
     _ = sns.lineplot(x='pct', y='accuracy', color='C1', data=df, lw=2, ax=axs[3])
-    _ = axs[3].set_ylim(0, 1)
+    _ = axs[3].text(x=0.04, y=0.04, 
+                    s=('Class imbalance:' + 
+                       f'\n0: {df["accuracy"].values[0]:.1%}' + 
+                       f'\n1: {df["accuracy"].values[-1]:.1%}'),
+                    transform=axs[3].transAxes, ha='left', va='bottom', 
+                    backgroundcolor='w', fontsize=10)
     _ = axs[3].set(title='Accuracy across the PPC pcts' +
-            f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct')
+            f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct',
+            xlabel='pct', ylabel='Accuracy', ylim=(0, 1))
 
     f.tight_layout()
     return None
