@@ -427,7 +427,7 @@ def plot_ppc_vs_observed(y, yhat):
 
 
 def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
-                      title_add=''):
+                      title_add='', force_xlim=None):
     """ Plot bootstrapped loss ratio, no grouping """
     
     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10,8), 
@@ -447,6 +447,8 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
     elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
              Line2D([0],[0], label='sample', **pest_mn_kws)]
     gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
+    if force_xlim is not None:
+        _ = gd.ax.set(xlim=force_xlim)
     
     ypos = 1.34
     if title_add != '':
@@ -460,7 +462,8 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
         f'\nEst. population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=ypos)
     
 
-def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim', title_add=''):
+def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim', 
+                        title_add='', force_xlim=None):
     """ Plot bootstrapped loss ratio, grouped by grp """
 
     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
@@ -486,6 +489,48 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim', tit
     elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
              Line2D([0],[0], label='sample', **pest_mn_kws)]
     gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
+    if force_xlim is not None:
+        _ = gd.ax.set(xlim=force_xlim)
+    
+    ypos = 1.05
+    if title_add != '':
+        ypos = 1.08
+        title_add = f'\n{title_add}'
+
+    title = (f'Gropued Loss Ratios (Population Estimates via Bootstrapping)' + 
+            f' - grouped by {grp}')
+    _ = gd.fig.suptitle(f'{title}{title_add}', y=ypos)
+
+
+def plot_bootstrap_grp(dfboot, df, grp='grp', prm='premium', clm='claim', 
+                        title_add='', force_xlim=None):
+    """ Plot bootstrapped loss ratio, grouped by grp """
+
+    mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
+                    textcoords='offset points', fontsize=8, backgroundcolor='w')
+    pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
+                    marker='d', markersize=10) 
+    mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+    if dfboot[grp].dtypes != 'object':
+        dfboot = dfboot.copy()
+        dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
+
+    mn = dfboot.groupby(grp)['lr'].mean().tolist()
+    pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
+
+    gd = sns.catplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
+                     scale='count', width=0.6, palette='cubehelix_r', 
+                     height=2+(len(mn)*.5), aspect=2+(len(mn)*0.05))
+   
+    _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+
+    elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
+             Line2D([0],[0], label='sample', **pest_mn_kws)]
+    gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
+    if force_xlim is not None:
+        _ = gd.ax.set(xlim=force_xlim)
     
     ypos = 1.05
     if title_add != '':

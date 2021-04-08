@@ -27,5 +27,6 @@ from oreum_core.eda.plot import (
 from oreum_core.eda.calc import (
     fit_and_plot_fn,
     get_gini,
+    bootstrap,
     bootstrap_lr,
     )
