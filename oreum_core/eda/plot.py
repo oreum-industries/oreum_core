@@ -553,7 +553,6 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
 
-
 def plot_bootstrap_lr_grp2(dfboot, dfboot2, df, grp='grp', prm='premium', 
                            clm='claim', title_add='', force_xlim=None, ):
     """ Plot bootstrapped loss ratio, grouped by grp 
