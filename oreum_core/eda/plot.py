@@ -1,9 +1,11 @@
 # eda.plot.py
 # copyright 2021 Oreum OÜ
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import warnings
 
 from matplotlib.lines import Line2D
 from scipy import stats, integrate
@@ -13,7 +15,7 @@ rng = np.random.default_rng(seed=RANDOM_SEED)
 
 
 def plot_cat_count(df, fts, topn=10, vsize=2):
-    """ Conv fn: plot group counts for cats """
+    """ Conv fn: plot group counts for cats and bools """
     
     if len(fts) == 0:
         return None
@@ -23,6 +25,10 @@ def plot_cat_count(df, fts, topn=10, vsize=2):
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
+
+        if df[ft].dtype == np.bool:  
+            counts_all = counts_all.sort_index()   # sort so true plots on top
+
         counts = counts_all[-topn:]
         ax = counts.plot(
             kind='barh', ax=ax2d[i//2, i%2],
@@ -32,12 +38,44 @@ def plot_cat_count(df, fts, topn=10, vsize=2):
                 xy=(c, i), xycoords='data', 
                 xytext=(4, -2), textcoords='offset points', 
                 ha='left', fontsize=10, color='#666666')
-             for i, c in enumerate(counts)]
-        ax.legend(loc='lower right')
+            for i, c in enumerate(counts)]
+        
+        if df[ft].dtype != np.bool:  
+            ax.legend(loc='lower right')
+        else:
+            _ = ax.set(ylabel=None)
+        
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
         
     f.tight_layout()
+
+
+def plot_bool_count(df, fts, vsize=1.6):
+    """ Conv fn: plot group counts for bools """
+    
+    if len(fts) == 0:
+        return None
+
+    vert = int(np.ceil(len(fts)/2))
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(14, vert*vsize))
+
+    for i, ft in enumerate(fts):
+        counts = df.groupby(ft).size().sort_values(ascending=True)
+        counts = counts.sort_index()   # sort so true plots on top
+        ax = counts.plot(
+            kind='barh', ax=ax2d[i//2, i%2],
+            title='{}: {} boolean levels'.format(ft, len(counts)))
+        _ = [ax.annotate('{} ({:.0%})'.format(c, c/counts.sum()), 
+                xy=(c, i), xycoords='data', 
+                xytext=(4, -2), textcoords='offset points', 
+                ha='left', fontsize=10, color='#666666')
+            for i, c in enumerate(counts)]       
+        _ = ax.set(ylabel=None)
+        _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
         
+    f.tight_layout()
+
+
 
 def plot_date_count(df, fts, fmt='%Y-%m', vsize=1.8):
     """ Plot group sizes for dates by strftime format """
@@ -62,7 +100,7 @@ def plot_date_count(df, fts, fmt='%Y-%m', vsize=1.8):
     f.tight_layout()
         
 
-def plot_int_dist(df, fts, log=False, vsize=1.8):
+def plot_int_dist(df, fts, log=False, vsize=1.4):
     """ Plot group counts (optionally logged) for ints """
 
     if len(fts) == 0:
@@ -107,7 +145,7 @@ def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
     else:
         dfm = df[fts].melt()
     g = sns.FacetGrid(row='variable', hue='variable', palette=sns.color_palette(),
-                      data=dfm, height=1.6, aspect=6, sharex=sharex)
+                      data=dfm, height=1.4, aspect=6, sharex=sharex)
     _ = g.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
     _ = g.map(sns.pointplot, 'value', order='variable', color='C3', 
                 estimator=np.mean, ci=94)
@@ -462,15 +500,19 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
         f'\nEst. population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=ypos)
     
 
+
 def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim', 
                         title_add='', force_xlim=None):
     """ Plot bootstrapped loss ratio, grouped by grp """
 
+    ct_txt_kws = dict(color='#ffffff', xycoords='data', xytext=(-5, 0), 
+                    textcoords='offset points', fontsize=10, ha='right', va='center')
     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
                     textcoords='offset points', fontsize=8, backgroundcolor='w')
     pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
                     marker='d', markersize=10) 
     mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+
     if dfboot[grp].dtypes != 'object':
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
@@ -478,65 +520,106 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
     mn = dfboot.groupby(grp)['lr'].mean().tolist()
     pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
 
-    gd = sns.catplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
-                     scale='count', width=0.6, palette='cubehelix_r', 
-                     height=2+(len(mn)*.5), aspect=2+(len(mn)*0.05))
-   
-    _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
-    _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
-    _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+    f = plt.figure(figsize=(14, 2+(len(mn)*.4)), constrained_layout=True)
+    gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
+    ax0 = f.add_subplot(gs[0])
+    ax1 = f.add_subplot(gs[1], sharey=ax0)
+
+    _ = sns.violinplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
+                     scale='count', width=0.6, palette='cubehelix_r', ax=ax0)
+
+    _ = [ax0.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
+    _ = [ax0.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
+    _ = [ax0.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
 
     elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
              Line2D([0],[0], label='sample', **pest_mn_kws)]
-    gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
+    _ = ax0.legend(handles=elems, loc='lower right', title='Mean LRs')
+    
     if force_xlim is not None:
-        _ = gd.ax.set(xlim=force_xlim)
+        _ = ax0.set(xlim=force_xlim)
+
+    _ = sns.countplot(y=grp, data=df, ax=ax1, palette='cubehelix_r')
+    ct = df.groupby(grp).size().tolist()
+    _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
     
     ypos = 1.05
     if title_add != '':
         ypos = 1.08
         title_add = f'\n{title_add}'
 
-    title = (f'Gropued Loss Ratios (Population Estimates via Bootstrapping)' + 
+    title = (f'Grouped Loss Ratios (Population Estimates via Bootstrapping)' + 
             f' - grouped by {grp}')
-    _ = gd.fig.suptitle(f'{title}{title_add}', y=ypos)
+    _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
 
-def plot_bootstrap_grp(dfboot, df, grp='grp', prm='premium', clm='claim', 
-                        title_add='', force_xlim=None):
-    """ Plot bootstrapped loss ratio, grouped by grp """
 
+def plot_bootstrap_lr_grp2(dfboot, dfboot2, df, grp='grp', prm='premium', 
+                           clm='claim', title_add='', force_xlim=None, ):
+    """ Plot bootstrapped loss ratio, grouped by grp 
+        Also plot ungrouped bootraped distribtuion over the top"""
+
+    ct_txt_kws = dict(color='#333333', xycoords='data', xytext=(2, 0), 
+                    textcoords='offset points', fontsize=10, ha='left', va='center')
     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
                     textcoords='offset points', fontsize=8, backgroundcolor='w')
     pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
                     marker='d', markersize=10) 
     mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
-    if dfboot[grp].dtypes != 'object':
+    
+    if dfboot[grp].dtype.name[:3] not in ['obj', 'cat', 'boo']:
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
 
     mn = dfboot.groupby(grp)['lr'].mean().tolist()
-    pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
 
-    gd = sns.catplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
-                     scale='count', width=0.6, palette='cubehelix_r', 
-                     height=2+(len(mn)*.5), aspect=2+(len(mn)*0.05))
-   
-    _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
-    _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
-    _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+    with warnings.catch_warnings(): 
+        warnings.simplefilter(action='ignore')  # ignore RuntimeWarning caused by 0/0
+        pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
+
+    f = plt.figure(figsize=(14, 2.6+(len(mn)*.4)), constrained_layout=True)
+    gs = gridspec.GridSpec(2, 2, height_ratios=[9, 1], width_ratios=[11, 1], figure=f)
+    ax0 = f.add_subplot(gs[0])
+    ax1 = f.add_subplot(gs[1], sharey=ax0)
+    ax2 = f.add_subplot(gs[2], sharex=ax0)
+        
+    _ = sns.violinplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
+                     scale='count', width=0.6, palette='cubehelix_r', ax=ax0)
+
+    _ = [ax0.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
+    _ = [ax0.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
+    _ = [ax0.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
 
     elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
              Line2D([0],[0], label='sample', **pest_mn_kws)]
-    gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
+    _ = ax0.legend(handles=elems, loc='upper right', title='Mean LRs')
+    
     if force_xlim is not None:
-        _ = gd.ax.set(xlim=force_xlim)
+        _ = ax0.set(xlim=force_xlim)
+
+    _ = sns.countplot(y=grp, data=df, ax=ax1, palette='cubehelix_r')
+    ct = df.groupby(grp).size().tolist()
+    _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
+    
+    _ = sns.violinplot(x='lr', data=dfboot2, kind='violin', cut=0, 
+                     scale='count', width=0.6, color='#333333', ax=ax2)
+    
+    mn2 = [dfboot2['lr'].mean()]
+    pest_mn2 = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]
+
+    _ = [ax2.plot(v, i%len(mn2), **mn_kws) for i, v in enumerate(mn2)]
+    _ = [ax2.annotate(f'{v:.1%}', xy=(v, i%len(mn2)), **mn_txt_kws) for i, v in enumerate(mn2)]
+    _ = [ax2.plot(v, i%len(pest_mn2), **pest_mn_kws) for i, v in enumerate(pest_mn2)]
+    _ = ax2.set(ylabel='Overall')
     
     ypos = 1.05
     if title_add != '':
         ypos = 1.08
         title_add = f'\n{title_add}'
 
-    title = (f'Gropued Loss Ratios (Population Estimates via Bootstrapping)' + 
-            f' - grouped by {grp}')
-    _ = gd.fig.suptitle(f'{title}{title_add}', y=ypos)
+    title = (f'Grouped Loss Ratios (Population Estimates via Bootstrapping)' + 
+            f' - Grouped by {grp}, {len(df)} policies')
+    _ = f.suptitle(f'{title}{title_add}', y=ypos)
+
+
+

@@ -5,7 +5,6 @@ import pyarrow
 import pandas as pd
 import pyarrow.parquet as pq
 import subprocess
-from time import sleep
 
 class PandasParquetIO:
     """ Helper class to convert pandas to parquet and save to local path

@@ -1,13 +1,12 @@
 # eda.calc.py
 # copyright 2021 Oreum OÜ
-import re
-import string
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from pandas.core.base import DataError
+# from pandas.core.base import DataError
 import seaborn as sns
 from scipy import stats
+import warnings
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
@@ -22,7 +21,6 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
     if tail_kind not in set(['right', 'both']):
         raise ValueError("tail_kind must be in {'right', 'both'}")
 
-    import warnings
     # warnings.filterwarnings("error") # handle RuntimeWarning as error so can catch
     # warnings.simplefilter(action='ignore', category='RuntimeWarning')
 
@@ -145,5 +143,3 @@ def bootstrap_lr(df, prm='premium', clm='claim', nboot=1000):
 
     dfboot['lr'] = dfboot['claim_sum'] / dfboot['premium_sum']
     return dfboot
-
-
