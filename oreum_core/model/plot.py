@@ -13,10 +13,11 @@ def facetplot_azid_dist(azid, rvs, rvs_hack_extra=0, group='posterior', **kwargs
         Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """
     # TODO unpack the compressed rvs from the azid
-    m, n = 2, ((len(rvs)+rvs_hack_extra) // 2) + ((len(rvs)+rvs_hack_extra) % 2)
-    f, axs = plt.subplots(n, m, figsize=(m*6, 2.2*n))
+    j = 3
+    m, n = j, ((len(rvs)+rvs_hack_extra-j) // j) + ((len(rvs)+rvs_hack_extra-j) % j)
+    f, axs = plt.subplots(n, m, figsize=(4+m*3, 2.2*n))
     _ = az.plot_posterior(azid, group=group, ax=axs, var_names=rvs, **kwargs)
-    f.suptitle(f'{group} {rvs}', y=0.93 + n*0.005)
+    f.suptitle(f'{group} {rvs}', y=0.96 + n*0.005)
     f.tight_layout()
 
 
