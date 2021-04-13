@@ -621,4 +621,11 @@ def plot_bootstrap_lr_grp2(dfboot, dfboot2, df, grp='grp', prm='premium',
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
 
-
+def plot_heatmap_corr(dfx_corr, title_add=''):
+    """ Convenience plot correlation as heatmap """
+    f, axs = plt.subplots(1, 1, figsize=(3+.5*len(dfx_corr), 1+.5*len(dfx_corr)))
+    _ = sns.heatmap(dfx_corr, mask=np.tril(np.ones(dfx_corr.shape)), 
+                     cmap='RdBu_r', square=True, ax=axs, cbar=False,
+                     annot=True, fmt='.2f', linewidths=0.5, vmin=-1, vmax=1)
+    _ = f.suptitle(f'Feature correlations: {title_add}')
+    _ = axs.set_xticklabels(axs.get_xticklabels(), rotation=40, ha='right')
