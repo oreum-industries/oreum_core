@@ -465,7 +465,7 @@ def plot_ppc_vs_observed(y, yhat):
 
 
 def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
-                      title_add='', force_xlim=None):
+                      title_add='', title_pol_summary=False, force_xlim=None):
     """ Plot bootstrapped loss ratio, no grouping """
     
     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10,8), 
@@ -493,10 +493,16 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
         ypos = 1.4
         title_add = f'\n{title_add}'
 
+    pol_summary = ''
+    if title_pol_summary:
+        pol_summary = (f'\n{len(df)} policies' + 
+                        f"\\${df[prm].sum()/1e6:.1f}M premium, " + 
+                        f"{df[clm_ct].sum():.0f} claims totalling " + 
+                        f"\\${df[clm].sum()/1e6:.1f}M")
+
     title = f'Overall Loss Ratio (Population Estimate via Bootstrapping)'
-    _ = gd.fig.suptitle((f'{title}{title_add}' + f'\n{len(df)} policies, ' + 
-        f"\\${df[prm].sum()/1e6:.1f}M premium, " + 
-        f"{df[clm_ct].sum():.0f} claims totalling \\${df[clm].sum()/1e6:.1f}M" + 
+    _ = gd.fig.suptitle((f'{title}{title_add}' + 
+        pol_summary + 
         f'\nEst. population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=ypos)
     
 
