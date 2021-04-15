@@ -1,5 +1,6 @@
 # curate.data_load.py
 # copyright 2021 Oreum OÜ
+import json
 import os
 import pyarrow
 import pandas as pd
@@ -36,25 +37,35 @@ class PandasParquetIO:
         return f'Written to {fqn}'
 
 
-class SimpleTxtIO:
-    """ Helper class to read/write simple strings to txt files at relative path
+class SimpleStringIO:
+    """ Helper class to read/write stringlike objects to txt or json files 
+        at relative path
+        Set kind to 
+            + 'txt' to read/write strings <-> text
+            + 'json' to read/write dicts <-> json
     """
 
-    def __init__(self, relpath=[]):
+    def __init__(self, relpath=[], kind='txt'):
         self.relpath = relpath
+        assert kind in set(['txt', 'json']), "kind must be in {'txt', 'json'}"
+        self.kind = kind
 
-    def read_txt(self, fn, relpath=[]):
+    def read(self, fn, relpath=[]):
         if len(relpath) == 0:
             relpath = self.relpath
-        fqn = os.path.join(*relpath, f'{fn}.txt')
+        fqn = os.path.join(*relpath, f'{fn}.{self.kind}')
         with open(fqn, 'r') as f:
             s = f.read()
+        if self.kind == 'json':
+            s = json.loads(s)
         return s
 
-    def write_txt(self, s, fn, relpath=[]):       
+    def write(self, s, fn, relpath=[]):       
         if len(relpath) == 0:
             relpath = self.relpath
-        fqn = os.path.join(*relpath, f'{fn}.txt')
+        fqn = os.path.join(*relpath, f'{fn}.{self.kind}')
+        if self.kind =='json':
+            s = json.dumps(s)
         with open(fqn, 'w') as f:
             f.write(s)
         return f'Written to {fqn}'

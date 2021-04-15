@@ -1,7 +1,7 @@
 # copyright 2021 Oreum OÜ
 from oreum_core.curate.data_load import (
     PandasParquetIO, 
-    SimpleTxtIO,
+    SimpleStringIO,
     copy_csv2md
 )
 from oreum_core.curate.text_clean import (
