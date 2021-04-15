@@ -174,7 +174,7 @@ def plot_joint_ft_x_tgt(df, ft, tgt, subtitle=None, colori=1):
 
 
 def plot_mincovdet(df, mcd, thresh=0.99):
-    """ Interactive plot of MDC delta results """
+    """ Interactive plot of MCD delta results """
     
     dfp = df.copy()
     dfp['mcd_delta'] = mcd.dist_
