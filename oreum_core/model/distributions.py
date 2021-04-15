@@ -4,13 +4,10 @@ import numpy as np
 import pymc3 as pm
 from scipy import stats, special
 import theano.tensor as tt
-
-# from pymc3.distributions import transforms
 from pymc3.distributions.dist_math import bound, logpow, alltrue_elemwise
 from pymc3.distributions.continuous import assert_negative_support, PositiveContinuous
-from pymc3.distributions.distribution import draw_values, generate_samples # Continuous, 
+from pymc3.distributions.distribution import draw_values, generate_samples
 from pymc3.theanof import floatX
-# from pymc3.util import get_variable_name
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)

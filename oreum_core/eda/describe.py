@@ -56,10 +56,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
         for ft in dfdesc.columns[1:]:
             dfdesc[ft] = dfdesc[ft].apply(lambda x: np.round(x,3))
 
-    # prepend random rows for example cases
-    rndidx = np.random.randint(0,len(df),nrows)
-    dfout = pd.concat((df.iloc[rndidx].T, dfdesc, df.dtypes), 
-                      axis=1, join='outer', sort=True)
+    dfout = pd.concat((dfdesc, df.dtypes), axis=1, join='outer', sort=True)
     dfout = dfout.loc[df.columns.values]
     dfout.rename(columns={0:'dtype'}, inplace=True)
     dfout.index.name = 'ft'
@@ -90,9 +87,11 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
         dfout = dfout.join(dfmode, how='left', left_index=True, right_index=True)
         fts_out.append(['mode', 'mode_count'])
     
-    dfout = dfout[fts_out].copy()
-    display_fw(dfout.iloc[:nfeats+len_index,:].fillna(''), 
-              max_rows=nfeats, latex=latex)
+    # select summary states and prepend random rows for example cases
+    rndidx = np.random.randint(0,len(df),nrows)
+    dfout = pd.concat((df.iloc[rndidx].T, dfout[fts_out].copy()), axis=1, 
+                        join='outer', sort=True)
+    display_fw(dfout.iloc[:nfeats+len_index,:].fillna(''), max_rows=nfeats, latex=latex)
 
 
 def get_fts_by_dtype(df):

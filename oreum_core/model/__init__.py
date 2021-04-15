@@ -9,6 +9,7 @@ from oreum_core.model.calc import (
     calc_mse,
     calc_rmse,
     calc_r2,
+    calc_bayesian_r2,
     calc_ppc_coverage,
     calc_dist_fns_over_x,
     calc_dist_fns_over_x_manual_only,

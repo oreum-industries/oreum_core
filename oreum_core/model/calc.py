@@ -13,7 +13,8 @@ rng = np.random.default_rng(seed=RANDOM_SEED)
 
 
 def calc_f_measure(precision, recall, b=1):
-    return (1 + b**2) * (precision * recall) / (b**2 * precision + recall)
+    """ Choose b such that recall is b times more important than precision """
+    return (1 + b**2) * (precision * recall) / ((b**2 * precision) + recall)
 
 
 def calc_binary_performance_measures(y, yhat):
@@ -114,6 +115,20 @@ def calc_r2(y, yhat):
     r2_pct.index.rename ('pct', inplace=True) 
     
     return r2_mean, r2_pct 
+
+
+def calc_bayesian_r2(y, yhat):
+    """ Calculate R2, 
+        return mean r2 and via summary stats of yhat
+        NOTE: shape (nsamples, nobservations)
+    """
+
+    var_yhat = np.var(yhat, axis=0)
+    var_residuals = np.var(y - yhat, axis=0)
+    r2 = var_yhat / (var_yhat + var_residuals)
+    return r2
+
+
 
     
 def calc_ppc_coverage(y, yhat):

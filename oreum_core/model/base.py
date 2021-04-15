@@ -3,7 +3,6 @@
 import pandas as pd
 import pymc3 as pm
 
-
 class BasePYMC3Model():
     """ Handle the build, sample and exploration of a PyMC3 model"""
 

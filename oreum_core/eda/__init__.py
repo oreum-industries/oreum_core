@@ -6,6 +6,7 @@ from oreum_core.eda.describe import (
     )
 from oreum_core.eda.plot import (
     plot_cat_count,
+    plot_bool_count,
     plot_date_count,
     plot_int_dist,
     plot_float_dist,
@@ -23,9 +24,12 @@ from oreum_core.eda.plot import (
     plot_ppc_vs_observed,
     plot_bootstrap_lr,
     plot_bootstrap_lr_grp,
+    plot_bootstrap_lr_grp2,
+    plot_heatmap_corr,
     )
 from oreum_core.eda.calc import (
     fit_and_plot_fn,
     get_gini,
+    bootstrap,
     bootstrap_lr,
     )

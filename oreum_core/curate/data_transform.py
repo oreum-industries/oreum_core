@@ -339,7 +339,9 @@ class Standardizer():
         self.design_info = design_info
         col_num_excl = [0] + [i for i, n in enumerate(self.design_info.column_names) 
                                 if (n in fts_exclude) or re.search(r'\[T\.', n)]
-        self.row_mask = [True if i in col_num_excl else False 
+        
+        # col_mask is True where we want to exclude the col from standardization
+        self.col_mask = [True if i in col_num_excl else False 
                         for i in np.arange(len(self.design_info.column_names))]
 
         self.means = None
@@ -356,9 +358,10 @@ class Standardizer():
                                  'run `fit_standardize()` on training set first')
 
         df_s = ((df - self.means) / (self.sdevs * self.scale))
-        mask = np.tile(self.row_mask, (len(df), 1))
+        mask = np.tile(self.col_mask, (len(df), 1))
+        
         # fill original df w/ standardized to more easily preseve dtype of ints
-        df_exs = df.mask(~mask, df_s)   
+        df_exs = df.mask(~mask, df_s)  # replace values where condition is True
         return df_exs
 
 
@@ -366,8 +369,8 @@ class Standardizer():
         """ Standardize numeric features of df with variable scale
             Retain the fitted means and sdevs for later use in standardize()
         """
-        self.means = np.where(self.row_mask, np.nan, np.nanmean(df, axis=0))
-        self.sdevs = np.where(self.row_mask, np.nan, np.nanstd(df, axis=0))
+        self.means = np.where(self.col_mask, np.nan, np.nanmean(df, axis=0))
+        self.sdevs = np.where(self.col_mask, np.nan, np.nanstd(df, axis=0))
         self.scale = scale
         return self.standardize(df)
 
@@ -381,7 +384,7 @@ class Standardizer():
                                  'run `fit_standardize()` on training set first')
 
         mxs_all = ((mx - self.means) / (self.sdevs * self.scale))
-        mask = np.tile(self.row_mask, (len(mx), 1))
+        mask = np.tile(self.col_mask, (len(mx), 1))
         mxs = np.where(mask, mx, mxs_all)
         return mxs
 
@@ -391,8 +394,8 @@ class Standardizer():
             Retain the fitted means and sdevs for later use in standardize()
         """
         # TODO add option to output dataframe
-        self.means = np.where(self.row_mask, np.nan, np.nanmean(mx, axis=0))
-        self.sdevs = np.where(self.row_mask, np.nan, np.nanstd(mx, axis=0))
+        self.means = np.where(self.col_mask, np.nan, np.nanmean(mx, axis=0))
+        self.sdevs = np.where(self.col_mask, np.nan, np.nanstd(mx, axis=0))
         self.scale = scale
         return self.standardize(mx)
 
