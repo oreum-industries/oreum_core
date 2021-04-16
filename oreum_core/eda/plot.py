@@ -438,7 +438,7 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
     _ = f.tight_layout()
 
 
-def plot_ppc_vs_observed(y, yhat):
+def plot_ppc_vs_observed(y, yhat, xlim_max_override=None):
     """ Plot (quantile summaries of) yhat_ppc vs y """
     ps = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 97]
     df_yhat_qs = pd.DataFrame(np.percentile(yhat, ps, axis=1).T, 
@@ -459,8 +459,13 @@ def plot_ppc_vs_observed(y, yhat):
         _ = sns.kdeplot(x='value', hue='ppc_q', data=dfm, 
                 cumulative=True, palette='coolwarm', lw=2, ls='-', 
                 ax=axs, zorder=-1, common_norm=False, common_grid=True)
+    
+    if xlim_max_override is not None:
+        _ = axs.set(xlim=(0, xlim_max_override), ylim=(0, 1))
+    else:
+        _ = axs.set(xlim=(0, np.ceil(y.max())), ylim=(0, 1))
 
-    _ = axs.set(xlim=(0, np.ceil(y.max())), ylim=(0, 1))
+    _ = f.suptitle('Cumulative density plot of the posterior predictive vs actual')
 
 
 

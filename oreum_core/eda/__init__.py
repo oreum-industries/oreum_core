@@ -32,4 +32,6 @@ from oreum_core.eda.calc import (
     get_gini,
     bootstrap,
     bootstrap_lr,
+    calc_geometric_cv,
+    calc_location_in_ecdf,
     )
