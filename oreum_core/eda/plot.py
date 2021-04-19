@@ -370,7 +370,7 @@ def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
     f, axs = plt.subplots(1, 1, figsize=(10, 4))
     ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs)
     #     _ = ax.set_yscale('log')
-    _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.2f}')
+    _ = ax.axhline(rmse, c='r', ls='-.', label=f'mean @ {rmse:,.2f}')
     _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.2f}')
     _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.2f}')
     _ = f.suptitle(f'RMSE ranges {yhat_name}', y=.95)

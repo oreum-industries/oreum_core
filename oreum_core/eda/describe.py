@@ -92,6 +92,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
     rndidx = np.random.randint(0,len(df),nrows)
     dfout = pd.concat((df.iloc[rndidx].T, dfout[fts_out].copy()), axis=1, 
                         join='outer', sort=False)
+    dfout.index.name = 'ft'
 
     if return_df:
         return dfout
