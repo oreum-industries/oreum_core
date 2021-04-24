@@ -143,3 +143,31 @@ def bootstrap_lr(df, prm='premium', clm='claim', nboot=1000):
 
     dfboot['lr'] = dfboot['claim_sum'] / dfboot['premium_sum']
     return dfboot
+
+
+def calc_geometric_cv(lognormal_yhat):
+    """ Calculate geometreic coefficient of variation for log-normally 
+        distributed samples. Expect 2D array shape (nobs, nsamples)
+        https://en.wikipedia.org/wiki/Coefficient_of_variation#Log-normal_data
+    """
+    return np.sqrt(np.exp(np.std(np.log(lognormal_yhat), axis=1)**2) - 1)
+
+
+def _ecdf(a):
+    """ Empirical CDF of array
+        Return sorted array and ecdf values
+    """
+    x = np.sort(a)
+    n = len(a)
+    y = (np.arange(1, n+1) / n)
+    return x, y
+
+
+def calc_location_in_ecdf(baseline_arr, test_arr):
+    """ Calculate the position of each element in test_arr 
+        relative to the ECDF described by baseline_arr
+        (len(baseline_arr) === len(test_arr)) = False
+    """
+    sorted_baseline, cdf_prop = _ecdf(baseline_arr)   
+    idxs = np.argmax((test_arr < sorted_baseline[:, None]), axis=0)
+    return cdf_prop[idxs]

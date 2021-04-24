@@ -26,10 +26,13 @@ from oreum_core.eda.plot import (
     plot_bootstrap_lr_grp,
     plot_bootstrap_lr_grp2,
     plot_heatmap_corr,
+    display_image_file,
     )
 from oreum_core.eda.calc import (
     fit_and_plot_fn,
     get_gini,
     bootstrap,
     bootstrap_lr,
+    calc_geometric_cv,
+    calc_location_in_ecdf,
     )

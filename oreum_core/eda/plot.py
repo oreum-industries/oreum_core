@@ -1,6 +1,7 @@
 # eda.plot.py
 # copyright 2021 Oreum OÜ
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 from matplotlib import gridspec
 import numpy as np
 import pandas as pd
@@ -174,7 +175,7 @@ def plot_joint_ft_x_tgt(df, ft, tgt, subtitle=None, colori=1):
 
 
 def plot_mincovdet(df, mcd, thresh=0.99):
-    """ Interactive plot of MDC delta results """
+    """ Interactive plot of MCD delta results """
     
     dfp = df.copy()
     dfp['mcd_delta'] = mcd.dist_
@@ -370,7 +371,7 @@ def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
     f, axs = plt.subplots(1, 1, figsize=(10, 4))
     ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs)
     #     _ = ax.set_yscale('log')
-    _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.2f}')
+    _ = ax.axhline(rmse, c='r', ls='-.', label=f'mean @ {rmse:,.2f}')
     _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.2f}')
     _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.2f}')
     _ = f.suptitle(f'RMSE ranges {yhat_name}', y=.95)
@@ -438,7 +439,7 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
     _ = f.tight_layout()
 
 
-def plot_ppc_vs_observed(y, yhat):
+def plot_ppc_vs_observed(y, yhat, xlim_max_override=None):
     """ Plot (quantile summaries of) yhat_ppc vs y """
     ps = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 97]
     df_yhat_qs = pd.DataFrame(np.percentile(yhat, ps, axis=1).T, 
@@ -459,8 +460,13 @@ def plot_ppc_vs_observed(y, yhat):
         _ = sns.kdeplot(x='value', hue='ppc_q', data=dfm, 
                 cumulative=True, palette='coolwarm', lw=2, ls='-', 
                 ax=axs, zorder=-1, common_norm=False, common_grid=True)
+    
+    if xlim_max_override is not None:
+        _ = axs.set(xlim=(0, xlim_max_override), ylim=(0, 1))
+    else:
+        _ = axs.set(xlim=(0, np.ceil(y.max())), ylim=(0, 1))
 
-    _ = axs.set(xlim=(0, np.ceil(y.max())), ylim=(0, 1))
+    _ = f.suptitle('Cumulative density plot of the posterior predictive vs actual')
 
 
 
@@ -495,15 +501,18 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
 
     pol_summary = ''
     if title_pol_summary:
-        pol_summary = (f'\n{len(df)} policies' + 
+        pol_summary = (f"\nPeriod {df['program_year'].min()} - {df['program_year'].max()} inc., " + 
+                        f'{len(df)} policies, ' + 
                         f"\\${df[prm].sum()/1e6:.1f}M premium, " + 
                         f"{df[clm_ct].sum():.0f} claims totalling " + 
                         f"\\${df[clm].sum()/1e6:.1f}M")
 
-    title = f'Overall Loss Ratio (Population Estimate via Bootstrapping)'
+    title = f'Distribution of Population Loss Ratio Estimate via Bootstrapping'
     _ = gd.fig.suptitle((f'{title}{title_add}' + 
         pol_summary + 
-        f'\nEst. population mean LR = {mn[0]:.1%}, sample mean LR={pest_mn[0]:.1%}'), y=ypos)
+        f'\nPopulation LR mean = {mn[0]:.1%}, (overplotted sample LR = {pest_mn[0]:.1%})'), y=ypos)
+
+    return gd
     
 
 
@@ -557,6 +566,8 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
     title = (f'Grouped Loss Ratios (Population Estimates via Bootstrapping)' + 
             f' - grouped by {grp}')
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
+
+    return gs
 
 
 def plot_bootstrap_lr_grp2(dfboot, dfboot2, df, grp='grp', prm='premium', 
@@ -626,6 +637,8 @@ def plot_bootstrap_lr_grp2(dfboot, dfboot2, df, grp='grp', prm='premium',
             f' - Grouped by {grp}, {len(df)} policies')
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
+    return gs
+
 
 def plot_heatmap_corr(dfx_corr, title_add=''):
     """ Convenience plot correlation as heatmap """
@@ -635,3 +648,29 @@ def plot_heatmap_corr(dfx_corr, title_add=''):
                      annot=True, fmt='.2f', linewidths=0.5, vmin=-1, vmax=1)
     _ = f.suptitle(f'Feature correlations: {title_add}')
     _ = axs.set_xticklabels(axs.get_xticklabels(), rotation=40, ha='right')
+
+
+
+def display_image_file(fqn):
+    """Hacky way to display pre-created image file in a Notebook 
+        such that nbconvert can see it and render to PDF
+        Force to a max width 16 inches, so you can see live it in Notebook
+        and it also renders full width in PDF
+
+    Note alternatives are bad
+        1. This is entirely missed by nbconvert at render to PDF
+        # <img src="img.jpg" style="float:center; width:900px" />
+
+        2. This causes following markdown to render monospace in PDF
+        # from IPython.display import Image
+        # Image("./assets/img/oreum_eloss_blueprint3.jpg", retina=True)
+
+    """
+    img = mpimg.imread(fqn)
+    f, axs = plt.subplots(1, 1, figsize=(16, 8))
+    im = axs.imshow(img)
+    ax = plt.gca()
+    ax.grid(False)
+    ax.set_frame_on(False)
+    plt.tick_params(top=False, bottom=False, left=False, right=False,
+                    labelleft=False, labelbottom=False)

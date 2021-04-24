@@ -27,7 +27,8 @@ def display_fw(df, max_rows=20, latex=True):
 
 
 def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, 
-                    round_numerics=False, reset_index=True, latex=True):
+                    round_numerics=False, reset_index=True, latex=True,
+                    return_df=False):
     """ Concat transposed topN rows, numerical desc & dtypes 
         Beware a dataframe full of bools or categoricals will error 
         thanks to pandas.describe() being too clever
@@ -56,7 +57,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
         for ft in dfdesc.columns[1:]:
             dfdesc[ft] = dfdesc[ft].apply(lambda x: np.round(x,3))
 
-    dfout = pd.concat((dfdesc, df.dtypes), axis=1, join='outer', sort=True)
+    dfout = pd.concat((dfdesc, df.dtypes), axis=1, join='outer', sort=False)
     dfout = dfout.loc[df.columns.values]
     dfout.rename(columns={0:'dtype'}, inplace=True)
     dfout.index.name = 'ft'
@@ -90,8 +91,14 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
     # select summary states and prepend random rows for example cases
     rndidx = np.random.randint(0,len(df),nrows)
     dfout = pd.concat((df.iloc[rndidx].T, dfout[fts_out].copy()), axis=1, 
-                        join='outer', sort=True)
-    display_fw(dfout.iloc[:nfeats+len_index,:].fillna(''), max_rows=nfeats, latex=latex)
+                        join='outer', sort=False)
+    dfout.index.name = 'ft'
+
+    if return_df:
+        return dfout
+    
+    display_fw(dfout.iloc[:nfeats+len_index,:].fillna(''), 
+                max_rows=nfeats, latex=latex)
 
 
 def get_fts_by_dtype(df):
