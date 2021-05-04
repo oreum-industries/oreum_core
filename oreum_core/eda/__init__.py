@@ -25,6 +25,7 @@ from oreum_core.eda.plot import (
     plot_bootstrap_lr,
     plot_bootstrap_lr_grp,
     plot_bootstrap_lr_grp2,
+    plot_bootstrap_delta_grp,
     plot_heatmap_corr,
     display_image_file,
     )
