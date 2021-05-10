@@ -469,7 +469,6 @@ def plot_ppc_vs_observed(y, yhat, xlim_max_override=None):
     _ = f.suptitle('Cumulative density plot of the posterior predictive vs actual')
 
 
-
 def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
                       title_add='', title_pol_summary=False, force_xlim=None):
     """ Plot bootstrapped loss ratio, no grouping """
@@ -688,7 +687,6 @@ def plot_heatmap_corr(dfx_corr, title_add=''):
                      annot=True, fmt='.2f', linewidths=0.5, vmin=-1, vmax=1)
     _ = f.suptitle(f'Feature correlations: {title_add}')
     _ = axs.set_xticklabels(axs.get_xticklabels(), rotation=40, ha='right')
-
 
 
 def display_image_file(fqn):
