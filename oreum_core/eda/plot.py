@@ -714,3 +714,29 @@ def display_image_file(fqn):
     ax.set_frame_on(False)
     plt.tick_params(top=False, bottom=False, left=False, right=False,
                     labelleft=False, labelbottom=False)
+
+
+def plot_kj_summaries_for_single_policy(dfp, policy_id, title_add='psi'):
+    """ Convenience: plot summary of kj components for a single policy
+        Highly coupled to summarise_kj_components_for_single_policy
+    """
+
+    idx = ~dfp['ft_mapped'].isnull()
+    gd = sns.FacetGrid(hue='component', data=dfp.loc[idx], palette='vlag', height=5, aspect=1.5)
+    _ = gd.map(sns.barplot, 'component', 'ft_mapped' , order=dfp.loc[idx,'ft_mapped'], lw=3, zorder=1)
+    _ = gd.axes.flat[0].axvline(0, color='#dddddd', lw=3, zorder=2)
+    _ = gd.axes.flat[0].set(xlabel=None, ylabel=None, xticklabels=[])
+    _ = gd.fig.suptitle(f'Components of linear submodel predictions: {title_add}\nfor policy {policy_id}', y=1.08)
+
+    rhs_lbls = dfp.loc[idx, 'input_val_as_label'].values[::-1]
+
+    axr = gd.axes.flat[0].twinx()
+    _ = axr.plot(np.zeros(len(rhs_lbls)), np.arange(len(rhs_lbls))+0.5, lw=0)
+    # _ = axr.set_ylim((-1,len(rhs_lbls)))
+    _ = axr.set_yticks([l for l in np.arange(len(rhs_lbls))+0.5])
+    _ = axr.set_yticklabels(rhs_lbls)
+    _ = axr.yaxis.grid(False)
+    _ = axr.xaxis.grid(False)
+    # _ = axr.spines['top'].set_visible(False)
+    # _ = axr.spines['right'].set_visible(False)
+    return gd
