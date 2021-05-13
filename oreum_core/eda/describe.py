@@ -70,7 +70,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
     
     # add sum for numeric cols
     dfout['sum'] = np.nan
-    idxs = dfout['dtype'] != 'object'
+    idxs = dfout['dtype'].isin(['int64','float64'])
     if np.sum(idxs.values) > 0:
         for ft in dfout.loc[idxs].index.values:
             dfout.loc[ft, 'sum'] = df[ft].sum()    
