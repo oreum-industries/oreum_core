@@ -469,7 +469,6 @@ def plot_ppc_vs_observed(y, yhat, xlim_max_override=None):
     _ = f.suptitle('Cumulative density plot of the posterior predictive vs actual')
 
 
-
 def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
                       title_add='', title_pol_summary=False, force_xlim=None):
     """ Plot bootstrapped loss ratio, no grouping """
@@ -515,7 +514,6 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
     return gd
     
 
-
 def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim', 
                         title_add='', force_xlim=None):
     """ Plot bootstrapped loss ratio, grouped by grp """
@@ -535,7 +533,7 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
     mn = dfboot.groupby(grp)['lr'].mean().tolist()
     pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
 
-    f = plt.figure(figsize=(14, 2+(len(mn)*.4)), constrained_layout=True)
+    f = plt.figure(figsize=(14, 2+(len(mn)*.2)), constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
@@ -640,6 +638,47 @@ def plot_bootstrap_lr_grp2(dfboot, dfboot2, df, grp='grp', prm='premium',
     return gs
 
 
+def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
+    """Plot delta between boostrap results, grouped"""
+    
+    ct_txt_kws = dict(color='#333333', xycoords='data', xytext=(5, 0), 
+                    textcoords='offset points', fontsize=10, ha='left', va='center')
+    
+    if dfboot[grp].dtypes != 'object':
+        dfboot = dfboot.copy()
+        dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
+
+    mn = dfboot.groupby(grp).size()
+        
+    f = plt.figure(figsize=(14, 2+(len(mn)*.2))) #, constrained_layout=True)
+    gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
+    ax0 = f.add_subplot(gs[0])
+    ax1 = f.add_subplot(gs[1], sharey=ax0)
+    
+    _ = sns.boxplot(x='lr_delta', y=grp, data=dfboot, palette='cubehelix_r',
+                     sym='', whis=[3, 97], showmeans=True, notch=True, ax=ax0)
+    _ = ax0.axvline(0, ls='--', lw=2, c='#333333', zorder=-1)
+
+    if force_xlim is not None:
+        _ = ax0.set(xlim=force_xlim)
+        
+    _ = sns.countplot(y=grp, data=df, ax=ax1, palette='cubehelix_r')
+    ct = df.groupby(grp).size().tolist()
+    _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
+    
+    ypos = 1.02
+    if title_add != '':
+        ypos = 1.05
+        title_add = f'\n{title_add}'
+
+    title = (f'2-sample bootstrap test - grouped by {grp}')
+    _ = f.suptitle(f'{title}{title_add}', y=ypos)
+    
+    f.tight_layout()  # prefer over constrained_layout
+
+    return gs
+
+
 def plot_heatmap_corr(dfx_corr, title_add=''):
     """ Convenience plot correlation as heatmap """
     f, axs = plt.subplots(1, 1, figsize=(3+.5*len(dfx_corr), 1+.5*len(dfx_corr)))
@@ -648,7 +687,6 @@ def plot_heatmap_corr(dfx_corr, title_add=''):
                      annot=True, fmt='.2f', linewidths=0.5, vmin=-1, vmax=1)
     _ = f.suptitle(f'Feature correlations: {title_add}')
     _ = axs.set_xticklabels(axs.get_xticklabels(), rotation=40, ha='right')
-
 
 
 def display_image_file(fqn):
@@ -674,3 +712,29 @@ def display_image_file(fqn):
     ax.set_frame_on(False)
     plt.tick_params(top=False, bottom=False, left=False, right=False,
                     labelleft=False, labelbottom=False)
+
+
+def plot_kj_summaries_for_single_policy(dfp, policy_id, title_add='psi'):
+    """ Convenience: plot summary of kj components for a single policy
+        Highly coupled to summarise_kj_components_for_single_policy
+    """
+
+    idx = ~dfp['ft_mapped'].isnull()
+    gd = sns.FacetGrid(hue='component', data=dfp.loc[idx], palette='vlag', height=5, aspect=1.5)
+    _ = gd.map(sns.barplot, 'component', 'ft_mapped' , order=dfp.loc[idx,'ft_mapped'], lw=3, zorder=1)
+    _ = gd.axes.flat[0].axvline(0, color='#dddddd', lw=3, zorder=2)
+    _ = gd.axes.flat[0].set(xlabel=None, ylabel=None, xticklabels=[])
+    _ = gd.fig.suptitle(f'Components of linear submodel predictions: {title_add}\nfor policy {policy_id}', y=1.08)
+
+    rhs_lbls = dfp.loc[idx, 'input_val_as_label'].values[::-1]
+
+    axr = gd.axes.flat[0].twinx()
+    _ = axr.plot(np.zeros(len(rhs_lbls)), np.arange(len(rhs_lbls))+0.5, lw=0)
+    # _ = axr.set_ylim((-1,len(rhs_lbls)))
+    _ = axr.set_yticks([l for l in np.arange(len(rhs_lbls))+0.5])
+    _ = axr.set_yticklabels(rhs_lbls)
+    _ = axr.yaxis.grid(False)
+    _ = axr.xaxis.grid(False)
+    # _ = axr.spines['top'].set_visible(False)
+    # _ = axr.spines['right'].set_visible(False)
+    return gd
