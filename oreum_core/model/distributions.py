@@ -361,8 +361,6 @@ class InverseWeibull(PositiveContinuous):
         fn = tt.log(s) - (1./ alpha ) * tt.log(-tt.log(value))
         return bound(fn, alpha > 0, s > 0, value >= 0, value <= 1)
 
-        
-
 
 class InverseWeibullNumpy():
     """Inverse Weibull PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF

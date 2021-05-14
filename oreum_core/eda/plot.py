@@ -480,6 +480,8 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
     mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
     
     mn = dfboot[['lr']].mean().tolist()                          # boot mean
+    hdi = dfboot['lr'].quantile(q=[0.03, 0.25, 0.75, 0.97]).values # boot qs
+    # return hdi
     pest_mn = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]  # point est mean
 
     gd = sns.catplot(x='lr', data=dfboot, kind='violin', cut=0, height=2, aspect=6)
@@ -509,7 +511,10 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
     title = f'Distribution of Population Loss Ratio Estimate via Bootstrapping'
     _ = gd.fig.suptitle((f'{title}{title_add}' + 
         pol_summary + 
-        f'\nPopulation LR mean = {mn[0]:.1%}, (overplotted sample LR = {pest_mn[0]:.1%})'), y=ypos)
+        f'\nPopulation LR = {mn[0]:.1%}, ' + 
+        f'HDI_50 = [{hdi[1]:.1%}, {hdi[2]:.1%}], ' + 
+        f'HDI_94 = [{hdi[0]:.1%}, {hdi[3]:.1%}]'), y=ypos)
+        # ignore (overplotted sample LR = {pest_mn[0]:.1%})')
 
     return gd
     
@@ -533,7 +538,7 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
     mn = dfboot.groupby(grp)['lr'].mean().tolist()
     pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
 
-    f = plt.figure(figsize=(14, 2+(len(mn)*.2)), constrained_layout=True)
+    f = plt.figure(figsize=(14, 2+(len(mn)*.25))) #, constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
@@ -556,14 +561,16 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
     ct = df.groupby(grp).size().tolist()
     _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
     
-    ypos = 1.05
+    ypos = 1.02
     if title_add != '':
-        ypos = 1.08
+        ypos = 1.05
         title_add = f'\n{title_add}'
 
     title = (f'Grouped Loss Ratios (Population Estimates via Bootstrapping)' + 
             f' - grouped by {grp}')
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
+
+    plt.tight_layout()
 
     return gs
 
