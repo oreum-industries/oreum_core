@@ -561,9 +561,9 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
     ct = df.groupby(grp).size().tolist()
     _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
     
-    ypos = 1.02
+    ypos = 1.01
     if title_add != '':
-        ypos = 1.05
+        ypos = 1.03
         title_add = f'\n{title_add}'
 
     title = (f'Grouped Loss Ratios (Population Estimates via Bootstrapping)' + 
@@ -575,45 +575,40 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
     return gs
 
 
-def plot_bootstrap_lr_grp2(dfboot, dfboot2, df, grp='grp', prm='premium', 
-                           clm='claim', title_add='', force_xlim=None, ):
-    """ Plot bootstrapped loss ratio, grouped by grp 
-        Also plot ungrouped bootraped distribtuion over the top"""
+def plot_bootstrap_grp(dfboot, df, grp='grp', val='y_eloss', title_add='', 
+                       force_xlim=None):
+    """ Plot bootstrapped value, grouped by grp """
 
-    ct_txt_kws = dict(color='#333333', xycoords='data', xytext=(2, 0), 
-                    textcoords='offset points', fontsize=10, ha='left', va='center')
+    ct_txt_kws = dict(color='#ffffff', xycoords='data', xytext=(-5, 0), 
+                    textcoords='offset points', fontsize=10, ha='right', va='center')
     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
                     textcoords='offset points', fontsize=8, backgroundcolor='w')
     pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
                     marker='d', markersize=10) 
     mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
-    
-    if dfboot[grp].dtype.name[:3] not in ['obj', 'cat', 'boo']:
+
+    if not dfboot[grp].dtypes in ['object', 'category']:
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
 
-    mn = dfboot.groupby(grp)['lr'].mean().tolist()
+    mn = dfboot.groupby(grp)[val].mean().tolist()
+    pest_mn = df.groupby(grp)[val].mean().values
 
-    with warnings.catch_warnings(): 
-        warnings.simplefilter(action='ignore')  # ignore RuntimeWarning caused by 0/0
-        pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
-
-    f = plt.figure(figsize=(14, 2.6+(len(mn)*.4)), constrained_layout=True)
-    gs = gridspec.GridSpec(2, 2, height_ratios=[9, 1], width_ratios=[11, 1], figure=f)
+    f = plt.figure(figsize=(14, 2+(len(mn)*.25))) #, constrained_layout=True)
+    gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
-    ax2 = f.add_subplot(gs[2], sharex=ax0)
-        
-    _ = sns.violinplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
+
+    _ = sns.violinplot(x=val, y=grp, data=dfboot, kind='violin', cut=0, 
                      scale='count', width=0.6, palette='cubehelix_r', ax=ax0)
 
     _ = [ax0.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
-    _ = [ax0.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
+    _ = [ax0.annotate(f'{v:,.0f}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
     _ = [ax0.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
 
     elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
              Line2D([0],[0], label='sample', **pest_mn_kws)]
-    _ = ax0.legend(handles=elems, loc='upper right', title='Mean LRs')
+    _ = ax0.legend(handles=elems, loc='lower right', title='Mean Val')
     
     if force_xlim is not None:
         _ = ax0.set(xlim=force_xlim)
@@ -622,27 +617,88 @@ def plot_bootstrap_lr_grp2(dfboot, dfboot2, df, grp='grp', prm='premium',
     ct = df.groupby(grp).size().tolist()
     _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
     
-    _ = sns.violinplot(x='lr', data=dfboot2, kind='violin', cut=0, 
-                     scale='count', width=0.6, color='#333333', ax=ax2)
-    
-    mn2 = [dfboot2['lr'].mean()]
-    pest_mn2 = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]
-
-    _ = [ax2.plot(v, i%len(mn2), **mn_kws) for i, v in enumerate(mn2)]
-    _ = [ax2.annotate(f'{v:.1%}', xy=(v, i%len(mn2)), **mn_txt_kws) for i, v in enumerate(mn2)]
-    _ = [ax2.plot(v, i%len(pest_mn2), **pest_mn_kws) for i, v in enumerate(pest_mn2)]
-    _ = ax2.set(ylabel='Overall')
-    
-    ypos = 1.05
+    ypos = 1.01
     if title_add != '':
-        ypos = 1.08
+        ypos = 1.02
         title_add = f'\n{title_add}'
 
-    title = (f'Grouped Loss Ratios (Population Estimates via Bootstrapping)' + 
-            f' - Grouped by {grp}, {len(df)} policies')
+    title = (f'Grouped Mean Value (Population Estimates via Bootstrapping)' + 
+            f' - grouped by {grp}')
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
+    plt.tight_layout()
+
     return gs
+
+
+# def plot_bootstrap_lr_grp2(dfboot, dfboot2, df, grp='grp', prm='premium', 
+#                            clm='claim', title_add='', force_xlim=None, ):
+#     """ Plot bootstrapped loss ratio, grouped by grp 
+#         Also plot ungrouped bootraped distribtuion over the top"""
+
+#     ct_txt_kws = dict(color='#333333', xycoords='data', xytext=(2, 0), 
+#                     textcoords='offset points', fontsize=10, ha='left', va='center')
+#     mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
+#                     textcoords='offset points', fontsize=8, backgroundcolor='w')
+#     pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
+#                     marker='d', markersize=10) 
+#     mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+    
+#     if dfboot[grp].dtype.name[:3] not in ['obj', 'cat', 'boo']:
+#         dfboot = dfboot.copy()
+#         dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
+
+#     mn = dfboot.groupby(grp)['lr'].mean().tolist()
+
+#     with warnings.catch_warnings(): 
+#         warnings.simplefilter(action='ignore')  # ignore RuntimeWarning caused by 0/0
+#         pest_mn = df.groupby(grp).apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()).values
+
+#     f = plt.figure(figsize=(14, 2.6+(len(mn)*.4)), constrained_layout=True)
+#     gs = gridspec.GridSpec(2, 2, height_ratios=[9, 1], width_ratios=[11, 1], figure=f)
+#     ax0 = f.add_subplot(gs[0])
+#     ax1 = f.add_subplot(gs[1], sharey=ax0)
+#     ax2 = f.add_subplot(gs[2], sharex=ax0)
+        
+#     _ = sns.violinplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
+#                      scale='count', width=0.6, palette='cubehelix_r', ax=ax0)
+
+#     _ = [ax0.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
+#     _ = [ax0.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
+#     _ = [ax0.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+
+#     elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
+#              Line2D([0],[0], label='sample', **pest_mn_kws)]
+#     _ = ax0.legend(handles=elems, loc='upper right', title='Mean LRs')
+    
+#     if force_xlim is not None:
+#         _ = ax0.set(xlim=force_xlim)
+
+#     _ = sns.countplot(y=grp, data=df, ax=ax1, palette='cubehelix_r')
+#     ct = df.groupby(grp).size().tolist()
+#     _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
+    
+#     _ = sns.violinplot(x='lr', data=dfboot2, kind='violin', cut=0, 
+#                      scale='count', width=0.6, color='#333333', ax=ax2)
+    
+#     mn2 = [dfboot2['lr'].mean()]
+#     pest_mn2 = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]
+
+#     _ = [ax2.plot(v, i%len(mn2), **mn_kws) for i, v in enumerate(mn2)]
+#     _ = [ax2.annotate(f'{v:.1%}', xy=(v, i%len(mn2)), **mn_txt_kws) for i, v in enumerate(mn2)]
+#     _ = [ax2.plot(v, i%len(pest_mn2), **pest_mn_kws) for i, v in enumerate(pest_mn2)]
+#     _ = ax2.set(ylabel='Overall')
+    
+#     ypos = 1.05
+#     if title_add != '':
+#         ypos = 1.08
+#         title_add = f'\n{title_add}'
+
+#     title = (f'Grouped Loss Ratios (Population Estimates via Bootstrapping)' + 
+#             f' - Grouped by {grp}, {len(df)} policies')
+#     _ = f.suptitle(f'{title}{title_add}', y=ypos)
+
+#     return gs
 
 
 def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
