@@ -27,6 +27,7 @@ from oreum_core.eda.plot import (
     plot_bootstrap_grp,
     # plot_bootstrap_lr_grp2,  # deprecated 2021-06-17
     plot_bootstrap_delta_grp,
+    plot_grp_sum_dist_count,
     plot_heatmap_corr,
     display_image_file,
     plot_kj_summaries_for_single_policy,
