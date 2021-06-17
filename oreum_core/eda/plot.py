@@ -88,7 +88,6 @@ def plot_bool_count(df, fts, vsize=1.6):
     f.tight_layout()
 
 
-
 def plot_date_count(df, fts, fmt='%Y-%m', vsize=1.8):
     """ Plot group sizes for dates by strftime format """
 
@@ -665,6 +664,7 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
 
     return gs
 
+
 def plot_grp_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
     """ Plot a grouped value: sum, distribution and count """
 
@@ -704,6 +704,64 @@ def plot_grp_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
 
     title = (f'Value (Sum, Distribution, Count)' + 
             f' - grouped by {grp}:')
+    _ = f.suptitle(f'{title}{title_add}', y=ypos)
+
+    plt.tight_layout()
+
+    return gs
+
+
+def plot_grp_year_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
+    """ Plot a grouped value split by year: sum, distribution and count """
+
+    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
+
+    if not df[grp].dtypes in ['object', 'category']:
+        df = df.copy()
+        df[grp] = df[grp].map(lambda x: f's{x}')
+    
+    lvls = df.groupby(grp).size().index.tolist()
+    yrs = df.groupby('program_year').size().index.tolist()
+
+    f = plt.figure(figsize=(14, len(yrs)*2+(len(lvls)*.25)))
+    gs = gridspec.GridSpec(len(yrs), 3, width_ratios=[5, 5, 1], figure=f)
+    
+    ax0d, ax1d, ax2d = {}, {}, {}
+    # this is going to be an ugly loop over years
+    for i, yr in enumerate(yrs):
+
+        dfs = df.loc[df['program_year']==yr].copy()
+
+        ax0d[i] = f.add_subplot(gs[i, 0])
+        if i == 0:
+            ax1d[i] = f.add_subplot(gs[i, 1], sharey=ax0d[i])
+            ax2d[i] = f.add_subplot(gs[i, 2], sharey=ax0d[i])
+        else:
+            ax1d[i] = f.add_subplot(gs[i, 1], sharey=ax0d[i], sharex=ax1d[0]) # doesnt work
+            ax2d[i] = f.add_subplot(gs[i, 2], sharey=ax0d[i], sharex=ax2d[0]) # doesnt work
+                
+        ax0d[i].set_title(f'Sum (bootstrapped) [{yr}]')
+        ax1d[i].set_title(f'Distribution (individual values) [{yr}]')
+        ax2d[i].set_title(f'Count [{yr}]')
+
+        ct = dfs.groupby(grp).size().tolist()
+    
+        _ = sns.pointplot(y=grp, x=val, data=dfs, ax=ax0d[i], 
+                palette='cubehelix_r', estimator=np.sum, ci=94, linestyles='-')
+
+        _ = sns.boxplot(y=grp, x=val, data=dfs, ax=ax1d[i], 
+              palette='cubehelix_r', sym='', whis=[3, 97], showmeans=True)
+        
+        _ = sns.countplot(y=grp, data=dfs, ax=ax2d[i], palette='cubehelix_r')
+        _ = [ax2d[i].annotate(f'{v}', xy=(v, j%len(ct)), **ct_txt_kws) for j, v in enumerate(ct)]
+        
+    ypos = 1.01
+    if title_add != '':
+        ypos = 1.02
+        title_add = f'\n{title_add}'
+
+    title = (f'Value (Sum, Distribution, Count)' + 
+            f' - grouped by {grp}, split by program_year')
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
     plt.tight_layout()
