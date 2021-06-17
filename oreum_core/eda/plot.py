@@ -14,6 +14,17 @@ from scipy import stats, integrate
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
+def _get_kws_styling():
+    ct_txt_kws = dict(color='#333333', xycoords='data', xytext=(2, 0), 
+                    textcoords='offset points', fontsize=10, ha='left', va='center')
+    mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
+                    textcoords='offset points', fontsize=8, backgroundcolor='w')
+    pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
+                    marker='d', markersize=10) 
+    mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+
+    return ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws
+
 
 def plot_cat_count(df, fts, topn=10, vsize=2):
     """ Conv fn: plot group counts for cats and bools """
@@ -473,11 +484,7 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
                       title_add='', title_pol_summary=False, force_xlim=None):
     """ Plot bootstrapped loss ratio, no grouping """
     
-    mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10,8), 
-                    textcoords='offset points', fontsize=8, backgroundcolor='w')
-    pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
-                    marker='d', markersize=10) 
-    mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
     
     mn = dfboot[['lr']].mean().tolist()                          # boot mean
     hdi = dfboot['lr'].quantile(q=[0.03, 0.25, 0.75, 0.97]).values # boot qs
@@ -523,13 +530,7 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
                         title_add='', force_xlim=None):
     """ Plot bootstrapped loss ratio, grouped by grp """
 
-    ct_txt_kws = dict(color='#ffffff', xycoords='data', xytext=(-5, 0), 
-                    textcoords='offset points', fontsize=10, ha='right', va='center')
-    mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
-                    textcoords='offset points', fontsize=8, backgroundcolor='w')
-    pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
-                    marker='d', markersize=10) 
-    mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
 
     if dfboot[grp].dtypes != 'object':
         dfboot = dfboot.copy()
@@ -579,13 +580,7 @@ def plot_bootstrap_grp(dfboot, df, grp='grp', val='y_eloss', title_add='',
                        force_xlim=None):
     """ Plot bootstrapped value, grouped by grp """
 
-    ct_txt_kws = dict(color='#ffffff', xycoords='data', xytext=(-5, 0), 
-                    textcoords='offset points', fontsize=10, ha='right', va='center')
-    mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
-                    textcoords='offset points', fontsize=8, backgroundcolor='w')
-    pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
-                    marker='d', markersize=10) 
-    mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
 
     if not dfboot[grp].dtypes in ['object', 'category']:
         dfboot = dfboot.copy()
@@ -634,8 +629,7 @@ def plot_bootstrap_grp(dfboot, df, grp='grp', val='y_eloss', title_add='',
 def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
     """Plot delta between boostrap results, grouped"""
     
-    ct_txt_kws = dict(color='#333333', xycoords='data', xytext=(5, 0), 
-                    textcoords='offset points', fontsize=10, ha='left', va='center')
+    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
     
     if dfboot[grp].dtypes != 'object':
         dfboot = dfboot.copy()
@@ -671,17 +665,10 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
 
     return gs
 
-
 def plot_grp_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
     """ Plot a grouped value: sum, distribution and count """
 
-    ct_txt_kws = dict(color='#333333', xycoords='data', xytext=(2, 0), 
-                    textcoords='offset points', fontsize=10, ha='left', va='center')
-    # mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
-    #                 textcoords='offset points', fontsize=8, backgroundcolor='w')
-    # pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
-    #                 marker='d', markersize=10) 
-    # mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
 
     # pest_mn = df.groupby(grp)[val].mean().values
 
@@ -697,7 +684,7 @@ def plot_grp_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
     ax1 = f.add_subplot(gs[1], sharey=ax0)
     ax2 = f.add_subplot(gs[2], sharey=ax0)
     
-    ax0.set_title('Sum (boostrapped)')
+    ax0.set_title('Sum (bootstrapped)')
     ax1.set_title('Distribution (individual values)')
     ax2.set_title('Count')
     
