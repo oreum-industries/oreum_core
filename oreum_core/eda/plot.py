@@ -731,14 +731,15 @@ def plot_grp_year_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
     for i, yr in enumerate(yrs):
 
         dfs = df.loc[df['program_year']==yr].copy()
-
-        ax0d[i] = f.add_subplot(gs[i, 0])
+        
         if i == 0:
+            ax0d[i] = f.add_subplot(gs[i, 0])
             ax1d[i] = f.add_subplot(gs[i, 1], sharey=ax0d[i])
             ax2d[i] = f.add_subplot(gs[i, 2], sharey=ax0d[i])
         else:
-            ax1d[i] = f.add_subplot(gs[i, 1], sharey=ax0d[i], sharex=ax1d[0]) # doesnt work
-            ax2d[i] = f.add_subplot(gs[i, 2], sharey=ax0d[i], sharex=ax2d[0]) # doesnt work
+            ax0d[i] = f.add_subplot(gs[i, 0], sharey=ax0d[0], sharex=ax0d[0])
+            ax1d[i] = f.add_subplot(gs[i, 1], sharey=ax0d[i], sharex=ax1d[0])
+            ax2d[i] = f.add_subplot(gs[i, 2], sharey=ax0d[i], sharex=ax2d[0])
                 
         ax0d[i].set_title(f'Sum (bootstrapped) [{yr}]')
         ax1d[i].set_title(f'Distribution (individual values) [{yr}]')
