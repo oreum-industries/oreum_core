@@ -805,16 +805,16 @@ def display_image_file(fqn):
                     labelleft=False, labelbottom=False)
 
 
-def plot_kj_summaries_for_single_policy(dfp, policy_id, title_add='psi'):
-    """ Convenience: plot summary of kj components for a single policy
-        Highly coupled to summarise_kj_components_for_single_policy
+def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add='psi'):
+    """ Convenience: plot summary of kj components for a linear model coeffs
+        Highly coupled to summarise_kj_components_for_linear_model
     """
 
     idx = ~dfp['ft_mapped'].isnull()
-    gd = sns.FacetGrid(hue='component', data=dfp.loc[idx], palette='vlag', height=5, aspect=1.5)
+    gd = sns.FacetGrid(hue='component', data=dfp.loc[idx], palette='vlag', height=4, aspect=1.5)
     _ = gd.map(sns.barplot, 'component', 'ft_mapped' , order=dfp.loc[idx,'ft_mapped'], lw=3, zorder=1)
     _ = gd.axes.flat[0].axvline(0, color='#dddddd', lw=3, zorder=2)
-    _ = gd.axes.flat[0].set(xlabel=None, ylabel=None, xticklabels=[])
+    _ = gd.axes.flat[0].set(xlabel=None, ylabel=None) #, xticklabels=[])
     _ = gd.fig.suptitle(f'Components of linear submodel predictions: {title_add}\nfor policy {policy_id}', y=1.08)
 
     rhs_lbls = dfp.loc[idx, 'input_val_as_label'].values[::-1]

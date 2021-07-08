@@ -1068,7 +1068,6 @@ class Normal(pm.Normal):
         # fn = np.log(mu - sigma * np.sqrt(2.) * special.erfcinv(2 * u))
         return bound(fn , value>=0., value<=1.)
 
-
     
 class NormalNumpy():
     """ Normal PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
