@@ -155,7 +155,6 @@ def calc_ppc_coverage(y, yhat):
 
     return pd.DataFrame(cov, columns=['method', 'cr', 'coverage'])
 
-
 # TODO fix this at source
 # Minor edit to a math fn to prevent annoying deprecation warnings
 # Jon Sedar 2020-03-31
@@ -275,37 +274,40 @@ def log_jacobian_det(f_inv_x, x):
     return tt.log(tt.abs_(grad))
 
 
-def calc_2_sample_delta_prop(arr, arr_ref, fully_vectorised=False):
+def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
     r""" Calculate 2-side sample delta difference between arrays row-wise
     so that we can make a statement about the difference between a test array
-    a reference array how different arr is from arr_ref
+    a reference array how different a is from aref
 
     Basic algo
     ---------- 
 
-    for each row i in arr:
-        for each row j in arr_ref:
-            do: d = arr[i] - arr_ref[j]
+    for each row i in a:
+        for each row j in aref:
+            do: d = a[i] - aref[j]
             do: q = quantiles[0.03, 0.97](d)
             do: b_i = q > 0
             if: sum(b_i) == 2:
-                we state "94% of arr[i] > arr_ref[j], substantially larger"
+                we state "97% of a[i] > aref[j], substantially larger"
             elif: sum(b_i) == 1:
                 we state "not different"                
             else (sum(b_i) == 0):                
-                we state "94% of arr[i] < arr_ref[j], substantially smaller"                    
+                we state "97% of a[i] < aref[j], substantially smaller"                    
         do: prop = unique_count(b) / len(b)
 
-        we state "prop arr[i] larger, same, smaller than arr_ref"
+        we state "prop a[i] larger | no different | smaller than aref"
 
     Parameters
     ---------- 
-    arr: 2D numpy array shape (nobs, nsamples), as returned by sample_ppc()
+    a: 2D numpy array shape (nobs, nsamples), as returned by sample_ppc()
         This will be tested against the reference array arr_ref
         This is typically the prediction set (1 or more policies)
 
-    arr_ref: 2D numpy array shape (nobs, nsamples), as returned by sample_ppc()
+    aref: 2D numpy array shape (nobs, nsamples), as returned by sample_ppc()
         This is typically the training set (1 or more policies)
+
+    a_index: Pandas series index, default None
+        If a_index is not None, then prop_delta is returned as a DataFrame
 
     fully_vectorised : bool, default=False
         arr is not limited to a single policy
@@ -320,8 +322,8 @@ def calc_2_sample_delta_prop(arr, arr_ref, fully_vectorised=False):
     -------
     prop_delta : numpy array of proportions of arr that are 
         [0, 1, 2](substantially lower, no difference, substantially higher) 
-        than arr_ref
-        has shape (len(arr), 3)
+        than aref
+        has shape (len(a), 3)
     """
 
     def _bincount_pad(a, maxval=2):
@@ -331,25 +333,31 @@ def calc_2_sample_delta_prop(arr, arr_ref, fully_vectorised=False):
     
     # silently deal with the common mistake of sending a 1D array for testing
     # must be a horizontal slice
-    if arr.ndim == 1:
-        arr = arr[np.newaxis, :]
+    if a.ndim == 1:
+        a = a[np.newaxis, :]
 
     rope = np.array([0.03, 0.97])  # ROPE limits, must be len 2
 
     if fully_vectorised:
-        delta = arr[:, np.newaxis] - arr_ref                                   # (len(arr), len(arr_ref), width(arr_ref))
-        delta_gt0 = 1 * (np.quantile(delta, rope, axis=2) > 0)                 # (len(rope), len(arr), len(arr_ref))
-        n_intersects = np.sum(delta_gt0, axis=0)                               # (len(arr), len(arr_ref))
+        delta = a[:, np.newaxis] - aref                                        # (len(a), len(aref), width(aref))
+        delta_gt0 = 1 * (np.quantile(delta, rope, axis=2) > 0)                 # (len(rope), len(a), len(aref))
+        n_intersects = np.sum(delta_gt0, axis=0)                               # (len(a), len(aref))
     
     else:
-        n_intersects = np.empty(shape=(len(arr), len(arr_ref)))                # (len(arr), len(arr_ref))
-        for i in range(len(arr)):
-            delta = arr[i] - arr_ref                                           # (len(arr_ref), width(arr_ref))
-            delta_gt0 = 1 * (np.quantile(delta, rope, axis=1) > 0)             # (len(rope), len(arr_ref))
-            n_intersects[i] = np.sum(delta_gt0, axis=0)                        # (len(arr_ref))
+        n_intersects = np.empty(shape=(len(a), len(aref)))                     # (len(a), len(aref))
+        for i in range(len(a)):
+            delta = a[i] - aref                                                # (len(aref), width(aref))
+            delta_gt0 = 1 * (np.quantile(delta, rope, axis=1) > 0)             # (len(rope), len(aref))
+            n_intersects[i] = np.sum(delta_gt0, axis=0)                        # (len(aref))
         n_intersects = n_intersects.astype(np.int)                             
 
-    prop_intersects_across_arr_ref = np.apply_along_axis(
-        lambda r: _bincount_pad(r, len(rope)), 1, n_intersects) / len(arr_ref) # (len(arr), [0, 1, 2])
+    prop_intersects_across_aref = np.apply_along_axis(
+        lambda r: _bincount_pad(r, len(rope)), 1, n_intersects) / len(aref)    # (len(a), [0, 1, 2])
 
-    return prop_intersects_across_arr_ref
+    if a_index is not None:
+        prop_intersects_across_aref = pd.DataFrame(
+            prop_intersects_across_aref, 
+            columns=['subs_lower', 'no_difference', 'subs_higher'],
+            index=a_index)
+
+    return prop_intersects_across_aref
