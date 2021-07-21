@@ -146,8 +146,9 @@ def bootstrap_lr(df, prm='premium', clm='claim', nboot=1000):
 
 
 def calc_geometric_cv(lognormal_yhat):
-    """ Calculate geometreic coefficient of variation for log-normally 
-        distributed samples. Expect 2D array shape (nobs, nsamples)
+    """ Calculate geometric coefficient of variation for log-normally 
+        distributed samples. 
+        Expect 2D array shape (nobs, nsamples)
         https://en.wikipedia.org/wiki/Coefficient_of_variation#Log-normal_data
     """
     return np.sqrt(np.exp(np.std(np.log(lognormal_yhat), axis=1)**2) - 1)

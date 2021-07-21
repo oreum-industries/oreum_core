@@ -1,12 +1,10 @@
 # model.calc.py
 # copyright 2021 Oreum OÜ
-import arviz as az
 import numpy as np
 import pandas as pd
 import pymc3 as pm
 import theano.tensor as tt
 import theano
-from scipy import integrate
 
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
@@ -51,7 +49,7 @@ def calc_binary_performance_measures(y, yhat):
 
 def calc_mse(y, yhat):
     r""" Convenience: Calculate MSE using all samples
-        shape (nsamples, nobservations)
+        shape (nsamples, nobs)
    
     Mean-Squared Error of prediction vs observed 
     $$\frac{1}{n}\sum_{i=1}^{i=n}(\hat{y}_{i}-y_{i})^{2}$$
@@ -74,12 +72,12 @@ def calc_mse(y, yhat):
     """  
     # collapse samples to mean then calc error
     se = np.power(yhat.mean(axis=0) - y, 2) # (nobs)
-    mse = np.mean(se, axis=0)                  # 1
+    mse = np.mean(se, axis=0)               # 1
 
     # collapse samples to a range of summary stats then calc error
     smry = np.arange(0, 101, 2)
     se_pct = np.power(np.percentile(yhat, smry, axis=0) - y, 2) # (len(smry), nobs)
-    mse_pct = np.mean(se_pct, axis=1)                              # len(smry)
+    mse_pct = np.mean(se_pct, axis=1)                           # len(smry)
     
     s_mse_pct = pd.Series(mse_pct, index=smry, name='mse')
     s_mse_pct.index.rename ('pct', inplace=True) 
@@ -87,11 +85,12 @@ def calc_mse(y, yhat):
 
 
 def calc_rmse(y, yhat):
-    """ Convenience: Calculate RMSE """
+    """ Convenience: Calculate RMSE using all samples
+        shape (nsamples, nobs)
+    """
     mse, s_mse_pct = calc_mse(y, yhat)
     s_rmse_pct = s_mse_pct.map(np.sqrt)
     s_rmse_pct._set_name('rmse', inplace=True)
-       
     return np.sqrt(mse), s_rmse_pct
 
 
@@ -128,8 +127,6 @@ def calc_bayesian_r2(y, yhat):
     r2 = var_yhat / (var_yhat + var_residuals)
     return r2
 
-
-
     
 def calc_ppc_coverage(y, yhat):
     """ Calc the proportion of coverage from full yhat ppc 
@@ -157,7 +154,6 @@ def calc_ppc_coverage(y, yhat):
                                       np.int64(y <= v['upper'][i])) / len(y)))
 
     return pd.DataFrame(cov, columns=['method', 'cr', 'coverage'])
-
 
 # TODO fix this at source
 # Minor edit to a math fn to prevent annoying deprecation warnings
@@ -276,3 +272,92 @@ def log_jacobian_det(f_inv_x, x):
     """
     grad = tt.reshape(pm.theanof.gradient(tt.sum(f_inv_x), [x]), x.shape)
     return tt.log(tt.abs_(grad))
+
+
+def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
+    r""" Calculate 2-side sample delta difference between arrays row-wise
+    so that we can make a statement about the difference between a test array
+    a reference array how different a is from aref
+
+    Basic algo
+    ---------- 
+
+    for each row i in a:
+        for each row j in aref:
+            do: d = a[i] - aref[j]
+            do: q = quantiles[0.03, 0.97](d)
+            do: b_i = q > 0
+            if: sum(b_i) == 2:
+                we state "97% of a[i] > aref[j], substantially larger"
+            elif: sum(b_i) == 1:
+                we state "not different"                
+            else (sum(b_i) == 0):                
+                we state "97% of a[i] < aref[j], substantially smaller"                    
+        do: prop = unique_count(b) / len(b)
+
+        we state "prop a[i] larger | no different | smaller than aref"
+
+    Parameters
+    ---------- 
+    a: 2D numpy array shape (nobs, nsamples), as returned by sample_ppc()
+        This will be tested against the reference array arr_ref
+        This is typically the prediction set (1 or more policies)
+
+    aref: 2D numpy array shape (nobs, nsamples), as returned by sample_ppc()
+        This is typically the training set (1 or more policies)
+
+    a_index: Pandas series index, default None
+        If a_index is not None, then prop_delta is returned as a DataFrame
+
+    fully_vectorised : bool, default=False
+        arr is not limited to a single policy
+        If True, we use a numpy broadcasting to create a 3D array of deltas
+            and perform both loops i, j in vectorised fashion
+            see https://stackoverflow.com/a/43412438
+            This is clever but consumes a lot of RAM (GBs)
+        If False we loop the outer loop i
+            This is more memory efficient and in testing seems faster!
+    
+    Returns
+    -------
+    prop_delta : numpy array of proportions of arr that are 
+        [0, 1, 2](substantially lower, no difference, substantially higher) 
+        than aref
+        has shape (len(a), 3)
+    """
+
+    def _bincount_pad(a, maxval=2):
+        b = np.bincount(a)
+        return np.pad(b, (0, np.maximum(0, maxval+1-len(b))), 'constant', 
+                    constant_values=(0))
+    
+    # silently deal with the common mistake of sending a 1D array for testing
+    # must be a horizontal slice
+    if a.ndim == 1:
+        a = a[np.newaxis, :]
+
+    rope = np.array([0.03, 0.97])  # ROPE limits, must be len 2
+
+    if fully_vectorised:
+        delta = a[:, np.newaxis] - aref                                        # (len(a), len(aref), width(aref))
+        delta_gt0 = 1 * (np.quantile(delta, rope, axis=2) > 0)                 # (len(rope), len(a), len(aref))
+        n_intersects = np.sum(delta_gt0, axis=0)                               # (len(a), len(aref))
+    
+    else:
+        n_intersects = np.empty(shape=(len(a), len(aref)))                     # (len(a), len(aref))
+        for i in range(len(a)):
+            delta = a[i] - aref                                                # (len(aref), width(aref))
+            delta_gt0 = 1 * (np.quantile(delta, rope, axis=1) > 0)             # (len(rope), len(aref))
+            n_intersects[i] = np.sum(delta_gt0, axis=0)                        # (len(aref))
+        n_intersects = n_intersects.astype(np.int)                             
+
+    prop_intersects_across_aref = np.apply_along_axis(
+        lambda r: _bincount_pad(r, len(rope)), 1, n_intersects) / len(aref)    # (len(a), [0, 1, 2])
+
+    if a_index is not None:
+        prop_intersects_across_aref = pd.DataFrame(
+            prop_intersects_across_aref, 
+            columns=['subs_lower', 'no_difference', 'subs_higher'],
+            index=a_index)
+
+    return prop_intersects_across_aref

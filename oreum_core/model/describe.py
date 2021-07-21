@@ -1,6 +1,5 @@
 # model.describe.py
 # copyright 2021 Oreum OÜ
-import arviz as az
 import numpy as np
 import patsy as pt
 import re
@@ -11,7 +10,7 @@ rng = np.random.default_rng(seed=RANDOM_SEED)
 def model_desc(fml):
     """ Convenience: return patsy modeldesc
         NOTE: `.describe()` doesn't return the `1 +` (intercept) term in the 
-              case that it's present. check and add if needed
+            case that it's present. check and add if needed
     """
     fmls = fml.split(' ~ ')
     add_intercept = False if re.match(r'1 \+', fml) is None else True
@@ -35,7 +34,6 @@ def extract_yobs_yhat(azid, obs='y', pred='yhat'):
     nsamp = np.product(azid.posterior_predictive[pred].shape[:-1])    
     yobs = azid.constant_data[obs].values                            # (nobs,)
     yhat = azid.posterior_predictive[pred].values.reshape(nsamp, -1) # (nsamp, nobs)
-    
     return yobs, yhat
 
 
@@ -51,5 +49,4 @@ def describe_dist(mdl, log=False, inc_summary=False):
 
     if inc_summary:
         return title, {**mdl.notation, **dist, **mdl.conditions, **mdl.summary_stats}     
-
     return title, {**dist}
