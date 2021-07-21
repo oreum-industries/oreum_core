@@ -829,3 +829,40 @@ def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add='psi'):
     # _ = axr.spines['top'].set_visible(False)
     # _ = axr.spines['right'].set_visible(False)
     return gd
+
+
+def plot_grp_count(df, grp='grp', pal=None, title_add=''):
+    """ Simple countplot for factors in grp, label with percentages 
+        Works nicely with categorical too
+    """
+
+    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
+
+    if not df[grp].dtypes in ['object', 'category']:
+        raise TypeError('grp must be Object (string) or Categorical')
+
+    ct = df.groupby(grp).size().tolist()
+    
+    if pal is None:
+        palette='cubehelix_r'
+    elif len(pal) != len(ct):
+        raise ValueError('len(pal) must equal count of factor levels')
+
+    f, axs = plt.subplots(1, 1, figsize=(14, 2+(len(ct)*.25)))
+    _ = sns.countplot(y=grp, data=df, ax=axs, palette=pal)
+    _ = [axs.annotate(f'{v:.0f} ({v/len(df):.0%})', xy=(v, i%len(ct)), **ct_txt_kws) 
+            for i, v in enumerate(ct)]
+
+    _ = axs.set(ylabel=None)
+    
+    ypos = 1.01
+    if title_add != '':
+        ypos = 1.02
+        title_add = f'\n{title_add}'
+
+    title = (f'Countplot: {len(df)} obs, grouped by {grp}')
+    _ = f.suptitle(f'{title}{title_add}', y=ypos)
+
+    plt.tight_layout()
+
+    return f
