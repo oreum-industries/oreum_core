@@ -418,7 +418,6 @@ class Standardizer():
         self.scale = scale
 
 
-
 def compress_factor_levels(df, fts, topn=20):
     """ Crude compression for factor levels, into the topn + 1 (other)
         Return new dataframe for fts
