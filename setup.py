@@ -12,7 +12,7 @@ from subprocess import check_call
 DISTNAME = "oreum_core"
 DESCRIPTION = "Core tools for use on projects by Oreum Industries"
 AUTHOR = "Jonathan Sedar"
-AUTHOR_EMAIL = "jon.sedar@oreum.io"
+AUTHOR_EMAIL = "jonathan.sedar@oreum.io"
 URL = "https://github.com/oreum-industries/oreum_core"
 LICENSE = "Proprietary"
 
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         packages=find_packages(),
         include_package_data=True,
         classifiers=CLASSIFIERS,
-        python_requires=">=3.8",
+        python_requires=">=3.9",
         install_requires=install_reqs,
         cmdclass={'develop': DevelopCommand,
                   'install': InstallCommand},
