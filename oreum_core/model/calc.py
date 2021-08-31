@@ -265,8 +265,8 @@ def calc_dist_fns_over_x_manual_only(d_manual, params, **kwargs):
     return dfpdf, dfcdf, dfinvcdf
 
 
-def log_jacobian_det(f_inv_x, x):
-    """ Calc log of Jacobian determinant 
+def log_jcd(f_inv_x, x):
+    """ Calc the log of Jacobian determinant 
         used to aid log-likelihood maximisation of copula marginals
         see JPL: https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
     """

@@ -246,7 +246,8 @@ class Transformer():
             for ft_fact in fts_fact:
                 dt = df[ft_fact[1]].dtype.name
                 if dt != 'category':
-                    raise AttributeError(f'fml contains F({ft_fact[1]}), dtype={dt}, but it must be categorical')
+                    raise AttributeError(f'fml contains F({ft_fact[1]}), ' +
+                                    'dtype={dt}, but it must be categorical')
                     
                 # map feature to int based on its preexisting catgorical order
                 # https://stackoverflow.com/a/55304375/1165112
@@ -255,22 +256,25 @@ class Transformer():
                 self.fts_fact_mapping[ft_fact[1]] = map_fact_to_int
                 df[ft_fact[1]] = df[ft_fact[1]].map(map_fact_to_int).astype(np.int)
                 
-                # replace F() in fml so that patsy can work as normal with our new int ft
+                # replace F() in fml so that patsy can work as normal with our 
+                # new int ft
                 fml = self.rx_get_f_components.sub(ft_fact[1], fml)
         
         # TODO add option to output matrix   # np.asarray(mx_ex)
         # TODO add check for fml contains `~` and handle accordingly
         na_action = 'raise'
         if propagate_nans:
-             na_action = pt.NAAction(NA_types=[])  # do nothing, see https://stackoverflow.com/a/51641183/1165112
+            # do nothing, see https://stackoverflow.com/a/51641183/1165112
+            na_action = pt.NAAction(NA_types=[])  
 
         df_ex = pt.dmatrix(fml, df, NA_action=na_action, return_type='dataframe')
         self.design_info = df_ex.design_info
 
-        #force patsy transform of an index feature back to int! there might be a better way to do this
-        fts_to_force_to_int = list(self.fts_fact_mapping.keys())
-        if len(fts_to_force_to_int) > 0:
-            df_ex[fts_to_force_to_int] = df_ex[fts_to_force_to_int].astype(np.int64)
+        # force patsy transform of an index feature back to int! 
+        # there might be a better way to do this
+        fts_force_to_int = list(self.fts_fact_mapping.keys())
+        if len(fts_force_to_int) > 0:
+            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
         
         return df_ex 
 
@@ -295,20 +299,24 @@ class Transformer():
             pass
         
         # TODO add option to output matrix
-        # mx_ex = pt.dmatrix(self.design_info, df, NA_action='raise', return_type='matrix')
+        # mx_ex = pt.dmatrix(self.design_info, df, NA_action='raise', 
+        #                       return_type='matrix')
         # return np.asarray(mx_ex)
 
         na_action = 'raise'
         if propagate_nans:
-             na_action = pt.NAAction(NA_types=[])  # do nothing, see https://stackoverflow.com/a/51641183/1165112
+            # do nothing, see https://stackoverflow.com/a/51641183/1165112
+            na_action = pt.NAAction(NA_types=[])
 
-        df_ex = pt.dmatrix(self.design_info, df, NA_action=na_action, return_type='dataframe')
+        df_ex = pt.dmatrix(self.design_info, df, NA_action=na_action, 
+                            return_type='dataframe')
         self.design_info = df_ex.design_info
 
-        #force patsy transform of an index feature back to int! there might be a better way to do this
-        fts_to_force_to_int = list(self.fts_fact_mapping.keys())
-        if len(fts_to_force_to_int) > 0:
-            df_ex[fts_to_force_to_int] = df_ex[fts_to_force_to_int].astype(np.int64)
+        # force patsy transform of an index feature back to int! 
+        # there might be a better way to do this
+        fts_force_to_int = list(self.fts_fact_mapping.keys())
+        if len(fts_force_to_int) > 0:
+            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
         
         return df_ex 
 
@@ -317,19 +325,18 @@ class Standardizer():
     """ Model-agnostic standardizer from pre-transformed dmatrix
         dmatrix according to patsy formula or patsy design_info object
         NOTES: 
-            + means, sdevs and scale are stateful: anticipate never changing
-            + must be initialised with Transformer.design_info, consider refactoring
-            + it's reasonable to initialise this per-observation but far more 
-              efficient to initialise once and persist in-memory
-            + note these standardizations use nanmean, nanstd, so they're
-              already compatible with recent changes (2021-03-31) to 
-              transformer to propagate nans
+        + means, sdevs and scale are stateful: anticipate never changing
+        + must be initialised with Transformer.design_info, consider refactoring
+        + it's reasonable to initialise this per-observation but far more 
+            efficient to initialise once and persist in-memory
+        + note these standardizations use nanmean, nanstd, so they're
+            already compatible with recent changes (2021-03-31) to 
+            transformer to propagate nans
         
-        NEW FUNCTIONALITY: 2021-03-11 
-            apply standardization using a mask. allows us to exclude any col 
+        NEW FUNCTIONALITY:
+        + apply standardization using a mask. allows us to exclude any col 
             from standardization
-
-        2021-04-14 rework to io dataframes
+        + rework to I/O dataframes
     """
 
     def __init__(self, design_info, fts_exclude=[]):
@@ -355,7 +362,7 @@ class Standardizer():
         """
         if any([v is None for v in [self.means, self.sdevs, self.scale]]):
             raise AttributeError('No mns, sdevs or scale, ' + 
-                                 'run `fit_standardize()` on training set first')
+                                'run `fit_standardize()` on training set first')
 
         df_s = ((df - self.means) / (self.sdevs * self.scale))
         mask = np.tile(self.col_mask, (len(df), 1))
@@ -381,7 +388,7 @@ class Standardizer():
         """
         if any([v is None for v in [self.means, self.sdevs, self.scale]]):
             raise AttributeError('No mns, sdevs or scale, ' + 
-                                 'run `fit_standardize()` on training set first')
+                                'run `fit_standardize()` on training set first')
 
         mxs_all = ((mx - self.means) / (self.sdevs * self.scale))
         mask = np.tile(self.col_mask, (len(mx), 1))
@@ -426,8 +433,9 @@ def compress_factor_levels(df, fts, topn=20):
     for ft in fts:
         vc = df[ft].value_counts(dropna=False)
         # print(f'{ft}: compress {vc[:topn].sum()} ({vc[:topn].sum()/vc.sum():.1%})')
-        print(f'{ft}: compressed {len(vc)}-{topn} ({len(vc)-topn}) levels into `other`, ' + 
-              f'{vc[topn:].sum()} rows ({vc[topn:].sum() / len(df):.1%}) affected')
+        print(f'{ft}: compressed {len(vc)}-{topn} ({len(vc)-topn}) levels '+
+            'into `other`, ' + 
+            f'{vc[topn:].sum()} rows ({vc[topn:].sum() / len(df):.1%}) affected')
         vc_map = {k: (k if i < topn else 'other') 
                     for i, (k, v) in enumerate(vc.to_dict().items())}
         newdf[f'{ft}_topn'] = df[ft].map(vc_map)

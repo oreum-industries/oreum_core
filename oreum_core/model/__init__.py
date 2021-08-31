@@ -13,7 +13,7 @@ from oreum_core.model.calc import (
     calc_ppc_coverage,
     calc_dist_fns_over_x,
     calc_dist_fns_over_x_manual_only,
-    log_jacobian_det,
+    log_jcd,
     calc_2_sample_delta_prop
 )
 from oreum_core.model.describe import (
