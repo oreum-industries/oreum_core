@@ -55,8 +55,8 @@ def get_version():
 def _get_nltk_dictionaries_post_install():
     pass
     # TODO fix ModuleNotFoundError: No module named 'nltk'
-    #import nltk
-    #nltk.downloader.download(['stopwords', 'treebank', 'wordnet','punkt'])
+    # import nltk
+    # nltk.downloader.download(['stopwords', 'treebank', 'wordnet','punkt'])
 
 
 class DevelopCommand(develop):
