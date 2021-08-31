@@ -1,2 +1,2 @@
 # copyright 2021 Oreum OÜ
-__version__ = "0.1.8"
+__version__ = "0.1.9"
