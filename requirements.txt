@@ -1,4 +1,4 @@
-# manually created as-at 2021-08-30
+# manually created as-at 2021-08-31
 # hard-pinned arviz, pymc3, theano to 3-level version == a.b.c
 # loose-pinned scientific packages to 2-level version == a.b.*
 # lower-pinned general packages to 2-level version >= a.b.*

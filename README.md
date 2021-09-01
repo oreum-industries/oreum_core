@@ -7,7 +7,7 @@ This is an ever-growing package of core tools for use on client projects.
 NOTES:
 
 + Compatible with POSIX systems only
-+ Currently requires post-install manual step: 
++ Currently requires post-install manual step:
 
 1. Download and install NLTK files, e.g.
 
