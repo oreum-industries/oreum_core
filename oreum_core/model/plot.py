@@ -6,33 +6,33 @@ import numpy as np
 import seaborn as sns
 
 
-def facetplot_azid_dist(azid, rvs, rvs_hack_extra=0, group='posterior', **kwargs):
-    """Control facet positioning of Arviz Krushke style plots, data in azid
+def facetplot_azid_dist(azid, rvs, group='posterior', m=3, rvs_hack=0, **kwargs):
+    """ Control facet positioning of Arviz Krushke style plots, data in azid
         Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """
     # TODO unpack the compressed rvs from the azid
-    j = 3
-    m, n = j, ((len(rvs)+rvs_hack_extra-j) // j) + ((len(rvs)+rvs_hack_extra-j) % j)
-    f, axs = plt.subplots(n, m, figsize=(4+m*3, 2.2*n))
+    n = 1 + ((len(rvs)+rvs_hack-m) // m) + ((len(rvs)+rvs_hack-m) % m)
+    f, axs = plt.subplots(n, m, figsize=(4 + m * 3, 2.2 * n))
     _ = az.plot_posterior(azid, group=group, ax=axs, var_names=rvs, **kwargs)
-    f.suptitle(f'{group} {rvs}', y=0.96 + n*0.005)
+    f.suptitle(f'{group} {rvs}', y=0.96 + n * 0.005)
     f.tight_layout()
 
 
-def facetplot_df_dist(df, rvs, rvs_hack_extra=0, **kwargs):
-    """Control facet positioning of Arviz Krushke style plots, data in df
+def facetplot_df_dist(df, rvs, m=3, rvs_hack=0, **kwargs):
+    """ Control facet positioning of Arviz Krushke style plots, data in df
         Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """  
-    m, n = 2, ((len(rvs)+rvs_hack_extra) // 2) + ((len(rvs)+rvs_hack_extra) % 2)
+    n = 1 + ((len(rvs)+rvs_hack-m) // m) + ((len(rvs)+rvs_hack-m) % m)
     sharex = kwargs.get('sharex', False)
-    f, axs = plt.subplots(n, m, figsize=(m*6, 2.2*n), sharex=sharex)
+    f, axs = plt.subplots(n, m, figsize=(4 + m * 3, 2.2 * n), sharex=sharex)
     ref_val = kwargs.get('ref_val', [None for i in range(len(df))])
+    
     for i, ft in enumerate(df.columns):
         axarr = az.plot_posterior(df[ft].values, ax=axs.flatten()[i], 
-                                ref_val=ref_val[i])
+                                 ref_val=ref_val[i])
         axarr.set_title(ft) 
     title = kwargs.get('title', '')
-    f.suptitle(f'{title} {rvs}', y=0.93 + n*0.005)
+    f.suptitle(f'{title} {rvs}', y=0.96 + n*0.005)
     f.tight_layout()
 
 

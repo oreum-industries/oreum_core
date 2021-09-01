@@ -57,8 +57,10 @@ class BasePYMC3Model():
 
     @property
     def trace_prior(self):
-        """ Returns trace_prior from a previous sample_prior_predictive() """
-        assert self._trace_prior, "Must run sample_prior_predictive() first!"
+        """ Returns trace_prior from a previous run of 
+            sample_prior_predictive() 
+        """
+        assert self._trace_prior, "Run sample_prior_predictive() first"
         return self._trace_prior
 
     @property
@@ -69,8 +71,10 @@ class BasePYMC3Model():
 
     @property
     def posterior_predictive(self):
-        """ Returns the posterior predictive from a previous sample_posterior_predictive() """
-        assert self._posterior_predictive, "Must run sample_posterior_predictive() first!"
+        """ Returns the posterior predictive from a previous run of
+            sample_posterior_predictive()
+        """
+        assert self._posterior_predictive, "Run sample_posterior_predictive() first"
         return self._posterior_predictive   
 
 
@@ -79,14 +83,22 @@ class BasePYMC3Model():
             self._build()
             print(f'Built model {self.name}')
         except AttributeError:
-            raise NotImplementedError('You must create a method _build()' + 
-                            ' in your subclass, containing your model definition')
+            raise NotImplementedError('Create a method _build() in your' +
+                                ' subclass, containing the model definition')
         
 
     def sample_prior_predictive(self, **kwargs):
         """ Sample prior predictive, use base class defaults 
             self.sample_prior_predictive_kws or passed kwargs for
             pm.sample_prior_predictive()
+
+            NOTE:
+            + It's not currently possible to run Prior Predictive Checks on a 
+              model with missing values, per my detailed 
+              [MRE Notebook gist](https://gist.github.com/jonsedar/070319334bcf033773cc3e9495c79ea0) 
+              that illustrates the issue.
+            + I have created and tested a fix as described in my 
+            [issue ticket](https://github.com/pymc-devs/pymc3/issues/4598)
         """
         samples = kwargs.pop('samples', self.sample_prior_predictive_kws['samples'])
         random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])

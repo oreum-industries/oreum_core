@@ -2,4 +2,4 @@ name: oreum_core
 channels:
 - defaults
 dependencies:
-- python==3.8.*
+- python==3.9.*
