@@ -11,8 +11,8 @@ from subprocess import check_call
 
 DISTNAME = "oreum_core"
 DESCRIPTION = "Core tools for use on projects by Oreum Industries"
-AUTHOR = "Jonathan Sedar"
-AUTHOR_EMAIL = "jonathan.sedar@oreum.io"
+AUTHOR = "Oreum Industries"
+AUTHOR_EMAIL = "info@oreum.io"
 URL = "https://github.com/oreum-industries/oreum_core"
 LICENSE = "Proprietary"
 
@@ -20,7 +20,7 @@ CLASSIFIERS = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Financial and Insurance Industry",
     "Topic :: Scientific/Engineering",
@@ -28,7 +28,7 @@ CLASSIFIERS = [
     "Topic :: Scientific/Engineering :: Visualization",
     "Operating System :: MacOS",
     "Operating System :: Unix",
-    "License :: Other/Proprietary License"
+    "License :: OSI Approved :: Apache Software License"
 ]
 
 PROJECT_ROOT = dirname(realpath(__file__))
@@ -87,6 +87,8 @@ if __name__ == "__main__":
     setup(
         name=DISTNAME,
         version=get_version(),
+        author=AUTHOR,
+        author_email=AUTHOR_EMAIL,
         maintainer=AUTHOR,
         maintainer_email=AUTHOR_EMAIL,
         description=DESCRIPTION,
