@@ -155,8 +155,9 @@ def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
         dfm = df[sorted(fts)].melt()
     else:
         dfm = df[fts].melt()
-    g = sns.FacetGrid(row='variable', hue='variable', palette=sns.color_palette(),
-                      data=dfm, height=1.4, aspect=6, sharex=sharex)
+    g = sns.FacetGrid(row='variable', hue='variable', data=dfm,
+                        palette=sns.color_palette(), height=1.8, aspect=6, 
+                        sharex=sharex)
     _ = g.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
     _ = g.map(sns.pointplot, 'value', order='variable', color='C3', 
                 estimator=np.mean, ci=94)
