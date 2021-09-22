@@ -15,15 +15,20 @@ RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
 def _get_kws_styling():
-    ct_txt_kws = dict(color='#333333', xycoords='data', xytext=(2, 0), 
-                    textcoords='offset points', fontsize=10, ha='left', va='center')
-    mn_txt_kws = dict(color='#333333', xycoords='data', xytext=(10, 8), 
-                    textcoords='offset points', fontsize=8, backgroundcolor='w')
-    pest_mn_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
-                    marker='d', markersize=10) 
-    mn_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', markersize=16)
+    count_txt_kws = dict(color='#555555', fontsize=8, va='center',
+                         xycoords='data', textcoords='offset points')
+    count_txt_h_kws = dict(ha='left', xytext=(4, 0), **count_txt_kws)
+    count_txt_v_kws = dict(ha='center', xytext=(0, 4), **count_txt_kws)
 
-    return ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws
+    mean_txt_kws = dict(color='#555555', xycoords='data', xytext=(10, 8), 
+                    textcoords='offset points', fontsize=8, backgroundcolor='w')
+    mean_point_kws = dict(markerfacecolor='w', markeredgecolor='k', marker='d', 
+                          markersize=10)
+    pest_mean_point_kws = dict(markerfacecolor='C9', markeredgecolor='#999999', 
+                               marker='d', markersize=10) 
+
+    return (count_txt_h_kws, mean_txt_kws, pest_mean_point_kws, 
+            mean_point_kws)
 
 
 def plot_cat_count(df, fts, topn=10, vsize=2):
@@ -155,8 +160,9 @@ def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
         dfm = df[sorted(fts)].melt()
     else:
         dfm = df[fts].melt()
-    g = sns.FacetGrid(row='variable', hue='variable', palette=sns.color_palette(),
-                      data=dfm, height=1.4, aspect=6, sharex=sharex)
+    g = sns.FacetGrid(row='variable', hue='variable', data=dfm,
+                        palette=sns.color_palette(), height=1.8, aspect=6, 
+                        sharex=sharex)
     _ = g.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
     _ = g.map(sns.pointplot, 'value', order='variable', color='C3', 
                 estimator=np.mean, ci=94)
@@ -347,7 +353,7 @@ def plot_binary_performance(df, n=1):
 def plot_coverage(df, title_add=''):
     """ Convenience plot coverage from mt.calc_ppc_coverage """
 
-    txt_kws = dict(color='#333333', xycoords='data', xytext=(2,-4), 
+    txt_kws = dict(color='#555555', xycoords='data', xytext=(2,-4), 
                 textcoords='offset points', fontsize=11, backgroundcolor='w')
 
     g = sns.lmplot(x='cr', y='coverage', col='method', hue='method', data=df, 
@@ -483,7 +489,7 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
                       title_add='', title_pol_summary=False, force_xlim=None):
     """ Plot bootstrapped loss ratio, no grouping """
     
-    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
+    count_txt_h_kws, mean_txt_kws, pest_mean_point_kws, mean_point_kws = _get_kws_styling()
     
     mn = dfboot[['lr']].mean().tolist()                          # boot mean
     hdi = dfboot['lr'].quantile(q=[0.03, 0.25, 0.75, 0.97]).values # boot qs
@@ -491,12 +497,12 @@ def plot_bootstrap_lr(dfboot, df, prm='premium', clm='claim', clm_ct='claim_ct',
     pest_mn = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]  # point est mean
 
     gd = sns.catplot(x='lr', data=dfboot, kind='violin', cut=0, height=2, aspect=6)
-    _ = [gd.ax.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
-    _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
-    _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+    _ = [gd.ax.plot(v, i%len(mn), **mean_point_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mean_txt_kws) for i, v in enumerate(mn)]
+    _ = [gd.ax.plot(v, i%len(pest_mn), **pest_mean_point_kws) for i, v in enumerate(pest_mn)]
 
-    elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
-             Line2D([0],[0], label='sample', **pest_mn_kws)]
+    elems = [Line2D([0],[0], label='population (bootstrap)', **mean_point_kws), 
+             Line2D([0],[0], label='sample', **pest_mean_point_kws)]
     gd.ax.legend(handles=elems, loc='lower right', title='Mean LRs')
     if force_xlim is not None:
         _ = gd.ax.set(xlim=force_xlim)
@@ -529,7 +535,7 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
                         title_add='', force_xlim=None):
     """ Plot bootstrapped loss ratio, grouped by grp """
 
-    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
+    count_txt_h_kws, mean_txt_kws, pest_mean_point_kws, mean_point_kws = _get_kws_styling()
 
     if dfboot[grp].dtypes != 'object':
         dfboot = dfboot.copy()
@@ -546,12 +552,12 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
     _ = sns.violinplot(x='lr', y=grp, data=dfboot, kind='violin', cut=0, 
                      scale='count', width=0.6, palette='cubehelix_r', ax=ax0)
 
-    _ = [ax0.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
-    _ = [ax0.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
-    _ = [ax0.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+    _ = [ax0.plot(v, i%len(mn), **mean_point_kws) for i, v in enumerate(mn)]
+    _ = [ax0.annotate(f'{v:.1%}', xy=(v, i%len(mn)), **mean_txt_kws) for i, v in enumerate(mn)]
+    _ = [ax0.plot(v, i%len(pest_mn), **pest_mean_point_kws) for i, v in enumerate(pest_mn)]
 
-    elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
-             Line2D([0],[0], label='sample', **pest_mn_kws)]
+    elems = [Line2D([0],[0], label='population (bootstrap)', **mean_point_kws), 
+             Line2D([0],[0], label='sample', **pest_mean_point_kws)]
     _ = ax0.legend(handles=elems, title='Mean LRs')  #loc='upper right',
     
     if force_xlim is not None:
@@ -559,7 +565,7 @@ def plot_bootstrap_lr_grp(dfboot, df, grp='grp', prm='premium', clm='claim',
 
     _ = sns.countplot(y=grp, data=df, ax=ax1, palette='cubehelix_r')
     ct = df.groupby(grp).size().tolist()
-    _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
+    _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **count_txt_h_kws) for i, v in enumerate(ct)]
     
     ypos = 1.01
     if title_add != '':
@@ -579,7 +585,7 @@ def plot_bootstrap_grp(dfboot, df, grp='grp', val='y_eloss', title_add='',
                        force_xlim=None):
     """ Plot bootstrapped value, grouped by grp """
 
-    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
+    count_txt_h_kws, mean_txt_kws, pest_mean_point_kws, mean_point_kws = _get_kws_styling()
 
     if not dfboot[grp].dtypes in ['object', 'category']:
         dfboot = dfboot.copy()
@@ -596,12 +602,12 @@ def plot_bootstrap_grp(dfboot, df, grp='grp', val='y_eloss', title_add='',
     _ = sns.violinplot(x=val, y=grp, data=dfboot, kind='violin', cut=0, 
                      scale='count', width=0.6, palette='cubehelix_r', ax=ax0)
 
-    _ = [ax0.plot(v, i%len(mn), **mn_kws) for i, v in enumerate(mn)]
-    _ = [ax0.annotate(f'{v:,.0f}', xy=(v, i%len(mn)), **mn_txt_kws) for i, v in enumerate(mn)]
-    _ = [ax0.plot(v, i%len(pest_mn), **pest_mn_kws) for i, v in enumerate(pest_mn)]
+    _ = [ax0.plot(v, i%len(mn), **mean_point_kws) for i, v in enumerate(mn)]
+    _ = [ax0.annotate(f'{v:,.0f}', xy=(v, i%len(mn)), **mean_txt_kws) for i, v in enumerate(mn)]
+    _ = [ax0.plot(v, i%len(pest_mn), **pest_mean_point_kws) for i, v in enumerate(pest_mn)]
 
-    elems = [Line2D([0],[0], label='population (bootstrap)', **mn_kws), 
-             Line2D([0],[0], label='sample', **pest_mn_kws)]
+    elems = [Line2D([0],[0], label='population (bootstrap)', **mean_point_kws), 
+             Line2D([0],[0], label='sample', **pest_mean_point_kws)]
     _ = ax0.legend(handles=elems, loc='lower right', title='Mean Val')
     
     if force_xlim is not None:
@@ -609,7 +615,7 @@ def plot_bootstrap_grp(dfboot, df, grp='grp', val='y_eloss', title_add='',
 
     _ = sns.countplot(y=grp, data=df, ax=ax1, palette='cubehelix_r')
     ct = df.groupby(grp).size().tolist()
-    _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
+    _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **count_txt_h_kws) for i, v in enumerate(ct)]
     
     ypos = 1.01
     if title_add != '':
@@ -628,7 +634,7 @@ def plot_bootstrap_grp(dfboot, df, grp='grp', val='y_eloss', title_add='',
 def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
     """Plot delta between boostrap results, grouped"""
     
-    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
+    count_txt_h_kws, mean_txt_kws, pest_mean_point_kws, mean_point_kws = _get_kws_styling()
     
     if dfboot[grp].dtypes != 'object':
         dfboot = dfboot.copy()
@@ -643,14 +649,14 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
     
     _ = sns.boxplot(x='lr_delta', y=grp, data=dfboot, palette='cubehelix_r',
                      sym='', whis=[3, 97], showmeans=True, notch=True, ax=ax0)
-    _ = ax0.axvline(0, ls='--', lw=2, c='#333333', zorder=-1)
+    _ = ax0.axvline(0, ls='--', lw=2, c='#555555', zorder=-1)
 
     if force_xlim is not None:
         _ = ax0.set(xlim=force_xlim)
         
     _ = sns.countplot(y=grp, data=df, ax=ax1, palette='cubehelix_r')
     ct = df.groupby(grp).size().tolist()
-    _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
+    _ = [ax1.annotate(f'{v}', xy=(v, i%len(ct)), **count_txt_h_kws) for i, v in enumerate(ct)]
     
     ypos = 1.02
     if title_add != '':
@@ -665,20 +671,24 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
     return gs
 
 
-def plot_grp_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
-    """ Plot a grouped value: sum, distribution and count """
+def plot_grp_sum_dist_count(df, grp='grp', val='y_eloss', title_add='',
+                            plot_outliers=True):
+    """ Plot simple diagnostics (sum, distribution and count) 
+        of a numeric value `val`, grouped by a categorical value `grp`
+        Returns a GridSpec
+    """
+    count_txt_h_kws, mean_txt_kws, pest_mean_point_kws, mean_point_kws = _get_kws_styling()
 
-    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
+    idx = df[val].notnull()
+    dfp = df.loc[idx].copy()
 
-    # pest_mn = df.groupby(grp)[val].mean().values
+    if not dfp[grp].dtypes in ['object', 'category']:
+        dfp[grp] = dfp[grp].map(lambda x: f's{x}')
 
-    if not df[grp].dtypes in ['object', 'category']:
-        df = df.copy()
-        df[grp] = df[grp].map(lambda x: f's{x}')
+    ct = dfp.groupby(grp, sort=True).size()
+    # pest_mn = dfp.groupby(grp)[val].mean().values
 
-    ct = df.groupby(grp).size().tolist()    
-
-    f = plt.figure(figsize=(14, 2+(len(ct)*.25))) #, constrained_layout=True)
+    f = plt.figure(figsize=(16, 2+(len(ct)*.25))) #, constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
@@ -688,24 +698,31 @@ def plot_grp_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
     ax1.set_title('Distribution (individual values)')
     ax2.set_title('Count')
     
-    _ = sns.pointplot(y=grp, x=val, data=df, ax=ax0, palette='cubehelix_r', 
-                    estimator=np.sum, ci=94, linestyles='-')
+    _ = sns.pointplot(y=grp, x=val, data=dfp, ax=ax0, palette='cubehelix_r', 
+                    estimator=np.sum, ci=94)
 
-    _ = sns.boxplot(y=grp, x=val, data=df, ax=ax1, palette='cubehelix_r', 
-                    sym='', whis=[3, 97], showmeans=True)
+    sym = 'k' if plot_outliers else ''
+    _ = sns.boxplot(y=grp, x=val, data=dfp, ax=ax1, palette='cubehelix_r', 
+                    sym=sym, whis=[3, 97], showmeans=True,
+                    meanprops=mean_point_kws)
     
-    _ = sns.countplot(y=grp, data=df, ax=ax2, palette='cubehelix_r')
-    _ = [ax2.annotate(f'{v}', xy=(v, i%len(ct)), **ct_txt_kws) for i, v in enumerate(ct)]
-    
+    _ = sns.countplot(y=grp, data=dfp, ax=ax2, palette='cubehelix_r')
+    _ = [ax2.annotate(f'{c} ({c/ct.sum():.0%})', xy=(c, i%len(ct)), 
+                      **count_txt_h_kws) for i, c in enumerate(ct)]
+
     ypos = 1.01
     if title_add != '':
         ypos = 1.02
         title_add = f'\n{title_add}'
-
-    title = (f'Value (Sum, Distribution, Count)' + 
-            f' - grouped by {grp}:')
+    title = (f'Diagnostic plots of `{val}` grouped by `{grp}`')
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
+    if sum(idx) > 0:
+        note=(f'Note: {sum(~idx):,.0f} NaNs found in value,'
+               f'\nplotted reduced dataset of {sum(idx):,.0f}')
+        _ = ax2.annotate(note, xy=(0.96, .96), xycoords='figure fraction', 
+                     ha='right', fontsize=8)
+    
     plt.tight_layout()
 
     return gs
@@ -714,7 +731,7 @@ def plot_grp_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
 def plot_grp_year_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
     """ Plot a grouped value split by year: sum, distribution and count """
 
-    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
+    count_txt_h_kws, mean_txt_kws, pest_mean_point_kws, mean_point_kws = _get_kws_styling()
 
     if not df[grp].dtypes in ['object', 'category']:
         df = df.copy()
@@ -754,7 +771,7 @@ def plot_grp_year_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
               palette='cubehelix_r', sym='', whis=[3, 97], showmeans=True)
         
         _ = sns.countplot(y=grp, data=dfs, ax=ax2d[i], palette='cubehelix_r')
-        _ = [ax2d[i].annotate(f'{v}', xy=(v, j%len(ct)), **ct_txt_kws) for j, v in enumerate(ct)]
+        _ = [ax2d[i].annotate(f'{v}', xy=(v, j%len(ct)), **count_txt_h_kws) for j, v in enumerate(ct)]
         
     ypos = 1.01
     if title_add != '':
@@ -836,7 +853,7 @@ def plot_grp_count(df, grp='grp', pal=None, title_add=''):
         Works nicely with categorical too
     """
 
-    ct_txt_kws, mn_txt_kws, pest_mn_kws, mn_kws = _get_kws_styling()
+    count_txt_h_kws, mean_txt_kws, pest_mean_point_kws, mean_point_kws = _get_kws_styling()
 
     if not df[grp].dtypes in ['object', 'category']:
         raise TypeError('grp must be Object (string) or Categorical')
@@ -850,7 +867,7 @@ def plot_grp_count(df, grp='grp', pal=None, title_add=''):
 
     f, axs = plt.subplots(1, 1, figsize=(14, 2+(len(ct)*.25)))
     _ = sns.countplot(y=grp, data=df, ax=axs, palette=pal)
-    _ = [axs.annotate(f'{v:.0f} ({v/len(df):.0%})', xy=(v, i%len(ct)), **ct_txt_kws) 
+    _ = [axs.annotate(f'{v:.0f} ({v/len(df):.0%})', xy=(v, i%len(ct)), **count_txt_h_kws) 
             for i, v in enumerate(ct)]
 
     _ = axs.set(ylabel=None)

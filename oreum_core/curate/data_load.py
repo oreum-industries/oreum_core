@@ -6,14 +6,21 @@ import pyarrow
 import pandas as pd
 import pyarrow.parquet as pq
 import subprocess
+import warnings
 
 class PandasParquetIO:
     """ Helper class to convert pandas to parquet and save to local path
         and vice-versa
+
+        NOTE: this seems no longer needed see:
+        https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-parquet
     """
 
     def __init__(self, relpath=[]):
         self.relpath = relpath
+        warnings.warn(
+            "This will be removed in future versions, use pandas to_parquet instead",
+            PendingDeprecationWarning)
 
     def read_ppq(self, fn, relpath=[]):
         if len(relpath) == 0:

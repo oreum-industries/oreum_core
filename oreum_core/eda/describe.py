@@ -26,6 +26,13 @@ def display_fw(df, max_rows=20, latex=True):
         display(df)
 
 
+def display_headtail(df, nrows=5, latex=True):
+    """ Convenience fn: Display head and tail n rows via display_fw """
+
+    dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
+    display_fw(dfd, latex=latex)
+
+
 def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False, 
                     round_numerics=False, reset_index=True, latex=True,
                     return_df=False):
@@ -48,8 +55,9 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
     if (df.values.nbytes > limit):
         return 'Array memsize > 50MB limit, avoid performing descriptions'
 
+    df = df.copy()
     if reset_index:
-        df = df.copy().reset_index()
+        df = df.reset_index()
 
     # start with pandas and round numerics
     dfdesc = df.describe(include='all', datetime_is_numeric=True).T

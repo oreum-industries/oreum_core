@@ -1,10 +1,10 @@
-# LICENSE.md
+# End-User License Agreement (EULA) of `oreum_core`
 
 This License pertains to `oreum_core` hosted on
 [Oreum Industries' GitHub](https://github.com/oreum-industries/oreum_core)
 
 Copyright 2021 Oreum OÜ t/a Oreum Industries. All rights reserved.
-Oreum OÜ Sepapaja 6, Tallinn, 15551, Estonia,reg.16122291
+Oreum OÜ, Sepapaja 6, Tallinn, 15551, Estonia, reg.16122291
 [oreum.io](https://oreum.io)
 
 Licensed under the Apache License, Version 2.0 (the "License");
