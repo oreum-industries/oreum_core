@@ -14,7 +14,7 @@ DESCRIPTION = "Core tools for use on projects by Oreum Industries"
 AUTHOR = "Oreum Industries"
 AUTHOR_EMAIL = "info@oreum.io"
 URL = "https://github.com/oreum-industries/oreum_core"
-LICENSE = "Proprietary"
+# LICENSE = "Proprietary"
 
 CLASSIFIERS = [
     "Development Status :: 4 - Beta",
@@ -37,7 +37,7 @@ PROJECT_ROOT = dirname(realpath(__file__))
 with open(join(PROJECT_ROOT, "README.md"), encoding="utf-8") as buff:
     LONG_DESCRIPTION = buff.read()
 
-REQUIREMENTS_FILE = join(PROJECT_ROOT, "requirements.txt")
+REQUIREMENTS_FILE = join(PROJECT_ROOT, "pip_requirements.txt")
 
 with open(REQUIREMENTS_FILE) as f:
     install_reqs = f.read().splitlines()
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         maintainer=AUTHOR,
         maintainer_email=AUTHOR_EMAIL,
         description=DESCRIPTION,
-        license=LICENSE,
+        # license=LICENSE,
         url=URL,
         long_description=LONG_DESCRIPTION,
         long_description_content_type="text/x-md",
