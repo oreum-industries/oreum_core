@@ -52,11 +52,18 @@ class DatatypeConverter():
         
         for ft in (self.fts['fid'] + self.fts['fcat']):
             idx = df[ft].notnull()
-            df.loc[idx, ft] = df.loc[idx, ft].astype(str, errors='raise').apply(snl.clean)
+            df.loc[idx, ft] = df.loc[idx, ft].astype(
+                                        str, errors='raise').apply(snl.clean)
             
         for ft in self.fts['fbool']:
+            # tame string True/False
+            if df.dtypes[ft] == object:
+                df[ft] = df[ft].astype(str).str.strip().str.lower()
+            # tame string 1/0
+            if set(df[ft].unique()) == set(['0', '1']):
+                df[ft] = df[ft].astype(float, errors='raise')
             if pd.isnull(df[ft]).sum() == 0:
-                df[ft] = df[ft].astype(np.bool)
+                df[ft] = df[ft].astype(bool)
 
         for ft in self.fts['fyear']:
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y')
@@ -65,20 +72,20 @@ class DatatypeConverter():
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y-%m-%d')
             
         for ft in self.fts['fint']:
-            if df.dtypes[ft] == np.object:
+            if df.dtypes[ft] == object:
                 df[ft] = df[ft].astype(str).str.strip().str.lower().map(
                             lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
-            df[ft] = df[ft].astype(np.float64, errors='raise')
+            df[ft] = df[ft].astype(float, errors='raise')
             if pd.isnull(df[ft]).sum() == 0:
-                df[ft] = df[ft].astype(np.int64, errors='raise')
+                df[ft] = df[ft].astype(int, errors='raise')
 
         for ft in self.fts['ffloat']:
-            if df.dtypes[ft] == np.object:
+            if df.dtypes[ft] == object:
                 df[ft] = df[ft].astype(str).str.strip().str.lower().map(
                             lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
-            df[ft] = df[ft].astype(np.float64, errors='raise')
+            df[ft] = df[ft].astype(float, errors='raise')
 
         # TODO as/when add logging
         # for ft in self.fts['fverbatim]:

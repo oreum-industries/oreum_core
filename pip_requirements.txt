@@ -17,6 +17,7 @@
 csv2md==1.1.*
 dask==2021.11.*
 ftfy>=6.0.*
+hypothesis==6.29.*
 matplotlib==3.5.*
 nltk==3.6.*
 orderedset>=2.0.*

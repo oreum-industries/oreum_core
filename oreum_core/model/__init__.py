@@ -2,7 +2,7 @@
 from oreum_core.model.base import BasePYMC3Model
 from oreum_core.model.azid_load import (
     read_azid,
-    create_azid
+    write_azid
 )
 from oreum_core.model.calc import (
     calc_binary_performance_measures,
