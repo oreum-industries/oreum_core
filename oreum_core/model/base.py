@@ -1,5 +1,6 @@
 # model.base.py
 # copyright 2021 Oreum OÜ
+import arviz as az
 import pandas as pd
 import pymc3 as pm
 
@@ -13,7 +14,7 @@ class BasePYMC3Model():
         self.model = None
         self._trace = None
         self._trace_prior = None
-        self._inference_data = None
+        self._idata = None
         self.obs = obs
         self.sample_prior_predictive_kws = dict(samples=500)
         self.sample_posterior_predictive_kws = dict(samples=500, fast=True)
@@ -21,40 +22,6 @@ class BasePYMC3Model():
                             random_seed=self.random_seed, tune=1000, draws=500, 
                             chains=4, cores=4, target_accept=0.8)
         self.rvs_for_posterior_plots = []
-
-    @property
-    def n_divergences(self):
-        """ Returns the number of divergences from the current trace """
-        assert self._trace != None, "Must run sample() first!"
-        return self._trace["diverging"].nonzero()[0].size
-
-    # not needed, see oreum_core.model.create_azid
-    # @property
-    # def inference_data(self):
-    #     """ Returns an Arviz InferenceData object """
-    #     assert self._trace, "Must run sample() first!"
-
-    #     with self.model:
-    #         posterior_predictive = pm.sample_posterior_predictive(self.trace)
-
-    #     _inference_data = az.from_pymc3(
-    #         trace=self._trace,
-    #         posterior_predictive=posterior_predictive,
-    #     )
-    #     _inference_data.posterior.attrs["model_version"] = self.version
-
-    #     return _inference_data
-
-
-    # TODO save and check cache e.g
-    # https://discourse.pymc.io/t/jupyter-idiom-for-cached-results/6782
-    # idata_file = "myfilename.nc"
-    # if os.path.exists(idata_file):
-    # idata = az.from_netcdf(idata_file)
-    # else:
-    # idata = <some expensive computation>
-    # if not os.path.exists(idata_file):
-    # az.to_netcdf(idata, idata_file)
 
     @property
     def trace_prior(self):
@@ -78,6 +45,19 @@ class BasePYMC3Model():
         assert self._posterior_predictive, "Run sample_posterior_predictive() first"
         return self._posterior_predictive   
 
+    @property
+    def idata(self):
+        """ Returns Arviz InferenceData built from sampling to date
+        """
+        assert self._idata, "Run update_idata() first"
+        return self._idata
+
+    @property
+    def n_divergences(self):
+        """ Returns the number of divergences from the current trace """
+        assert self._trace , "Must run sample() first!"
+        return self._trace["diverging"].nonzero()[0].size
+
 
     def build(self):
         try:
@@ -86,7 +66,7 @@ class BasePYMC3Model():
         except AttributeError:
             raise NotImplementedError('Create a method _build() in your' +
                                 ' subclass, containing the model definition')
-        
+
 
     def sample_prior_predictive(self, **kwargs):
         """ Sample prior predictive, use base class defaults 
@@ -110,6 +90,9 @@ class BasePYMC3Model():
         with self.model:
             self._trace_prior = pm.sample_prior_predictive(samples=samples, 
                                             random_seed=random_seed, **kwargs)
+        
+        _ = self.update_idata()
+        print(f'Sampled Prior Predictive: {samples} samples')
         return None
 
 
@@ -166,3 +149,30 @@ class BasePYMC3Model():
 
     def replace_obs(self, new_obs):
         self.obs = new_obs
+
+
+    def update_idata(self):
+        """ Create and update Arviz InferenceData object """
+        k = {'model': self.model}       
+        # ordered exceptions: assume we always use workflow: prior, trc, post
+        try:
+            k['prior'] = self.trace_prior
+            # k['trace'] = self.trace
+            # k['posterior_predictive'] = self.posterior_predictive
+        except AssertionError:
+            pass
+        # self._create_azid(k)
+        self._idata = az.from_pymc3(**k)
+        #_inference_data.posterior.attrs["model_version"] = self.version
+        
+        return None
+
+        # TODO save and check cache e.g
+        # https://discourse.pymc.io/t/jupyter-idiom-for-cached-results/6782
+        # idata_file = "myfilename.nc"
+        # if os.path.exists(idata_file):
+        # idata = az.from_netcdf(idata_file)
+        # else:
+        # idata = <some expensive computation>
+        # if not os.path.exists(idata_file):
+        # az.to_netcdf(idata, idata_file)
