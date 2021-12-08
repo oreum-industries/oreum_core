@@ -1,6 +1,6 @@
 # copyright 2021 Oreum OÜ
 from oreum_core.model.base import BasePYMC3Model
-from oreum_core.model.azid_load import (
+from oreum_core.model.file_io import (
     read_azid,
     write_azid
 )

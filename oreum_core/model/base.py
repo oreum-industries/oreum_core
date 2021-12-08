@@ -12,8 +12,9 @@ class BasePYMC3Model():
     def __init__(self, obs:pd.DataFrame=None, **kwargs):
         """ Expect obs as dfx pd.DataFrame(mx_en, mx_exs) """
         self.model = None
-        self._trace = None
         self._trace_prior = None
+        self._trace = None
+        self._posterior_predictive = None
         self._idata = None
         self.obs = obs
         self.sample_prior_predictive_kws = dict(samples=500)
@@ -117,7 +118,8 @@ class BasePYMC3Model():
                             target_accept=target_accept, 
                             #step=self.steppers,
                             return_inferencedata=False, **kwargs)
-                            # TODO consider return_inferencedata=True
+
+        _ = self.update_idata()
         return None 
 
 
@@ -152,19 +154,20 @@ class BasePYMC3Model():
 
 
     def update_idata(self):
-        """ Create and update Arviz InferenceData object """
+        """ Create and update Arviz InferenceData object 
+            NOTE: use ordered exceptions, with assumption that we always use 
+                an ordered workflow: prior, trc, post
+        """
         k = {'model': self.model}       
-        # ordered exceptions: assume we always use workflow: prior, trc, post
+        
         try:
             k['prior'] = self.trace_prior
-            # k['trace'] = self.trace
-            # k['posterior_predictive'] = self.posterior_predictive
+            k['trace'] = self.trace
+            k['posterior_predictive'] = self.posterior_predictive
         except AssertionError:
             pass
-        # self._create_azid(k)
+
         self._idata = az.from_pymc3(**k)
-        #_inference_data.posterior.attrs["model_version"] = self.version
-        
         return None
 
         # TODO save and check cache e.g
@@ -176,3 +179,5 @@ class BasePYMC3Model():
         # idata = <some expensive computation>
         # if not os.path.exists(idata_file):
         # az.to_netcdf(idata, idata_file)
+        # also:        
+        #_inference_data.posterior.attrs["model_version"] = self.version
