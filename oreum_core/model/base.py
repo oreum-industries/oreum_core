@@ -18,7 +18,7 @@ class BasePYMC3Model():
         self._idata = None
         self.obs = obs
         self.sample_prior_predictive_kws = dict(samples=500)
-        self.sample_posterior_predictive_kws = dict(samples=500, fast=True)
+        self.sample_posterior_predictive_kws = dict(fast=True)
         self.sample_kws = dict(init='jitter+adapt_diag', 
                             random_seed=self.random_seed, tune=1000, draws=500, 
                             chains=4, cores=4, target_accept=0.8)
@@ -127,12 +127,12 @@ class BasePYMC3Model():
         """ Sample posterior predictive for 
             base class self.sample_posterior_predictive_kws or passed kwargs 
             
-            Option to use pm.fast_sample_posterior_predictive()
+            Default to use pm.fast_sample_posterior_predictive()
         """
         random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
         fast = kwargs.pop('fast', self.sample_posterior_predictive_kws['fast'])
-        samples = kwargs.pop('samples', 
-                            self.sample_posterior_predictive_kws['samples'])
+        # expect default None, but allow for exceptional override
+        samples = kwargs.get('samples')
         
         if self.model is None:
             self.build()
@@ -146,7 +146,8 @@ class BasePYMC3Model():
                 self._posterior_predictive = pm.sample_posterior_predictive(
                                             self.trace, random_seed=random_seed, 
                                             samples=samples, **kwargs)
-        return None 
+        _ = self.update_idata()
+        return None
 
 
     def replace_obs(self, new_obs):
