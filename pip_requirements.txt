@@ -21,6 +21,7 @@ hypothesis==6.29.*
 matplotlib==3.5.*
 nltk==3.6.*
 orderedset>=2.0.*
+pillow==8.4.*
 pyarrow==6.0.*
 pybloomfiltermmap3==0.5.*
 scikit-learn==1.0.*

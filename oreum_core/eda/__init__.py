@@ -29,7 +29,6 @@ from oreum_core.eda.plot import (
     plot_grp_sum_dist_count,
     plot_grp_year_sum_dist_count,
     plot_heatmap_corr,
-    display_image_file,
     plot_kj_summaries_for_linear_model,
     plot_grp_count,
     )
@@ -41,3 +40,6 @@ from oreum_core.eda.calc import (
     calc_geometric_cv,
     calc_location_in_ecdf,
     )
+from oreum_core.eda.utils import (
+    display_image_file,
+)

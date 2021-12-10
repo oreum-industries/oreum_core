@@ -1,12 +1,11 @@
 # eda.plot.py
 # copyright 2021 Oreum OÜ
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 from matplotlib import gridspec
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import warnings
+# import warnings
 
 from matplotlib.lines import Line2D
 from scipy import stats, integrate
@@ -795,31 +794,6 @@ def plot_heatmap_corr(dfx_corr, title_add=''):
                      annot=True, fmt='.2f', linewidths=0.5, vmin=-1, vmax=1)
     _ = f.suptitle(f'Feature correlations: {title_add}')
     _ = axs.set_xticklabels(axs.get_xticklabels(), rotation=40, ha='right')
-
-
-def display_image_file(fqn):
-    """Hacky way to display pre-created image file in a Notebook 
-        such that nbconvert can see it and render to PDF
-        Force to a max width 16 inches, so you can see live it in Notebook
-        and it also renders full width in PDF
-
-    Note alternatives are bad
-        1. This is entirely missed by nbconvert at render to PDF
-        # <img src="img.jpg" style="float:center; width:900px" />
-
-        2. This causes following markdown to render monospace in PDF
-        # from IPython.display import Image
-        # Image("./assets/img/oreum_eloss_blueprint3.jpg", retina=True)
-
-    """
-    img = mpimg.imread(fqn)
-    f, axs = plt.subplots(1, 1, figsize=(16, 8))
-    im = axs.imshow(img)
-    ax = plt.gca()
-    ax.grid(False)
-    ax.set_frame_on(False)
-    plt.tick_params(top=False, bottom=False, left=False, right=False,
-                    labelleft=False, labelbottom=False)
 
 
 def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add='psi'):
