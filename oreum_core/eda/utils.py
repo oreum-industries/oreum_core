@@ -20,7 +20,7 @@ def display_image_file(fqn):
 
     """
     img = mpimg.imread(fqn)
-    f, axs = plt.subplots(1, 1, figsize=(16, 12))
+    f, axs = plt.subplots(1, 1, figsize=(16, 10))
     im = axs.imshow(img)
     ax = plt.gca()
     ax.grid(False)
