@@ -17,7 +17,6 @@ def display_image_file(fqn):
             2. This one causes following markdown to render monospace in PDF
             # from IPython.display import Image
             # Image("./assets/img/oreum_eloss_blueprint3.jpg", retina=True)
-
     """
     img = mpimg.imread(fqn)
     f, axs = plt.subplots(1, 1, figsize=(16, 10))

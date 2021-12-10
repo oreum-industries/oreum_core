@@ -147,7 +147,7 @@ class BasePYMC3Model():
         
         if store_ppc == False:
             # the default expected for forward-pass stateless prediction
-            return self._build_idata(ppc)
+            return self._create_idata(ppc)
         else:
             self._posterior_predictive = ppc
             _ = self._update_idata()
@@ -160,7 +160,7 @@ class BasePYMC3Model():
         self.build()
 
     
-    def _build_idata(self, ppc=None):
+    def _create_idata(self, ppc=None):
         """ Create Arviz InferenceData object 
             NOTE: use ordered exceptions, with assumption that we always use 
                 an ordered workflow: prior, trc, post
@@ -182,7 +182,7 @@ class BasePYMC3Model():
     def _update_idata(self):
         """ Create and update Arviz InferenceData object on-model
         """
-        self._idata = self._build_idata()
+        self._idata = self._create_idata()
         return None
 
 
