@@ -26,7 +26,7 @@ def display_fw(df, max_rows=20, latex=True):
         display(df)
 
 
-def display_headtail(df, nrows=5, latex=True):
+def display_ht(df, nrows=3, latex=True):
     """ Convenience fn: Display head and tail n rows via display_fw """
 
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
