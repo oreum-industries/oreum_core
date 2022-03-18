@@ -172,3 +172,8 @@ def calc_location_in_ecdf(baseline_arr, test_arr):
     sorted_baseline, cdf_prop = _ecdf(baseline_arr)   
     idxs = np.argmax((test_arr < sorted_baseline[:, None]), axis=0)
     return cdf_prop[idxs]
+
+
+def month_diff(a:pd.DataFrame, b:pd.DataFrame):
+    """ https://stackoverflow.com/a/40924041/1165112 """
+    return 12 * (a.dt.year - b.dt.year) + (a.dt.month - b.dt.month)

@@ -41,6 +41,7 @@ from oreum_core.eda.calc import (
     bootstrap_lr,
     calc_geometric_cv,
     calc_location_in_ecdf,
+    month_diff,
     )
 from oreum_core.eda.utils import (
     display_image_file,
