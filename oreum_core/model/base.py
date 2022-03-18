@@ -56,7 +56,7 @@ class BasePYMC3Model():
     @property
     def n_divergences(self):
         """ Returns the number of divergences from the current trace """
-        assert self._trace , "Must run sample() first!"
+        assert self._trace, "Must run sample() first!"
         return self._trace["diverging"].nonzero()[0].size
 
 

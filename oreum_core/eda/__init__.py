@@ -3,7 +3,8 @@ from oreum_core.eda.describe import (
     custom_describe, 
     display_fw,
     display_ht, 
-    get_fts_by_dtype
+    get_fts_by_dtype,
+    output_data_dict,
     )
 from oreum_core.eda.plot import (
     plot_cat_count,

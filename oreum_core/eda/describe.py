@@ -1,5 +1,6 @@
 # eda.descibe.py
 # copyright 2021 Oreum OÜ
+import os
 import numpy as np
 import pandas as pd
 from IPython.display import display
@@ -8,7 +9,7 @@ from scipy import stats
 RANDOM_SEED = 42
 rng = np.random.default_rng(seed=RANDOM_SEED)
 
-def display_fw(df, max_rows=20, latex=True):
+def display_fw(df, max_rows=20, latex=False):
     """ Conv fn: contextually display max rows """
 
     display_latex_repr = False
@@ -26,7 +27,7 @@ def display_fw(df, max_rows=20, latex=True):
         display(df)
 
 
-def display_ht(df, nrows=3, latex=True):
+def display_ht(df, nrows=3, latex=False):
     """ Convenience fn: Display head and tail n rows via display_fw """
 
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
@@ -39,7 +40,7 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
     """ Concat transposed topN rows, numerical desc & dtypes 
         Beware a dataframe full of bools or categoricals will error 
         thanks to pandas.describe() being too clever
-        Assume df has index. I
+        Assume df has index.
     """
     
     len_index = df.index.nlevels
@@ -116,14 +117,14 @@ def custom_describe(df, nrows=3, nfeats=30, limit=50e6, get_mode=False,
                 max_rows=nfeats, latex=latex)
 
 
-def get_fts_by_dtype(df):
+def get_fts_by_dtype(df, as_dataframe=False):
     """Return a dictionary of lists of feats within df according to dtype 
     """
     fts = dict(
         categorical = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'cat'], #category
         cat = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'obj'],
         bool = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'boo'],
-        date = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'dat'],
+        datetime = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'dat'],
         int = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'int'],
         float = [k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'flo']
         )
@@ -135,5 +136,52 @@ def get_fts_by_dtype(df):
     if n > 0:
         raise ValueError(f'Failed to match a dtype to {n} fts. Check again.' +
                          f'\nThese fts did match correctly: {fts}')
+
+    if as_dataframe:
+        dtypes = ['categorical', 'cat', 'bool', 'datetime', 'int', 'float']
+        d = {w: k for k, v in fts.items() for w in v}
+        dfd = pd.DataFrame.from_dict(d, orient='index', columns=['dtype'])
+        dfd.index.set_names('ft', inplace=True)
+        dfd['dtype'] = pd.Categorical(dfd['dtype'], categories=dtypes, ordered=True)
+        return dfd
+
     return fts
 
+
+def output_data_dict(df, dd_notes, dir_docs, fn=''):
+    """ Convenience fn: output data dict """
+        
+    # get desc overview
+    nrows = 3
+    dfd = custom_describe(df, nrows=nrows, return_df=True)
+    cols = dfd.columns.values
+    cols[:nrows] = [f'example_row_{i}' for i in range(nrows)]
+    dfd.columns = cols
+
+    # set dtypes categorical
+    df_dtypes = get_fts_by_dtype(df.reset_index(), as_dataframe=True)
+    dfd['dtype'] = df_dtypes['dtype']
+    del df_dtypes
+
+    # attached notes
+    df_dd_notes = pd.DataFrame(dd_notes, index=['notes']).T
+    df_dd_notes.index.name = 'ft'  
+    dfd = pd.merge(dfd, df_dd_notes, how='left', left_index=True, right_index=True)
+    
+    # write overview
+    if fn != '':
+        fn = f'_{fn}'
+    writer = pd.ExcelWriter(os.path.join(*dir_docs, f'datadict{fn}.xlsx'), 
+                            engine='xlsxwriter')
+    dfd.to_excel(writer, sheet_name='overview', index=True)
+        
+    # write cats to separate sheets for levels (but not indexes since they're unique)
+    for ft in dfd.loc[dfd['dtype'].isin(['categorical', 'cat'])].index.values:
+        if ft not in df.index.names:
+            print(ft)
+            dfg = (df[ft].value_counts(dropna=False) / len(df)).to_frame('prop')
+            dfg.index.name = 'value'
+            dfg.reset_index().to_excel(writer, sheet_name=ft, index=False, 
+                                        float_format='%.3f', na_rep='NULL')
+
+    writer.save()
