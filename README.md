@@ -1,8 +1,9 @@
-**Oreum Industries**
+# README.md
 
-# Oreum Core Tools `oreum_core`
+## Oreum Core Tools `oreum_core`
 
-This is an ever-growing package of core tools for use on client projects.
+This is an ever-growing package of core tools for use on client projects by
+Oreum Industries.
 
 NOTES:
 
@@ -18,7 +19,7 @@ FURTHER NOTES:
 
 + This package is a work in progress (v0.y.z) and liable to breaking changes,
 and inconveniences to the user.
-+ This package is solely designed for ease of use and rapdi development by
++ This package is solely designed for ease of use and rapid development by
 employees of Oreum Industries, and selected clients. It is not intended for
 public usage and will not be supported in that fashion.
 
@@ -35,11 +36,11 @@ nltk.downloader.download(['stopwords', 'treebank', 'wordnet','punkt'])
 
 ---
 
-Copyright 2021 Oreum OÜ t/a Oreum Industries. All rights reserved.
+Copyright 2021 - 2022 Oreum OÜ t/a Oreum Industries. All rights reserved.
 See LICENSE.md.
 
 Oreum OÜ t/a Oreum Industries, Sepapaja 6, Tallinn, 15551, Estonia,
 reg.16122291, [oreum.io](https://oreum.io)
 
 ---
-Oreum OÜ &copy; 2021
+Oreum OÜ &copy; 2021 - 2022
