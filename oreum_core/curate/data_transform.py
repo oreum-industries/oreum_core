@@ -12,7 +12,7 @@ from .text_clean import SnakeyLowercaser
 class DatatypeConverter():
     """ Force correct datatypes according to what model expects """
 
-    def __init__(self, fts, ftslvlcat={}):
+    def __init__(self, fts, ftslvlcat={}, date_format='%Y-%m-%d'):
         """ Initialise with fts and fts_dtype_pandas_categorical
             The pandas categorical dtype logically sits on top of a str object
             giving it order which is critical for patsy dmatrix transform 
@@ -40,6 +40,7 @@ class DatatypeConverter():
                         )
         self.ftslvlcat = ftslvlcat
         self.rx_number_junk = re.compile(r'[#$€£₤¥,;%]')
+        self.date_format = date_format
 
     def _force_dtypes(self, dfraw):
         """ Select fts and convert dtypes. Return cleaned df 
@@ -52,33 +53,44 @@ class DatatypeConverter():
         
         for ft in (self.fts['fid'] + self.fts['fcat']):
             idx = df[ft].notnull()
-            df.loc[idx, ft] = df.loc[idx, ft].astype(str, errors='raise').apply(snl.clean)
+            df.loc[idx, ft] = df.loc[idx, ft].astype(
+                                        str, errors='raise').apply(snl.clean)
             
         for ft in self.fts['fbool']:
+            # tame string
+            if df.dtypes[ft] == object:
+                df[ft] = df[ft].astype(str).str.strip().str.lower()
+            # convert string representation of {'0', '1'}
+            if set(df[ft].unique()) == set(['0', '1']):
+                df[ft] = df[ft].astype(float, errors='raise')
+            # fix case where "none" creeps in from processing and is False
+            if 'none' in df[ft].unique():
+                df[ft] = df[ft] != 'none'
             if pd.isnull(df[ft]).sum() == 0:
-                df[ft] = df[ft].astype(np.bool)
+                df[ft] = df[ft].astype(bool)
 
         for ft in self.fts['fyear']:
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y')
 
         for ft in self.fts['fdate']:
-            df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y-%m-%d')
+            df[ft] = pd.to_datetime(df[ft], errors='raise', 
+                                    format=self.date_format)
             
         for ft in self.fts['fint']:
-            if df.dtypes[ft] == np.object:
+            if df.dtypes[ft] == object:
                 df[ft] = df[ft].astype(str).str.strip().str.lower().map(
                             lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
-            df[ft] = df[ft].astype(np.float64, errors='raise')
+            df[ft] = df[ft].astype(float, errors='raise')
             if pd.isnull(df[ft]).sum() == 0:
-                df[ft] = df[ft].astype(np.int64, errors='raise')
+                df[ft] = df[ft].astype(int, errors='raise')
 
         for ft in self.fts['ffloat']:
-            if df.dtypes[ft] == np.object:
+            if df.dtypes[ft] == object:
                 df[ft] = df[ft].astype(str).str.strip().str.lower().map(
                             lambda x: self.rx_number_junk.sub('', x))
                 df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
-            df[ft] = df[ft].astype(np.float64, errors='raise')
+            df[ft] = df[ft].astype(float, errors='raise')
 
         # TODO as/when add logging
         # for ft in self.fts['fverbatim]:

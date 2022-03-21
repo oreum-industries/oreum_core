@@ -1,8 +1,10 @@
 # copyright 2021 Oreum OÜ
 from oreum_core.eda.describe import (
     custom_describe, 
-    display_fw, 
-    get_fts_by_dtype
+    display_fw,
+    display_ht, 
+    get_fts_by_dtype,
+    output_data_dict,
     )
 from oreum_core.eda.plot import (
     plot_cat_count,
@@ -29,7 +31,6 @@ from oreum_core.eda.plot import (
     plot_grp_sum_dist_count,
     plot_grp_year_sum_dist_count,
     plot_heatmap_corr,
-    display_image_file,
     plot_kj_summaries_for_linear_model,
     plot_grp_count,
     )
@@ -40,4 +41,8 @@ from oreum_core.eda.calc import (
     bootstrap_lr,
     calc_geometric_cv,
     calc_location_in_ecdf,
+    month_diff,
     )
+from oreum_core.eda.utils import (
+    display_image_file,
+)
