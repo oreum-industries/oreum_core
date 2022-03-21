@@ -1,4 +1,5 @@
 # Manually created as-at 2021-12-01
+# Last updated as-at 2022-03-21
 # Installation Notes:
 #  + This package is intended to be installed via a git+ egg
 #    e.g. this line would appear in a `pip_requirements.txt` file 
@@ -12,18 +13,17 @@
 #    otherwise expect to see listed here: `arviz`, `pandas`, `scipy`, so we 
 #    rely on https://github.com/pymc-devs/pymc/blob/main/requirements.txt
 #    unless we have to hard-pin for compatibility (not yet needed)
-#  + Loose-pinned scientific packages to 2-level version == a.b.*
-#  + Lower-pinned general packages to 2-level version >= a.b.*
-csv2md==1.1.*
-dask==2021.11.*
-ftfy>=6.0.*
-hypothesis==6.29.*
-matplotlib==3.5.*
-nltk==3.6.*
-orderedset>=2.0.*
-pillow==8.4.*
-pyarrow==6.0.*
-pybloomfiltermmap3==0.5.*
-scikit-learn==1.0.*
-seaborn==0.11.*
-statsmodels==0.13.*
+#  + Lower-pinned packages to 3-level version >= a.b.c
+csv2md>=1.1.2
+dask>=2022.3.0
+ftfy>=6.1.1
+hypothesis>=6.39.4
+matplotlib>=3.5.0
+nltk>=3.7
+orderedset>=2.0.3
+pillow>=9.0.1
+pyarrow>=7.0.0
+pybloomfiltermmap3>=0.5.5
+scikit-learn>=1.0.2
+seaborn>=0.11.2
+statsmodels>=0.13.2

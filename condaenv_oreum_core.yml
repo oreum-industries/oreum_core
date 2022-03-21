@@ -1,11 +1,14 @@
+# Manually created as-at 2021-12-01
+# Last updated as-at 2022-03-21
+# Lower-pinned packages to 3-level version >= a.b.c
 name: oreum_core
 channels:
 - defaults
 dependencies:
-- mkl==2021.4.*
-- mkl-service==2.4.*
-- numpy==1.21.*      # install here to compile against Intel MKL BLAS
-- pip==21.2.*
-- python==3.9.*
-- conda-forge::pymc3==3.11.4 # install here to compile against Intel MKL BLAS
+- mkl>=2021.4.0
+- mkl-service>=2.4.0
+- numpy>=1.21.2                   # install here to compile against Intel MKL BLAS
+- pip>=21.2.4
+- python==3.9.7
+- conda-forge::pymc3==3.11.4      # install here to compile against Intel MKL BLAS
 - conda-forge::theano-pymc==1.1.2 # install here to compile against Intel MKL BLAS
