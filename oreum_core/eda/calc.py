@@ -1,5 +1,5 @@
 # eda.calc.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

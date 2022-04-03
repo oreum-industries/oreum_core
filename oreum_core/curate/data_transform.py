@@ -1,5 +1,5 @@
 # curate.data_transform.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import re
 import numpy as np
 import pandas as pd

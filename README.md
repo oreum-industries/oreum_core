@@ -36,11 +36,11 @@ nltk.downloader.download(['stopwords', 'treebank', 'wordnet','punkt'])
 
 ---
 
-Copyright 2021 - 2022 Oreum OÜ t/a Oreum Industries. All rights reserved.
+Copyright 2022 Oreum OÜ t/a Oreum Industries. All rights reserved.
 See LICENSE.md.
 
 Oreum OÜ t/a Oreum Industries, Sepapaja 6, Tallinn, 15551, Estonia,
 reg.16122291, [oreum.io](https://oreum.io)
 
 ---
-Oreum OÜ &copy; 2021 - 2022
+Oreum OÜ &copy; 2022

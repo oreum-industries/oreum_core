@@ -1,5 +1,5 @@
 # eda.plot.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import numpy as np

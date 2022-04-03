@@ -1,5 +1,5 @@
 # model.distributions.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import numpy as np
 import pymc3 as pm
 from scipy import stats, special

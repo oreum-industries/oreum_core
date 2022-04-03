@@ -1,4 +1,6 @@
-# copyright 2021 Oreum OÜ
+# model/
+# Various classes & functions for modelling, primarily using pymc3
+# copyright 2022 Oreum Industries
 from oreum_core.model.base import BasePYMC3Model
 from oreum_core.model.utils import (
     read_azid,

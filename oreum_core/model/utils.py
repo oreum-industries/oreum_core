@@ -1,5 +1,5 @@
 # model.utils.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import errno
 import os
 import arviz as az

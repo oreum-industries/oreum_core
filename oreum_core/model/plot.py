@@ -1,5 +1,5 @@
 # model.plot.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import arviz as az
 import matplotlib.pyplot as plt
 import numpy as np

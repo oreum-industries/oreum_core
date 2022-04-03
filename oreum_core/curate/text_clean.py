@@ -1,5 +1,5 @@
 # curate.text_clean.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import ftfy
 import itertools
 import numpy as np

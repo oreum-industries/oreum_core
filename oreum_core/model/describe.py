@@ -1,5 +1,5 @@
 # model.describe.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import numpy as np
 import patsy as pt
 import re

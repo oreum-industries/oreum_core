@@ -1,5 +1,5 @@
 # setup.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 
 import re
 from codecs import open

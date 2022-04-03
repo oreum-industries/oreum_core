@@ -1,4 +1,6 @@
-# copyright 2021 Oreum OÜ
+# eda/
+# Various classes & functions for exploratory data analysis
+# copyright 2022 Oreum Industries
 from oreum_core.eda.describe import (
     custom_describe, 
     display_fw,

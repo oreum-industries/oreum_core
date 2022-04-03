@@ -1,5 +1,5 @@
 # eda.utils.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 

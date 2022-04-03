@@ -1,4 +1,6 @@
-# copyright 2021 Oreum OÜ
+# curate/
+# Various classes & functions for data curation
+# copyright 2022 Oreum Industries
 from oreum_core.curate.data_load import (
     PandasParquetIO, 
     SimpleStringIO,

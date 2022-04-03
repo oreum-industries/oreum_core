@@ -1,5 +1,5 @@
 # eda.descibe.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import os
 import numpy as np
 import pandas as pd

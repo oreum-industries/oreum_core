@@ -1,5 +1,5 @@
 # curate.data_load.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import json
 import os
 import pyarrow
