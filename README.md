@@ -5,7 +5,12 @@
 This is an ever-growing package of core tools for use on client projects by
 Oreum Industries.
 
-NOTES:
+---
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+---
+
+### Notes
 
 + Uses a scientific Python stack for scripting
 + Hosted on
@@ -15,7 +20,7 @@ NOTES:
 + See LICENCE.md for licensing and copyright details
 + See CONTRIBUTORS.md for list of contributors
 
-FURTHER NOTES:
+### Further Notes:
 
 + This package is a work in progress (v0.y.z) and liable to breaking changes
 and inconveniences to the user.
@@ -24,7 +29,7 @@ employees of Oreum Industries, and selected clients with guidance.
 + **This package is not intended for public usage and will not be supported 
 in that fashion.**
 
-POST INSTALL:
+### Post Install:
 
 Currently requires post-install manual step:
 
