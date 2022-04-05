@@ -7,6 +7,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: psf/black@stable
         with:
-          options: '-v -S -C -t py39 --check --diff --color --extend-exclude = """/(*/__pycache__)/"""'
+          options: '-v -S -C -t py39 --check --diff --color --extend-exclude = """__pycache__"""'
           src: './oreum_core'
           version: '22.3.*'
