@@ -64,12 +64,12 @@ def _create_engine(option='config_group'):
                 ),
                 fast_executemany=True,
             )
-    elif kind == 'postgres':
-        eng = sqlalchemy.create_engine(
-            f'postgresql://{usr}:{pwd}@{host}:{port}/{schema}'
-        )
+    # elif kind == 'postgres':
+    #     eng = sqlalchemy.create_engine(
+    #         f'postgresql://{usr}:{pwd}@{host}:{port}/{schema}'
+    #     )
     else:
-        raise AttributeError('Config file: kind in {mssqlserver, postgres}')
+        raise AttributeError('Config file: kind in {mssqlserver}')
 
     return eng
 
