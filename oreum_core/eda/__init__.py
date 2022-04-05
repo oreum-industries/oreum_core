@@ -1,18 +1,20 @@
-# copyright 2021 Oreum OÜ
+# eda/
+# Various classes & functions for exploratory data analysis
+# copyright 2022 Oreum Industries
 from oreum_core.eda.describe import (
-    custom_describe, 
+    custom_describe,
     display_fw,
-    display_ht, 
+    display_ht,
     get_fts_by_dtype,
     output_data_dict,
-    )
+)
 from oreum_core.eda.plot import (
     plot_cat_count,
     plot_bool_count,
     plot_date_count,
     plot_int_dist,
     plot_float_dist,
-    plot_joint_ft_x_tgt,    
+    plot_joint_ft_x_tgt,
     plot_mincovdet,
     plot_roc_precrec,
     plot_f_measure,
@@ -33,7 +35,7 @@ from oreum_core.eda.plot import (
     plot_heatmap_corr,
     plot_kj_summaries_for_linear_model,
     plot_grp_count,
-    )
+)
 from oreum_core.eda.calc import (
     fit_and_plot_fn,
     get_gini,
@@ -42,7 +44,7 @@ from oreum_core.eda.calc import (
     calc_geometric_cv,
     calc_location_in_ecdf,
     month_diff,
-    )
+)
 from oreum_core.eda.utils import (
     display_image_file,
 )

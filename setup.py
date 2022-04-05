@@ -1,5 +1,5 @@
 # setup.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 
 import re
 from codecs import open
@@ -28,7 +28,7 @@ CLASSIFIERS = [
     "Topic :: Scientific/Engineering :: Visualization",
     "Operating System :: MacOS",
     "Operating System :: Unix",
-    "License :: OSI Approved :: Apache Software License"
+    "License :: OSI Approved :: Apache Software License",
 ]
 
 PROJECT_ROOT = dirname(realpath(__file__))
@@ -42,6 +42,7 @@ REQUIREMENTS_FILE = join(PROJECT_ROOT, "pip_requirements.txt")
 with open(REQUIREMENTS_FILE) as f:
     install_reqs = f.read().splitlines()
 
+
 def get_version():
     VERSIONFILE = join(DISTNAME, "__init__.py")
     lines = open(VERSIONFILE).readlines()
@@ -52,6 +53,7 @@ def get_version():
             return mo.group(1)
     raise RuntimeError(f"Unable to find version in {VERSIONFILE}.")
 
+
 def _get_nltk_dictionaries_post_install():
     pass
     # TODO fix ModuleNotFoundError: No module named 'nltk'
@@ -61,8 +63,9 @@ def _get_nltk_dictionaries_post_install():
 
 class DevelopCommand(develop):
     """Pre / Post-installation for development / editable mode.
-        https://stackoverflow.com/a/36902139/1165112
+    https://stackoverflow.com/a/36902139/1165112
     """
+
     def run(self):
         ## pre
         # pass
@@ -73,8 +76,9 @@ class DevelopCommand(develop):
 
 class InstallCommand(install):
     """Pre / Post-installation for installation mode.
-        https://stackoverflow.com/a/36902139/1165112
+    https://stackoverflow.com/a/36902139/1165112
     """
+
     def run(self):
         ## pre
         # pass
@@ -101,6 +105,5 @@ if __name__ == "__main__":
         classifiers=CLASSIFIERS,
         python_requires=">=3.9",
         install_requires=install_reqs,
-        cmdclass={'develop': DevelopCommand,
-                  'install': InstallCommand},
+        cmdclass={'develop': DevelopCommand, 'install': InstallCommand},
     )

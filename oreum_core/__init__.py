@@ -1,2 +1,2 @@
-# copyright 2021 Oreum OÜ
-__version__ = "0.2.1"
+# copyright 2022 Oreum Industries
+__version__ = "0.2.2"

@@ -1,5 +1,5 @@
 # curate.data_load.py
-# copyright 2021 Oreum OÜ
+# copyright 2022 Oreum Industries
 import json
 import os
 import pyarrow
@@ -8,19 +8,21 @@ import pyarrow.parquet as pq
 import subprocess
 import warnings
 
-class PandasParquetIO:
-    """ Helper class to convert pandas to parquet and save to local path
-        and vice-versa
 
-        NOTE: this seems no longer needed see:
-        https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-parquet
+class PandasParquetIO:
+    """Helper class to convert pandas to parquet and save to local path
+    and vice-versa
+
+    NOTE: this seems no longer needed see:
+    https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html#io-parquet
     """
 
     def __init__(self, relpath=[]):
         self.relpath = relpath
         warnings.warn(
             "This will be removed in future versions, use pandas to_parquet instead",
-            PendingDeprecationWarning)
+            PendingDeprecationWarning,
+        )
 
     def read_ppq(self, fn, relpath=[]):
         if len(relpath) == 0:
@@ -32,7 +34,7 @@ class PandasParquetIO:
             raise e
         return pyarrow.Table.to_pandas(arw_df)
 
-    def write_ppq(self, df, fn, relpath=[]):       
+    def write_ppq(self, df, fn, relpath=[]):
         if len(relpath) == 0:
             relpath = self.relpath
         fqn = os.path.join(*relpath, f'{fn}.parquet')
@@ -45,11 +47,11 @@ class PandasParquetIO:
 
 
 class SimpleStringIO:
-    """ Helper class to read/write stringlike objects to txt or json files 
-        at relative path
-        Set kind to 
-            + 'txt' to read/write strings <-> text
-            + 'json' to read/write dicts <-> json
+    """Helper class to read/write stringlike objects to txt or json files
+    at relative path
+    Set kind to
+        + 'txt' to read/write strings <-> text
+        + 'json' to read/write dicts <-> json
     """
 
     def __init__(self, relpath=[], kind='txt'):
@@ -67,11 +69,11 @@ class SimpleStringIO:
             s = json.loads(s)
         return s
 
-    def write(self, s, fn, relpath=[]):       
+    def write(self, s, fn, relpath=[]):
         if len(relpath) == 0:
             relpath = self.relpath
         fqn = os.path.join(*relpath, f'{fn}.{self.kind}')
-        if self.kind =='json':
+        if self.kind == 'json':
             s = json.dumps(s)
         with open(fqn, 'w') as f:
             f.write(s)
@@ -79,10 +81,8 @@ class SimpleStringIO:
 
 
 def copy_csv2md(fqn):
-    """ Convenience to copy csv 'path/x.csv' to markdown 'path/x.md' """
+    """Convenience to copy csv 'path/x.csv' to markdown 'path/x.md'"""
     r = subprocess.run(['csv2md', f'{fqn}'], capture_output=True)
     with open(f'{fqn[:-3] + "md"}', 'wb') as f:
         f.write(r.stdout)
     return f'Created file {fqn} and {fqn[:-3]}md'
-
-
