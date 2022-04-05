@@ -1,12 +1,7 @@
 [tool.black]
 line-length = 88
-target-version = ['py38', 'py39']
+target-version = ["py39"]
 skip-string-normalization = true
-include = 'src'
-exclude = '''/(\.git | build | dist)/'''
-
-#[tool.isort]
-#profile = 'black'
-#
-#[tool.pylint.format]
-#max-line-length = "88"
+skip-magic-trailing-comma = true
+include = "oreum_core/"
+extend-exclude = """/(__pycache__)/"""

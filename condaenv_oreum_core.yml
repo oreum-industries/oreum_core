@@ -9,6 +9,6 @@ dependencies:
 - mkl-service>=2.4.0
 - numpy>=1.21.2                      # install here to compile w/ Intel MKL BLAS
 - pip>=21.2.4
-- python==3.9.7
+- python==3.9.*
 - conda-forge::pymc3==3.11.4         # install here to compile w/ Intel MKL BLAS
 - conda-forge::theano-pymc==1.1.2    # install here to compile w/ Intel MKL BLAS
