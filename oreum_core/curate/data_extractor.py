@@ -15,7 +15,7 @@ app = typer.Typer()
 
 def _create_engine(option='config_group'):
     """Create SQL engine"""
-    cfg = confuse.Configuration('resevol_extract', __name__)
+    cfg = confuse.Configuration('data_extractor', __name__)
 
     cfg.set_file(
         os.path.join('dev', 'config', 'database.yml')
