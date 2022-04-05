@@ -8,5 +8,5 @@ jobs:
       - uses: psf/black@stable
         with:
           options: '-v -S -C -t py39 --check --diff'
-          src: './src'
+          src: './oreum_core'
           version: '22.3.*'

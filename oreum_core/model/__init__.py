@@ -17,13 +17,9 @@ from oreum_core.model.calc import (
     calc_dist_fns_over_x,
     calc_dist_fns_over_x_manual_only,
     log_jcd,
-    calc_2_sample_delta_prop
+    calc_2_sample_delta_prop,
 )
-from oreum_core.model.describe import (
-    model_desc,
-    extract_yobs_yhat,
-    describe_dist
-)
+from oreum_core.model.describe import model_desc, extract_yobs_yhat, describe_dist
 from oreum_core.model.distributions import (
     # Gamma,
     GammaNumpy,
@@ -37,13 +33,13 @@ from oreum_core.model.distributions import (
     ZeroInflatedLognormal,
     ZeroInflatedLognormalNumpy,
     Normal,
-    NormalNumpy
+    NormalNumpy,
 )
 from oreum_core.model.plot import (
     facetplot_azid_dist,
     facetplot_df_dist,
     plot_dist_fns_over_x,
-    plot_dist_fns_over_x_manual_only
+    plot_dist_fns_over_x_manual_only,
 )
 
 from oreum_core.model.base import (

@@ -11,39 +11,46 @@ rng = np.random.default_rng(seed=RANDOM_SEED)
 
 
 def calc_f_measure(precision, recall, b=1):
-    """ Choose b such that recall is b times more important than precision """
+    """Choose b such that recall is b times more important than precision"""
     return (1 + b**2) * (precision * recall) / ((b**2 * precision) + recall)
 
 
 def calc_binary_performance_measures(y, yhat):
-    f""" Calculate tpr (recall), fpr, precision, accuracy for binary target, 
-        using all samples from PPC, use vectorised calcs
-        shapes y: (nsamples,), yhat: (nsamples, nobservations) 
+    f"""Calculate tpr (recall), fpr, precision, accuracy for binary target,
+    using all samples from PPC, use vectorised calcs
+    shapes y: (nsamples,), yhat: (nsamples, nobservations)
     """
 
     yhat_pct = np.percentile(yhat, np.arange(0, 101, 1), axis=0).T
     y_mx = np.tile(y.reshape(-1, 1), 101)
- 
+
     # calc tp, fp, tn, fn vectorized
     tp = np.nansum(np.where(yhat_pct == 1, y_mx, np.nan), axis=0)
-    fp = np.nansum(np.where(yhat_pct == 1, 1-y_mx, np.nan), axis=0)
-    tn = np.nansum(np.where(yhat_pct == 0, 1-y_mx, np.nan), axis=0)
+    fp = np.nansum(np.where(yhat_pct == 1, 1 - y_mx, np.nan), axis=0)
+    tn = np.nansum(np.where(yhat_pct == 0, 1 - y_mx, np.nan), axis=0)
     fn = np.nansum(np.where(yhat_pct == 0, y_mx, np.nan), axis=0)
-    
+
     # calc tpr (recall), fpr, precision etc
     accuracy = (tp + tn) / (tp + tn + fp + fn)
     tpr = recall = tp / (tp + fn)
     fpr = fp / (tn + fp)
-    precision = np.nan_to_num(tp / (tp + fp), nan=1) # beware of divide by zero
+    precision = np.nan_to_num(tp / (tp + fp), nan=1)  # beware of divide by zero
 
-    perf = pd.DataFrame({'accuracy': accuracy, 'tpr': tpr, 'fpr': fpr, 
-                        'recall': recall, 'precision': precision, 
-                        'f0.5': calc_f_measure(precision, recall, b=0.5),
-                        'f1': calc_f_measure(precision, recall, b=1),
-                        'f2': calc_f_measure(precision, recall, b=2)},
-                        index=np.arange(101))
+    perf = pd.DataFrame(
+        {
+            'accuracy': accuracy,
+            'tpr': tpr,
+            'fpr': fpr,
+            'recall': recall,
+            'precision': precision,
+            'f0.5': calc_f_measure(precision, recall, b=0.5),
+            'f1': calc_f_measure(precision, recall, b=1),
+            'f2': calc_f_measure(precision, recall, b=2),
+        },
+        index=np.arange(101),
+    )
     perf.index.set_names('pct', inplace=True)
-    
+
     return perf
 
 
@@ -69,24 +76,24 @@ def calc_mse(y, yhat):
         https://en.wikipedia.org/wiki/Generalized_mean
         
         I can only think to calc summary stats and then calc MSE for them
-    """  
+    """
     # collapse samples to mean then calc error
-    se = np.power(yhat.mean(axis=0) - y, 2) # (nobs)
-    mse = np.mean(se, axis=0)               # 1
+    se = np.power(yhat.mean(axis=0) - y, 2)  # (nobs)
+    mse = np.mean(se, axis=0)  # 1
 
     # collapse samples to a range of summary stats then calc error
     smry = np.arange(0, 101, 2)
-    se_pct = np.power(np.percentile(yhat, smry, axis=0) - y, 2) # (len(smry), nobs)
-    mse_pct = np.mean(se_pct, axis=1)                           # len(smry)
-    
+    se_pct = np.power(np.percentile(yhat, smry, axis=0) - y, 2)  # (len(smry), nobs)
+    mse_pct = np.mean(se_pct, axis=1)  # len(smry)
+
     s_mse_pct = pd.Series(mse_pct, index=smry, name='mse')
-    s_mse_pct.index.rename ('pct', inplace=True) 
+    s_mse_pct.index.rename('pct', inplace=True)
     return mse, s_mse_pct
 
 
 def calc_rmse(y, yhat):
-    """ Convenience: Calculate RMSE using all samples
-        shape (nsamples, nobs)
+    """Convenience: Calculate RMSE using all samples
+    shape (nsamples, nobs)
     """
     mse, s_mse_pct = calc_mse(y, yhat)
     s_rmse_pct = s_mse_pct.map(np.sqrt)
@@ -95,31 +102,33 @@ def calc_rmse(y, yhat):
 
 
 def calc_r2(y, yhat):
-    """ Calculate R2, 
-        return mean r2 and via summary stats of yhat
-        NOTE: shape (nsamples, nobservations)
-        $$R^{2} = 1 - \frac{\sum e_{model}^{2}}{\sum e_{mean}^{2}}$$
-        R2 normal range [0, 1]
+    """Calculate R2,
+    return mean r2 and via summary stats of yhat
+    NOTE: shape (nsamples, nobservations)
+    $$R^{2} = 1 - \frac{\sum e_{model}^{2}}{\sum e_{mean}^{2}}$$
+    R2 normal range [0, 1]
     """
-    sse_mean = np.sum((y - y.mean(axis=0))**2)
+    sse_mean = np.sum((y - y.mean(axis=0)) ** 2)
 
     # Collapse samples to mean then calc error
-    sse_model_mean = np.sum((y - yhat.mean(axis=0))**2)
+    sse_model_mean = np.sum((y - yhat.mean(axis=0)) ** 2)
     r2_mean = 1 - (sse_model_mean / sse_mean)
-    
+
     # calc summary stats of yhat
     smry = np.arange(0, 101, 5)
-    sse_model =  np.sum((y - np.percentile(yhat, smry, axis=0))**2, axis=1) # (len(smry), nobs)       
+    sse_model = np.sum(
+        (y - np.percentile(yhat, smry, axis=0)) ** 2, axis=1
+    )  # (len(smry), nobs)
     r2_pct = pd.Series(1 - (sse_model / sse_mean), index=smry, name='r2')
-    r2_pct.index.rename ('pct', inplace=True) 
-    
-    return r2_mean, r2_pct 
+    r2_pct.index.rename('pct', inplace=True)
+
+    return r2_mean, r2_pct
 
 
 def calc_bayesian_r2(y, yhat):
-    """ Calculate R2, 
-        return mean r2 and via summary stats of yhat
-        NOTE: shape (nsamples, nobservations)
+    """Calculate R2,
+    return mean r2 and via summary stats of yhat
+    NOTE: shape (nsamples, nobservations)
     """
 
     var_yhat = np.var(yhat, axis=0)
@@ -127,39 +136,49 @@ def calc_bayesian_r2(y, yhat):
     r2 = var_yhat / (var_yhat + var_residuals)
     return r2
 
-    
+
 def calc_ppc_coverage(y, yhat):
-    """ Calc the proportion of coverage from full yhat ppc 
-        shapes: y (nobservations), yhat (nsamples, nobservations)
+    """Calc the proportion of coverage from full yhat ppc
+    shapes: y (nobservations), yhat (nsamples, nobservations)
     """
-    
-    crs=np.arange(0, 1.01, .02)
+
+    crs = np.arange(0, 1.01, 0.02)
     bounds = dict(
-            pin_left=dict(
-                lower=np.tile(np.percentile(yhat, 0., axis=0), reps=(len(crs), 1)),
-                upper=np.percentile(yhat, 100. * crs, axis=0)),
-            middle_out=dict(
-                lower=np.percentile(yhat, 50. - (50. * crs), axis=0),
-                upper=np.percentile(yhat, 50. + (50. * crs), axis=0)),
-            # pin_right=dict(       ##just a rotation of pin_left
-            #     lower=np.percentile(yhat, 100. - (100 * crs), axis=0),
-            #     upper=np.tile(np.percentile(yhat, 100., axis=0), reps=(len(crs), 1)))
-            )
-    
+        pin_left=dict(
+            lower=np.tile(np.percentile(yhat, 0.0, axis=0), reps=(len(crs), 1)),
+            upper=np.percentile(yhat, 100.0 * crs, axis=0),
+        ),
+        middle_out=dict(
+            lower=np.percentile(yhat, 50.0 - (50.0 * crs), axis=0),
+            upper=np.percentile(yhat, 50.0 + (50.0 * crs), axis=0),
+        ),
+        # pin_right=dict(       ##just a rotation of pin_left
+        #     lower=np.percentile(yhat, 100. - (100 * crs), axis=0),
+        #     upper=np.tile(np.percentile(yhat, 100., axis=0), reps=(len(crs), 1)))
+    )
+
     cov = []
     y = y.values
     for k, v in bounds.items():
         for i, cr in enumerate(crs):
-            cov.append((k, cr, np.sum(np.int64(y >= v['lower'][i]) * 
-                                      np.int64(y <= v['upper'][i])) / len(y)))
+            cov.append(
+                (
+                    k,
+                    cr,
+                    np.sum(np.int64(y >= v['lower'][i]) * np.int64(y <= v['upper'][i]))
+                    / len(y),
+                )
+            )
 
     return pd.DataFrame(cov, columns=['method', 'cr', 'coverage'])
+
 
 # TODO fix this at source
 # Minor edit to a math fn to prevent annoying deprecation warnings
 # Jon Sedar 2020-03-31
 # Users/jon/anaconda/envs/instechex/lib/python3.6/site-packages/theano/tensor/subtensor.py:2339: FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated; use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index, `arr[np.array(seq)]`, which will result either in an error or a different result.
 #   out[0][inputs[2:]] = inputs[1]
+
 
 def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
     R"""Convert a packed triangular matrix into a two dimensional array.
@@ -203,8 +222,8 @@ def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
 
 
 def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
-    """ Test my manual model PDF, CDF, InvCDF vs 
-        a scipy fixed dist over range x 
+    """Test my manual model PDF, CDF, InvCDF vs
+    a scipy fixed dist over range x
     """
     logdist = kwargs.get('logdist', False)
     upper = kwargs.get('upper', 1)
@@ -214,32 +233,43 @@ def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
     u = np.linspace(0, 1, nsteps)
 
     if logdist:
-        dfpdf = pd.DataFrame({'manual': d_manual.logpdf(x, **params),
-                              'scipy': fd_scipy.logpdf(x), 
-                              'x': x}).set_index('x')
-        dfcdf = pd.DataFrame({'manual': d_manual.logcdf(x, **params),
-                              'scipy': fd_scipy.logcdf(x), 
-                              'x': x}).set_index('x')
-        dfinvcdf = pd.DataFrame({'manual': d_manual.loginvcdf(u, **params),
-                                 'scipy': np.log(fd_scipy.ppf(u)), 
-                                 'u': u}).set_index('u')
+        dfpdf = pd.DataFrame(
+            {
+                'manual': d_manual.logpdf(x, **params),
+                'scipy': fd_scipy.logpdf(x),
+                'x': x,
+            }
+        ).set_index('x')
+        dfcdf = pd.DataFrame(
+            {
+                'manual': d_manual.logcdf(x, **params),
+                'scipy': fd_scipy.logcdf(x),
+                'x': x,
+            }
+        ).set_index('x')
+        dfinvcdf = pd.DataFrame(
+            {
+                'manual': d_manual.loginvcdf(u, **params),
+                'scipy': np.log(fd_scipy.ppf(u)),
+                'u': u,
+            }
+        ).set_index('u')
     else:
-        dfpdf = pd.DataFrame({'manual': d_manual.pdf(x, **params),
-                             'scipy': fd_scipy.pdf(x), 
-                             'x': x}).set_index('x')
-        dfcdf = pd.DataFrame({'manual': d_manual.cdf(x, **params),
-                              'scipy': fd_scipy.cdf(x), 
-                              'x': x}).set_index('x')
-        dfinvcdf = pd.DataFrame({'manual': d_manual.invcdf(u, **params),
-                                 'scipy': fd_scipy.ppf(u), 
-                                 'u': u}).set_index('u')
-            
+        dfpdf = pd.DataFrame(
+            {'manual': d_manual.pdf(x, **params), 'scipy': fd_scipy.pdf(x), 'x': x}
+        ).set_index('x')
+        dfcdf = pd.DataFrame(
+            {'manual': d_manual.cdf(x, **params), 'scipy': fd_scipy.cdf(x), 'x': x}
+        ).set_index('x')
+        dfinvcdf = pd.DataFrame(
+            {'manual': d_manual.invcdf(u, **params), 'scipy': fd_scipy.ppf(u), 'u': u}
+        ).set_index('u')
+
     return dfpdf, dfcdf, dfinvcdf
 
 
 def calc_dist_fns_over_x_manual_only(d_manual, params, **kwargs):
-    """ Test my manual model PDF, CDF, InvCDF over range x 
-    """
+    """Test my manual model PDF, CDF, InvCDF over range x"""
     logdist = kwargs.get('logdist', False)
     upper = kwargs.get('upper', 1)
     lower = kwargs.get('lower', 0)
@@ -248,39 +278,45 @@ def calc_dist_fns_over_x_manual_only(d_manual, params, **kwargs):
     u = np.linspace(0, 1, nsteps)
 
     if logdist:
-        dfpdf = pd.DataFrame({'manual': d_manual.logpdf(x, **params),
-                              'x': x}).set_index('x')
-        dfcdf = pd.DataFrame({'manual': d_manual.logcdf(x, **params),
-                              'x': x}).set_index('x')
-        dfinvcdf = pd.DataFrame({'manual': d_manual.loginvcdf(u, **params),
-                                 'u': u}).set_index('u')
+        dfpdf = pd.DataFrame(
+            {'manual': d_manual.logpdf(x, **params), 'x': x}
+        ).set_index('x')
+        dfcdf = pd.DataFrame(
+            {'manual': d_manual.logcdf(x, **params), 'x': x}
+        ).set_index('x')
+        dfinvcdf = pd.DataFrame(
+            {'manual': d_manual.loginvcdf(u, **params), 'u': u}
+        ).set_index('u')
     else:
-        dfpdf = pd.DataFrame({'manual': d_manual.pdf(x, **params),
-                              'x': x}).set_index('x')
-        dfcdf = pd.DataFrame({'manual': d_manual.cdf(x, **params),
-                              'x': x}).set_index('x')
-        dfinvcdf = pd.DataFrame({'manual': d_manual.invcdf(u, **params),
-                                 'u': u}).set_index('u')
-            
+        dfpdf = pd.DataFrame({'manual': d_manual.pdf(x, **params), 'x': x}).set_index(
+            'x'
+        )
+        dfcdf = pd.DataFrame({'manual': d_manual.cdf(x, **params), 'x': x}).set_index(
+            'x'
+        )
+        dfinvcdf = pd.DataFrame(
+            {'manual': d_manual.invcdf(u, **params), 'u': u}
+        ).set_index('u')
+
     return dfpdf, dfcdf, dfinvcdf
 
 
 def log_jcd(f_inv_x, x):
-    """ Calc the log of Jacobian determinant 
-        used to aid log-likelihood maximisation of copula marginals
-        see JPL: https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
+    """Calc the log of Jacobian determinant
+    used to aid log-likelihood maximisation of copula marginals
+    see JPL: https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
     """
     grad = tt.reshape(pm.theanof.gradient(tt.sum(f_inv_x), [x]), x.shape)
     return tt.log(tt.abs_(grad))
 
 
 def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
-    r""" Calculate 2-side sample delta difference between arrays row-wise
+    r"""Calculate 2-side sample delta difference between arrays row-wise
     so that we can make a statement about the difference between a test array
     a reference array how different a is from aref
 
     Basic algo
-    ---------- 
+    ----------
 
     for each row i in a:
         for each row j in aref:
@@ -290,15 +326,15 @@ def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
             if: sum(b_i) == 2:
                 we state "97% of a[i] > aref[j], substantially larger"
             elif: sum(b_i) == 1:
-                we state "not different"                
-            else (sum(b_i) == 0):                
-                we state "97% of a[i] < aref[j], substantially smaller"                    
+                we state "not different"
+            else (sum(b_i) == 0):
+                we state "97% of a[i] < aref[j], substantially smaller"
         do: prop = unique_count(b) / len(b)
 
         we state "prop a[i] larger | no different | smaller than aref"
 
     Parameters
-    ---------- 
+    ----------
     a: 2D numpy array shape (nobs, nsamples), as returned by sample_ppc()
         This will be tested against the reference array arr_ref
         This is typically the prediction set (1 or more policies)
@@ -317,20 +353,21 @@ def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
             This is clever but consumes a lot of RAM (GBs)
         If False we loop the outer loop i
             This is more memory efficient and in testing seems faster!
-    
+
     Returns
     -------
-    prop_delta : numpy array of proportions of arr that are 
-        [0, 1, 2](substantially lower, no difference, substantially higher) 
+    prop_delta : numpy array of proportions of arr that are
+        [0, 1, 2](substantially lower, no difference, substantially higher)
         than aref
         has shape (len(a), 3)
     """
 
     def _bincount_pad(a, maxval=2):
         b = np.bincount(a)
-        return np.pad(b, (0, np.maximum(0, maxval+1-len(b))), 'constant', 
-                    constant_values=(0))
-    
+        return np.pad(
+            b, (0, np.maximum(0, maxval + 1 - len(b))), 'constant', constant_values=(0)
+        )
+
     # silently deal with the common mistake of sending a 1D array for testing
     # must be a horizontal slice
     if a.ndim == 1:
@@ -339,25 +376,33 @@ def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
     rope = np.array([0.03, 0.97])  # ROPE limits, must be len 2
 
     if fully_vectorised:
-        delta = a[:, np.newaxis] - aref                                        # (len(a), len(aref), width(aref))
-        delta_gt0 = 1 * (np.quantile(delta, rope, axis=2) > 0)                 # (len(rope), len(a), len(aref))
-        n_intersects = np.sum(delta_gt0, axis=0)                               # (len(a), len(aref))
-    
+        delta = a[:, np.newaxis] - aref  # (len(a), len(aref), width(aref))
+        delta_gt0 = 1 * (
+            np.quantile(delta, rope, axis=2) > 0
+        )  # (len(rope), len(a), len(aref))
+        n_intersects = np.sum(delta_gt0, axis=0)  # (len(a), len(aref))
+
     else:
-        n_intersects = np.empty(shape=(len(a), len(aref)))                     # (len(a), len(aref))
+        n_intersects = np.empty(shape=(len(a), len(aref)))  # (len(a), len(aref))
         for i in range(len(a)):
-            delta = a[i] - aref                                                # (len(aref), width(aref))
-            delta_gt0 = 1 * (np.quantile(delta, rope, axis=1) > 0)             # (len(rope), len(aref))
-            n_intersects[i] = np.sum(delta_gt0, axis=0)                        # (len(aref))
-        n_intersects = n_intersects.astype(np.int)                             
+            delta = a[i] - aref  # (len(aref), width(aref))
+            delta_gt0 = 1 * (
+                np.quantile(delta, rope, axis=1) > 0
+            )  # (len(rope), len(aref))
+            n_intersects[i] = np.sum(delta_gt0, axis=0)  # (len(aref))
+        n_intersects = n_intersects.astype(np.int)
 
     prop_intersects_across_aref = np.apply_along_axis(
-        lambda r: _bincount_pad(r, len(rope)), 1, n_intersects) / len(aref)    # (len(a), [0, 1, 2])
+        lambda r: _bincount_pad(r, len(rope)), 1, n_intersects
+    ) / len(
+        aref
+    )  # (len(a), [0, 1, 2])
 
     if a_index is not None:
         prop_intersects_across_aref = pd.DataFrame(
-            prop_intersects_across_aref, 
+            prop_intersects_across_aref,
             columns=['subs_lower', 'no_difference', 'subs_higher'],
-            index=a_index)
+            index=a_index,
+        )
 
     return prop_intersects_across_aref

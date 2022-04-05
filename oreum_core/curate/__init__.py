@@ -1,21 +1,17 @@
 # curate/
 # Various classes & functions for data curation
 # copyright 2022 Oreum Industries
-from oreum_core.curate.data_load import (
-    PandasParquetIO, 
-    SimpleStringIO,
-    copy_csv2md
-)
+from oreum_core.curate.data_load import PandasParquetIO, SimpleStringIO, copy_csv2md
 from oreum_core.curate.text_clean import (
-    SnakeyLowercaser, 
+    SnakeyLowercaser,
     TextCleaner,
     StopWorder,
-    NGrammer
+    NGrammer,
 )
 from oreum_core.curate.data_transform import (
     DatatypeConverter,
     DatasetReshaper,
     Transformer,
     Standardizer,
-    compress_factor_levels
+    compress_factor_levels,
 )
