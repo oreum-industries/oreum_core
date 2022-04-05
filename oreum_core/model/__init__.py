@@ -2,11 +2,7 @@
 # Various classes & functions for modelling, primarily using pymc3
 # copyright 2022 Oreum Industries
 from oreum_core.model.base import BasePYMC3Model
-from oreum_core.model.utils import (
-    read_azid,
-    write_azid,
-    save_graph,
-)
+from oreum_core.model.utils import read_azid, write_azid, save_graph
 from oreum_core.model.calc import (
     calc_binary_performance_measures,
     calc_mse,
@@ -42,6 +38,4 @@ from oreum_core.model.plot import (
     plot_dist_fns_over_x_manual_only,
 )
 
-from oreum_core.model.base import (
-    BasePYMC3Model,
-)
+from oreum_core.model.base import BasePYMC3Model
