@@ -5,10 +5,6 @@
 This is an ever-growing package of core tools for use on client projects by
 Oreum Industries.
 
----
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
----
 
 ### Notes
 
@@ -19,6 +15,8 @@ Oreum Industries.
 + The README.md is MacOS and POSIX oriented
 + See LICENCE.md for licensing and copyright details
 + See CONTRIBUTORS.md for list of contributors
++ [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 
 ### Further Notes:
 
