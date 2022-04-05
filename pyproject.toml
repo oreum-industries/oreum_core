@@ -1,7 +1,7 @@
 [tool.black]
-line-length = 88
-target-version = ["py38", "py39"]
-skip-string-normalization = true
-skip-magic-trailing-comma = true
-include = "oreum_core/"
-extend-exclude = """/(__pycache__)/"""
+    line-length = 88
+    target-version = ["py39"]
+    skip-string-normalization = true
+    skip-magic-trailing-comma = true
+    include = "oreum_core/"
+    extend-exclude = """/(__pycache__)/"""
