@@ -1,4 +1,4 @@
-# src.data_extractor.py
+# curate.data_extractor.py
 # convenient, consistent way to run extract sql scripts from CLI
 import confuse
 import os
@@ -13,37 +13,32 @@ DIR_DATA_EXTRACT = ['data', 'raw', 'extracted']
 app = typer.Typer()
 
 
-def _create_engine(option='config_group'):
-    """Create SQL engine"""
-    cfg = confuse.Configuration('data_extractor', __name__)
+def _create_engine(cfg: confuse.Configuration()):
+    """Create SQL engine from passed config object
 
-    cfg.set_file(
-        os.path.join('dev', 'config', 'database.yml')
-    )  # get private config first
-    cfg_private = cfg.get()
-    cfg.set_file(os.path.join('config', 'database.yml'))  # then get open config
+    Expect config to have nodes e.g.
 
-    # merge in (or at least, the non repo-ed usr/pwd creds)
-    for k, v in cfg.get().items():
-        v.update(cfg_private[k])
-    # TODO (P3) make recursive
-    # for k, v in cfg.get().items():
-    #     for k1, v1 in v.items():
-    #         v1.update(cfg_private[k][k1])
+        kind: 'mssqlserver'
+        host: 'ip.address'
+        port: 1433
+        database: 'dbname'
+        schema: 'dbo'
+        domain: 'windows_domain'
+    """
 
     try:
-        kind = cfg[option]['kind'].get(str)
-        host = cfg[option]['host'].get(str)
-        port = cfg[option]['port'].get(int)
-        database = cfg[option]['database'].get(str)
-        schema = cfg[option]['schema'].get(str)
-        usr = cfg[option]['usr'].get(str)
-        pwd = cfg[option]['pwd'].get(str)
+        kind = cfg['kind'].get(str)
+        host = cfg['host'].get(str)
+        port = cfg['port'].get(int)
+        database = cfg['database'].get(str)
+        schema = cfg['schema'].get(str)
+        usr = cfg['usr'].get(str)
+        pwd = cfg['pwd'].get(str)
     except confuse.ConfigError as e:
         raise e
 
     try:
-        domain = cfg[option]['domain'].get(str)
+        domain = cfg['domain'].get(str)
     except confuse.ConfigError as e:
         domain = None
 
@@ -76,6 +71,8 @@ def _create_engine(option='config_group'):
 
 @app.command()
 def extract_datasets(
+    scriptd: dict = typer.Argument(help="Pass dict(desc=filename.sql)"),
+    cfg: confuse.Configuration() = typer.Argument(help="Pass config object"),
     extract_asat_date: Optional[str] = typer.Argument(
         time.strftime("%Y-%m-%d"), help="ISO 27001 e.g. 2021-12-31"
     ),
@@ -87,14 +84,12 @@ def extract_datasets(
     extract_asat_date_replacement = f"cast('{extract_asat_date}' as TIMESTAMP)"
     typer.echo(f'Extracting datasets as-at date {extract_asat_date}')
 
-    fquery = {'policy_and_claims': 'extract_policy_and_claims.sql'}
-
-    engine = _create_engine()
+    engine = _create_engine(cfg=cfg)
     cnx = engine.connect()
     rx_sel = re.compile(r'select', re.I)
 
-    for k, v in fquery.items():
-        with open(os.path.join('sql', v), 'r') as f:
+    for k, v in scriptd.items():
+        with open(v, 'r') as f:
             typer.echo(f'Extracting {k} using sql/{v}')
 
             q = f.read()
