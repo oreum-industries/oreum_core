@@ -1,5 +1,5 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2022-03-21
+# Last updated as-at 2022-04-05
 # Installation Notes:
 #  + This package is intended to be installed via a git+ egg
 #    e.g. this line would appear in a `pip_requirements.txt` file 
@@ -14,16 +14,26 @@
 #    rely on https://github.com/pymc-devs/pymc/blob/main/requirements.txt
 #    unless we have to hard-pin for compatibility (not yet needed)
 #  + Lower-pinned packages to 3-level version >= a.b.c
+black>=22.3.*
+click-spinner>=0.1.*
+confuse==1.7.*
 csv2md>=1.1.2
 dask>=2022.3.0
+flake8>=4.0.*
 ftfy>=6.1.1
 hypothesis>=6.39.4
 matplotlib>=3.5.0
 nltk>=3.7
 orderedset>=2.0.3
 pillow>=9.0.1
+pre-commit>=2.18.*
+# psycopg2>=2.8.*              # requires pg_config
 pyarrow>=7.0.0
 pybloomfiltermmap3>=0.5.5
+pyodbc>=4.0.*
+pymssql>=2.2.*
 scikit-learn>=1.0.2
 seaborn>=0.11.2
+sqlalchemy>=1.4.*
 statsmodels>=0.13.2
+typer>=0.4.*

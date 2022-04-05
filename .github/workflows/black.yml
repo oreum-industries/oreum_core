@@ -1,0 +1,12 @@
+name: black
+on: [pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: psf/black@stable
+        with:
+          options: '-v -S -C -t py39 --check --diff'
+          src: './src'
+          version: '22.3.*'

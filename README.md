@@ -17,11 +17,12 @@ NOTES:
 
 FURTHER NOTES:
 
-+ This package is a work in progress (v0.y.z) and liable to breaking changes,
++ This package is a work in progress (v0.y.z) and liable to breaking changes
 and inconveniences to the user.
 + This package is solely designed for ease of use and rapid development by
-employees of Oreum Industries, and selected clients. It is not intended for
-public usage and will not be supported in that fashion.
+employees of Oreum Industries, and selected clients with guidance.
++ **This package is not intended for public usage and will not be supported 
+in that fashion.**
 
 POST INSTALL:
 
