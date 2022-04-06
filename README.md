@@ -15,7 +15,6 @@ Oreum Industries.
 + The README.md is MacOS and POSIX oriented
 + See LICENCE.md for licensing and copyright details
 + See CONTRIBUTORS.md for list of contributors
-+ [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
 ### Further Notes:
@@ -26,6 +25,8 @@ and inconveniences to the user.
 employees of Oreum Industries, and selected clients with guidance.
 + **This package is not intended for public usage and will not be supported 
 in that fashion.**
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 
 ### Post Install:
 
