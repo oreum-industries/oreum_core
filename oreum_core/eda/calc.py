@@ -182,5 +182,11 @@ def calc_location_in_ecdf(baseline_arr, test_arr):
 
 
 def month_diff(a: pd.DataFrame, b: pd.DataFrame):
-    """https://stackoverflow.com/a/40924041/1165112"""
+    """https://stackoverflow.com/a/40924041/1165112
+
+    In recent pandas can equally use to_period(), though it's unwieldy
+    e.g
+    [x.n for x in (df['obs_date'].dt.to_period('M') -
+                    df['reported_date'].dt.to_period('M'))]
+    """
     return 12 * (a.dt.year - b.dt.year) + (a.dt.month - b.dt.month)

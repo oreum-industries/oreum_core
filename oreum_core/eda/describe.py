@@ -49,7 +49,7 @@ def custom_describe(
     get_mode=False,
     round_numerics=False,
     reset_index=True,
-    latex=True,
+    latex=False,
     return_df=False,
 ):
     """Concat transposed topN rows, numerical desc & dtypes
@@ -188,7 +188,7 @@ def get_fts_by_dtype(df, as_dataframe=False):
     return fts
 
 
-def output_data_dict(df, dd_notes, dir_docs, fn=''):
+def output_data_dict(df: pd.DataFrame, dd_notes: dict, dir_docs: list, fn: str = ''):
     """Convenience fn: output data dict"""
 
     # get desc overview
