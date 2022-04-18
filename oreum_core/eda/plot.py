@@ -710,14 +710,15 @@ def plot_ppc_vs_observed(y, yhat, xlim_max_override=None):
 
 
 def plot_bootstrap_lr(
-    dfboot,
-    df,
-    prm='premium',
-    clm='claim',
-    clm_ct='claim_ct',
-    title_add='',
-    title_pol_summary=False,
-    force_xlim=None,
+    dfboot: pd.DataFrame,
+    df: pd.DataFrame,
+    prm: str = 'premium',
+    clm: str = 'claim',
+    clm_ct: str = 'claim_ct',
+    ftname_year: str = 'incept_year',
+    title_add: str = '',
+    title_pol_summary: bool = False,
+    force_xlim: list = None,
 ):
     """Plot bootstrapped loss ratio, no grouping"""
 
@@ -760,7 +761,7 @@ def plot_bootstrap_lr(
     pol_summary = ''
     if title_pol_summary:
         pol_summary = (
-            f"\nPeriod {df['program_year'].min()} - {df['program_year'].max()} inc., "
+            f"\nPeriod {df[ftname_year].min()} - {df[ftname_year].max()} inc., "
             + f'{len(df)} policies, '
             + f"\\${df[prm].sum()/1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():.0f} claims totalling "
@@ -784,7 +785,13 @@ def plot_bootstrap_lr(
 
 
 def plot_bootstrap_lr_grp(
-    dfboot, df, grp='grp', prm='premium', clm='claim', title_add='', force_xlim=None
+    dfboot: pd.DataFrame,
+    df: pd.DataFrame,
+    grp: str = 'grp',
+    prm: str = 'premium',
+    clm: str = 'claim',
+    title_add: str = '',
+    force_xlim: list = None,
 ):
     """Plot bootstrapped loss ratio, grouped by grp"""
 
