@@ -100,7 +100,7 @@ def plot_bool_count(df, fts, vsize=1.6):
     f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(14, vert * vsize))
 
     for i, ft in enumerate(fts):
-        counts = df.groupby(ft).size().sort_values(ascending=True)
+        counts = df.groupby(ft, dropna=False).size().sort_values(ascending=True)
         counts = counts.sort_index()  # sort so true plots on top
         ax = counts.plot(
             kind='barh',
