@@ -6,8 +6,8 @@ import pandas as pd
 from IPython.display import display
 from scipy import stats
 
-RANDOM_SEED = 42
-rng = np.random.default_rng(seed=RANDOM_SEED)
+RSD = 42
+rng = np.random.default_rng(seed=RSD)
 
 
 def display_fw(df, max_rows=20, latex=False):

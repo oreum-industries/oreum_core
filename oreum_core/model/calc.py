@@ -6,8 +6,8 @@ import pymc3 as pm
 import theano.tensor as tt
 import theano
 
-RANDOM_SEED = 42
-rng = np.random.default_rng(seed=RANDOM_SEED)
+RSD = 42
+rng = np.random.default_rng(seed=RSD)
 
 
 def calc_f_measure(precision, recall, b=1):

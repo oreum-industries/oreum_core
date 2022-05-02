@@ -9,8 +9,8 @@ import seaborn as sns
 from scipy import stats
 import warnings
 
-RANDOM_SEED = 42
-rng = np.random.default_rng(seed=RANDOM_SEED)
+RSD = 42
+rng = np.random.default_rng(seed=RSD)
 
 # TODO see issue #2
 def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
@@ -123,7 +123,7 @@ def bootstrap(a, nboot=1000, summary_fn=np.mean):
     """
     # vectorise via numpy broadcasting random indexs to a 2D shape
     rng = np.random.default_rng(42)
-    sample_idx = rng.integers(0, len(a), size=(len(a), nboot))
+    sample_idx = RNG.integers(0, len(a), size=(len(a), nboot))
 
     # hack allow for passing a series
     if type(a) == pd.Series:

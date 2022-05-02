@@ -42,6 +42,8 @@ class DatatypeConverter:
         self.ftslvlcat = ftslvlcat
         self.rx_number_junk = re.compile(r'[#$€£₤¥,;%]')
         self.date_format = date_format
+        self.bool_map = dict(yes=True, true=True, no=False, false=False)
+        self.strnans = ['none', 'nan', 'null', 'na', 'n/a', 'missing', 'empty']
 
     def _force_dtypes(self, dfraw):
         """Select fts and convert dtypes. Return cleaned df"""
@@ -58,15 +60,15 @@ class DatatypeConverter:
             )
 
         for ft in self.fts['fbool']:
-            # tame string
+            # tame string, strip, lower, use self.bool_map, use pd.NA
             if df.dtypes[ft] == object:
-                df[ft] = df[ft].astype(str).str.strip().str.lower()
+                df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
+                df.loc[df[ft].isin(self.strnans), ft] = np.nan
+                df[ft] = df[ft].map(self.bool_map)
+                df[ft] = df[ft].convert_dtypes(convert_boolean=True)
             # convert string representation of {'0', '1'}
             if set(df[ft].unique()) == set(['0', '1']):
                 df[ft] = df[ft].astype(float, errors='raise')
-            # fix case where "none" creeps in from processing and is False
-            if 'none' in df[ft].unique():
-                df[ft] = df[ft] != 'none'
             if pd.isnull(df[ft]).sum() == 0:
                 df[ft] = df[ft].astype(bool)
 
@@ -85,7 +87,7 @@ class DatatypeConverter:
                     .str.lower()
                     .map(lambda x: self.rx_number_junk.sub('', x))
                 )
-                df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
+                df.loc[df[ft].isin(self.strnans), ft] = np.nan
             df[ft] = df[ft].astype(float, errors='raise')
             if pd.isnull(df[ft]).sum() == 0:
                 df[ft] = df[ft].astype(int, errors='raise')
@@ -99,7 +101,7 @@ class DatatypeConverter:
                     .str.lower()
                     .map(lambda x: self.rx_number_junk.sub('', x))
                 )
-                df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
+                df.loc[df[ft].isin(self.strnans), ft] = np.nan
             df[ft] = df[ft].astype(float, errors='raise')
 
         # TODO as/when add logging

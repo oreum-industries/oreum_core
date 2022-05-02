@@ -8,7 +8,7 @@ import pymc3 as pm
 class BasePYMC3Model:
     """Handle the build, sample and exploration of a PyMC3 model"""
 
-    random_seed = 42
+    RSD = 42
 
     def __init__(self, obs: pd.DataFrame = None, **kwargs):
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)"""
@@ -22,7 +22,7 @@ class BasePYMC3Model:
         self.sample_posterior_predictive_kws = dict(fast=True, store_ppc=False)
         self.sample_kws = dict(
             init='jitter+adapt_diag',
-            random_seed=self.random_seed,
+            random_seed=self.RSD,
             tune=1000,
             draws=500,
             chains=4,
@@ -92,9 +92,6 @@ class BasePYMC3Model:
         draws = kwargs.pop('draws', self.sample_prior_predictive_kws['draws'])
         random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
 
-        # if self.model is None:
-        #     self.build()
-
         with self.model:
             self._trace_prior = pm.sample_prior_predictive(
                 samples=draws, random_seed=random_seed, **kwargs
@@ -114,9 +111,6 @@ class BasePYMC3Model:
         chains = kwargs.pop('chains', self.sample_kws['chains'])
         cores = kwargs.pop('cores', self.sample_kws['cores'])
         target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
-
-        # if self.model is None:
-        #     self.build()
 
         with self.model:
             self._trace = pm.sample(

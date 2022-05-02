@@ -11,8 +11,8 @@ import seaborn as sns
 from matplotlib.lines import Line2D
 from scipy import stats, integrate
 
-RANDOM_SEED = 42
-rng = np.random.default_rng(seed=RANDOM_SEED)
+RSD = 42
+rng = np.random.default_rng(seed=RSD)
 
 
 def _get_kws_styling():
@@ -244,9 +244,7 @@ def plot_joint_ft_x_tgt(df, ft, tgt, subtitle=None, colori=1):
     """Jointplot of ft vs tgt distributions. Suitable for int or float"""
     kde_kws = dict(zorder=0, levels=7, cut=0)
     nsamp = min(len(df), 200)
-    g = sns.JointGrid(
-        x=ft, y=tgt, data=df.sample(nsamp, random_state=RANDOM_SEED), height=6
-    )
+    g = sns.JointGrid(x=ft, y=tgt, data=df.sample(nsamp, random_state=RSD), height=6)
     _ = g.plot_joint(sns.kdeplot, **kde_kws, fill=True, color=f'C{colori%5}')
     _ = g.plot_marginals(sns.histplot, color=f'C{colori%5}')
     _ = g.ax_joint.text(

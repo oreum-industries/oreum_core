@@ -9,8 +9,8 @@ from pymc3.distributions.continuous import assert_negative_support, PositiveCont
 from pymc3.distributions.distribution import draw_values, generate_samples
 from pymc3.theanof import floatX
 
-RANDOM_SEED = 42
-rng = np.random.default_rng(seed=RANDOM_SEED)
+RSD = 42
+rng = np.random.default_rng(seed=RSD)
 
 # NOTE hack to clip values away from {0, 1} for invcdfs
 # Whilst value = {0, 1} is theoretically allowed, is seems to cause a
