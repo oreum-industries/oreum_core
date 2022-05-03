@@ -75,6 +75,7 @@ def custom_describe(
 
     df = df.copy()
     if reset_index:
+        nfeats += len(df.index.names)
         df = df.reset_index()
 
     # start with pandas and round numerics

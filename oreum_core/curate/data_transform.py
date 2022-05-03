@@ -42,7 +42,11 @@ class DatatypeConverter:
         self.ftslvlcat = ftslvlcat
         self.rx_number_junk = re.compile(r'[#$€£₤¥,;%]')
         self.date_format = date_format
-        self.bool_map = dict(yes=True, true=True, no=False, false=False)
+        inv_bool_dict = {
+            True: ['yes', 'y', 'true', 't', '1', 1],
+            False: ['no', 'n', 'false', 'f', '0', 0],
+        }
+        self.bool_dict = {v: k for k, vs in inv_bool_dict.items() for v in vs}
         self.strnans = ['none', 'nan', 'null', 'na', 'n/a', 'missing', 'empty']
 
     def _force_dtypes(self, dfraw):
@@ -60,17 +64,22 @@ class DatatypeConverter:
             )
 
         for ft in self.fts['fbool']:
-            # tame string, strip, lower, use self.bool_map, use pd.NA
+            # tame string, strip, lower, use self.bool_dict, use pd.NA
             if df.dtypes[ft] == object:
                 df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
                 df.loc[df[ft].isin(self.strnans), ft] = np.nan
-                df[ft] = df[ft].map(self.bool_map)
-                df[ft] = df[ft].convert_dtypes(convert_boolean=True)
+                df[ft] = df[ft].apply(lambda x: self.bool_dict.get(x, x))
+
+                if set(df[ft].unique()) != set([True, False, np.nan]):
+                    # avoid converting anything not yet properly mapped
+                    continue
+
             # convert string representation of {'0', '1'}
-            if set(df[ft].unique()) == set(['0', '1']):
-                df[ft] = df[ft].astype(float, errors='raise')
-            if pd.isnull(df[ft]).sum() == 0:
-                df[ft] = df[ft].astype(bool)
+            # if set(df[ft].unique()) == set(['0', '1']):
+            #     df[ft] = df[ft].astype(float, errors='raise')
+            # if pd.isnull(df[ft]).sum() == 0:
+            #     df[ft] = df[ft].astype(bool)
+            df[ft] = df[ft].convert_dtypes(convert_boolean=True)
 
         for ft in self.fts['fyear']:
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y')
