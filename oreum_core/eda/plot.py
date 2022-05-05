@@ -11,6 +11,35 @@ import seaborn as sns
 from matplotlib.lines import Line2D
 from scipy import stats, integrate
 
+__all__ = [
+    'plot_cat_count',
+    'plot_bool_count',
+    'plot_date_count',
+    'plot_int_dist',
+    'plot_joint_ft_x_tgt',
+    'plot_mincovdet',
+    'plot_roc_precrec',
+    'plot_f_measure',
+    'plot_accuracy',
+    'plot_binary_performance',
+    'plot_coverage',
+    'plot_rmse_range',
+    'plot_rmse_range_pair',
+    'plot_r2_range',
+    'plot_r2_range_pair',
+    'plot_ppc_vs_observed',
+    'plot_bootstrap_lr',
+    'plot_bootstrap_lr_grp',
+    'plot_bootstrap_grp',
+    'plot_bootstrap_delta_grp',
+    'plot_grp_sum_dist_count',
+    'plot_grp_year_sum_dist_count',
+    'plot_heatmap_corr',
+    'plot_kj_summaries_for_linear_model',
+    'plot_grp_count',
+]
+
+
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
@@ -756,10 +785,17 @@ def plot_bootstrap_lr(
         ypos = 1.4
         title_add = f'\n{title_add}'
 
+    # hacky way to deal with year as int or datetime
+    pmin = df[ftname_year].min()
+    pmax = df[ftname_year].max()
+    if np.issubdtype(df[ftname_year].dtype, np.datetime64):
+        pmin = pmin.year
+        pmax = pmax.year
+
     pol_summary = ''
     if title_pol_summary:
         pol_summary = (
-            f"\nPeriod {df[ftname_year].min()} - {df[ftname_year].max()} inc., "
+            f"\nPeriod {str(pmin)} - {str(pmax)} incl., "
             + f'{len(df)} policies, '
             + f"\\${df[prm].sum()/1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():.0f} claims totalling "
@@ -788,7 +824,10 @@ def plot_bootstrap_lr_grp(
     grp: str = 'grp',
     prm: str = 'premium',
     clm: str = 'claim',
+    clm_ct: str = 'claim_ct',
+    ftname_year: str = 'incept_year',
     title_add: str = '',
+    title_pol_summary: bool = False,
     force_xlim: list = None,
 ):
     """Plot bootstrapped loss ratio, grouped by grp"""
@@ -859,11 +898,28 @@ def plot_bootstrap_lr_grp(
         ypos = 1.03
         title_add = f'\n{title_add}'
 
+    # hacky way to deal with year as int or datetime
+    pmin = df[ftname_year].min()
+    pmax = df[ftname_year].max()
+    if np.issubdtype(df[ftname_year].dtype, np.datetime64):
+        pmin = pmin.year
+        pmax = pmax.year
+
+    pol_summary = ''
+    if title_pol_summary:
+        pol_summary = (
+            f"\nPeriod {str(pmin)} - {str(pmax)} incl., "
+            + f'{len(df)} policies, '
+            + f"\\${df[prm].sum()/1e6:.1f}M premium, "
+            + f"{df[clm_ct].sum():.0f} claims totalling "
+            + f"\\${df[clm].sum()/1e6:.1f}M"
+        )
+
     title = (
-        f'Grouped Loss Ratios (Population Estimates via Bootstrapping)'
+        f'Grouped Distributions of Population Loss Ratio Estimate via Bootstrapping'
         + f' - grouped by {grp}'
     )
-    _ = f.suptitle(f'{title}{title_add}', y=ypos)
+    _ = f.suptitle(f'{title}{title_add}{pol_summary}', y=ypos)
 
     plt.tight_layout()
 
@@ -1006,10 +1062,18 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
 
 
 def plot_grp_sum_dist_count(
-    df, grp='grp', val='y_eloss', title_add='', plot_outliers=True
+    df,
+    grp='grp',
+    val='y_eloss',
+    title_add='',
+    plot_outliers=True,
+    plot_compact=True,
+    plot_grid=True,
 ):
     """Plot simple diagnostics (sum, distribution and count)
-    of a numeric value `val`, grouped by a categorical value `grp`
+    of a numeric value `val`, grouped by a categorical value `grp`, with group
+    ordered by count desc
+
     Returns a GridSpec
     """
     (
@@ -1025,7 +1089,7 @@ def plot_grp_sum_dist_count(
     if not dfp[grp].dtypes in ['object', 'category']:
         dfp[grp] = dfp[grp].map(lambda x: f's{x}')
 
-    ct = dfp.groupby(grp, sort=True).size()
+    ct = dfp.groupby(grp).size().sort_values()[::-1]
     # pest_mn = dfp.groupby(grp)[val].mean().values
 
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
@@ -1034,32 +1098,53 @@ def plot_grp_sum_dist_count(
     ax1 = f.add_subplot(gs[1], sharey=ax0)
     ax2 = f.add_subplot(gs[2], sharey=ax0)
 
-    ax0.set_title('Sum (bootstrapped)')
-    ax1.set_title('Distribution (individual values)')
+    if plot_compact:
+        ax1.yaxis.label.set_visible(False)
+        ax2.yaxis.label.set_visible(False)
+        plt.setp(ax1.get_yticklabels(), visible=False)
+        plt.setp(ax2.get_yticklabels(), visible=False)
+
+    ax0.set_title(f'Distribution of bootstrapped sum')
+    ax1.set_title('Distribution of indiv. values')
     ax2.set_title('Count')
 
     _ = sns.pointplot(
-        y=grp, x=val, data=dfp, ax=ax0, palette='cubehelix_r', estimator=np.sum, ci=94
+        x=val,
+        y=grp,
+        order=ct.index.values,
+        data=dfp,
+        palette='cubehelix_r',
+        estimator=np.sum,
+        ci=94,
+        ax=ax0,
     )
 
     sym = 'k' if plot_outliers else ''
     _ = sns.boxplot(
-        y=grp,
         x=val,
+        y=grp,
+        order=ct.index.values,
         data=dfp,
-        ax=ax1,
         palette='cubehelix_r',
         sym=sym,
         whis=[3, 97],
         showmeans=True,
         meanprops=mean_point_kws,
+        ax=ax1,
     )
 
-    _ = sns.countplot(y=grp, data=dfp, ax=ax2, palette='cubehelix_r')
+    _ = sns.countplot(
+        y=grp, data=dfp, order=ct.index.values, palette='cubehelix_r', ax=ax2
+    )
     _ = [
         ax2.annotate(f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **count_txt_h_kws)
         for i, c in enumerate(ct)
     ]
+
+    if plot_grid:
+        ax0.yaxis.grid(True)
+        ax1.yaxis.grid(True)
+        ax2.yaxis.grid(True)
 
     ypos = 1.01
     if title_add != '':
@@ -1069,12 +1154,12 @@ def plot_grp_sum_dist_count(
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
     if sum(idx) > 0:
-        note = (
+        t = (
             f'Note: {sum(~idx):,.0f} NaNs found in value,'
-            f'\nplotted reduced dataset of {sum(idx):,.0f}'
+            f'\nplotted non-NaN dataset of {sum(idx):,.0f}'
         )
         _ = ax2.annotate(
-            note, xy=(0.96, 0.96), xycoords='figure fraction', ha='right', fontsize=8
+            t, xy=(0.96, 0.96), xycoords='figure fraction', ha='right', fontsize=8
         )
 
     plt.tight_layout()
@@ -1082,7 +1167,9 @@ def plot_grp_sum_dist_count(
     return gs
 
 
-def plot_grp_year_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
+def plot_grp_year_sum_dist_count(
+    df, grp='grp', val='y_eloss', year='uw_year', title_add=''
+):
     """Plot a grouped value split by year: sum, distribution and count"""
 
     (
@@ -1097,7 +1184,7 @@ def plot_grp_year_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
         df[grp] = df[grp].map(lambda x: f's{x}')
 
     lvls = df.groupby(grp).size().index.tolist()
-    yrs = df.groupby('program_year').size().index.tolist()
+    yrs = df.groupby(year).size().index.tolist()
 
     f = plt.figure(figsize=(14, len(yrs) * 2 + (len(lvls) * 0.25)))
     gs = gridspec.GridSpec(len(yrs), 3, width_ratios=[5, 5, 1], figure=f)
@@ -1106,7 +1193,7 @@ def plot_grp_year_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
     # this is going to be an ugly loop over years
     for i, yr in enumerate(yrs):
 
-        dfs = df.loc[df['program_year'] == yr].copy()
+        dfs = df.loc[df[year] == yr].copy()
 
         if i == 0:
             ax0d[i] = f.add_subplot(gs[i, 0])
@@ -1156,10 +1243,7 @@ def plot_grp_year_sum_dist_count(df, grp='grp', val='y_eloss', title_add=''):
         ypos = 1.02
         title_add = f'\n{title_add}'
 
-    title = (
-        f'Value (Sum, Distribution, Count)'
-        + f' - grouped by {grp}, split by program_year'
-    )
+    title = f'Value (Sum, Distribution, Count)' + f' - grouped by {grp}, split by {yr}'
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
     plt.tight_layout()

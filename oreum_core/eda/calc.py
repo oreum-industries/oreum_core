@@ -122,8 +122,7 @@ def bootstrap(a, nboot=1000, summary_fn=np.mean):
     mean estimates of those 20 observations
     """
     # vectorise via numpy broadcasting random indexs to a 2D shape
-    rng = np.random.default_rng(42)
-    sample_idx = RNG.integers(0, len(a), size=(len(a), nboot))
+    sample_idx = rng.integers(0, len(a), size=(len(a), nboot))
 
     # hack allow for passing a series
     if type(a) == pd.Series:
