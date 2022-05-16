@@ -1168,7 +1168,14 @@ def plot_grp_sum_dist_count(
 
 
 def plot_grp_year_sum_dist_count(
-    df, grp='grp', val='y_eloss', year='uw_year', title_add=''
+    df,
+    grp='grp',
+    val='y_eloss',
+    year='uw_year',
+    title_add='',
+    plot_outliers=True,
+    plot_compact=True,
+    plot_grid=True,
 ):
     """Plot a grouped value split by year: sum, distribution and count"""
 
@@ -1186,7 +1193,7 @@ def plot_grp_year_sum_dist_count(
     lvls = df.groupby(grp).size().index.tolist()
     yrs = df.groupby(year).size().index.tolist()
 
-    f = plt.figure(figsize=(14, len(yrs) * 2 + (len(lvls) * 0.25)))
+    f = plt.figure(figsize=(16, len(yrs) * 2 + (len(lvls) * 0.25)))
     gs = gridspec.GridSpec(len(yrs), 3, width_ratios=[5, 5, 1], figure=f)
 
     ax0d, ax1d, ax2d = {}, {}, {}
@@ -1194,6 +1201,8 @@ def plot_grp_year_sum_dist_count(
     for i, yr in enumerate(yrs):
 
         dfs = df.loc[df[year] == yr].copy()
+
+        ct = dfs.groupby(grp).size().sort_values()[::-1]
 
         if i == 0:
             ax0d[i] = f.add_subplot(gs[i, 0])
@@ -1204,15 +1213,22 @@ def plot_grp_year_sum_dist_count(
             ax1d[i] = f.add_subplot(gs[i, 1], sharey=ax0d[i], sharex=ax1d[0])
             ax2d[i] = f.add_subplot(gs[i, 2], sharey=ax0d[i], sharex=ax2d[0])
 
-        ax0d[i].set_title(f'Sum (bootstrapped) [{yr}]')
-        ax1d[i].set_title(f'Distribution (individual values) [{yr}]')
-        ax2d[i].set_title(f'Count [{yr}]')
+        if plot_compact:
+            ax1d[i].yaxis.label.set_visible(False)
+            ax2d[i].yaxis.label.set_visible(False)
+            plt.setp(ax1d[i].get_yticklabels(), visible=False)
+            plt.setp(ax2d[i].get_yticklabels(), visible=False)
+
+        ax0d[i].set_title(f'Distribution of bootstrapped sum [{yr:"%Y"}]')
+        ax1d[i].set_title(f'Distribution of indiv. values [{yr:"%Y"}]')
+        ax2d[i].set_title(f'Count [{yr:"%Y"}]')
 
         ct = dfs.groupby(grp).size().tolist()
 
         _ = sns.pointplot(
-            y=grp,
             x=val,
+            y=grp,
+            order=ct.index.values,
             data=dfs,
             ax=ax0d[i],
             palette='cubehelix_r',
@@ -1221,29 +1237,39 @@ def plot_grp_year_sum_dist_count(
             linestyles='-',
         )
 
+        sym = 'k' if plot_outliers else ''
         _ = sns.boxplot(
-            y=grp,
             x=val,
+            y=grp,
+            order=ct.index.values,
             data=dfs,
-            ax=ax1d[i],
             palette='cubehelix_r',
-            sym='',
+            sym=sym,
             whis=[3, 97],
             showmeans=True,
+            meanprops=mean_point_kws,
+            ax=ax1d[i],
         )
 
-        _ = sns.countplot(y=grp, data=dfs, ax=ax2d[i], palette='cubehelix_r')
+        _ = sns.countplot(
+            y=grp, data=dfs, ax=ax2d[i], order=ct.index.values, palette='cubehelix_r'
+        )
         _ = [
             ax2d[i].annotate(f'{v}', xy=(v, j % len(ct)), **count_txt_h_kws)
             for j, v in enumerate(ct)
         ]
+
+        if plot_grid:
+            ax0d[i].yaxis.grid(True)
+            ax1d[i].yaxis.grid(True)
+            ax2d[i].yaxis.grid(True)
 
     ypos = 1.01
     if title_add != '':
         ypos = 1.02
         title_add = f'\n{title_add}'
 
-    title = f'Value (Sum, Distribution, Count)' + f' - grouped by {grp}, split by {yr}'
+    title = f'Diagnostic plots of `{val}` grouped by `{grp}` split by {year}'
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
     plt.tight_layout()
