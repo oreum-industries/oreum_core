@@ -831,7 +831,7 @@ def plot_bootstrap_lr_grp(
     force_xlim: list = None,
 ):
     """Plot bootstrapped loss ratio, grouped by grp"""
-
+    # TODO create order e.g. ct = dfp.groupby(grp).size().sort_values()[::-1]
     (
         count_txt_h_kws,
         mean_txt_kws,
@@ -1113,7 +1113,7 @@ def plot_grp_sum_dist_count(
         y=grp,
         order=ct.index.values,
         data=dfp,
-        palette='cubehelix_r',
+        palette='viridis',
         estimator=np.sum,
         ci=94,
         ax=ax0,
@@ -1125,7 +1125,7 @@ def plot_grp_sum_dist_count(
         y=grp,
         order=ct.index.values,
         data=dfp,
-        palette='cubehelix_r',
+        palette='viridis',
         sym=sym,
         whis=[3, 97],
         showmeans=True,
@@ -1133,9 +1133,7 @@ def plot_grp_sum_dist_count(
         ax=ax1,
     )
 
-    _ = sns.countplot(
-        y=grp, data=dfp, order=ct.index.values, palette='cubehelix_r', ax=ax2
-    )
+    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette='viridis', ax=ax2)
     _ = [
         ax2.annotate(f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **count_txt_h_kws)
         for i, c in enumerate(ct)
@@ -1231,7 +1229,7 @@ def plot_grp_year_sum_dist_count(
             order=ct.index.values,
             data=dfs,
             ax=ax0d[i],
-            palette='cubehelix_r',
+            palette='viridis',
             estimator=np.sum,
             ci=94,
             linestyles='-',
@@ -1243,7 +1241,7 @@ def plot_grp_year_sum_dist_count(
             y=grp,
             order=ct.index.values,
             data=dfs,
-            palette='cubehelix_r',
+            palette='viridis',
             sym=sym,
             whis=[3, 97],
             showmeans=True,
@@ -1252,7 +1250,7 @@ def plot_grp_year_sum_dist_count(
         )
 
         _ = sns.countplot(
-            y=grp, data=dfs, ax=ax2d[i], order=ct.index.values, palette='cubehelix_r'
+            y=grp, data=dfs, ax=ax2d[i], order=ct.index.values, palette='viridis'
         )
         _ = [
             ax2d[i].annotate(f'{v}', xy=(v, j % len(ct)), **count_txt_h_kws)
@@ -1337,7 +1335,7 @@ def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add='psi'):
     return gd
 
 
-def plot_grp_count(df, grp='grp', pal=None, title_add=''):
+def plot_grp_count(df, grp='grp', title_add=''):
     """Simple countplot for factors in grp, label with percentages
     Works nicely with categorical too
     """
@@ -1352,15 +1350,10 @@ def plot_grp_count(df, grp='grp', pal=None, title_add=''):
     if not df[grp].dtypes in ['object', 'category']:
         raise TypeError('grp must be Object (string) or Categorical')
 
-    ct = df.groupby(grp).size().tolist()
-
-    if pal is None:
-        palette = 'cubehelix_r'
-    elif len(pal) != len(ct):
-        raise ValueError('len(pal) must equal count of factor levels')
+    ct = df[grp].value_counts(dropna=False)
 
     f, axs = plt.subplots(1, 1, figsize=(14, 2 + (len(ct) * 0.25)))
-    _ = sns.countplot(y=grp, data=df, ax=axs, palette=pal)
+    _ = sns.countplot(y=grp, data=df, order=ct.index, ax=axs, palette='viridis')
     _ = [
         axs.annotate(
             f'{v:.0f} ({v/len(df):.0%})', xy=(v, i % len(ct)), **count_txt_h_kws
