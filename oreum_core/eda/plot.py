@@ -1144,12 +1144,12 @@ def plot_grp_sum_dist_count(
         ax1.yaxis.grid(True)
         ax2.yaxis.grid(True)
 
-    ypos = 1.01
+    ypos = 0.98
     if title_add != '':
-        ypos = 1.02
+        ypos = 1.01
         title_add = f'\n{title_add}'
-    title = f'Diagnostic plots of `{val}` grouped by `{grp}`'
-    _ = f.suptitle(f'{title}{title_add}', y=ypos)
+    title = f'Diagnostic 1D plots of `{val}` grouped by `{grp}`'
+    _ = f.suptitle(f'{title}{title_add}', y=ypos, fontsize=16)
 
     if sum(idx) > 0:
         t = (
@@ -1262,13 +1262,13 @@ def plot_grp_year_sum_dist_count(
             ax1d[i].yaxis.grid(True)
             ax2d[i].yaxis.grid(True)
 
-    ypos = 1.01
+    ypos = 0.98
     if title_add != '':
-        ypos = 1.02
+        ypos = 1.01
         title_add = f'\n{title_add}'
 
-    title = f'Diagnostic plots of `{val}` grouped by `{grp}` split by {year}'
-    _ = f.suptitle(f'{title}{title_add}', y=ypos)
+    title = f'Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}'
+    _ = f.suptitle(f'{title}{title_add}', y=ypos, fontsize=16)
 
     plt.tight_layout()
 
