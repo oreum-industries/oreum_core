@@ -86,7 +86,7 @@ def custom_describe(
 
     dfout = pd.concat((dfdesc, df.dtypes), axis=1, join='outer', sort=False)
     dfout = dfout.loc[df.columns.values]
-    dfout.rename(columns={0: 'dtype'}, inplace=True)
+    dfout.rename(columns={0: 'dtype', 'unique': 'count_unique'}, inplace=True)
     dfout.index.name = 'ft'
 
     # add null counts for all
@@ -116,7 +116,7 @@ def custom_describe(
         'count_null',
         'count_inf',
         'count_zero',
-        'unique',
+        'count_unique',
         'top',
         'freq',
         'sum',
