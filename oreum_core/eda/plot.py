@@ -234,11 +234,15 @@ def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
         n_zeros = (data['value'] == 0).sum()
         n_infs = kwargs.pop('n_infs', 0)
         mean = data['value'].mean()
+        med = data['value'].median()
         ax = plt.gca()
         ax.text(
             0.993,
             0.93,
-            f'NaNs: {n_nans}, infs+/-: {n_infs}, zeros: {n_zeros}, mean: {mean:.2f}',
+            (
+                f'NaNs: {n_nans},  infs+/-: {n_infs},  zeros: {n_zeros},  '
+                + f'mean: {mean:.2f},  med: {med:.2f}'
+            ),
             transform=ax.transAxes,
             ha='right',
             va='top',
@@ -790,9 +794,9 @@ def plot_bootstrap_lr(
     if force_xlim is not None:
         _ = gd.ax.set(xlim=force_xlim)
 
-    ypos = 1.34
+    ypos = 1.32
     if title_add != '':
-        ypos = 1.4
+        ypos = 1.45
         title_add = f'\n{title_add}'
 
     # hacky way to deal with year as int or datetime
@@ -805,10 +809,10 @@ def plot_bootstrap_lr(
     pol_summary = ''
     if title_pol_summary:
         pol_summary = (
-            f"\nPeriod {str(pmin)} - {str(pmax)} incl., "
-            + f'{len(df)} policies, '
+            f"\nPeriod {str(pmin)} - {str(pmax)} inclusive, "
+            + f'{len(df):,.0f} policies with '
             + f"\\${df[prm].sum()/1e6:.1f}M premium, "
-            + f"{df[clm_ct].sum():.0f} claims totalling "
+            + f"{df[clm_ct].sum():,.0f} claims totalling "
             + f"\\${df[clm].sum()/1e6:.1f}M"
         )
 
@@ -824,7 +828,6 @@ def plot_bootstrap_lr(
         y=ypos,
     )
     # ignore (overplotted sample LR = {pest_mn[0]:.1%})')
-
     return gd
 
 
@@ -903,9 +906,9 @@ def plot_bootstrap_lr_grp(
         for i, v in enumerate(ct)
     ]
 
-    ypos = 1.01
+    ypos = 0.98
     if title_add != '':
-        ypos = 1.03
+        ypos = 1.0
         title_add = f'\n{title_add}'
 
     # hacky way to deal with year as int or datetime
@@ -918,10 +921,10 @@ def plot_bootstrap_lr_grp(
     pol_summary = ''
     if title_pol_summary:
         pol_summary = (
-            f"\nPeriod {str(pmin)} - {str(pmax)} incl., "
-            + f'{len(df)} policies, '
+            f"\nPeriod {str(pmin)} - {str(pmax)} inclusive, "
+            + f'{len(df):,.0f} policies with '
             + f"\\${df[prm].sum()/1e6:.1f}M premium, "
-            + f"{df[clm_ct].sum():.0f} claims totalling "
+            + f"{df[clm_ct].sum():,.0f} claims totalling "
             + f"\\${df[clm].sum()/1e6:.1f}M"
         )
 
