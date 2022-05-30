@@ -16,6 +16,7 @@ __all__ = [
     'plot_bool_count',
     'plot_date_count',
     'plot_int_dist',
+    'plot_float_dist',
     'plot_joint_ft_x_tgt',
     'plot_mincovdet',
     'plot_roc_precrec',
@@ -219,7 +220,10 @@ def plot_int_dist(df, fts, log=False, vsize=1.4):
 
 
 def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
-    """Plot distributions for floats, annotate count of nans and zeros"""
+    """
+    Plot distributions for floats
+    Annotate with count of nans, infs (+/-) and zeros
+    """
 
     def _annotate_facets(data, **kwargs):
         """Func to be mapped to the dataframe (named `data` by seaborn)
@@ -228,12 +232,13 @@ def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
         """
         n_nans = pd.isnull(data['value']).sum()
         n_zeros = (data['value'] == 0).sum()
+        n_infs = kwargs.pop('n_infs', 0)
         mean = data['value'].mean()
         ax = plt.gca()
         ax.text(
             0.993,
             0.93,
-            f'NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}',
+            f'NaNs: {n_nans}, infs+/-: {n_infs}, zeros: {n_zeros}, mean: {mean:.2f}',
             transform=ax.transAxes,
             ha='right',
             va='top',
@@ -243,10 +248,15 @@ def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
 
     if len(fts) == 0:
         return None
+
     if sort:
         dfm = df[sorted(fts)].melt()
     else:
         dfm = df[fts].melt()
+
+    idx_inf = np.isinf(dfm['value'])
+    dfm = dfm.loc[~idx_inf].copy()
+
     g = sns.FacetGrid(
         row='variable',
         hue='variable',
@@ -262,7 +272,7 @@ def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
     )
     # https://stackoverflow.com/q/33486613/1165112
     # scatter_kws=(dict(edgecolor='k', edgewidth=100)))
-    _ = g.map_dataframe(_annotate_facets)
+    _ = g.map_dataframe(_annotate_facets, n_infs=sum(idx_inf))
 
     if log:
         _ = g.set(xscale='log')  # , title=ft, ylabel='log(count)')
