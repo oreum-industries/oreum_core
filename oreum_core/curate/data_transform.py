@@ -1,11 +1,12 @@
 # curate.data_transform.py
 # copyright 2022 Oreum Industries
 import re
+
 import numpy as np
 import pandas as pd
 import patsy as pt
-import re
 from sklearn.model_selection import train_test_split
+
 from .text_clean import SnakeyLowercaser
 
 
@@ -42,6 +43,12 @@ class DatatypeConverter:
         self.ftslvlcat = ftslvlcat
         self.rx_number_junk = re.compile(r'[#$€£₤¥,;%]')
         self.date_format = date_format
+        inv_bool_dict = {
+            True: ['yes', 'y', 'true', 't', '1', 1],
+            False: ['no', 'n', 'false', 'f', '0', 0],
+        }
+        self.bool_dict = {v: k for k, vs in inv_bool_dict.items() for v in vs}
+        self.strnans = ['none', 'nan', 'null', 'na', 'n/a', 'missing', 'empty']
 
     def _force_dtypes(self, dfraw):
         """Select fts and convert dtypes. Return cleaned df"""
@@ -58,17 +65,22 @@ class DatatypeConverter:
             )
 
         for ft in self.fts['fbool']:
-            # tame string
+            # tame string, strip, lower, use self.bool_dict, use pd.NA
             if df.dtypes[ft] == object:
-                df[ft] = df[ft].astype(str).str.strip().str.lower()
+                df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
+                df.loc[df[ft].isin(self.strnans), ft] = np.nan
+                df[ft] = df[ft].apply(lambda x: self.bool_dict.get(x, x))
+
+                if set(df[ft].unique()) != set([True, False, np.nan]):
+                    # avoid converting anything not yet properly mapped
+                    continue
+
             # convert string representation of {'0', '1'}
-            if set(df[ft].unique()) == set(['0', '1']):
-                df[ft] = df[ft].astype(float, errors='raise')
-            # fix case where "none" creeps in from processing and is False
-            if 'none' in df[ft].unique():
-                df[ft] = df[ft] != 'none'
-            if pd.isnull(df[ft]).sum() == 0:
-                df[ft] = df[ft].astype(bool)
+            # if set(df[ft].unique()) == set(['0', '1']):
+            #     df[ft] = df[ft].astype(float, errors='raise')
+            # if pd.isnull(df[ft]).sum() == 0:
+            #     df[ft] = df[ft].astype(bool)
+            df[ft] = df[ft].convert_dtypes(convert_boolean=True)
 
         for ft in self.fts['fyear']:
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y')
@@ -85,7 +97,7 @@ class DatatypeConverter:
                     .str.lower()
                     .map(lambda x: self.rx_number_junk.sub('', x))
                 )
-                df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
+                df.loc[df[ft].isin(self.strnans), ft] = np.nan
             df[ft] = df[ft].astype(float, errors='raise')
             if pd.isnull(df[ft]).sum() == 0:
                 df[ft] = df[ft].astype(int, errors='raise')
@@ -99,7 +111,7 @@ class DatatypeConverter:
                     .str.lower()
                     .map(lambda x: self.rx_number_junk.sub('', x))
                 )
-                df.loc[df[ft].isin(['none', 'nan', 'null', 'na']), ft] = np.nan
+                df.loc[df[ft].isin(self.strnans), ft] = np.nan
             df[ft] = df[ft].astype(float, errors='raise')
 
         # TODO as/when add logging

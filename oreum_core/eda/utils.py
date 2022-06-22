@@ -19,9 +19,9 @@ def display_image_file(fqn):
         # from IPython.display import Image
         # Image("./assets/img/oreum_eloss_blueprint3.jpg", retina=True)
     """
-    img = mpimg.imread(fqn)
+    # img = mpimg.imread(fqn)
     f, axs = plt.subplots(1, 1, figsize=(16, 10))
-    im = axs.imshow(img)
+    # im = axs.imshow(img)
     ax = plt.gca()
     ax.grid(False)
     ax.set_frame_on(False)

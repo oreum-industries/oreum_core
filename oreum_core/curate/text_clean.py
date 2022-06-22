@@ -1,16 +1,16 @@
 # curate.text_clean.py
 # copyright 2022 Oreum Industries
-import ftfy
 import itertools
-import numpy as np
-import regex as re
-import requests
 import string
 import sys
 
+import ftfy
+import numpy as np
+import regex as re
+import requests
 from nltk.corpus import stopwords, wordnet
 from nltk.stem.wordnet import WordNetLemmatizer
-from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.tokenize import sent_tokenize, word_tokenize
 from orderedset import OrderedSet
 from pybloomfilter import BloomFilter
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
@@ -209,7 +209,7 @@ class StopWorder:
     def _get_book(self, book_url=None):
         """Download a book from project Gutenberg for testing"""
 
-        if book_url == None:
+        if book_url is None:
             book_url = self.default_book_url
 
         try:
@@ -508,24 +508,24 @@ class StopWorder:
 
         return bf
 
-    def _dedupe_list_preserve_order(self, l):
+    def _dedupe_list_preserve_order(self, lst):
         """Extremely useful dedupe list of hashable objects, preserve order
         https://pypi.org/project/orderedset/
         """
-        oset = OrderedSet(l)
+        oset = OrderedSet(lst)
         return list(oset)
 
-    def _join_tuples(self, lt):
+    def _join_tuples(self, lst):
         """Fairly ropey logic to rejoin tups after removing duplicates
         Needed because retained tups contain some of the words removed
         e.g. (a, {b}) [(b, c)], ({c}, d)  -> a, d
         """
         out = []
-        for i, t in enumerate(lt):
+        for i, t in enumerate(lst):
             if i == 0:
                 out.extend(list(t))
-            elif i < (len(lt) - 1):
-                if not ((t[0] == lt[i - 1][1]) & (t[1] != lt[i + 1][0])):
+            elif i < (len(lst) - 1):
+                if not ((t[0] == lst[i - 1][1]) & (t[1] != lst[i + 1][0])):
                     out.append(t[1])
             else:
                 # if (t[0] == lt[i-1][1]):
@@ -605,8 +605,8 @@ class StopWorder:
 
         def _remove_stutter(s):
             """Dedupe contiguous repeated words"""
-            l = list(self.ng.get_tuples_of_window(s, 2))
-            lt = [t for t in l if len(set(t)) == len(t)]
+            lst = list(self.ng.get_tuples_of_window(s, 2))
+            lt = [t for t in lst if len(set(t)) == len(t)]
             return self._join_tuples(lt)
 
         def _remove_repeat_2grams(s):
@@ -618,13 +618,13 @@ class StopWorder:
                   so you get a duplicated word.
                   TODO fix this
             """
-            l = self.ng.get_tuples_of_window(s, stride=2)
-            lt = self._dedupe_list_preserve_order(l)
+            lst = self.ng.get_tuples_of_window(s, stride=2)
+            lt = self._dedupe_list_preserve_order(lst)
             return self._join_tuples(lt)
 
         # NOTE: using 1-gram TreeBankWord tokenisation
         lol = [word_tokenize(s) for s in sent_tokenize(txt)]
-        lol = [[w for w in s if self.rx_nonchar.search(w) == None] for s in lol]
+        lol = [[w for w in s if self.rx_nonchar.search(w) is None] for s in lol]
         lol = [[_filter_and_lem(w) for w in s] for s in lol]
 
         if drop_rem:
@@ -644,12 +644,12 @@ class NGrammer:
     def __init__(self):
         pass
 
-    def get_tuples_of_window(self, l, stride=2):
+    def get_tuples_of_window(self, lst, stride=2):
         """Run a window of length stride along list l
         Return generator of tuples
         https://stackoverflow.com/a/61977295/1165112
         """
-        return zip(*[itertools.islice(l, i, sys.maxsize) for i in range(stride)])
+        return zip(*[itertools.islice(lst, i, sys.maxsize) for i in range(stride)])
 
     def create_ngrams_from_lol(self, lol, max_ngram=2):
         """Create list of ngrams within list of lists (each list a sentence)

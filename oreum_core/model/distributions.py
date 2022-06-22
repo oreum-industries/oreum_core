@@ -2,21 +2,42 @@
 # copyright 2022 Oreum Industries
 import numpy as np
 import pymc3 as pm
-from scipy import stats, special
 import theano.tensor as tt
-from pymc3.distributions.dist_math import bound, logpow, alltrue_elemwise
-from pymc3.distributions.continuous import assert_negative_support, PositiveContinuous
+from pymc3.distributions.continuous import PositiveContinuous, assert_negative_support
+from pymc3.distributions.dist_math import alltrue_elemwise, bound, logpow
 from pymc3.distributions.distribution import draw_values, generate_samples
 from pymc3.theanof import floatX
+from scipy import special, stats
 
-RANDOM_SEED = 42
-rng = np.random.default_rng(seed=RANDOM_SEED)
+RSD = 42
+rng = np.random.default_rng(seed=RSD)
 
 # NOTE hack to clip values away from {0, 1} for invcdfs
 # Whilst value = {0, 1} is theoretically allowed, is seems to cause a
 # numeric compuational issue somewhere in tt.erfcinv which throws infs.
 # This screws up the downstream, so clip slightly away from {0, 1}
 CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS = 1e-15  # 1e-18 too small
+
+__all__ = [
+    'boundzero_numpy',
+    'boundzero_theano',
+    'boundlog_numpy',
+    'logpow_numpy',
+    'Gamma',
+    'GammaNumpy',
+    'Gumbel',
+    'InverseWeibull',
+    'InverseWeibullNumpy',
+    'ZeroInflatedInverseWeibull',
+    'ZeroInflatedInverseWeibullNumpy',
+    'Kumaraswamy',
+    'Lognormal',
+    'LognormalNumpy',
+    'ZeroInflatedLognormal',
+    'ZeroInflatedLognormalNumpy',
+    'Normal',
+    'NormalNumpy',
+]
 
 
 def boundzero_numpy(vals, *conditions):
@@ -53,8 +74,8 @@ class Gamma(pm.Gamma):
     def __init__(self):
 
         raise NotImplementedError(
-            """Consider that InvCDF is hard to calculate: even scipy uses C functions
-            Recommend use different dist in practice"""
+            """Consider that InvCDF is hard to calculate: even scipy uses C 
+            functions Recommend use different dist in practice"""
         )
 
 
@@ -240,8 +261,8 @@ class InverseWeibull(PositiveContinuous):
     extreme value distribution.
 
     See scipy for reference
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.invweibull.html
-        https://github.com/scipy/scipy/blob/v1.6.0/scipy/stats/_continuous_distns.py
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.invweibull.html
+    https://github.com/scipy/scipy/blob/v1.6.0/scipy/stats/_continuous_distns.py
 
     The pdf of this distribution is
     .. math::
@@ -265,7 +286,7 @@ class InverseWeibull(PositiveContinuous):
     ========  ======================================================
     Support   :math:`x \in (-\infty, \infty)`
     Mean      :math:`{\begin{cases}\ m+s\Gamma \left(1-{\frac  {1}{\alpha }}\right)&{\text{for }}\alpha >1\\\ \infty &{\text{otherwise}}\end{cases}}`
-    Variance  :math:`{\begin{cases}\ s^{2}\left(\Gamma \left(1-{\frac  {2}{\alpha }}\right)-\left(\Gamma \left(1-{\frac{1}{\alpha }}\right)\right)^{2}\right)&{\text{for }}\alpha >2\\\ \infty &{\text{otherwise}}\end{cases}}`
+    Variance  :math:`{\begin{cases}\ s^{2}\left(\Gamma \left(1-{\frac  {2}{\alpha }}\right)-\left(\Gamma \left(1-{\frac{1}{\alpha }}\right)\right)^{2}\right)&{\text{for }}\alpha >2\\\ \infty &{\text{otherwise}}\end{cases}}` # noqa: W505
 
     ========  ======================================================
     Parameters

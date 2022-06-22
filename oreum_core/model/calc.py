@@ -3,11 +3,11 @@
 import numpy as np
 import pandas as pd
 import pymc3 as pm
-import theano.tensor as tt
 import theano
+import theano.tensor as tt
 
-RANDOM_SEED = 42
-rng = np.random.default_rng(seed=RANDOM_SEED)
+RSD = 42
+rng = np.random.default_rng(seed=RSD)
 
 
 def calc_f_measure(precision, recall, b=1):
@@ -16,11 +16,10 @@ def calc_f_measure(precision, recall, b=1):
 
 
 def calc_binary_performance_measures(y, yhat):
-    f"""Calculate tpr (recall), fpr, precision, accuracy for binary target,
+    """Calculate tpr (recall), fpr, precision, accuracy for binary target,
     using all samples from PPC, use vectorised calcs
     shapes y: (nsamples,), yhat: (nsamples, nobservations)
     """
-
     yhat_pct = np.percentile(yhat, np.arange(0, 101, 1), axis=0).T
     y_mx = np.tile(y.reshape(-1, 1), 101)
 
@@ -176,7 +175,10 @@ def calc_ppc_coverage(y, yhat):
 # TODO fix this at source
 # Minor edit to a math fn to prevent annoying deprecation warnings
 # Jon Sedar 2020-03-31
-# Users/jon/anaconda/envs/instechex/lib/python3.6/site-packages/theano/tensor/subtensor.py:2339: FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated; use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index, `arr[np.array(seq)]`, which will result either in an error or a different result.
+# Users/jon/anaconda/envs/instechex/lib/python3.6/site-packages/theano/tensor/subtensor.py:2339:
+# FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated;
+# use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index,
+# `arr[np.array(seq)]`, which will result either in an error or a different result.
 #   out[0][inputs[2:]] = inputs[1]
 
 

@@ -1,11 +1,12 @@
 # model.describe.py
 # copyright 2022 Oreum Industries
-import numpy as np
-import patsy as pt
 import re
 
-RANDOM_SEED = 42
-rng = np.random.default_rng(seed=RANDOM_SEED)
+import numpy as np
+import patsy as pt
+
+RSD = 42
+rng = np.random.default_rng(seed=RSD)
 
 
 def model_desc(fml):

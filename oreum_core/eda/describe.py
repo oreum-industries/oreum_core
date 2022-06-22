@@ -1,13 +1,14 @@
 # eda.descibe.py
 # copyright 2022 Oreum Industries
 import os
+
 import numpy as np
 import pandas as pd
 from IPython.display import display
 from scipy import stats
 
-RANDOM_SEED = 42
-rng = np.random.default_rng(seed=RANDOM_SEED)
+RSD = 42
+rng = np.random.default_rng(seed=RSD)
 
 
 def display_fw(df, max_rows=20, latex=False):
@@ -75,6 +76,7 @@ def custom_describe(
 
     df = df.copy()
     if reset_index:
+        nfeats += len(df.index.names)
         df = df.reset_index()
 
     # start with pandas and round numerics
@@ -85,7 +87,7 @@ def custom_describe(
 
     dfout = pd.concat((dfdesc, df.dtypes), axis=1, join='outer', sort=False)
     dfout = dfout.loc[df.columns.values]
-    dfout.rename(columns={0: 'dtype'}, inplace=True)
+    dfout.rename(columns={0: 'dtype', 'unique': 'count_unique'}, inplace=True)
     dfout.index.name = 'ft'
 
     # add null counts for all
@@ -115,7 +117,7 @@ def custom_describe(
         'count_null',
         'count_inf',
         'count_zero',
-        'unique',
+        'count_unique',
         'top',
         'freq',
         'sum',

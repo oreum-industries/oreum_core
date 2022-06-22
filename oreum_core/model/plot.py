@@ -42,9 +42,9 @@ def plot_dist_fns_over_x(dfpdf, dfcdf, dfinvcdf, **kwargs):
 
     name = kwargs.get('name', 'unknown_dist')
     islog = kwargs.get('log', False)
-    l = 'log ' if islog else ''
+    lg = 'log ' if islog else ''
     f, axs = plt.subplots(1, 3, figsize=(16, 4), sharex=False, sharey=False)
-    f.suptitle(f'Comparisons manual vs scipy for {l}{name}', y=1.02)
+    f.suptitle(f'Comparisons manual vs scipy for {lg}{name}', y=1.02)
     n = len(dfpdf)
     is_close = {
         k: np.sum(np.isclose(v['manual'], v['scipy'], equal_nan=True))
@@ -55,20 +55,20 @@ def plot_dist_fns_over_x(dfpdf, dfcdf, dfinvcdf, **kwargs):
     ax0 = sns.lineplot(
         x='x', y='density', hue='method', style='method', data=dfm, ax=axs[0]
     )
-    _ = ax0.set_title(f"{l}PDF: match {is_close['p'] / n :.1%}")
+    _ = ax0.set_title(f"{lg}PDF: match {is_close['p'] / n :.1%}")
 
     dfm = dfcdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
     ax1 = sns.lineplot(
         x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1]
     )
-    _ = ax1.set_title(f"{l}CDF: match {is_close['c'] / n :.1%}")
+    _ = ax1.set_title(f"{lg}CDF: match {is_close['c'] / n :.1%}")
     if not islog:
         ylimmin = ax1.get_ylim()[0]
         _ = ax1.set(ylim=(min(0, ylimmin), None))
 
     dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
     ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])
-    _ = ax2.set_title(f"{l}InvCDF: match {is_close['i'] / n :.1%}")
+    _ = ax2.set_title(f"{lg}InvCDF: match {is_close['i'] / n :.1%}")
     # f.tight_layout()
 
 
@@ -77,25 +77,25 @@ def plot_dist_fns_over_x_manual_only(dfpdf, dfcdf, dfinvcdf, **kwargs):
 
     name = kwargs.get('name', 'unknown_dist')
     islog = kwargs.get('log', False)
-    l = 'log ' if islog else ''
+    lg = 'log ' if islog else ''
     f, axs = plt.subplots(1, 3, figsize=(16, 4), sharex=False, sharey=False)
-    f.suptitle(f'Display manual calcs for {l}{name}', y=1.02)
-    n = len(dfpdf)
+    f.suptitle(f'Display manual calcs for {lg}{name}', y=1.02)
+    # n = len(dfpdf)
 
     dfm = dfpdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
     ax0 = sns.lineplot(
         x='x', y='density', hue='method', style='method', data=dfm, ax=axs[0]
     )
-    _ = ax0.set_title(f"{l}PDF")
+    _ = ax0.set_title(f"{lg}PDF")
 
     dfm = dfcdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
     ax1 = sns.lineplot(
         x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1]
     )
-    _ = ax1.set_title(f"{l}CDF")
+    _ = ax1.set_title(f"{lg}CDF")
     if not islog:
         _ = ax1.set(ylim=(0, None))
 
     dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
     ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])
-    _ = ax2.set_title(f"{l}InvCDF")
+    _ = ax2.set_title(f"{lg}InvCDF")
