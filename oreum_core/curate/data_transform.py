@@ -1,11 +1,12 @@
 # curate.data_transform.py
 # copyright 2022 Oreum Industries
 import re
+
 import numpy as np
 import pandas as pd
 import patsy as pt
-import re
 from sklearn.model_selection import train_test_split
+
 from .text_clean import SnakeyLowercaser
 
 

@@ -1,8 +1,9 @@
 # model.describe.py
 # copyright 2022 Oreum Industries
+import re
+
 import numpy as np
 import patsy as pt
-import re
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)

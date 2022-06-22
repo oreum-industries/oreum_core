@@ -1,5 +1,7 @@
 # eda.calc.py
 # copyright 2022 Oreum Industries
+import warnings
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -7,16 +9,15 @@ import pandas as pd
 # from pandas.core.base import DataError
 import seaborn as sns
 from scipy import stats
-import warnings
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
+
 # TODO see issue #2
 def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
-    """
-    Fit dists to 1d array of `obs`, report RMSE and plot the fits
-    # see https://stackoverflow.com/a/37616966
+    """Fit dists to 1d array of `obs`, report RMSE and plot the fits
+    see https://stackoverflow.com/a/37616966
     """
 
     if tail_kind not in set(['right', 'both']):
@@ -60,7 +61,7 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
         bin_centers_int = np.round(bin_centers)
         dists = dists_discrete
 
-        ax0 = sns.histplot(x=obs, bins=nbins, stat='count', **hist_kws)
+        _ = sns.histplot(x=obs, bins=nbins, stat='count', **hist_kws)
 
         # TODO fix this hack: only works for poisson right now
         for i, (d, dist) in enumerate(dists.items()):
@@ -71,7 +72,7 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
             # rmse not necessarily good for discrete count models
             # https://stats.stackexchange.com/questions/48811/cost-function-for-validating-poisson-regression-models
             rmse = np.sqrt(np.sum(np.power(obs_count - pmf, 2.0)) / len(obs))
-            ax1 = sns.lineplot(
+            _ = sns.lineplot(
                 x=bin_centers_int, y=pmf, label=f'{d}: {rmse:#.2g}', **line_kws
             )
 
@@ -84,7 +85,7 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
         elif tail_kind == 'right':
             dists = dists_cont_right_tail
 
-        ax0 = sns.histplot(x=obs, bins=nbins, stat='density', **hist_kws)
+        _ = sns.histplot(x=obs, bins=nbins, stat='density', **hist_kws)
 
         for i, (d, dist) in enumerate(dists.items()):
             with warnings.catch_warnings():
@@ -97,7 +98,7 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
             # rmse not necessarily good for discrete count models
             # https://stats.stackexchange.com/questions/48811/cost-function-for-validating-poisson-regression-models
             rmse = np.sqrt(np.sum(np.power(obs_density - pdf, 2.0)) / len(obs))
-            ax1 = sns.lineplot(
+            _ = sns.lineplot(
                 x=bin_centers, y=pdf, label=f'{d}: {rmse:#.2g}', **line_kws
             )
 

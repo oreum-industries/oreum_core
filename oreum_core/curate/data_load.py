@@ -2,11 +2,12 @@
 # copyright 2022 Oreum Industries
 import json
 import os
-import pyarrow
-import pandas as pd
-import pyarrow.parquet as pq
 import subprocess
 import warnings
+
+import pandas as pd
+import pyarrow
+import pyarrow.parquet as pq
 
 
 class PandasParquetIO:

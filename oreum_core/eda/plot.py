@@ -1,15 +1,15 @@
 # eda.plot.py
 # copyright 2022 Oreum Industries
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from matplotlib import gridspec
+from matplotlib.lines import Line2D
+from scipy import integrate, stats
 
 # import warnings
 
-from matplotlib.lines import Line2D
-from scipy import stats, integrate
 
 __all__ = [
     'plot_cat_count',
@@ -54,7 +54,7 @@ def _get_kws_styling():
         textcoords='offset points',
     )
     count_txt_h_kws = dict(ha='left', xytext=(4, 0), **count_txt_kws)
-    count_txt_v_kws = dict(ha='center', xytext=(0, 4), **count_txt_kws)
+    # count_txt_v_kws = dict(ha='center', xytext=(0, 4), **count_txt_kws)
 
     mean_txt_kws = dict(
         color='#555555',
@@ -214,7 +214,7 @@ def plot_int_dist(df, fts, log=False, vsize=1.4):
         )
         if log:
             _ = ax.set(yscale='log', title=ft, ylabel='log(count)')
-        _ = ax.set(title=ft, ylabel='count', xlabel=None)  #'value'
+        _ = ax.set(title=ft, ylabel='count', xlabel=None)  # 'value'
         _ = ax.legend(loc='upper right')
     f.tight_layout(pad=0.8)
 
@@ -325,7 +325,7 @@ def plot_mincovdet(df, mcd, thresh=0.99):
 
     # sorted MCD dist plot
     ax0 = plt.subplot(grd[0])
-    sc = ax0.scatter(
+    _ = ax0.scatter(
         dfp['counter'],
         dfp['mcd_delta'],
         c=dfp['counter'] / 1,
@@ -816,7 +816,7 @@ def plot_bootstrap_lr(
             + f"\\${df[clm].sum()/1e6:.1f}M"
         )
 
-    title = f'Distribution of Population Loss Ratio Estimate via Bootstrapping'
+    title = 'Distribution of Population Loss Ratio Estimate via Bootstrapping'
     _ = gd.fig.suptitle(
         (
             f'{title}{title_add}'
@@ -929,7 +929,7 @@ def plot_bootstrap_lr_grp(
         )
 
     title = (
-        f'Grouped Distributions of Population Loss Ratio Estimate via Bootstrapping'
+        'Grouped Distributions of Population Loss Ratio Estimate via Bootstrapping'
         + f' - grouped by {grp}'
     )
     _ = f.suptitle(f'{title}{title_add}{pol_summary}', y=ypos)
@@ -1007,7 +1007,7 @@ def plot_bootstrap_grp(
         title_add = f'\n{title_add}'
 
     title = (
-        f'Grouped Mean Value (Population Estimates via Bootstrapping)'
+        'Grouped Mean Value (Population Estimates via Bootstrapping)'
         + f' - grouped by {grp}'
     )
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
@@ -1117,7 +1117,7 @@ def plot_grp_sum_dist_count(
         plt.setp(ax1.get_yticklabels(), visible=False)
         plt.setp(ax2.get_yticklabels(), visible=False)
 
-    ax0.set_title(f'Distribution of bootstrapped sum')
+    ax0.set_title('Distribution of bootstrapped sum')
     ax1.set_title('Distribution of indiv. values')
     ax2.set_title('Count')
 
@@ -1339,7 +1339,7 @@ def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add='psi'):
     axr = gd.axes.flat[0].twinx()
     _ = axr.plot(np.zeros(len(rhs_lbls)), np.arange(len(rhs_lbls)) + 0.5, lw=0)
     # _ = axr.set_ylim((-1,len(rhs_lbls)))
-    _ = axr.set_yticks([l for l in np.arange(len(rhs_lbls)) + 0.5])
+    _ = axr.set_yticks([x for x in np.arange(len(rhs_lbls)) + 0.5])
     _ = axr.set_yticklabels(rhs_lbls)
     _ = axr.yaxis.grid(False)
     _ = axr.xaxis.grid(False)

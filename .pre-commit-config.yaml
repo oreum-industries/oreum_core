@@ -1,10 +1,26 @@
+# .pre-commit-config.yaml
+default_language_version:
+  python: python3.9
+default_stages: [commit, push]
 repos:
-  - repo: https://github.com/psf/black
+  - repo: https://github.com/pre-commit/pre-commit-hooks  # general checks
+    rev: v4.3.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+  - repo: https://github.com/psf/black  # black formatter
     rev: 22.3.0
     hooks:
       - id: black
-        language_version: python3.9
-  # - repo: https://gitlab.com/pycqa/flake8
-  #   rev: 3.9.2
-  #   hooks:
-  #     - id: flake8
+  - repo: https://github.com/PyCQA/isort  # isort import sorter
+    rev: 5.10.1
+    hooks:
+      - id: isort
+  - repo: https://gitlab.com/pycqa/flake8  # flake8 linter
+    rev: 4.0.1
+    hooks:
+      - id: flake8

@@ -154,7 +154,7 @@ class BasePYMC3Model:
                     self.trace, random_seed=random_seed, samples=n_samples, **kwargs
                 )
 
-        if store_ppc == False:
+        if store_ppc is False:
             # the default expected for forward-pass stateless prediction
             return self._create_idata(ppc)
         else:
