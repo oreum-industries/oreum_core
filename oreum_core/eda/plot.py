@@ -1070,19 +1070,19 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
     _ = f.suptitle(f'{title}{title_add}', y=ypos)
 
     f.tight_layout()  # prefer over constrained_layout
-
     return gs
 
 
 def plot_grp_sum_dist_count(
-    df,
-    grp='grp',
-    val='y_eloss',
-    title_add='',
-    plot_outliers=True,
-    plot_compact=True,
-    plot_grid=True,
-):
+    df: pd.DataFrame,
+    grp: str = 'grp',
+    val: str = 'y_eloss',
+    title_add: str = '',
+    plot_outliers: bool = True,
+    plot_compact: bool = True,
+    plot_grid: bool = True,
+    yorder_count: bool = True,
+) -> gridspec.GridSpec:
     """Plot simple diagnostics (sum, distribution and count)
     of a numeric value `val`, grouped by a categorical value `grp`, with group
     ordered by count desc
@@ -1099,10 +1099,15 @@ def plot_grp_sum_dist_count(
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
 
+    grpsort = sorted(dfp[grp].unique())[::-1]
+
     if not dfp[grp].dtypes in ['object', 'category']:
         dfp[grp] = dfp[grp].map(lambda x: f's{x}')
+        grpsort = [f's{x}' for x in grpsort]
 
     ct = dfp.groupby(grp).size().sort_values()[::-1]
+    yorder = ct.index.values if yorder_count else grpsort
+
     # pest_mn = dfp.groupby(grp)[val].mean().values
 
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
@@ -1124,7 +1129,7 @@ def plot_grp_sum_dist_count(
     _ = sns.pointplot(
         x=val,
         y=grp,
-        order=ct.index.values,
+        order=yorder,
         data=dfp,
         palette='viridis',
         estimator=np.sum,
@@ -1136,7 +1141,7 @@ def plot_grp_sum_dist_count(
     _ = sns.boxplot(
         x=val,
         y=grp,
-        order=ct.index.values,
+        order=yorder,
         data=dfp,
         palette='viridis',
         sym=sym,
@@ -1146,7 +1151,7 @@ def plot_grp_sum_dist_count(
         ax=ax1,
     )
 
-    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette='viridis', ax=ax2)
+    _ = sns.countplot(y=grp, data=dfp, order=yorder, palette='viridis', ax=ax2)
     _ = [
         ax2.annotate(f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **count_txt_h_kws)
         for i, c in enumerate(ct)
@@ -1174,7 +1179,6 @@ def plot_grp_sum_dist_count(
         )
 
     plt.tight_layout()
-
     return gs
 
 
