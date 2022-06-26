@@ -1099,16 +1099,14 @@ def plot_grp_sum_dist_count(
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
 
-    grpsort = sorted(dfp[grp].unique())[::-1]
+    grpsort = sorted(dfp[grp].unique())[::-1]  # reverse often best for datetimes
 
     if not dfp[grp].dtypes in ['object', 'category']:
         dfp[grp] = dfp[grp].map(lambda x: f's{x}')
         grpsort = [f's{x}' for x in grpsort]
 
-    ct = dfp.groupby(grp).size().sort_values()[::-1]
-    yorder = ct.index.values if yorder_count else grpsort
-
-    # pest_mn = dfp.groupby(grp)[val].mean().values
+    sz = dfp.groupby(grp).size()
+    ct = sz.sort_values()[::-1] if yorder_count else sz.reindex(grpsort)
 
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
@@ -1129,7 +1127,7 @@ def plot_grp_sum_dist_count(
     _ = sns.pointplot(
         x=val,
         y=grp,
-        order=yorder,
+        order=ct.index.values,
         data=dfp,
         palette='viridis',
         estimator=np.sum,
@@ -1141,7 +1139,7 @@ def plot_grp_sum_dist_count(
     _ = sns.boxplot(
         x=val,
         y=grp,
-        order=yorder,
+        order=ct.index.values,
         data=dfp,
         palette='viridis',
         sym=sym,
@@ -1151,7 +1149,7 @@ def plot_grp_sum_dist_count(
         ax=ax1,
     )
 
-    _ = sns.countplot(y=grp, data=dfp, order=yorder, palette='viridis', ax=ax2)
+    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette='viridis', ax=ax2)
     _ = [
         ax2.annotate(f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **count_txt_h_kws)
         for i, c in enumerate(ct)
@@ -1183,15 +1181,16 @@ def plot_grp_sum_dist_count(
 
 
 def plot_grp_year_sum_dist_count(
-    df,
-    grp='grp',
-    val='y_eloss',
-    year='uw_year',
-    title_add='',
-    plot_outliers=True,
-    plot_compact=True,
-    plot_grid=True,
-):
+    df: pd.DataFrame,
+    grp: str = 'grp',
+    val: str = 'y_eloss',
+    year: str = 'uw_year',
+    title_add: str = '',
+    plot_outliers: bool = True,
+    plot_compact: bool = True,
+    plot_grid: bool = True,
+    yorder_count: bool = True,
+) -> gridspec.GridSpec:
     """Plot a grouped value split by year: sum, distribution and count"""
 
     (
@@ -1201,23 +1200,28 @@ def plot_grp_year_sum_dist_count(
         mean_point_kws,
     ) = _get_kws_styling()
 
-    if not df[grp].dtypes in ['object', 'category']:
-        df = df.copy()
-        df[grp] = df[grp].map(lambda x: f's{x}')
+    # if not df[grp].dtypes in ['object', 'category']:
+    #     df = df.copy()
+    #     df[grp] = df[grp].map(lambda x: f's{x}')
 
     lvls = df.groupby(grp).size().index.tolist()
     yrs = df.groupby(year).size().index.tolist()
 
     f = plt.figure(figsize=(16, len(yrs) * 2 + (len(lvls) * 0.25)))
     gs = gridspec.GridSpec(len(yrs), 3, width_ratios=[5, 5, 1], figure=f)
-
     ax0d, ax1d, ax2d = {}, {}, {}
-    # this is going to be an ugly loop over years
-    for i, yr in enumerate(yrs):
+
+    for i, yr in enumerate(yrs):  # ugly loop over years
 
         dfs = df.loc[df[year] == yr].copy()
+        grpsort = sorted(dfs[grp].unique())[::-1]
 
-        ct = dfs.groupby(grp).size().sort_values()[::-1]
+        if not dfs[grp].dtypes in ['object', 'category']:
+            dfs[grp] = dfs[grp].map(lambda x: f's{x}')
+            grpsort = [f's{x}' for x in grpsort]
+
+        sz = dfs.groupby(grp).size()
+        ct = sz.sort_values()[::-1] if yorder_count else sz.reindex(grpsort)
 
         if i == 0:
             ax0d[i] = f.add_subplot(gs[i, 0])
@@ -1238,7 +1242,7 @@ def plot_grp_year_sum_dist_count(
         ax1d[i].set_title(f'Distribution of indiv. values [{yr:"%Y"}]')
         ax2d[i].set_title(f'Count [{yr:"%Y"}]')
 
-        ct = dfs.groupby(grp).size().tolist()
+        # ct = dfs.groupby(grp).size().tolist()
 
         _ = sns.pointplot(
             x=val,
