@@ -760,7 +760,7 @@ def plot_bootstrap_lr(
     title_add: str = '',
     title_pol_summary: bool = False,
     force_xlim: list = None,
-):
+) -> sns.axisgrid.FacetGrid:
     """Plot bootstrapped loss ratio, no grouping"""
 
     (
@@ -809,14 +809,14 @@ def plot_bootstrap_lr(
     pol_summary = ''
     if title_pol_summary:
         pol_summary = (
-            f"\nPeriod {str(pmin)} - {str(pmax)} inclusive, "
+            f"\nInception {str(pmin)} - {str(pmax)} inclusive, "
             + f'{len(df):,.0f} policies with '
             + f"\\${df[prm].sum()/1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():,.0f} claims totalling "
             + f"\\${df[clm].sum()/1e6:.1f}M"
         )
 
-    title = 'Distribution of Population Loss Ratio Estimate via Bootstrapping'
+    title = 'Distribution of Population Loss Ratio - Bootstrapped Estimate'
     _ = gd.fig.suptitle(
         (
             f'{title}{title_add}'
@@ -842,9 +842,9 @@ def plot_bootstrap_lr_grp(
     title_add: str = '',
     title_pol_summary: bool = False,
     force_xlim: list = None,
-):
+) -> gridspec.GridSpec:
     """Plot bootstrapped loss ratio, grouped by grp"""
-    # TODO create order e.g. ct = dfp.groupby(grp).size().sort_values()[::-1]
+    # TODO create y order e.g. ct = dfp.groupby(grp).size().sort_values()[::-1]
     (
         count_txt_h_kws,
         mean_txt_kws,
@@ -921,7 +921,7 @@ def plot_bootstrap_lr_grp(
     pol_summary = ''
     if title_pol_summary:
         pol_summary = (
-            f"\nPeriod {str(pmin)} - {str(pmax)} inclusive, "
+            f"\nInception {str(pmin)} - {str(pmax)} inclusive, "
             + f'{len(df):,.0f} policies with '
             + f"\\${df[prm].sum()/1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():,.0f} claims totalling "
@@ -929,7 +929,7 @@ def plot_bootstrap_lr_grp(
         )
 
     title = (
-        'Grouped Distributions of Population Loss Ratio Estimate via Bootstrapping'
+        'Distributions of Population Loss Ratio - Bootstrapped Estimates'
         + f' - grouped by {grp}'
     )
     _ = f.suptitle(f'{title}{title_add}{pol_summary}', y=ypos)
