@@ -8,9 +8,6 @@ from matplotlib import gridspec
 from matplotlib.lines import Line2D
 from scipy import integrate, stats
 
-# import warnings
-
-
 __all__ = [
     'plot_cat_count',
     'plot_bool_count',
@@ -74,7 +71,7 @@ def _get_kws_styling():
     return (count_txt_h_kws, mean_txt_kws, pest_mean_point_kws, mean_point_kws)
 
 
-def plot_cat_count(df, fts, topn=10, vsize=2):
+def plot_cat_count(df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2):
     """Conv fn: plot group counts for cats and bools"""
 
     if len(fts) == 0:
@@ -118,9 +115,10 @@ def plot_cat_count(df, fts, topn=10, vsize=2):
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
 
     f.tight_layout()
+    return f
 
 
-def plot_bool_count(df, fts, vsize=1.6):
+def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6):
     """Conv fn: plot group counts for bools"""
 
     if len(fts) == 0:
@@ -154,9 +152,12 @@ def plot_bool_count(df, fts, vsize=1.6):
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
 
     f.tight_layout()
+    return f
 
 
-def plot_date_count(df, fts, fmt='%Y-%m', vsize=1.8):
+def plot_date_count(
+    df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.8
+):
     """Plot group sizes for dates by strftime format"""
 
     if len(fts) == 0:
@@ -190,9 +191,10 @@ def plot_date_count(df, fts, fmt='%Y-%m', vsize=1.8):
         ax.legend(loc='upper right')
 
     f.tight_layout()
+    return f
 
 
-def plot_int_dist(df, fts, log=False, vsize=1.4):
+def plot_int_dist(df: pd.DataFrame, fts: list, log: bool = False, vsize: float = 1.4):
     """Plot group counts (optionally logged) for ints"""
 
     if len(fts) == 0:
@@ -217,9 +219,16 @@ def plot_int_dist(df, fts, log=False, vsize=1.4):
         _ = ax.set(title=ft, ylabel='count', xlabel=None)  # 'value'
         _ = ax.legend(loc='upper right')
     f.tight_layout(pad=0.8)
+    return f
 
 
-def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
+def plot_float_dist(
+    df: pd.DataFrame,
+    fts: list,
+    log: bool = False,
+    sharex: bool = False,
+    sort: bool = True,
+) -> sns.FacetGrid:
     """
     Plot distributions for floats
     Annotate with count of nans, infs (+/-) and zeros
@@ -261,7 +270,7 @@ def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
     idx_inf = np.isinf(dfm['value'])
     dfm = dfm.loc[~idx_inf].copy()
 
-    g = sns.FacetGrid(
+    gd = sns.FacetGrid(
         row='variable',
         hue='variable',
         data=dfm,
@@ -270,17 +279,18 @@ def plot_float_dist(df, fts, log=False, sharex=False, sort=True):
         aspect=6,
         sharex=sharex,
     )
-    _ = g.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
-    _ = g.map(
+    _ = gd.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
+    _ = gd.map(
         sns.pointplot, 'value', order='variable', color='C3', estimator=np.mean, ci=94
     )
     # https://stackoverflow.com/q/33486613/1165112
     # scatter_kws=(dict(edgecolor='k', edgewidth=100)))
-    _ = g.map_dataframe(_annotate_facets, n_infs=sum(idx_inf))
+    _ = gd.map_dataframe(_annotate_facets, n_infs=sum(idx_inf))
 
     if log:
-        _ = g.set(xscale='log')  # , title=ft, ylabel='log(count)')
-    g.fig.tight_layout(pad=0.8)
+        _ = gd.set(xscale='log')  # , title=ft, ylabel='log(count)')
+    gd.fig.tight_layout(pad=0.8)
+    return gd
 
 
 def plot_joint_ft_x_tgt(df, ft, tgt, subtitle=None, colori=1):
