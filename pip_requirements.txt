@@ -24,6 +24,7 @@ hypothesis>=6.39.4
 matplotlib>=3.5.0
 nltk>=3.7
 orderedset>=2.0.3
+patsy==0.5.*
 pillow>=9.0.1
 pre-commit>=2.18.*
 pyarrow>=7.0.0

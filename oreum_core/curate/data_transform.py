@@ -286,7 +286,7 @@ class Transformer:
     def __init__(self):
         self.design_info = None
         self.col_idx_numerics = None
-        self.rx_get_f_components = re.compile(r'(F\(([a-z_]+?)\))')
+        self.rx_get_f_components = re.compile(r'(F\(([a-z0-9_]+?)\))')
         self.fts_fact_mapping = {}
 
     def fit_transform(
@@ -403,7 +403,7 @@ class Standardizer:
     + rework to I/O dataframes
     """
 
-    def __init__(self, design_info, fts_exclude: list = []):
+    def __init__(self, design_info: pt.design_info.DesignInfo, fts_exclude: list = []):
         """Optionally exclude from standardization a list of named fts that
         are numeric and would otherwise get standardardized"""
 
