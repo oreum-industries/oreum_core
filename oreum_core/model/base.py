@@ -11,7 +11,13 @@ class BasePYMC3Model:
     RSD = 42
 
     def __init__(self, obs: pd.DataFrame = None, **kwargs):
-        """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)"""
+        """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
+        Options for init are often very important!
+        https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/sampling.py#L277
+        A good place to look if you have sampling issues is to set
+        inheriting classes to initialize using
+        init='adapt_diag'
+        """
         self.model = None
         self._trace_prior = None
         self._trace = None
@@ -21,7 +27,7 @@ class BasePYMC3Model:
         self.sample_prior_predictive_kws = dict(draws=500)
         self.sample_posterior_predictive_kws = dict(fast=True, store_ppc=False)
         self.sample_kws = dict(
-            init='jitter+adapt_diag',
+            init='auto',  # aka jitter+adapt_diag
             random_seed=self.RSD,
             tune=1000,
             draws=500,

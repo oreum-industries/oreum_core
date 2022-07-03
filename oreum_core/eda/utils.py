@@ -4,7 +4,7 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
 
-def display_image_file(fqn: str, title: str = None):
+def display_image_file(fqn: str, title: str = None, figsize: tuple = (16, 9)):
     """Hacky way to display pre-created image file in a Notebook
     such that nbconvert can see it and render to PDF
     Force to max width 16 inches, for fullwidth render in live Notebook and PDF
@@ -19,7 +19,7 @@ def display_image_file(fqn: str, title: str = None):
         # Image("./assets/img/oreum_eloss_blueprint3.jpg", retina=True)
     """
     img = mpimg.imread(fqn)
-    f, axs = plt.subplots(1, 1, figsize=(14, 8))
+    f, axs = plt.subplots(1, 1, figsize=figsize)
     _ = axs.imshow(img)
     ax = plt.gca()
     _ = ax.grid(False)
