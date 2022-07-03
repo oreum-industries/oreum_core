@@ -3,22 +3,32 @@
 import arviz as az
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 
 
-def facetplot_azid_dist(azid, rvs, group='posterior', m=3, rvs_hack=0, **kwargs):
+def facetplot_azid_dist(
+    azid: az.data.inference_data.InferenceData,
+    rvs: list,
+    group: str = 'posterior',
+    m: int = 3,
+    rvs_hack: int = 0,
+    **kwargs,
+):
     """Control facet positioning of Arviz Krushke style plots, data in azid
     Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """
     # TODO unpack the compressed rvs from the azid
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
-    f, axs = plt.subplots(n, m, figsize=(4 + m * 3, 2.2 * n))
+    f, axs = plt.subplots(n, m, figsize=(4 + m * 3, 2.1 * n))
     _ = az.plot_posterior(azid, group=group, ax=axs, var_names=rvs, **kwargs)
     f.suptitle(f'{group} {rvs}', y=0.96 + n * 0.005)
     f.tight_layout()
 
 
-def facetplot_df_dist(df, rvs, m=3, rvs_hack=0, **kwargs):
+def facetplot_df_dist(
+    df: pd.DataFrame, rvs: list, m: int = 3, rvs_hack: int = 0, **kwargs
+):
     """Control facet positioning of Arviz Krushke style plots, data in df
     Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """
