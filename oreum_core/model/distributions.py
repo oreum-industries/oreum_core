@@ -867,7 +867,7 @@ class LognormalNumpy:
         mu = np.array(mu).astype(np.float)  # , casting='no')
         sigma = np.array(sigma).astype(np.float)  # , casting='no')
         z = (np.log(x) - mu) / sigma
-        fn = 0.5 * special.erfc(-z / np.sqrt(2))
+        fn = 0.5 * special.erfc(-z / np.sqrt(2.0))
         return boundzero_numpy(fn, sigma > 0, x > 0)
 
     def invcdf(self, u, mu, sigma):
