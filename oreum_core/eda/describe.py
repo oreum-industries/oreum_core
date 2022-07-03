@@ -11,7 +11,7 @@ RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
 
-def display_fw(df, max_rows=20, latex=False):
+def display_fw(df, max_rows: int = 20, latex: bool = False):
     """Conv fn: contextually display max rows"""
 
     display_latex_repr = False
@@ -35,7 +35,7 @@ def display_fw(df, max_rows=20, latex=False):
         display(df)
 
 
-def display_ht(df, nrows=3, latex=False):
+def display_ht(df, nrows: int = 3, latex: bool = False):
     """Convenience fn: Display head and tail n rows via display_fw"""
 
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
