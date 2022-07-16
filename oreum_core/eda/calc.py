@@ -5,9 +5,8 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-# from pandas.core.base import DataError
 import seaborn as sns
+from matplotlib import figure
 from scipy import stats
 
 RSD = 42
@@ -15,7 +14,9 @@ rng = np.random.default_rng(seed=RSD)
 
 
 # TODO see issue #2
-def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
+def fit_and_plot_fn(
+    obs: pd.Series, tail_kind: str = 'right'
+) -> tuple[figure.Figure, dict]:
     """Fit dists to 1d array of `obs`, report RMSE and plot the fits
     see https://stackoverflow.com/a/37616966
     """
@@ -47,7 +48,7 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
     nbins = 50
     dist_kind = 'Continuous'
     params = {}
-    f, ax1d = plt.subplots(1, 1, figsize=(15, 7))
+    f, ax1d = plt.subplots(1, 1, figsize=(14, 6))
     hist_kws = dict(
         kde=False, label='data', ax=ax1d, alpha=0.5, color='#aaaaaa', zorder=-1
     )
@@ -102,7 +103,7 @@ def fit_and_plot_fn(obs, tail_kind='right', title_insert=None):
                 x=bin_centers, y=pdf, label=f'{d}: {rmse:#.2g}', **line_kws
             )
 
-    title = f'{dist_kind} function approximations to `{title_insert}`'
+    title = f'{dist_kind} function approximations to {obs.name}'
     _ = f.suptitle(title, y=0.97)
     _ = f.axes[0].legend(title='dist: RMSE', title_fontsize=10)
 
