@@ -52,7 +52,7 @@ def facetplot_azid_dist(
     """
     # TODO unpack the compressed rvs from the azid
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
-    f, axs = plt.subplots(n, m, figsize=(4 + m * 3, 2 * n))
+    f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(azid, group=group, ax=axs, var_names=rvs, **kwargs)
     f.suptitle(f'{group} {rvs}', y=0.96 + n * 0.005)
     f.tight_layout()
@@ -67,7 +67,7 @@ def facetplot_df_dist(
     """
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     sharex = kwargs.get('sharex', False)
-    f, axs = plt.subplots(n, m, figsize=(4 + m * 3, 2 * n), sharex=sharex)
+    f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n), sharex=sharex)
     ref_val = kwargs.get('ref_val', [None for i in range(len(df))])
 
     for i, ft in enumerate(df.columns):
