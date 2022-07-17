@@ -335,8 +335,6 @@ class Transformer:
         # force patsy transform of an index feature back to int!
         # there might be a better way to do this
         fts_force_to_int = list(self.fts_fact_mapping.keys())
-        print(fml)
-        print(df_ex)
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
 
