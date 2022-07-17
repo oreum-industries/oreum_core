@@ -311,7 +311,6 @@ class Transformer:
                         f'fml contains F({ft_fact[1]}), '
                         + 'dtype={dt}, but it must be categorical'
                     )
-
                 # map feature to int based on its preexisting catgorical order
                 # https://stackoverflow.com/a/55304375/1165112
                 map_int_to_fact = dict(enumerate(df[ft_fact[1]].cat.categories))
@@ -319,9 +318,9 @@ class Transformer:
                 self.fts_fact_mapping[ft_fact[1]] = map_fact_to_int
                 df[ft_fact[1]] = df[ft_fact[1]].map(map_fact_to_int).astype(np.int)
 
-                # replace F() in fml so that patsy can work as normal with our
-                # new int ft
-                fml = self.rx_get_f_components.sub(ft_fact[1], fml)
+                # replace F() in fml so that patsy can work as normal
+                # with our new int type feature
+                fml = fml.replace(ft_fact[0], ft_fact[1])
 
         # TODO add option to output matrix   # np.asarray(mx_ex)
         # TODO add check for fml contains `~` and handle accordingly
@@ -336,6 +335,8 @@ class Transformer:
         # force patsy transform of an index feature back to int!
         # there might be a better way to do this
         fts_force_to_int = list(self.fts_fact_mapping.keys())
+        print(fml)
+        print(df_ex)
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
 
