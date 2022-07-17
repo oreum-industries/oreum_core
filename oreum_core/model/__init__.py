@@ -28,6 +28,8 @@ from oreum_core.model.distributions import (  # Gamma,
     ZeroInflatedInverseWeibull,
     ZeroInflatedLognormal,
     ZeroInflatedLognormalNumpy,
+    boundzero_numpy,
+    boundzero_theano,
 )
 from oreum_core.model.plot import (
     facetplot_azid_dist,

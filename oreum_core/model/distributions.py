@@ -21,7 +21,7 @@ CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS = 1e-15  # 1e-18 too small
 __all__ = [
     'boundzero_numpy',
     'boundzero_theano',
-    'boundlog_numpy',
+    'bound_numpy',
     'logpow_numpy',
     'Gamma',
     'GammaNumpy',
@@ -54,9 +54,9 @@ def boundzero_theano(vals, *conditions):
     return tt.switch(alltrue_elemwise(conditions), vals, 0.0)
 
 
-def boundlog_numpy(vals, *conditions):
+def bound_numpy(vals, *conditions):
     """Bound log unit distribution params, return -inf for out-of-bounds
-    Copy from pymc.bound pymc3.distributions.dist_math.py
+    Copied from pymc.bound pymc3.distributions.dist_math.py
     """
     return np.where(alltrue_elemwise(conditions), vals, -np.inf)
 
@@ -74,7 +74,7 @@ class Gamma(pm.Gamma):
     def __init__(self):
 
         raise NotImplementedError(
-            """Consider that InvCDF is hard to calculate: even scipy uses C 
+            """Consider that InvCDF is hard to calculate: even scipy uses C
             functions Recommend use different dist in practice"""
         )
 
@@ -143,14 +143,14 @@ class GammaNumpy:
         compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2599
         """
         fn = -special.gammaln(a) + logpow_numpy(b, a) + logpow_numpy(x, a - 1) - b * x
-        return boundlog_numpy(fn, a > 0, b > 0, x > 0)
+        return bound_numpy(fn, a > 0, b > 0, x > 0)
 
     def logcdf(self, x, a, b):
         """Gamma log CDF:
         where $\gamma(a, bx)$ is lower incomplete gamma function [0, lim)
         compare to https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L2614
         """
-        return boundlog_numpy(
+        return bound_numpy(
             (-special.gammaln(a)) + special.gammainc(a, b * x), a > 0, b > 0, x > 0
         )
 
@@ -428,14 +428,14 @@ class InverseWeibullNumpy:
             'invcdf': r"""F^{-1}(u \mid \alpha, s, m=0) = s \log(u)^{-\frac{1}{\alpha}}""",
         }
         self.dist_log = {
-            'logpdf': r"""\log f(x \mid \alpha, s, m=0) = \log{\alpha} - (1+\alpha)\log{x} + 
+            'logpdf': r"""\log f(x \mid \alpha, s, m=0) = \log{\alpha} - (1+\alpha)\log{x} +
                         \alpha \log{s} - \left( \frac{x}{s} \right)^{-\alpha}""",
             'logcdf': r'\log F(x \mid \alpha, s, m=0) = - \left( \frac{x}{s} \right)^{-\alpha}',
             'loginvcdf': r'\log F^{-1}(u \mid \alpha, s, m=0) = \log(s) - \frac{1}{\alpha} * \log(-\log(u))',
         }
         self.conditions = {
-            'parameters': r"""\alpha > 0 \, \text{(shape)}, \; 
-                            s > 0 \, \text{(scale, default } s=1 \text{)}, \; 
+            'parameters': r"""\alpha > 0 \, \text{(shape)}, \;
+                            s > 0 \, \text{(scale, default } s=1 \text{)}, \;
                             m \in (-\infty, \infty) \, \text{(location of minimum, default } m=0 \text{)}""",
             'support': r'x \in (m, \infty), \; u \sim \text{Uniform([0, 1])}',
         }
@@ -448,8 +448,8 @@ class InverseWeibullNumpy:
             'mode': r'm + s \left( \frac{\alpha}{1+\alpha} \right)^{1/\alpha}',
             'variance': r"""
                 \begin{cases}
-                s^{2} \left( \Gamma \left( 1-\frac{2}{\alpha} \right) - 
-                            \left( \Gamma \left( 1-\frac{1}{\alpha} \right) \right)^{2} 
+                s^{2} \left( \Gamma \left( 1-\frac{2}{\alpha} \right) -
+                            \left( \Gamma \left( 1-\frac{1}{\alpha} \right) \right)^{2}
                     \right) & \text{for } \alpha > 2 \\
                 \infty & \text{otherwise}
                 \end{cases}""",
@@ -494,7 +494,7 @@ class InverseWeibullNumpy:
             + logpow_numpy(x / s, -1.0 - a)
             - np.power(x / s, -a)  # this term grossly dominates if a >> 2
         )
-        return boundlog_numpy(fn, a > 0, s > 0, x >= 0)
+        return bound_numpy(fn, a > 0, s > 0, x >= 0)
 
     def logcdf(self, x, a, s):
         """InverseWeibull log CDF
@@ -503,7 +503,7 @@ class InverseWeibullNumpy:
         a = np.array(a).astype(np.float)  # , casting='no')
         s = np.array(s).astype(np.float)  # , casting='no')
         fn = -np.power(x / s, -a)
-        return boundlog_numpy(fn, a > 0, s > 0, x >= 0)
+        return bound_numpy(fn, a > 0, s > 0, x >= 0)
 
     def loginvcdf(self, u, a, s):
         """InverseWeibull log Inverse CDF aka log PPF
@@ -512,7 +512,7 @@ class InverseWeibullNumpy:
         a = np.array(a).astype(np.float)  # , casting='no')
         s = np.array(s).astype(np.float)  # , casting='no')
         fn = np.log(s) - (1.0 / a) * np.log(-np.log(u))
-        return boundlog_numpy(fn, a > 0, s > 0, u >= 0, u <= 1)
+        return bound_numpy(fn, a > 0, s > 0, u >= 0, u <= 1)
 
 
 class ZeroInflatedInverseWeibull(PositiveContinuous):
@@ -521,20 +521,20 @@ class ZeroInflatedInverseWeibull(PositiveContinuous):
 
     WIP! Mixture model to allow for observations dominated by zeros such as sev
 
-    also see 
-    + McElreath 2014, http://xcelab.net/rmpubs/Mcelreath%20Koster%202014.pdf, 
+    also see
+    + McElreath 2014, http://xcelab.net/rmpubs/Mcelreath%20Koster%202014.pdf,
                       https://github.com/rmcelreath/mcelreath-koster-human-nature-2014
     + Jones 2013, https://royalsocietypublishing.org/doi/10.1098/rspb.2013.1210
     + https://stackoverflow.com/questions/42409761/pymc3-nuts-has-difficulty-sampling-from-a-hierarchical-zero-inflated-gamma-mode
 
     The pmf of this distribution is
     .. math::
- 
+
         f(x \mid \psi, \alpha, s) = \left\{
             \begin{array}{l}
                 (1 - \psi), & \text{if } x = 0 \\
                 \psi \, \text{InverseWeibull}(\alpha, s), & \text{if } x > 0
-            \end{array} 
+            \end{array}
             \right.
 
     ========  ==========================
@@ -542,7 +542,7 @@ class ZeroInflatedInverseWeibull(PositiveContinuous):
     Mean      :math:`\psi \, \text{InverseWeibull}(\mu, \sigma)`
     Variance  :math: TODO
     ========  ==========================
-    
+
     Parameters
     ----------
     psi: float
@@ -643,14 +643,14 @@ class ZeroInflatedInverseWeibullNumpy:
             'invcdf': r"""F^{-1}(u \mid \alpha, s, m=0) = s \log(u)^{-\frac{1}{\alpha}}""",
         }
         self.dist_log = {
-            'logpdf': r"""\log f(x \mid \alpha, s, m=0) = \log{\alpha} - (1+\alpha)\log{x} + 
+            'logpdf': r"""\log f(x \mid \alpha, s, m=0) = \log{\alpha} - (1+\alpha)\log{x} +
                         \alpha \log{s} - \left( \frac{x}{s} \right)^{-\alpha}""",
             'logcdf': r'\log F(x \mid \alpha, s, m=0) = - \left( \frac{x}{s} \right)^{-\alpha}',
             'loginvcdf': r'\log F^{-1}(u \mid \alpha, s, m=0) = \log(s) - \frac{1}{\alpha} * \log(-\log(u))',
         }
         self.conditions = {
-            'parameters': r"""\alpha > 0 \, \text{(shape)}, \; 
-                            s > 0 \, \text{(scale, default } s=1 \text{)}, \; 
+            'parameters': r"""\alpha > 0 \, \text{(shape)}, \;
+                            s > 0 \, \text{(scale, default } s=1 \text{)}, \;
                             m \in (-\infty, \infty) \, \text{(location of minimum, default } m=0 \text{)}""",
             'support': r'x \in (m, \infty), \; u \sim \text{Uniform([0, 1])}',
         }
@@ -663,8 +663,8 @@ class ZeroInflatedInverseWeibullNumpy:
             'mode': r'm + s \left( \frac{\alpha}{1+\alpha} \right)^{1/\alpha}',
             'variance': r"""
                 \begin{cases}
-                s^{2} \left( \Gamma \left( 1-\frac{2}{\alpha} \right) - 
-                            \left( \Gamma \left( 1-\frac{1}{\alpha} \right) \right)^{2} 
+                s^{2} \left( \Gamma \left( 1-\frac{2}{\alpha} \right) -
+                            \left( \Gamma \left( 1-\frac{1}{\alpha} \right) \right)^{2}
                     \right) & \text{for } \alpha > 2 \\
                 \infty & \text{otherwise}
                 \end{cases}""",
@@ -709,7 +709,7 @@ class ZeroInflatedInverseWeibullNumpy:
             + logpow_numpy(x / s, -1.0 - a)
             - np.power(x / s, -a)  # this term grossly dominates if a >> 2
         )
-        return boundlog_numpy(fn, a > 0, s > 0, x >= 0)
+        return bound_numpy(fn, a > 0, s > 0, x >= 0)
 
     def logcdf(self, x, a, s):
         """InverseWeibull log CDF
@@ -718,7 +718,7 @@ class ZeroInflatedInverseWeibullNumpy:
         a = np.array(a).astype(np.float)  # , casting='no')
         s = np.array(s).astype(np.float)  # , casting='no')
         fn = -np.power(x / s, -a)
-        return boundlog_numpy(fn, a > 0, s > 0, x >= 0)
+        return bound_numpy(fn, a > 0, s > 0, x >= 0)
 
     def loginvcdf(self, u, a, s):
         """InverseWeibull log Inverse CDF aka log PPF
@@ -727,7 +727,7 @@ class ZeroInflatedInverseWeibullNumpy:
         a = np.array(a).astype(np.float)  # , casting='no')
         s = np.array(s).astype(np.float)  # , casting='no')
         fn = np.log(s) - (1.0 / a) * np.log(-np.log(u))
-        return boundlog_numpy(fn, a > 0, s > 0, u >= 0, u <= 1)
+        return bound_numpy(fn, a > 0, s > 0, u >= 0, u <= 1)
 
 
 class Kumaraswamy(pm.Kumaraswamy):
@@ -892,7 +892,7 @@ class LognormalNumpy:
             + 0.5 * np.log(1 / (2 * np.pi * np.power(sigma, 2)))
             - np.log(x)
         )
-        return boundlog_numpy(fn, sigma > 0, x > 0)
+        return bound_numpy(fn, sigma > 0, x > 0)
 
     def logcdf(self, x, mu, sigma):
         """Lognormal log CDF
@@ -902,7 +902,7 @@ class LognormalNumpy:
         mu = np.array(mu).astype(np.float)  # , casting='no')
         sigma = np.array(sigma).astype(np.float)  # , casting='no')
         fn = np.log(self.cdf(x, mu, sigma))
-        return boundlog_numpy(fn, sigma > 0, x > 0)
+        return bound_numpy(fn, sigma > 0, x > 0)
 
     def loginvcdf(self, u, mu, sigma):
         """Lognormal log Inverse CDF aka log PPF
@@ -911,7 +911,7 @@ class LognormalNumpy:
         mu = np.array(mu).astype(np.float)  # , casting='no')
         sigma = np.array(sigma).astype(np.float)  # , casting='no')
         fn = mu - sigma * np.sqrt(2) * special.erfcinv(2 * u)
-        return boundlog_numpy(fn, sigma > 0, u >= 0, u <= 1)
+        return bound_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
 
 class ZeroInflatedLognormal(PositiveContinuous):
@@ -920,20 +920,20 @@ class ZeroInflatedLognormal(PositiveContinuous):
 
     WIP! Mixture model to allow for observations dominated by zeros such as freq
 
-    also see 
-    + McElreath 2014, http://xcelab.net/rmpubs/Mcelreath%20Koster%202014.pdf, 
+    also see
+    + McElreath 2014, http://xcelab.net/rmpubs/Mcelreath%20Koster%202014.pdf,
                       https://github.com/rmcelreath/mcelreath-koster-human-nature-2014
     + Jones 2013, https://royalsocietypublishing.org/doi/10.1098/rspb.2013.1210
     + https://stackoverflow.com/questions/42409761/pymc3-nuts-has-difficulty-sampling-from-a-hierarchical-zero-inflated-gamma-mode
 
     The pmf of this distribution is
     .. math::
- 
+
         f(x \mid \psi, \mu, \sigma) = \left\{
             \begin{array}{l}
                 (1 - \psi), & \text{if } x = 0 \\
                 \psi \, \text{Lognormal}(\mu, \sigma), & \text{if } x > 0
-            \end{array} 
+            \end{array}
             \right.
 
     ========  ==========================
@@ -941,7 +941,7 @@ class ZeroInflatedLognormal(PositiveContinuous):
     Mean      :math:`\psi \text{Lognormal}(\mu, \sigma)`
     Variance  :math: TODO
     ========  ==========================
-    
+
     Parameters
     ----------
     psi: float
@@ -1054,7 +1054,7 @@ class ZeroInflatedLognormalNumpy:
         }
         self.conditions = {
             'parameters': r"""\psi \in (0, 1)\, \text{(prop. lognormal)}, \;
-                              \mu \in (-\infty, \infty) \, \text{(location)}, \; 
+                              \mu \in (-\infty, \infty) \, \text{(location)}, \;
                               \sigma > 0 \, \text{(std. dev.)}""",
             'support': r'x \in [0, \infty), \; u \sim \text{Uniform([0, 1])}',
         }
@@ -1144,7 +1144,7 @@ class NormalNumpy:
         self.notation = {'notation': r'x \sim Normal(\mu, \sigma)'}
         self.dist_natural = {
             'pdf': r'f(x \mid \mu, \sigma) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{1}{2} \left( (x-\mu) / \sigma \right)^{2}}',
-            'cdf': r"""F(x \mid \mu, \sigma) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{x} e^{-t^{2}/2} dt 
+            'cdf': r"""F(x \mid \mu, \sigma) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{x} e^{-t^{2}/2} dt
                                              = \frac{1}{2} \big[1 + \text{erf} \big( \frac{x - \mu}{\sigma \sqrt{2}} \big) \big]
                                              = \frac{1}{2} \text{erfc} \big(- \frac{x - \mu}{\sigma \sqrt{2}} \big)""",
             'invcdf': r'F^{-1}(u \mid \mu, \sigma) = \mu - \sigma \sqrt{2} \text{erfcinv}(2u)',
@@ -1201,7 +1201,7 @@ class NormalNumpy:
         sigma = np.float(sigma)
         z = (x - mu) / sigma
         fn = -np.log(sigma * np.sqrt(2 * np.pi)) - 0.5 * np.power(z, 2)
-        return boundlog_numpy(fn, sigma > 0)
+        return bound_numpy(fn, sigma > 0)
 
     def logcdf(self, x, mu, sigma):
         """Normal log CDF
@@ -1212,7 +1212,7 @@ class NormalNumpy:
         sigma = np.float(sigma)
         z = (x - mu) / sigma
         fn = np.log(0.5) + np.log(special.erfc(-z / np.sqrt(2)))
-        return boundlog_numpy(fn, sigma > 0)
+        return bound_numpy(fn, sigma > 0)
 
     def loginvcdf(self, u, mu, sigma):
         """Normal log Inverse CDF aka log PPF
@@ -1221,4 +1221,4 @@ class NormalNumpy:
         mu = np.float(mu)
         sigma = np.float(sigma)
         fn = np.log(mu - sigma * np.sqrt(2.0) * special.erfcinv(2 * u))
-        return boundlog_numpy(fn, sigma > 0, u >= 0, u <= 1)
+        return bound_numpy(fn, sigma > 0, u >= 0, u <= 1)

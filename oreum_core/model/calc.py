@@ -56,8 +56,8 @@ def calc_binary_performance_measures(y, yhat):
 def calc_mse(y, yhat):
     r""" Convenience: Calculate MSE using all samples
         shape (nsamples, nobs)
-   
-    Mean-Squared Error of prediction vs observed 
+
+    Mean-Squared Error of prediction vs observed
     $$\frac{1}{n}\sum_{i=1}^{i=n}(\hat{y}_{i}-y_{i})^{2}$$
 
     \begin{align}
@@ -65,15 +65,15 @@ def calc_mse(y, yhat):
     \text{Method B, use all samples then mean: } \text{MSE} &= \frac{1}{n} \sum_{i=1}^{i=n}(\mu_{j}(\hat{y}_{ij} - y_{i})^{2})
     \end{align}
 
-    WARNING: 
+    WARNING:
         the 'samples' approach squares outliers pushing farther from the mean
         # se_samples = np.power(yhat - yobs, 2)      # (nsamp, nobs)
         # mse_samples = np.mean(se_samples, axis=1)  # (nsamp,)
         i.e.
-        take mean across samples then square the differences is usually smaller than 
+        take mean across samples then square the differences is usually smaller than
         square the differences each sample and preserve samples
         https://en.wikipedia.org/wiki/Generalized_mean
-        
+
         I can only think to calc summary stats and then calc MSE for them
     """
     # collapse samples to mean then calc error

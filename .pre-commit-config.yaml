@@ -7,20 +7,34 @@ repos:
     rev: v4.3.0
     hooks:
       - id: check-added-large-files
-        args: ['--maxkb=1024']
-      - id: check-case-conflict
+        args: ['--maxkb=2048']
       - id: check-merge-conflict
-      - id: end-of-file-fixer
+      - id: check-toml
+      - id: check-yaml
+      - id: check-json
+      - id: debug-statements
+      - id: detect-private-key
+      - id: check-case-conflict
       - id: mixed-line-ending
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+  # - repo: https://github.com/MarcoGorelli/madforhooks  # not yet
+  #   rev: 0.3.0
+  #   hooks:
+  #     - id: no-print-statements
+  #       files: ^oreum_core/
   - repo: https://github.com/psf/black  # black formatter
-    rev: 22.3.0
+    rev: 22.6.0
     hooks:
       - id: black
+        files: ^oreum_core/
   - repo: https://github.com/PyCQA/isort  # isort import sorter
     rev: 5.10.1
     hooks:
       - id: isort
+        files: ^oreum_core/
   - repo: https://gitlab.com/pycqa/flake8  # flake8 linter
     rev: 4.0.1
     hooks:
       - id: flake8
+        files: ^oreum_core/
