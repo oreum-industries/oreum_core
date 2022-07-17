@@ -300,8 +300,8 @@ class Transformer:
         NEW FUNCTIONALITY: 2021-03-11
             factorize components marked as F(), must be pd.Categorical
         """
-        # deal with any fml components marked F()
-        fts_fact = self.rx_get_f_components.findall(fml)
+        # deal with any fml components marked F() - use set to uniqify
+        fts_fact = set(self.rx_get_f_components.findall(fml))
         if len(fts_fact) > 0:
             df = df.copy()
             for ft_fact in fts_fact:
