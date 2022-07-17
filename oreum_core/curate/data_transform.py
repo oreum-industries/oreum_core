@@ -300,7 +300,7 @@ class Transformer:
         NEW FUNCTIONALITY: 2021-03-11
             factorize components marked as F(), must be pd.Categorical
         """
-        # deal with any fml components marked F() - use set to uniqify
+        # deal with any fml components marked F(), note use set to uniqify
         fts_fact = set(self.rx_get_f_components.findall(fml))
         if len(fts_fact) > 0:
             df = df.copy()
@@ -311,7 +311,7 @@ class Transformer:
                         f'fml contains F({ft_fact[1]}), '
                         + 'dtype={dt}, but it must be categorical'
                     )
-                # map feature to int based on its preexisting catgorical order
+                # map feature to int based on its preexisting categorical order
                 # https://stackoverflow.com/a/55304375/1165112
                 map_int_to_fact = dict(enumerate(df[ft_fact[1]].cat.categories))
                 map_fact_to_int = {v: k for k, v in map_int_to_fact.items()}
@@ -334,6 +334,7 @@ class Transformer:
 
         # force patsy transform of an index feature back to int!
         # there might be a better way to do this
+        # TODO somehow make this work for interactions for F():F()
         fts_force_to_int = list(self.fts_fact_mapping.keys())
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
