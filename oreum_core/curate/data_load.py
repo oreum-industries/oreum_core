@@ -37,7 +37,7 @@ class SimpleStringIO:
             relpath = self.relpath
         fqn = os.path.join(*relpath, f'{fn}.{self.kind}')
         with open(fqn, 'r') as f:
-            s = f.read()
+            s = f.read().rstrip('\n')
             f.close()
         if self.kind == 'json':
             s = json.loads(s)
