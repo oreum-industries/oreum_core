@@ -281,6 +281,7 @@ class Transformer:
         + design_info is stateful
         + it's reasonable to initialise this per-observation but far more
           efficient to initialise once and persist in-memory
+    TODO allow for interaction of F():F() terms
     """
 
     def __init__(self):
