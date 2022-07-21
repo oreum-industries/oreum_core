@@ -6,7 +6,10 @@ import pymc3 as pm
 
 
 class BasePYMC3Model:
-    """Handle the build, sample and exploration of a PyMC3 model"""
+    """Base handler to build, sample, store traces for PyMC3 model.
+    To be inherited e.g. `super().__init__(*args, **kwargs)`
+    Children must declare a _build() method and define obs within __init__()
+    """
 
     RSD = 42
 
@@ -14,22 +17,19 @@ class BasePYMC3Model:
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
         https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/sampling.py#L277
-        A good place to look if you have sampling issues is to set
-        inheriting classes to initialize using
-        init='adapt_diag'
         """
         self.model = None
         self._trace_prior = None
         self._trace = None
         self._posterior_predictive = None
         self._idata = None
-        self.obs = obs
+        self.obs = obs  # TODO: I think we dont need / want this here. Leave this to child instances to do
         self.sample_prior_predictive_kws = dict(draws=500)
         self.sample_posterior_predictive_kws = dict(fast=True, store_ppc=False)
         self.sample_kws = dict(
             init='auto',  # aka jitter+adapt_diag
             random_seed=self.RSD,
-            tune=1000,
+            tune=2000,  # NOTE: often need to bump this much higher e.g. 10000
             draws=500,
             chains=4,
             cores=4,
@@ -161,7 +161,7 @@ class BasePYMC3Model:
                 )
 
         if store_ppc is False:
-            # the default expected for forward-pass stateless prediction
+            # the default as expected for forward-pass stateless prediction
             return self._create_idata(ppc)
         else:
             self._posterior_predictive = ppc
