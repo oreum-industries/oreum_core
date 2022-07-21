@@ -866,29 +866,20 @@ def plot_bootstrap_lr_grp(
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
 
-    mn = dfboot.groupby(grp)['lr'].mean().tolist()
+    mn = dfboot.groupby(grp, observed=True)['lr'].mean().tolist()
     pest_mn = (
-        df.groupby(grp)
+        df.groupby(grp, observed=True)
         .apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum())
         .values
     )
 
-    f = plt.figure(figsize=(14, 2 + (len(mn) * 0.25)))  # , constrained_layout=True)
+    f = plt.figure(figsize=(14, 3 + (len(mn) * 0.2)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
 
-    _ = sns.violinplot(
-        x='lr',
-        y=grp,
-        data=dfboot,
-        kind='violin',
-        cut=0,
-        scale='count',
-        width=0.6,
-        palette='cubehelix_r',
-        ax=ax0,
-    )
+    v_kws = dict(kind='violin', cut=0, scale='count', width=0.6, palette='cubehelix_r')
+    _ = sns.violinplot(x='lr', y=grp, data=dfboot, ax=ax0, **v_kws)
 
     _ = [ax0.plot(v, i % len(mn), **mean_point_kws) for i, v in enumerate(mn)]
     _ = [
@@ -910,7 +901,7 @@ def plot_bootstrap_lr_grp(
         _ = ax0.set(xlim=force_xlim)
 
     _ = sns.countplot(y=grp, data=df, ax=ax1, palette='cubehelix_r')
-    ct = df.groupby(grp).size().tolist()
+    ct = df.groupby(grp, observed=True).size().tolist()
     _ = [
         ax1.annotate(f'{v}', xy=(v, i % len(ct)), **count_txt_h_kws)
         for i, v in enumerate(ct)
