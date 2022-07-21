@@ -9,6 +9,14 @@ from sklearn.model_selection import train_test_split
 
 from .text_clean import SnakeyLowercaser
 
+__all__ = [
+    'DatatypeConverter',
+    'DatasetReshaper',
+    'Transformer',
+    'Standardizer',
+    'compress_factor_levels',
+]
+
 
 class DatatypeConverter:
     """Force correct datatypes according to what model expects"""
@@ -138,7 +146,7 @@ class DatasetReshaper:
     def __init__(self):
         pass
 
-    def create_dfcmb(self, df, fts):
+    def create_dfcmb(self, df: pd.DataFrame, fts: dict) -> pd.DataFrame:
         """Create a combination dataset `dfcmb` from inputted `df`.
 
         *Not* a big groupby (equiv to cartesian join) for factor values
@@ -197,7 +205,7 @@ class DatasetReshaper:
 
         return dfcmb
 
-    def _create_dfcmb_big(self, df, fts):
+    def _create_dfcmb_big(self, df: pd.DataFrame, fts: dict) -> pd.DataFrame:
         """Create a combination dataset `dfcmb` from inputted `df`.
         Just a big groupby (equiv to cartesian join) for factor values
         and concats numerics. The shape and datatypes matter.
@@ -243,13 +251,13 @@ class DatasetReshaper:
 
     def split_train_test(
         self,
-        df,
+        df: pd.DataFrame,
         stratify_ft=None,
         test_size=0.2,
         skip=1,
         idx_ids_only=False,
         random_state=None,
-    ):
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Split `df` into training and test sets, optionally by `stratify_ft`"""
         vec = None
         if stratify_ft is not None:
@@ -273,15 +281,18 @@ class Transformer:
         + design_info is stateful
         + it's reasonable to initialise this per-observation but far more
           efficient to initialise once and persist in-memory
+    TODO allow for interaction of F():F() terms
     """
 
     def __init__(self):
         self.design_info = None
         self.col_idx_numerics = None
-        self.rx_get_f_components = re.compile(r'(F\(([a-z_]+?)\))')
+        self.rx_get_f_components = re.compile(r'(F\(([a-z0-9_]+?)\))')
         self.fts_fact_mapping = {}
 
-    def fit_transform(self, fml, df: pd.DataFrame, propagate_nans=False):
+    def fit_transform(
+        self, fml: str, df: pd.DataFrame, propagate_nans: bool = False
+    ) -> pd.DataFrame:
         """Fit a new design_info attribute for this instance according to
         `fml` acting upon `df`. Return the transformed dmatrix (np.array)
         Use this for a new training set or to initialise the transfomer
@@ -290,8 +301,8 @@ class Transformer:
         NEW FUNCTIONALITY: 2021-03-11
             factorize components marked as F(), must be pd.Categorical
         """
-        # deal with any fml components marked F()
-        fts_fact = self.rx_get_f_components.findall(fml)
+        # deal with any fml components marked F(), note use set to uniqify
+        fts_fact = set(self.rx_get_f_components.findall(fml))
         if len(fts_fact) > 0:
             df = df.copy()
             for ft_fact in fts_fact:
@@ -301,17 +312,16 @@ class Transformer:
                         f'fml contains F({ft_fact[1]}), '
                         + 'dtype={dt}, but it must be categorical'
                     )
-
-                # map feature to int based on its preexisting catgorical order
+                # map feature to int based on its preexisting categorical order
                 # https://stackoverflow.com/a/55304375/1165112
                 map_int_to_fact = dict(enumerate(df[ft_fact[1]].cat.categories))
                 map_fact_to_int = {v: k for k, v in map_int_to_fact.items()}
                 self.fts_fact_mapping[ft_fact[1]] = map_fact_to_int
                 df[ft_fact[1]] = df[ft_fact[1]].map(map_fact_to_int).astype(np.int)
 
-                # replace F() in fml so that patsy can work as normal with our
-                # new int ft
-                fml = self.rx_get_f_components.sub(ft_fact[1], fml)
+                # replace F() in fml so that patsy can work as normal
+                # with our new int type feature
+                fml = fml.replace(ft_fact[0], ft_fact[1])
 
         # TODO add option to output matrix   # np.asarray(mx_ex)
         # TODO add check for fml contains `~` and handle accordingly
@@ -325,13 +335,14 @@ class Transformer:
 
         # force patsy transform of an index feature back to int!
         # there might be a better way to do this
+        # TODO somehow make this work for interactions for F():F()
         fts_force_to_int = list(self.fts_fact_mapping.keys())
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
 
         return df_ex
 
-    def transform(self, df: pd.DataFrame, propagate_nans=False):
+    def transform(self, df: pd.DataFrame, propagate_nans: bool = False) -> pd.DataFrame:
         """Transform input `df` to dmatrix according to pre-fitted
         `design_info`. Return transformed dmatrix (np.array)
 
@@ -393,7 +404,7 @@ class Standardizer:
     + rework to I/O dataframes
     """
 
-    def __init__(self, design_info, fts_exclude=[]):
+    def __init__(self, design_info: pt.design_info.DesignInfo, fts_exclude: list = []):
         """Optionally exclude from standardization a list of named fts that
         are numeric and would otherwise get standardardized"""
 
@@ -414,7 +425,7 @@ class Standardizer:
         self.sdevs = None
         self.scale = None
 
-    def standardize(self, df: pd.DataFrame):
+    def standardize(self, df: pd.DataFrame) -> pd.DataFrame:
         """Standardize input df to mean-centered, 2sd unit variance,
         Retain the fitted means and sdevs for later use in standardize()
         """
@@ -431,7 +442,7 @@ class Standardizer:
         df_exs = df.mask(~mask, df_s)  # replace values where condition is True
         return df_exs
 
-    def fit_standardize(self, df: pd.DataFrame, scale=2):
+    def fit_standardize(self, df: pd.DataFrame, scale: int = 2) -> pd.DataFrame:
         """Standardize numeric features of df with variable scale
         Retain the fitted means and sdevs for later use in standardize()
         """
@@ -440,7 +451,7 @@ class Standardizer:
         self.scale = scale
         return self.standardize(df)
 
-    def standardize_mx(self, mx):
+    def standardize_mx(self, mx: np.ndarray) -> np.ndarray:
         """Standardize input mx to mean-centered, 2sd unit variance,
         Retain the fitted means and sdevs for later use in standardize()
         """
@@ -455,7 +466,7 @@ class Standardizer:
         mxs = np.where(mask, mx, mxs_all)
         return mxs
 
-    def fit_standardize_mx(self, mx: np.ndarray, scale=2):
+    def fit_standardize_mx(self, mx: np.ndarray, scale: int = 2) -> np.ndarray:
         """Standardize numeric features of mx with variable scale
         Retain the fitted means and sdevs for later use in standardize()
         """
@@ -474,7 +485,7 @@ class Standardizer:
 
         return means_sdevs, self.scale
 
-    def set_means_sdevs_scale(self, means_sdevs, scale=2):
+    def set_means_sdevs_scale(self, means_sdevs, scale: int = 2):
         """Set values saved from a prior fit_standardize. Now can run
         standardize for new data
         """
@@ -483,7 +494,7 @@ class Standardizer:
         self.scale = scale
 
 
-def compress_factor_levels(df, fts, topn=20):
+def compress_factor_levels(df: pd.DataFrame, fts: list, topn: int = 20) -> pd.DataFrame:
     """Crude compression for factor levels, into the topn + 1 (other)
     Return new dataframe for fts
     """

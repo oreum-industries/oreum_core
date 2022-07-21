@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.defaultInterpreterPath": "/opt/miniconda/envs/oreum_core/bin/python",
+		"workbench.colorTheme": "Darcula",
+	}
+}

@@ -1,7 +1,7 @@
 name: black
 on: [pull_request]
 jobs:
-  lint:
+  black-formatter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

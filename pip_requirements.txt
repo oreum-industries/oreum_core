@@ -2,15 +2,15 @@
 # Last updated as-at 2022-04-18
 # Installation Notes:
 #  + This package is intended to be installed via a git+ egg
-#    e.g. this line would appear in a `pip_requirements.txt` file 
+#    e.g. this line would appear in a `pip_requirements.txt` file
 #    `git+https://github.com/oreum-industries/oreum_core.git@v0.2.0#egg=oreum_core`
-#  + We further intend this pip install is within a pre-created conda env 
-#  + The parent conda env needs to have installed the requirements shown in 
+#  + We further intend this pip install is within a pre-created conda env
+#  + The parent conda env needs to have installed the requirements shown in
 #    this repos `condaenv_oreum_core.yml` file
 #  + This ensures that we get the correct `pymc3` and `pymc-theano` installs,
 #    see: https://github.com/pymc-devs/pymc/wiki/Installation-Guide-(MacOS)
 #  + Note that pymc3 itself installs several scientific packages that you might
-#    otherwise expect to see listed here: `arviz`, `pandas`, `scipy`, so we 
+#    otherwise expect to see listed here: `arviz`, `pandas`, `scipy`, so we
 #    rely on https://github.com/pymc-devs/pymc/blob/main/requirements.txt
 #    unless we have to hard-pin for compatibility (not yet needed)
 #  + Lower-pinned packages to 3-level version >= a.b.c
@@ -24,6 +24,7 @@ hypothesis>=6.39.4
 matplotlib>=3.5.0
 nltk>=3.7
 orderedset>=2.0.3
+patsy==0.5.*
 pillow>=9.0.1
 pre-commit>=2.18.*
 pyarrow>=7.0.0
