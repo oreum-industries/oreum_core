@@ -288,8 +288,7 @@ class Transformer:
     def __init__(self):
         self.design_info = None
         self.col_idx_numerics = None
-        self.rx_get_f = re.compile(r'(F\(([a-z0-9_]+?)\))')
-        self.rx_get_ff = re.compile(r'(F\(([a-z0-9_]+?)\):F\(([a-z0-9_]+?)\))')
+        self.rx_get_f = re.compile(r'(F\(([a-z0-9_:]+?)\))')
         self.fts_fact_mapping = {}
         self.original_fml = None
 
@@ -302,9 +301,8 @@ class Transformer:
         based on dfcmb.
         """
         self.original_fml = fml
-        # deal w/ any fml components F(), use set() to uniqify, loses F():F()
-        fts_f = set(self.rx_get_f.findall(fml))
-        fts_ff = set(self.rx_get_ff.findall(fml))  # add any interaction F():F()
+        # deal w/ any fml components F(), use set() to uniqify
+        fts_f = list(set(self.rx_get_f.findall(fml)))
 
         if len(fts_f) > 0:
             df = df.copy()
@@ -324,7 +322,7 @@ class Transformer:
 
                 # replace F() in fml so patsy can work as normal w/ our new int type
                 fml = fml.replace(ft_f[0], ft_f[1])
-
+        print(fml)
         # TODO add option to output matrix   # np.asarray(mx_ex)
         # TODO add check for fml contains `~` and handle accordingly
 
@@ -334,14 +332,9 @@ class Transformer:
         df_ex = pt.dmatrix(fml, df, NA_action=na_action, return_type='dataframe')
         self.design_info = df_ex.design_info
 
-        # force patsy transform of an index feature back to int!
-        # there might be a better way to do this
+        # force patsy transform of an F() to int feature back to int not float
         fts_force_to_int = []
         fts_force_to_int = list(self.fts_fact_mapping.keys())
-        for ff in fts_ff:
-            if len(ff) == 3:
-                fts_force_to_int.append(f'{ff[1]}:{ff[2]}')
-
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
 
@@ -357,8 +350,8 @@ class Transformer:
         if self.design_info is None:
             raise AttributeError('No design_info, run `fit_transform()` first')
 
-        # hacky way to get F():F() components
-        fts_ff = set(self.rx_get_ff.findall(self.original_fml))
+        # # hacky way to get F():F() components
+        # fts_ff = set(self.rx_get_ff.findall(self.original_fml))
 
         # map any features noted in fts_fact_mapping
         try:
@@ -387,10 +380,6 @@ class Transformer:
         # there might be a better way to do this
         fts_force_to_int = []
         fts_force_to_int = list(self.fts_fact_mapping.keys())
-        for ff in fts_ff:
-            if len(ff) == 3:
-                fts_force_to_int.append(f'{ff[1]}:{ff[2]}')
-
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
 
