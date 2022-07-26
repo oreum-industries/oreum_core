@@ -1,6 +1,7 @@
 # curate.data_transform.py
 # copyright 2022 Oreum Industries
 import re
+from distutils.log import error
 
 import numpy as np
 import pandas as pd
@@ -281,61 +282,58 @@ class Transformer:
         + design_info is stateful
         + it's reasonable to initialise this per-observation but far more
           efficient to initialise once and persist in-memory
-    TODO allow for interaction of F():F() terms
+        + allows for F() and F():F() terms
     """
 
     def __init__(self):
         self.design_info = None
         self.col_idx_numerics = None
-        self.rx_get_f_components = re.compile(r'(F\(([a-z0-9_]+?)\))')
+        self.rx_get_f = re.compile(r'(F\(([a-z0-9_:]+?)\))')
         self.fts_fact_mapping = {}
+        self.original_fml = None
 
     def fit_transform(
         self, fml: str, df: pd.DataFrame, propagate_nans: bool = False
     ) -> pd.DataFrame:
         """Fit a new design_info attribute for this instance according to
         `fml` acting upon `df`. Return the transformed dmatrix (np.array)
-        Use this for a new training set or to initialise the transfomer
+        Use this for a new training set or to initialise the transformer
         based on dfcmb.
-
-        NEW FUNCTIONALITY: 2021-03-11
-            factorize components marked as F(), must be pd.Categorical
         """
-        # deal with any fml components marked F(), note use set to uniqify
-        fts_fact = set(self.rx_get_f_components.findall(fml))
-        if len(fts_fact) > 0:
+        self.original_fml = fml
+        # deal w/ any fml components F(), use set() to uniqify
+        fts_f = list(set(self.rx_get_f.findall(fml)))
+
+        if len(fts_f) > 0:
             df = df.copy()
-            for ft_fact in fts_fact:
-                dt = df[ft_fact[1]].dtype.name
+            for ft_f in fts_f:
+                dt = df[ft_f[1]].dtype.name
                 if dt != 'category':
                     raise AttributeError(
-                        f'fml contains F({ft_fact[1]}), '
-                        + 'dtype={dt}, but it must be categorical'
+                        f'fml contains F({ft_f[1]}),'
+                        + f' dtype={dt}, but {ft_f[1]} is not categorical'
                     )
                 # map feature to int based on its preexisting categorical order
                 # https://stackoverflow.com/a/55304375/1165112
-                map_int_to_fact = dict(enumerate(df[ft_fact[1]].cat.categories))
+                map_int_to_fact = dict(enumerate(df[ft_f[1]].cat.categories))
                 map_fact_to_int = {v: k for k, v in map_int_to_fact.items()}
-                self.fts_fact_mapping[ft_fact[1]] = map_fact_to_int
-                df[ft_fact[1]] = df[ft_fact[1]].map(map_fact_to_int).astype(np.int)
+                self.fts_fact_mapping[ft_f[1]] = map_fact_to_int
+                df[ft_f[1]] = df[ft_f[1]].map(map_fact_to_int).astype(np.int)
 
-                # replace F() in fml so that patsy can work as normal
-                # with our new int type feature
-                fml = fml.replace(ft_fact[0], ft_fact[1])
-
+                # replace F() in fml so patsy can work as normal w/ our new int type
+                fml = fml.replace(ft_f[0], ft_f[1])
+        print(fml)
         # TODO add option to output matrix   # np.asarray(mx_ex)
         # TODO add check for fml contains `~` and handle accordingly
-        na_action = 'raise'
-        if propagate_nans:
-            # do nothing, see https://stackoverflow.com/a/51641183/1165112
-            na_action = pt.NAAction(NA_types=[])
+
+        # do nothing, see https://stackoverflow.com/a/51641183/1165112
+        na_action = pt.NAAction(NA_types=[]) if propagate_nans else 'raise'
 
         df_ex = pt.dmatrix(fml, df, NA_action=na_action, return_type='dataframe')
         self.design_info = df_ex.design_info
 
-        # force patsy transform of an index feature back to int!
-        # there might be a better way to do this
-        # TODO somehow make this work for interactions for F():F()
+        # force patsy transform of an F() to int feature back to int not float
+        fts_force_to_int = []
         fts_force_to_int = list(self.fts_fact_mapping.keys())
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
@@ -352,6 +350,9 @@ class Transformer:
         if self.design_info is None:
             raise AttributeError('No design_info, run `fit_transform()` first')
 
+        # # hacky way to get F():F() components
+        # fts_ff = set(self.rx_get_ff.findall(self.original_fml))
+
         # map any features noted in fts_fact_mapping
         try:
             df = df.copy()
@@ -367,10 +368,8 @@ class Transformer:
         #                       return_type='matrix')
         # return np.asarray(mx_ex)
 
-        na_action = 'raise'
-        if propagate_nans:
-            # do nothing, see https://stackoverflow.com/a/51641183/1165112
-            na_action = pt.NAAction(NA_types=[])
+        # do nothing, see https://stackoverflow.com/a/51641183/1165112
+        na_action = pt.NAAction(NA_types=[]) if propagate_nans else 'raise'
 
         df_ex = pt.dmatrix(
             self.design_info, df, NA_action=na_action, return_type='dataframe'
@@ -379,6 +378,7 @@ class Transformer:
 
         # force patsy transform of an index feature back to int!
         # there might be a better way to do this
+        fts_force_to_int = []
         fts_force_to_int = list(self.fts_fact_mapping.keys())
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
