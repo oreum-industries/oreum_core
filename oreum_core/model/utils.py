@@ -32,8 +32,7 @@ def save_graph(mdl, fp: list = [], format: str = 'png'):
     """Accept a BasePYMC3Model object mdl, get the graphviz representation,
     write to file and return the fqn
     """
-
-    gv = pm.model_graph.model_to_graphviz(mdl.model)
+    gv = pm.model_graph.model_to_graphviz(mdl.model, formatting='plain')
     fqn = os.path.join(*fp, f'{mdl.name}')
 
     if format == 'png':
