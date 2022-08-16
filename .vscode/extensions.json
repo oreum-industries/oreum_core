@@ -2,6 +2,6 @@
     "recommendations": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "github.github-vscode-theme"
+        "github.github-vscode-theme",
     ]
 }

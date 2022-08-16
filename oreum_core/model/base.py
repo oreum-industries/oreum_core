@@ -34,7 +34,7 @@ class BasePYMC3Model:
             chains=4,
             cores=4,
             target_accept=0.8,
-            idata_kwargs=None
+            idata_kwargs=None,
         )
         self.rvs_for_posterior_plots = []
 

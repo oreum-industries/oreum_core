@@ -40,7 +40,7 @@ def fit_and_plot_fn(
         # 'invgauss': stats.invgauss,
         'invweibull': stats.invweibull,
         'lognorm': stats.lognorm,
-        'fisk': stats.fisk
+        'fisk': stats.fisk,
     }
     # NOTE: not quite true since gumbel and invweibull can go neg
 
@@ -77,7 +77,6 @@ def fit_and_plot_fn(
             backgroundcolor='w',
             fontsize=10,
         )
-
 
     if obs_is_discrete:
         dist_kind = 'Discrete'

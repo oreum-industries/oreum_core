@@ -44,14 +44,14 @@ rng = np.random.default_rng(seed=RSD)
 def _get_kws_styling() -> dict:
     """Common styling kws for plots"""
     kws = dict(
-        count_txt_kws = dict(
+        count_txt_kws=dict(
             color='#555555',
             fontsize=8,
             va='center',
             xycoords='data',
             textcoords='offset points',
         ),
-        mean_txt_kws = dict(
+        mean_txt_kws=dict(
             color='#555555',
             xycoords='data',
             xytext=(10, 9),
@@ -59,7 +59,7 @@ def _get_kws_styling() -> dict:
             fontsize=8,
             backgroundcolor='w',
         ),
-        pest_mean_txt_kws = dict(
+        pest_mean_txt_kws=dict(
             color='#555555',
             xycoords='data',
             xytext=(-10, -9),
@@ -67,12 +67,16 @@ def _get_kws_styling() -> dict:
             fontsize=6,
             backgroundcolor='#7cfaf2',
         ),
-        mean_point_kws = dict(
+        mean_point_kws=dict(
             markerfacecolor='w', markeredgecolor='#333333', marker='d', markersize=12
         ),
-        pest_mean_point_kws = dict(
-            markerfacecolor='#56f8ee', markeredgecolor='#eeeeee', marker='d', markersize=10
-        ))
+        pest_mean_point_kws=dict(
+            markerfacecolor='#56f8ee',
+            markeredgecolor='#eeeeee',
+            marker='d',
+            markersize=10,
+        ),
+    )
     kws['count_txt_h_kws'] = dict(ha='left', xytext=(4, 0), **kws['count_txt_kws'])
     return kws
 
@@ -796,14 +800,16 @@ def plot_bootstrap_lr(
     ]
 
     elems = [
-        lines.Line2D([0], [0], label='population LR (bootstrap)', **styl['mean_point_kws']),
+        lines.Line2D(
+            [0], [0], label='population LR (bootstrap)', **styl['mean_point_kws']
+        ),
         lines.Line2D([0], [0], label='sample LR', **styl['pest_mean_point_kws']),
     ]
     gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
-                # title='Mean LRs', title_fontsize=6
+    # title='Mean LRs', title_fontsize=6
     if force_xlim is not None:
         _ = gd.ax.set(xlim=force_xlim)
-    gd.ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.))
+    gd.ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
 
     if title_add != '':
         title_add = f'\n{title_add}'
@@ -832,7 +838,7 @@ def plot_bootstrap_lr(
             + f'\nPopulation LR: mean = {mn[0]:.1%}, '
             + f'HDI_50 = [{hdi[1]:.1%}, {hdi[2]:.1%}], '
             + f'HDI_94 = [{hdi[0]:.1%}, {hdi[3]:.1%}]'
-        ),
+        )
     )
     _ = plt.tight_layout()
     return gd
@@ -881,10 +887,12 @@ def plot_bootstrap_lr_grp(
         ax0.plot(v, i % len(pest_mn), **styl['pest_mean_point_kws'])
         for i, v in enumerate(pest_mn)
     ]
-    ax0.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.))
+    ax0.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
 
     elems = [
-        lines.Line2D([0], [0], label='population LR (bootstrap)', **styl['mean_point_kws']),
+        lines.Line2D(
+            [0], [0], label='population LR (bootstrap)', **styl['mean_point_kws']
+        ),
         lines.Line2D([0], [0], label='sample LR', **styl['pest_mean_point_kws']),
     ]
     _ = ax0.legend(handles=elems, loc='upper right', fontsize=8)
@@ -968,7 +976,9 @@ def plot_bootstrap_grp(
     ]
 
     elems = [
-        lines.Line2D([0], [0], label='population (bootstrap)', **styl['mean_point_kws']),
+        lines.Line2D(
+            [0], [0], label='population (bootstrap)', **styl['mean_point_kws']
+        ),
         lines.Line2D([0], [0], label='sample', **styl['pest_mean_point_kws']),
     ]
     _ = ax0.legend(handles=elems, loc='lower right', title='Mean Val')
@@ -1114,7 +1124,9 @@ def plot_grp_sum_dist_count(
 
     _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette='viridis', ax=ax2)
     _ = [
-        ax2.annotate(f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **styl['count_txt_h_kws'])
+        ax2.annotate(
+            f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **styl['count_txt_h_kws']
+        )
         for i, c in enumerate(ct)
     ]
 
@@ -1126,7 +1138,7 @@ def plot_grp_sum_dist_count(
     if title_add != '':
         title_add = f'\n{title_add}'
     title = f'Diagnostic 1D plots of `{val}` grouped by `{grp}`'
-    _ = f.suptitle(f'{title}{title_add}', y=ypos, fontsize=16)
+    _ = f.suptitle(f'{title}{title_add}', fontsize=16)
 
     if sum(idx) > 0:
         t = (
@@ -1331,14 +1343,12 @@ def plot_grp_count(df, grp='grp', title_add=''):
 
     _ = axs.set(ylabel=None)
 
-    ypos = 1.01
     if title_add != '':
-        ypos = 1.02
         title_add = f'\n{title_add}'
 
     title = f'Countplot: {len(df)} obs, grouped by {grp}'
-    _ = f.suptitle(f'{title}{title_add}', y=ypos)
+    _ = f.suptitle(f'{title}{title_add}')
 
-    plt.tight_layout()
+    _ = plt.tight_layout()
 
     return f
