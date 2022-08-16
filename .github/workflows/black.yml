@@ -9,4 +9,4 @@ jobs:
         with:
           options: '-v -S -C -t py39 --check --diff --color'
           src: './oreum_core'
-          version: '22.3.*'
+          version: '22.6.*'

@@ -18,6 +18,8 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
       - id: end-of-file-fixer
+      - id: no-commit-to-branch
+        args: [--branch, master]
   # - repo: https://github.com/MarcoGorelli/madforhooks  # not yet
   #   rev: 0.3.0
   #   hooks:
