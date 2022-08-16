@@ -23,7 +23,7 @@ def fit_and_plot_fn(
     """
 
     if tail_kind not in set(['right', 'both']):
-        raise ValueError("tail_kind must be in {'right', 'both'}")
+        raise ValueError("tail_kind must be one of {'right', 'both'}")
 
     # warnings.filterwarnings("error") # handle RuntimeWarning as error so can catch
     # warnings.simplefilter(action='ignore', category='RuntimeWarning')
@@ -40,6 +40,7 @@ def fit_and_plot_fn(
         # 'invgauss': stats.invgauss,
         'invweibull': stats.invweibull,
         'lognorm': stats.lognorm,
+        'fisk': stats.fisk
     }
     # NOTE: not quite true since gumbel and invweibull can go neg
 
@@ -54,6 +55,29 @@ def fit_and_plot_fn(
         kde=False, label='data', ax=ax1d, alpha=0.5, color='#aaaaaa', zorder=-1
     )
     line_kws = dict(lw=2, ls='--', ax=ax1d)
+
+    def _annotate_facets():
+        """Convenience to annotate, based on eda.plots.plot_float_dist"""
+        n_nans = pd.isnull(obs).sum()
+        n_zeros = (obs == 0).sum()
+        n_infs = np.isinf(obs).sum()
+        mean = obs.mean()
+        med = obs.median()
+        ax = plt.gca()
+        ax.text(
+            0.5,
+            0.97,
+            (
+                f'NaNs: {n_nans},  infs+/-: {n_infs},  zeros: {n_zeros},  '
+                + f'mean: {mean:.2f},  med: {med:.2f}'
+            ),
+            transform=ax.transAxes,
+            ha='center',
+            va='top',
+            backgroundcolor='w',
+            fontsize=10,
+        )
+
 
     if obs_is_discrete:
         dist_kind = 'Discrete'
@@ -107,6 +131,7 @@ def fit_and_plot_fn(
     title = f'{dist_kind} function approximations to {obs.name}'
     _ = f.suptitle(title, y=0.97)
     _ = f.axes[0].legend(title='dist: RMSE', title_fontsize=10)
+    _annotate_facets()
 
     return f, params
 

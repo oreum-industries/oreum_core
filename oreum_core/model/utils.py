@@ -9,7 +9,9 @@ import pymc3 as pm
 
 def read_azid(dir_traces: list = [], fn: str = 'azid'):
     """Convenience: read arviz.InferenceData object from file"""
-    return az.from_netcdf(os.path.join(*dir_traces, f'{fn}.netcdf'))
+    # with az.rc_context(rc={'data.load': 'eager'}):   # alternative: 'lazy'
+    azid = az.from_netcdf(os.path.join(*dir_traces, f'{fn}.netcdf'))
+    return azid
 
 
 def write_azid(mdl, dir_traces: list = []):

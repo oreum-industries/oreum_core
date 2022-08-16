@@ -402,6 +402,8 @@ class Standardizer:
     + apply standardization using a mask. allows us to exclude any col
         from standardization
     + rework to I/O dataframes
+
+    TODO: introduce minmax scaling as an option
     """
 
     def __init__(self, design_info: pt.design_info.DesignInfo, fts_exclude: list = []):
