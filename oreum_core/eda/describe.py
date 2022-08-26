@@ -100,9 +100,10 @@ def custom_describe(
 
     # add sum for numeric cols
     dfout['sum'] = np.nan
-    idxs = dfout['dtype'].isin(['int64', 'float64'])
+    idxs = (dfout['dtype'] == 'float64') | (dfout['dtype'] == 'int64')
     if np.sum(idxs.values) > 0:
         for ft in dfout.loc[idxs].index.values:
+            print(ft)
             dfout.loc[ft, 'sum'] = df[ft].sum()
 
     # add min, max for string cols (note the not very clever overwrite of count)

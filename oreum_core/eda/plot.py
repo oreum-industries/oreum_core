@@ -782,6 +782,7 @@ def plot_bootstrap_lr(
     title_add: str = '',
     title_pol_summary: bool = False,
     force_xlim: list = None,
+    color: str = None,
 ) -> sns.axisgrid.FacetGrid:
     """Plot bootstrapped loss ratio, no grouping"""
 
@@ -790,7 +791,10 @@ def plot_bootstrap_lr(
     hdi = dfboot['lr'].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # boot qs
     pest_mn = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]  # point est mean
 
-    gd = sns.catplot(x='lr', data=dfboot, kind='violin', cut=0, height=3, aspect=4)
+    clr = color if color is not None else sns.color_palette()[0]
+    gd = sns.catplot(
+        x='lr', data=dfboot, kind='violin', cut=0, color=clr, height=3, aspect=4
+    )
     _ = [gd.ax.plot(v, i % len(mn), **sty['mn_pt_kws']) for i, v in enumerate(mn)]
     _ = [
         gd.ax.annotate(f'{v:.1%}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
