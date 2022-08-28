@@ -7,7 +7,8 @@ repos:
     rev: v4.3.0
     hooks:
       - id: check-added-large-files
-        args: ['--maxkb=2048']
+        args: ['--maxkb=1024']
+        exclude: "(^[a-zA-Z0-9_]{1,}\\.ipynb|^.+?\\.png)"
       - id: check-merge-conflict
       - id: check-toml
       - id: check-yaml
@@ -34,8 +35,8 @@ repos:
     hooks:
       - id: isort
         files: ^oreum_core/
-  - repo: https://gitlab.com/pycqa/flake8  # flake8 linter
-    rev: 4.0.1
+  - repo: https://github.com/pycqa/flake8  # flake8 linter
+    rev: 5.0.4
     hooks:
       - id: flake8
         files: ^oreum_core/

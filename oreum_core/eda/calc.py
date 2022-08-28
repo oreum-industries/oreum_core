@@ -13,6 +13,17 @@ from scipy import stats
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
+__all__ = [
+    'fit_and_plot_fn',
+    'get_gini',
+    'bootstrap',
+    'bootstrap_lr',
+    'calc_geometric_cv',
+    'calc_location_in_ecdf',
+    'month_diff',
+    'tril_nan',
+]
+
 
 # TODO see issue #2
 def fit_and_plot_fn(
@@ -217,3 +228,12 @@ def month_diff(a: pd.DataFrame, b: pd.DataFrame):
                     df['reported_date'].dt.to_period('M'))]
     """
     return 12 * (a.dt.year - b.dt.year) + (a.dt.month - b.dt.month)
+
+
+def tril_nan(m, k=0):
+    """Copy of np.tril but mask with np.nans not zeros"""
+
+    m = np.asanyarray(m)  # numpy.core.numeric
+    mask = np.tri(*m.shape[-2:], k=k, dtype=bool)
+
+    return np.where(mask, m, np.ones(1, m.dtype) * np.nan)
