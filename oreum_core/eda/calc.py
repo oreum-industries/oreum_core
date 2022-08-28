@@ -236,4 +236,5 @@ def tril_nan(m, k=0):
     m = np.asanyarray(m)  # numpy.core.numeric
     mask = np.tri(*m.shape[-2:], k=k, dtype=bool)
 
-    return np.where(mask, m, np.ones(1, m.dtype) * np.nan)
+    # return np.where(mask, m, np.ones(1, m.dtype) * np.nan)
+    return np.where(mask, m, np.nan)
