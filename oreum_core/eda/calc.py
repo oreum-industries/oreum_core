@@ -230,8 +230,14 @@ def month_diff(a: pd.DataFrame, b: pd.DataFrame):
     return 12 * (a.dt.year - b.dt.year) + (a.dt.month - b.dt.month)
 
 
-def tril_nan(m, k=0):
-    """Copy of np.tril but mask with np.nans not zeros"""
+def tril_nan(m: np.ndarray, k: int = 0) -> np.ndarray:
+    """Copy of np.tril but mask with np.nans not zeros
+    Example usage, to set tril to np.nan in DataFrame.corr()
+    corr = df_b0.corr()
+    mask = eda.tril_nan(corr, k=-1)
+    corr.mask(np.isnan(mask))
+
+    """
 
     m = np.asanyarray(m)  # numpy.core.numeric
     mask = np.tri(*m.shape[-2:], k=k, dtype=bool)
