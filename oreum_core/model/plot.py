@@ -35,7 +35,7 @@ def plot_ppc_loopit(
     _ = ax0.set_title('PPC Predicted(yhat) vs Observed(y)')
     _ = ax1.set_title('yhat LOO-PIT')
     _ = ax2.set_title('yhat LOO-PIT cumulative')
-    f.tight_layout()
+    _ = f.tight_layout()
     return f
 
 
@@ -54,8 +54,8 @@ def facetplot_azid_dist(
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(azid, group=group, ax=axs, var_names=rvs, **kwargs)
-    f.suptitle(f'{group} {rvs}', y=0.96 + n * 0.005)
-    f.tight_layout()
+    _ = f.suptitle(f'{group} {rvs}', y=0.96 + n * 0.005)
+    _ = f.tight_layout()
     return f
 
 
@@ -76,8 +76,8 @@ def facetplot_df_dist(
         )
         axarr.set_title(ft)
     title = kwargs.get('title', '')
-    f.suptitle(f'{title} {rvs}', y=0.96 + n * 0.005)
-    f.tight_layout()
+    _ = f.suptitle(f'{title} {rvs}', y=0.96 + n * 0.005)
+    _ = f.tight_layout()
     return f
 
 

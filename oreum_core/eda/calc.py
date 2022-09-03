@@ -146,14 +146,14 @@ def fit_and_plot_fn(
     return f, params
 
 
-def get_gini(r, n):
+def get_gini(r: np.ndarray, n: np.ndarray) -> np.ndarray:
     """For array r, return estimate of gini co-efficient over n
     g = A / (A+B)
     """
     return 1 - sum(r.sort_values().cumsum() * (2 / n))
 
 
-def bootstrap(a, nboot=1000, summary_fn=np.mean):
+def bootstrap(a: np.ndarray, nboot: int = 1000, summary_fn=np.mean) -> np.ndarray:
     """Calc vectorised bootstrap sample of array of observations
     By default return the mean value of the observations per sample
     I.e if len(a)=20 and nboot=100, this returns 100 bootstrap resampled
@@ -174,7 +174,9 @@ def bootstrap(a, nboot=1000, summary_fn=np.mean):
         return samples
 
 
-def bootstrap_lr(df, prm='premium', clm='claim', nboot=1000):
+def bootstrap_lr(
+    df: pd.DataFrame, prm: str = 'premium', clm: str = 'claim', nboot: int = 1000
+) -> pd.DataFrame:
     """Calc vectorised bootstrap loss ratios for df
     Pass a dataframe or group. fts named `'premium', 'claim'`
     Accept nans in clm
@@ -190,7 +192,7 @@ def bootstrap_lr(df, prm='premium', clm='claim', nboot=1000):
     return dfboot
 
 
-def calc_geometric_cv(lognormal_yhat):
+def calc_geometric_cv(lognormal_yhat: np.ndarray) -> np.ndarray:
     """Calculate geometric coefficient of variation for log-normally
     distributed samples.
     Expect 2D array shape (nobs, nsamples)
@@ -199,7 +201,7 @@ def calc_geometric_cv(lognormal_yhat):
     return np.sqrt(np.exp(np.std(np.log(lognormal_yhat), axis=1) ** 2) - 1)
 
 
-def _ecdf(a):
+def _ecdf(a: np.ndarray) -> tuple:
     """Empirical CDF of array
     Return sorted array and ecdf values
     """
