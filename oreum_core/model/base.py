@@ -37,6 +37,9 @@ class BasePYMC3Model:
             idata_kwargs=None,
         )
         self.rvs_for_posterior_plots = []
+        self.name = getattr(self, 'name', 'unnamed_model')
+        self.version = getattr(self, 'name', 'unversioned_model')
+        self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
     @property
     def trace_prior(self):
@@ -76,7 +79,7 @@ class BasePYMC3Model:
         helper_txt = '' if self.model is None else 're'
         try:
             self._build()
-            print(f'{helper_txt}built model {self.name}')
+            print(f'{helper_txt}built model {self.name} {self.version}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _build() in your'
