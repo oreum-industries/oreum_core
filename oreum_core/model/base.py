@@ -38,7 +38,7 @@ class BasePYMC3Model:
         )
         self.rvs_for_posterior_plots = []
         self.name = getattr(self, 'name', 'unnamed_model')
-        self.version = getattr(self, 'name', 'unversioned_model')
+        self.version = getattr(self, 'version', 'unversioned_model')
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
     @property
