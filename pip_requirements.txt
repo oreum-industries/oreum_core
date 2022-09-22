@@ -1,9 +1,9 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2022-04-18
+# Last updated as-at 2022-09-22
 # Installation Notes:
 #  + This package is intended to be installed via a git+ egg
 #    e.g. this line would appear in a `pip_requirements.txt` file
-#    `git+https://github.com/oreum-industries/oreum_core.git@v0.2.0#egg=oreum_core`
+#    `git+https://github.com/oreum-industries/oreum_core.git@v0.3.0#egg=oreum_core`
 #  + We further intend this pip install is within a pre-created conda env
 #  + The parent conda env needs to have installed the requirements shown in
 #    this repos `condaenv_oreum_core.yml` file
@@ -15,21 +15,19 @@
 #    unless we have to hard-pin for compatibility (not yet needed)
 #  + Lower-pinned packages to 3-level version >= a.b.c
 arviz==0.12.*
-black>=22.3.*
 csv2md>=1.1.2
 dask>=2022.3.0
-flake8>=4.0.*
 ftfy>=6.1.1
 hypothesis>=6.39.4
 matplotlib>=3.5.0
 nltk>=3.7
-orderedset>=2.0.3
+ordered-set>=4.1.0
 patsy==0.5.*
 pillow>=9.0.1
 pre-commit>=2.18.*
 pyarrow>=7.0.0
 pybloomfiltermmap3>=0.5.5
-scikit-learn>=1.0.2
-seaborn>=0.11.2
+scikit-learn>=1.1.2
+seaborn>=0.12.*
 sqlalchemy>=1.4.*
 statsmodels>=0.13.2
