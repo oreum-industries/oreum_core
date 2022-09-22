@@ -11,7 +11,7 @@ import requests
 from nltk.corpus import stopwords, wordnet
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.tokenize import sent_tokenize, word_tokenize
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 from pybloomfilter import BloomFilter
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
@@ -510,7 +510,7 @@ class StopWorder:
 
     def _dedupe_list_preserve_order(self, lst):
         """Extremely useful dedupe list of hashable objects, preserve order
-        https://pypi.org/project/orderedset/
+        https://pypi.org/project/ordered-set/ (new updated package)
         """
         oset = OrderedSet(lst)
         return list(oset)

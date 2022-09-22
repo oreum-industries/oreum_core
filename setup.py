@@ -4,7 +4,6 @@
 import re
 from codecs import open
 from os.path import dirname, join, realpath
-from subprocess import check_call
 
 from setuptools import find_packages, setup
 from setuptools.command.develop import develop
@@ -21,7 +20,7 @@ CLASSIFIERS = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Financial and Insurance Industry",
     "Topic :: Scientific/Engineering",
@@ -104,7 +103,7 @@ if __name__ == "__main__":
         packages=find_packages(),
         include_package_data=True,
         classifiers=CLASSIFIERS,
-        python_requires=">=3.9",
+        python_requires=">=3.10",
         install_requires=install_reqs,
         cmdclass={'develop': DevelopCommand, 'install': InstallCommand},
     )
