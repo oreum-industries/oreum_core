@@ -1,6 +1,6 @@
 # .pre-commit-config.yaml
 default_language_version:
-  python: python3.9
+  python: python3.10
 default_stages: [commit, push]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks  # general checks
@@ -26,7 +26,7 @@ repos:
   #     - id: no-print-statements
   #       files: ^oreum_core/
   - repo: https://github.com/psf/black  # black formatter
-    rev: 22.6.0
+    rev: 22.8.0
     hooks:
       - id: black
         files: ^oreum_core/
