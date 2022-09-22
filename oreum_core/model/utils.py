@@ -9,7 +9,9 @@ import pymc3 as pm
 
 def read_azid(dir_traces: list = [], fn: str = 'azid'):
     """Convenience: read arviz.InferenceData object from file"""
-    return az.from_netcdf(os.path.join(*dir_traces, f'{fn}.netcdf'))
+    # with az.rc_context(rc={'data.load': 'eager'}):   # alternative: 'lazy'
+    azid = az.from_netcdf(os.path.join(*dir_traces, f'{fn}.netcdf'))
+    return azid
 
 
 def write_azid(mdl, dir_traces: list = []):
@@ -32,8 +34,7 @@ def save_graph(mdl, fp: list = [], format: str = 'png'):
     """Accept a BasePYMC3Model object mdl, get the graphviz representation,
     write to file and return the fqn
     """
-
-    gv = pm.model_graph.model_to_graphviz(mdl.model)
+    gv = pm.model_graph.model_to_graphviz(mdl.model, formatting='plain')
     fqn = os.path.join(*fp, f'{mdl.name}')
 
     if format == 'png':

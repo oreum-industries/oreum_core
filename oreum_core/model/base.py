@@ -34,8 +34,12 @@ class BasePYMC3Model:
             chains=4,
             cores=4,
             target_accept=0.8,
+            idata_kwargs=None,
         )
         self.rvs_for_posterior_plots = []
+        self.name = getattr(self, 'name', 'unnamed_model')
+        self.version = getattr(self, 'version', 'unversioned_model')
+        self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
     @property
     def trace_prior(self):
@@ -75,7 +79,7 @@ class BasePYMC3Model:
         helper_txt = '' if self.model is None else 're'
         try:
             self._build()
-            print(f'{helper_txt}built model {self.name}')
+            print(f'{helper_txt}built model {self.name} {self.version}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _build() in your'
@@ -131,7 +135,7 @@ class BasePYMC3Model:
                 return_inferencedata=False,
                 **kwargs,
             )
-
+        # TODO can put idata_kwargs into sample() above as/when allow return_inferencedata=True
         _ = self._update_idata()
         return None
 
@@ -178,7 +182,11 @@ class BasePYMC3Model:
         NOTE: use ordered exceptions, with assumption that we always use
             an ordered workflow: prior, trc, post
         """
-        k = {'model': self.model}
+        idata_kwargs = self.sample_kws['idata_kwargs']
+
+        k = dict(model=self.model)
+        if idata_kwargs is not None:
+            k.update(**idata_kwargs)
 
         if ppc is not None:
             k['posterior_predictive'] = ppc
@@ -192,6 +200,7 @@ class BasePYMC3Model:
         return az.from_pymc3(**k)
 
     def _update_idata(self):
+        # raise ValueError(kwargs)
         """Create and update Arviz InferenceData object on-model"""
         self._idata = self._create_idata()
         return None

@@ -13,6 +13,17 @@ from scipy import stats
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
+__all__ = [
+    'fit_and_plot_fn',
+    'get_gini',
+    'bootstrap',
+    'bootstrap_lr',
+    'calc_geometric_cv',
+    'calc_location_in_ecdf',
+    'month_diff',
+    'tril_nan',
+]
+
 
 # TODO see issue #2
 def fit_and_plot_fn(
@@ -23,7 +34,7 @@ def fit_and_plot_fn(
     """
 
     if tail_kind not in set(['right', 'both']):
-        raise ValueError("tail_kind must be in {'right', 'both'}")
+        raise ValueError("tail_kind must be one of {'right', 'both'}")
 
     # warnings.filterwarnings("error") # handle RuntimeWarning as error so can catch
     # warnings.simplefilter(action='ignore', category='RuntimeWarning')
@@ -40,6 +51,7 @@ def fit_and_plot_fn(
         # 'invgauss': stats.invgauss,
         'invweibull': stats.invweibull,
         'lognorm': stats.lognorm,
+        'fisk': stats.fisk,
     }
     # NOTE: not quite true since gumbel and invweibull can go neg
 
@@ -54,6 +66,28 @@ def fit_and_plot_fn(
         kde=False, label='data', ax=ax1d, alpha=0.5, color='#aaaaaa', zorder=-1
     )
     line_kws = dict(lw=2, ls='--', ax=ax1d)
+
+    def _annotate_facets():
+        """Convenience to annotate, based on eda.plots.plot_float_dist"""
+        n_nans = pd.isnull(obs).sum()
+        n_zeros = (obs == 0).sum()
+        n_infs = np.isinf(obs).sum()
+        mean = obs.mean()
+        med = obs.median()
+        ax = plt.gca()
+        ax.text(
+            0.5,
+            0.97,
+            (
+                f'NaNs: {n_nans},  infs+/-: {n_infs},  zeros: {n_zeros},  '
+                + f'mean: {mean:.2f},  med: {med:.2f}'
+            ),
+            transform=ax.transAxes,
+            ha='center',
+            va='top',
+            backgroundcolor='w',
+            fontsize=10,
+        )
 
     if obs_is_discrete:
         dist_kind = 'Discrete'
@@ -107,18 +141,19 @@ def fit_and_plot_fn(
     title = f'{dist_kind} function approximations to {obs.name}'
     _ = f.suptitle(title, y=0.97)
     _ = f.axes[0].legend(title='dist: RMSE', title_fontsize=10)
+    _annotate_facets()
 
     return f, params
 
 
-def get_gini(r, n):
+def get_gini(r: np.ndarray, n: np.ndarray) -> np.ndarray:
     """For array r, return estimate of gini co-efficient over n
     g = A / (A+B)
     """
     return 1 - sum(r.sort_values().cumsum() * (2 / n))
 
 
-def bootstrap(a, nboot=1000, summary_fn=np.mean):
+def bootstrap(a: np.ndarray, nboot: int = 1000, summary_fn=np.mean) -> np.ndarray:
     """Calc vectorised bootstrap sample of array of observations
     By default return the mean value of the observations per sample
     I.e if len(a)=20 and nboot=100, this returns 100 bootstrap resampled
@@ -139,7 +174,9 @@ def bootstrap(a, nboot=1000, summary_fn=np.mean):
         return samples
 
 
-def bootstrap_lr(df, prm='premium', clm='claim', nboot=1000):
+def bootstrap_lr(
+    df: pd.DataFrame, prm: str = 'premium', clm: str = 'claim', nboot: int = 1000
+) -> pd.DataFrame:
     """Calc vectorised bootstrap loss ratios for df
     Pass a dataframe or group. fts named `'premium', 'claim'`
     Accept nans in clm
@@ -155,7 +192,7 @@ def bootstrap_lr(df, prm='premium', clm='claim', nboot=1000):
     return dfboot
 
 
-def calc_geometric_cv(lognormal_yhat):
+def calc_geometric_cv(lognormal_yhat: np.ndarray) -> np.ndarray:
     """Calculate geometric coefficient of variation for log-normally
     distributed samples.
     Expect 2D array shape (nobs, nsamples)
@@ -164,7 +201,7 @@ def calc_geometric_cv(lognormal_yhat):
     return np.sqrt(np.exp(np.std(np.log(lognormal_yhat), axis=1) ** 2) - 1)
 
 
-def _ecdf(a):
+def _ecdf(a: np.ndarray) -> tuple:
     """Empirical CDF of array
     Return sorted array and ecdf values
     """
@@ -193,3 +230,19 @@ def month_diff(a: pd.DataFrame, b: pd.DataFrame):
                     df['reported_date'].dt.to_period('M'))]
     """
     return 12 * (a.dt.year - b.dt.year) + (a.dt.month - b.dt.month)
+
+
+def tril_nan(m: np.ndarray, k: int = 0) -> np.ndarray:
+    """Copy of np.tril but mask with np.nans not zeros
+    Example usage, to set tril to np.nan in DataFrame.corr()
+    corr = df_b0.corr()
+    mask = eda.tril_nan(corr, k=-1)
+    corr.mask(np.isnan(mask))
+
+    """
+
+    m = np.asanyarray(m)  # numpy.core.numeric
+    mask = np.tri(*m.shape[-2:], k=k, dtype=bool)
+
+    # return np.where(mask, m, np.ones(1, m.dtype) * np.nan)
+    return np.where(mask, m, np.nan)

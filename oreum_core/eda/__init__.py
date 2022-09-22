@@ -9,6 +9,7 @@ from oreum_core.eda.calc import (
     fit_and_plot_fn,
     get_gini,
     month_diff,
+    tril_nan,
 )
 from oreum_core.eda.describe import (
     custom_describe,

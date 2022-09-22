@@ -20,18 +20,16 @@ def display_fw(df, max_rows: int = 20, latex: bool = False):
         display_latex_repr = True
         display_latex_longtable = True
 
-    with pd.option_context(
-        'display.max_rows',
-        max_rows,
-        'display.max_columns',
-        None,
-        'display.max_colwidth',
-        200,
-        'display.latex.repr',
-        display_latex_repr,
-        'display.latex.longtable',
-        display_latex_longtable,
-    ):
+    options = {
+        'display.precision': 2,
+        'display.max_rows': max_rows,
+        'display.max_columns': None,
+        'display.max_colwidth': 200,
+        'display.latex.repr': display_latex_repr,
+        'display.latex.longtable': display_latex_longtable,
+    }
+
+    with pd.option_context(*[i for tup in options.items() for i in tup]):
         display(df)
 
 
@@ -48,7 +46,6 @@ def custom_describe(
     nfeats=30,
     limit=50e6,
     get_mode=False,
-    round_numerics=False,
     reset_index=True,
     latex=False,
     return_df=False,
@@ -59,11 +56,11 @@ def custom_describe(
     Assume df has index.
     """
 
-    len_index = df.index.nlevels
+    len_idx = df.index.nlevels
     note = ''
-    if nfeats + len_index < df.shape[1]:
-        note = 'NOTE: nfeats+index shown {} < width {}'.format(
-            nfeats + len_index, df.shape[1]
+    if nfeats + len_idx < df.shape[1]:
+        note = 'NOTE: nfeats + index shown {} < width {}'.format(
+            nfeats + len_idx, df.shape[1]
         )
 
     print(f'Array shape: {df.shape}')
@@ -79,11 +76,8 @@ def custom_describe(
         nfeats += len(df.index.names)
         df = df.reset_index()
 
-    # start with pandas and round numerics
+    # start with pandas describe, add on dtypes
     dfdesc = df.describe(include='all', datetime_is_numeric=True).T
-    if round_numerics:
-        for ft in dfdesc.columns[1:]:
-            dfdesc[ft] = dfdesc[ft].apply(lambda x: np.round(x, 3))
 
     dfout = pd.concat((dfdesc, df.dtypes), axis=1, join='outer', sort=False)
     dfout = dfout.loc[df.columns.values]
@@ -100,7 +94,7 @@ def custom_describe(
 
     # add sum for numeric cols
     dfout['sum'] = np.nan
-    idxs = dfout['dtype'].isin(['int64', 'float64'])
+    idxs = (dfout['dtype'] == 'float64') | (dfout['dtype'] == 'int64')
     if np.sum(idxs.values) > 0:
         for ft in dfout.loc[idxs].index.values:
             dfout.loc[ft, 'sum'] = df[ft].sum()
@@ -150,10 +144,10 @@ def custom_describe(
 
     if return_df:
         return dfout
-
-    display_fw(
-        dfout.iloc[: nfeats + len_index, :].fillna(''), max_rows=nfeats, latex=latex
-    )
+    else:
+        display_fw(
+            dfout.iloc[: nfeats + len_idx, :].fillna(''), max_rows=nfeats, latex=latex
+        )
 
 
 def get_fts_by_dtype(df, as_dataframe=False):
