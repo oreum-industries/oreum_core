@@ -106,7 +106,7 @@ if __name__ == "__main__":
         python_requires=">=3.9",
         install_requires=install_reqs,
         cmdclass={'develop': DevelopCommand, 'install': InstallCommand},
-        entry_points = {
-            'console_scripts': ['data_extractor=oreum_core.data_stractor:extract'],
-        }
+        # entry_points = {
+        #     'console_scripts': ['data_extractor=oreum_core.data_stractor:extract'],
+        # }
     )
