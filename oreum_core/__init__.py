@@ -1,2 +1,2 @@
 # copyright 2022 Oreum Industries
-__version__ = "0.3.2"
+__version__ = "0.3.3"
