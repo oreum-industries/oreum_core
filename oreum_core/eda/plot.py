@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib import gridspec, lines, ticker
+from matplotlib import figure, gridspec, lines, ticker
 from scipy import integrate, stats
 
 __all__ = [
@@ -83,14 +83,16 @@ def _get_kws_styling() -> dict:
     return kws
 
 
-def plot_cat_count(df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2):
+def plot_cat_count(
+    df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2
+) -> figure.Figure:
     """Conv fn: plot group counts for cats and bools"""
 
     if len(fts) == 0:
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(14, vert * vsize))
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
@@ -130,7 +132,7 @@ def plot_cat_count(df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2
     return f
 
 
-def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6):
+def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figure:
     """Conv fn: plot group counts for bools"""
 
     if len(fts) == 0:
@@ -169,7 +171,7 @@ def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6):
 
 def plot_date_count(
     df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.8
-):
+) -> figure.Figure:
     """Plot group sizes for dates by strftime format"""
 
     if len(fts) == 0:
@@ -206,7 +208,9 @@ def plot_date_count(
     return f
 
 
-def plot_int_dist(df: pd.DataFrame, fts: list, log: bool = False, vsize: float = 1.4):
+def plot_int_dist(
+    df: pd.DataFrame, fts: list, log: bool = False, vsize: float = 1.4
+) -> figure.Figure:
     """Plot group counts (optionally logged) for ints"""
 
     if len(fts) == 0:
@@ -305,7 +309,9 @@ def plot_float_dist(
     return gd
 
 
-def plot_joint_ft_x_tgt(df, ft, tgt, subtitle=None, colori=1):
+def plot_joint_ft_x_tgt(
+    df: pd.DataFrame, ft: str, tgt: str, subtitle: str = None, colori: int = 1
+):
     """Jointplot of ft vs tgt distributions. Suitable for int or float"""
     kde_kws = dict(zorder=0, levels=7, cut=0)
     nsamp = min(len(df), 200)
@@ -323,7 +329,7 @@ def plot_joint_ft_x_tgt(df, ft, tgt, subtitle=None, colori=1):
     _ = g.fig.suptitle(f'Joint dist: {ft} x {tgt}{t[0]}', y=1.02 + t[1])
 
 
-def plot_mincovdet(df, mcd, thresh=0.99):
+def plot_mincovdet(df: pd.DataFrame, mcd, thresh: float = 0.99):
     """Interactive plot of MCD delta results"""
 
     dfp = df.copy()
@@ -1335,7 +1341,9 @@ def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add='psi'):
     return gd
 
 
-def plot_grp_count(df, grp='grp', title_add=''):
+def plot_grp_count(
+    df: pd.DataFrame, grp: str = 'grp', title_add: str = ''
+) -> figure.Figure:
     """Simple countplot for factors in grp, label with percentages
     Works nicely with categorical too
     """

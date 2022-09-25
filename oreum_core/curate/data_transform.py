@@ -50,14 +50,14 @@ class DatatypeConverter:
             fverbatim=fts.get('fverbatim', []),  # keep verbatim
         )
         self.ftslvlcat = ftslvlcat
-        self.rx_number_junk = re.compile(r'[#$€£₤¥,;%]')
+        self.rx_number_junk = re.compile(r'[#$€£₤¥,;%\s]')
         self.date_format = date_format
         inv_bool_dict = {
             True: ['yes', 'y', 'true', 't', '1', 1],
             False: ['no', 'n', 'false', 'f', '0', 0],
         }
         self.bool_dict = {v: k for k, vs in inv_bool_dict.items() for v in vs}
-        self.strnans = ['none', 'nan', 'null', 'na', 'n/a', 'missing', 'empty']
+        self.strnans = ['none', 'nan', 'null', 'na', 'n/a', 'missing', 'empty', '']
 
     def _force_dtypes(self, dfraw):
         """Select fts and convert dtypes. Return cleaned df"""
@@ -92,6 +92,18 @@ class DatatypeConverter:
             df[ft] = df[ft].convert_dtypes(convert_boolean=True)
 
         for ft in self.fts['fyear']:
+            if df.dtypes[ft] == object:
+                df[ft] = (
+                    df[ft]
+                    .astype(str)
+                    .str.strip()
+                    .str.lower()
+                    .map(lambda x: self.rx_number_junk.sub('', x))
+                )
+                df.loc[df[ft].isin(self.strnans), ft] = np.nan
+            df[ft] = df[ft].astype(float, errors='raise')
+            if pd.isnull(df[ft]).sum() == 0:
+                df[ft] = df[ft].astype(int, errors='raise')
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y')
 
         for ft in self.fts['fdate']:
