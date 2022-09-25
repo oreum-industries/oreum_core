@@ -139,7 +139,7 @@ def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.F
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(14, vert * vsize))
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
 
     for i, ft in enumerate(fts):
         counts = df.groupby(ft, dropna=False).size().sort_values(ascending=True)
@@ -178,7 +178,7 @@ def plot_date_count(
         return None
 
     vert = int(np.ceil(len(fts)))
-    f, ax1d = plt.subplots(vert, 1, figsize=(14, vert * vsize), squeeze=True)
+    f, ax1d = plt.subplots(vert, 1, figsize=(12, vert * vsize), squeeze=True)
 
     if vert > 1:
         for i, ft in enumerate(fts):
@@ -209,24 +209,28 @@ def plot_date_count(
 
 
 def plot_int_dist(
-    df: pd.DataFrame, fts: list, log: bool = False, vsize: float = 1.4
+    df: pd.DataFrame, fts: list, log: bool = False, vsize: float = 1.4, bins: int = None
 ) -> figure.Figure:
-    """Plot group counts (optionally logged) for ints"""
+    """Plot group counts as histogram (optional log)"""
 
     if len(fts) == 0:
         return None
+    if bins is None:
+        bins = 'auto'
 
     vert = int(np.ceil(len(fts)))
-    f, ax1d = plt.subplots(len(fts), 1, figsize=(14, vert * vsize), squeeze=False)
+    f, ax1d = plt.subplots(len(fts), 1, figsize=(12, vert * vsize), squeeze=False)
     for i, ft in enumerate(fts):
         n_nans = pd.isnull(df[ft]).sum()
         mean = df[ft].mean()
+        med = df[ft].median()
         n_zeros = (df[ft] == 0).sum()
         ax = sns.histplot(
             df.loc[df[ft].notnull(), ft],
             kde=False,
-            stat='density',
-            label=f'NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}',
+            stat='count',
+            bins=bins,
+            label=f'NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}, med: {med:.2f}',
             color=sns.color_palette()[i % 7],
             ax=ax1d[i][0],
         )
@@ -291,8 +295,8 @@ def plot_float_dist(
         hue='variable',
         data=dfm,
         palette=sns.color_palette(),
-        height=1.8,
-        aspect=6,
+        height=1.5,
+        aspect=8,
         sharex=sharex,
     )
     _ = gd.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
