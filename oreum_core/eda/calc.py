@@ -221,7 +221,7 @@ def calc_location_in_ecdf(baseline_arr, test_arr):
     return cdf_prop[idxs]
 
 
-def month_diff(a: pd.DataFrame, b: pd.DataFrame):
+def month_diff(a: pd.Series, b: pd.Series) -> pd.Series:
     """https://stackoverflow.com/a/40924041/1165112
 
     In recent pandas can equally use to_period(), though it's unwieldy

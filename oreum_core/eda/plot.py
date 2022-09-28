@@ -209,7 +209,12 @@ def plot_date_count(
 
 
 def plot_int_dist(
-    df: pd.DataFrame, fts: list, log: bool = False, vsize: float = 1.4, bins: int = None
+    df: pd.DataFrame,
+    fts: list,
+    log: bool = False,
+    vsize: float = 1.4,
+    bins: int = None,
+    plot_zeros: bool = True,
 ) -> figure.Figure:
     """Plot group counts as histogram (optional log)"""
 
@@ -225,6 +230,8 @@ def plot_int_dist(
         mean = df[ft].mean()
         med = df[ft].median()
         n_zeros = (df[ft] == 0).sum()
+        if not plot_zeros:
+            df = df.loc[df[ft] != 0].copy()
         ax = sns.histplot(
             df.loc[df[ft].notnull(), ft],
             kde=False,
