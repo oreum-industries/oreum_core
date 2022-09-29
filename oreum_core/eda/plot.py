@@ -332,24 +332,32 @@ def plot_joint_numeric(
 ) -> sns.JointGrid:
     """Jointplot of 2 numeric fts. Suitable for int or float"""
     kde_kws = dict(zorder=0, levels=7, cut=0, fill=True)
-    scatter_kws = dict(alpha=0.8, marker='o', linewidths=0.05, edgecolor='#999999')
+    scatter_kws = dict(alpha=0.6, marker='o', linewidths=0.05, edgecolor='#999999')
+
     if nsamp is not None:
         df = df.sample(nsamp, random_state=RSD).copy()
+
     gd = sns.JointGrid(x=ft0, y=ft1, data=df, height=6)
+
     if kind == 'kde':
         _ = gd.plot_joint(sns.kdeplot, **kde_kws, color=f'C{colori%5}')
     elif kind == 'scatter':
-        _ = gd.plot_joint(sns.scatterplot, **scatter_kws, color=f'C{colori%5}')
+        _ = gd.plot_joint(sns.regplot, scatter_kws=scatter_kws, color=f'C{colori%5}')
     else:
-        raise ValueError('provide kind as kde or scatter')
+        raise ValueError('provide `kind` as kde or scatter')
 
     _ = gd.plot_marginals(sns.histplot, kde=True, color=f'C{colori%5}')
+    r = stats.linregress(x=df[ft0], y=df[ft1])
+
     _ = gd.ax_joint.text(
-        0.95,
-        0.95,
-        f"pearsonr = {stats.pearsonr(df[ft0], df[ft1])[0]:.4g}",
+        0.98,
+        0.98,
+        # f"pearsonr = {stats.pearsonr(df[ft0], df[ft1])[0]:.4g}",
+        f"y = {r.slope:.2f}x + {r.intercept:.2f}\npearsonr = {r.rvalue:.2f}",
         transform=gd.ax_joint.transAxes,
         ha='right',
+        va='top',
+        fontsize=8,
     )
     if log:
         _ = gd.ax_joint.set_xscale('log')
