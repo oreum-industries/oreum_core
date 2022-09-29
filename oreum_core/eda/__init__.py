@@ -36,7 +36,7 @@ from oreum_core.eda.plot import (
     plot_grp_year_sum_dist_count,
     plot_heatmap_corr,
     plot_int_dist,
-    plot_joint_ft_x_tgt,
+    plot_joint_numeric,
     plot_kj_summaries_for_linear_model,
     plot_mincovdet,
     plot_ppc_vs_observed,

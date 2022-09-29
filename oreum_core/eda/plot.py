@@ -13,7 +13,7 @@ __all__ = [
     'plot_date_count',
     'plot_int_dist',
     'plot_float_dist',
-    'plot_joint_ft_x_tgt',
+    'plot_joint_numeric',
     'plot_mincovdet',
     'plot_roc_precrec',
     'plot_f_measure',
@@ -320,24 +320,48 @@ def plot_float_dist(
     return gd
 
 
-def plot_joint_ft_x_tgt(
-    df: pd.DataFrame, ft: str, tgt: str, subtitle: str = None, colori: int = 1
-):
-    """Jointplot of ft vs tgt distributions. Suitable for int or float"""
-    kde_kws = dict(zorder=0, levels=7, cut=0)
-    nsamp = min(len(df), 200)
-    g = sns.JointGrid(x=ft, y=tgt, data=df.sample(nsamp, random_state=RSD), height=6)
-    _ = g.plot_joint(sns.kdeplot, **kde_kws, fill=True, color=f'C{colori%5}')
-    _ = g.plot_marginals(sns.histplot, color=f'C{colori%5}')
-    _ = g.ax_joint.text(
+def plot_joint_numeric(
+    df: pd.DataFrame,
+    ft0: str,
+    ft1: str,
+    kind: str = 'kde',
+    log: bool = False,
+    subtitle: str = None,
+    colori: int = 0,
+    nsamp: int = None,
+) -> sns.JointGrid:
+    """Jointplot of 2 numeric fts. Suitable for int or float"""
+    kde_kws = dict(zorder=0, levels=7, cut=0, fill=True)
+    scatter_kws = dict(alpha=0.8, marker='o', linewidths=0.05, edgecolor='#999999')
+    if nsamp is not None:
+        df = df.sample(nsamp, random_state=RSD).copy()
+    gd = sns.JointGrid(x=ft0, y=ft1, data=df, height=6)
+    if kind == 'kde':
+        _ = gd.plot_joint(sns.kdeplot, **kde_kws, color=f'C{colori%5}')
+    elif kind == 'scatter':
+        _ = gd.plot_joint(sns.scatterplot, **scatter_kws, color=f'C{colori%5}')
+    else:
+        raise ValueError('provide kind as kde or scatter')
+
+    _ = gd.plot_marginals(sns.histplot, kde=True, color=f'C{colori%5}')
+    _ = gd.ax_joint.text(
         0.95,
         0.95,
-        f"pearsonr = {stats.pearsonr(df[ft], df[tgt])[0]:.4g}",
-        transform=g.ax_joint.transAxes,
+        f"pearsonr = {stats.pearsonr(df[ft0], df[ft1])[0]:.4g}",
+        transform=gd.ax_joint.transAxes,
         ha='right',
     )
+    if log:
+        _ = gd.ax_joint.set_xscale('log')
+        _ = gd.ax_joint.set_yscale('log')
+        _ = gd.ax_marg_x.set_xscale('log')
+        _ = gd.ax_marg_y.set_yscale('log')
+
     t = ('', 0.0) if subtitle is None else (f'\n{subtitle}', 0.04)
-    _ = g.fig.suptitle(f'Joint dist: {ft} x {tgt}{t[0]}', y=1.02 + t[1])
+    _ = gd.fig.suptitle(
+        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)} obs{t[0]}', y=1.02 + t[1]
+    )
+    return gd
 
 
 def plot_mincovdet(df: pd.DataFrame, mcd, thresh: float = 0.99):
