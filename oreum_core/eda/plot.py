@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib import gridspec, lines, ticker
+from matplotlib import figure, gridspec, lines, ticker
 from scipy import integrate, stats
 
 __all__ = [
@@ -13,7 +13,7 @@ __all__ = [
     'plot_date_count',
     'plot_int_dist',
     'plot_float_dist',
-    'plot_joint_ft_x_tgt',
+    'plot_joint_numeric',
     'plot_mincovdet',
     'plot_roc_precrec',
     'plot_f_measure',
@@ -83,14 +83,16 @@ def _get_kws_styling() -> dict:
     return kws
 
 
-def plot_cat_count(df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2):
+def plot_cat_count(
+    df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2
+) -> figure.Figure:
     """Conv fn: plot group counts for cats and bools"""
 
     if len(fts) == 0:
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(14, vert * vsize))
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
@@ -130,14 +132,14 @@ def plot_cat_count(df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2
     return f
 
 
-def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6):
+def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figure:
     """Conv fn: plot group counts for bools"""
 
     if len(fts) == 0:
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(14, vert * vsize))
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
 
     for i, ft in enumerate(fts):
         counts = df.groupby(ft, dropna=False).size().sort_values(ascending=True)
@@ -169,14 +171,14 @@ def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6):
 
 def plot_date_count(
     df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.8
-):
+) -> figure.Figure:
     """Plot group sizes for dates by strftime format"""
 
     if len(fts) == 0:
         return None
 
     vert = int(np.ceil(len(fts)))
-    f, ax1d = plt.subplots(vert, 1, figsize=(14, vert * vsize), squeeze=True)
+    f, ax1d = plt.subplots(vert, 1, figsize=(12, vert * vsize), squeeze=True)
 
     if vert > 1:
         for i, ft in enumerate(fts):
@@ -206,23 +208,36 @@ def plot_date_count(
     return f
 
 
-def plot_int_dist(df: pd.DataFrame, fts: list, log: bool = False, vsize: float = 1.4):
-    """Plot group counts (optionally logged) for ints"""
+def plot_int_dist(
+    df: pd.DataFrame,
+    fts: list,
+    log: bool = False,
+    vsize: float = 1.4,
+    bins: int = None,
+    plot_zeros: bool = True,
+) -> figure.Figure:
+    """Plot group counts as histogram (optional log)"""
 
     if len(fts) == 0:
         return None
+    if bins is None:
+        bins = 'auto'
 
     vert = int(np.ceil(len(fts)))
-    f, ax1d = plt.subplots(len(fts), 1, figsize=(14, vert * vsize), squeeze=False)
+    f, ax1d = plt.subplots(len(fts), 1, figsize=(12, vert * vsize), squeeze=False)
     for i, ft in enumerate(fts):
         n_nans = pd.isnull(df[ft]).sum()
         mean = df[ft].mean()
+        med = df[ft].median()
         n_zeros = (df[ft] == 0).sum()
+        if not plot_zeros:
+            df = df.loc[df[ft] != 0].copy()
         ax = sns.histplot(
             df.loc[df[ft].notnull(), ft],
             kde=False,
-            stat='density',
-            label=f'NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}',
+            stat='count',
+            bins=bins,
+            label=f'NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}, med: {med:.2f}',
             color=sns.color_palette()[i % 7],
             ax=ax1d[i][0],
         )
@@ -287,8 +302,8 @@ def plot_float_dist(
         hue='variable',
         data=dfm,
         palette=sns.color_palette(),
-        height=1.8,
-        aspect=6,
+        height=1.5,
+        aspect=8,
         sharex=sharex,
     )
     _ = gd.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
@@ -305,25 +320,59 @@ def plot_float_dist(
     return gd
 
 
-def plot_joint_ft_x_tgt(df, ft, tgt, subtitle=None, colori=1):
-    """Jointplot of ft vs tgt distributions. Suitable for int or float"""
-    kde_kws = dict(zorder=0, levels=7, cut=0)
-    nsamp = min(len(df), 200)
-    g = sns.JointGrid(x=ft, y=tgt, data=df.sample(nsamp, random_state=RSD), height=6)
-    _ = g.plot_joint(sns.kdeplot, **kde_kws, fill=True, color=f'C{colori%5}')
-    _ = g.plot_marginals(sns.histplot, color=f'C{colori%5}')
-    _ = g.ax_joint.text(
-        0.95,
-        0.95,
-        f"pearsonr = {stats.pearsonr(df[ft], df[tgt])[0]:.4g}",
-        transform=g.ax_joint.transAxes,
+def plot_joint_numeric(
+    df: pd.DataFrame,
+    ft0: str,
+    ft1: str,
+    kind: str = 'kde',
+    log: bool = False,
+    subtitle: str = None,
+    colori: int = 0,
+    nsamp: int = None,
+) -> sns.JointGrid:
+    """Jointplot of 2 numeric fts. Suitable for int or float"""
+    kde_kws = dict(zorder=0, levels=7, cut=0, fill=True)
+    scatter_kws = dict(alpha=0.6, marker='o', linewidths=0.05, edgecolor='#999999')
+
+    if nsamp is not None:
+        df = df.sample(nsamp, random_state=RSD).copy()
+
+    gd = sns.JointGrid(x=ft0, y=ft1, data=df, height=6)
+
+    if kind == 'kde':
+        _ = gd.plot_joint(sns.kdeplot, **kde_kws, color=f'C{colori%5}')
+    elif kind == 'scatter':
+        _ = gd.plot_joint(sns.regplot, scatter_kws=scatter_kws, color=f'C{colori%5}')
+    else:
+        raise ValueError('provide `kind` as kde or scatter')
+
+    _ = gd.plot_marginals(sns.histplot, kde=True, color=f'C{colori%5}')
+    r = stats.linregress(x=df[ft0], y=df[ft1])
+
+    _ = gd.ax_joint.text(
+        0.98,
+        0.98,
+        # f"pearsonr = {stats.pearsonr(df[ft0], df[ft1])[0]:.4g}",
+        f"y = {r.slope:.2f}x + {r.intercept:.2f}\npearsonr = {r.rvalue:.2f}",
+        transform=gd.ax_joint.transAxes,
         ha='right',
+        va='top',
+        fontsize=8,
     )
+    if log:
+        _ = gd.ax_joint.set_xscale('log')
+        _ = gd.ax_joint.set_yscale('log')
+        _ = gd.ax_marg_x.set_xscale('log')
+        _ = gd.ax_marg_y.set_yscale('log')
+
     t = ('', 0.0) if subtitle is None else (f'\n{subtitle}', 0.04)
-    _ = g.fig.suptitle(f'Joint dist: {ft} x {tgt}{t[0]}', y=1.02 + t[1])
+    _ = gd.fig.suptitle(
+        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)} obs{t[0]}', y=1.02 + t[1]
+    )
+    return gd
 
 
-def plot_mincovdet(df, mcd, thresh=0.99):
+def plot_mincovdet(df: pd.DataFrame, mcd, thresh: float = 0.99):
     """Interactive plot of MCD delta results"""
 
     dfp = df.copy()
@@ -1335,7 +1384,9 @@ def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add='psi'):
     return gd
 
 
-def plot_grp_count(df, grp='grp', title_add=''):
+def plot_grp_count(
+    df: pd.DataFrame, grp: str = 'grp', title_add: str = ''
+) -> figure.Figure:
     """Simple countplot for factors in grp, label with percentages
     Works nicely with categorical too
     """

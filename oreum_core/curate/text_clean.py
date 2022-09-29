@@ -15,6 +15,8 @@ from ordered_set import OrderedSet
 from pybloomfilter import BloomFilter
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
+__all__ = ['SnakeyLowercaser', 'TextCleaner', 'StopWorder', 'NGrammer']
+
 
 class SnakeyLowercaser:
     """Clean and standardise a string to snakey_lowercase
@@ -33,7 +35,7 @@ class SnakeyLowercaser:
         self.rx_patsy_interaction = re.compile(r':')
         self.rx_multi_underscore = re.compile(r'[_]{2,}')
 
-    def clean(self, s):
+    def clean(self, s: str) -> str:
         s0 = self.rx_to_underscore.sub('_', str(s))
         s1 = self.rx_punct.sub('', s0)
         s2 = self.rx_splitter1.sub(r'\1_\2 ', s1)
@@ -41,7 +43,7 @@ class SnakeyLowercaser:
         s4 = self.rx_multi_underscore.sub('_', s3)
         return s4
 
-    def clean_patsy(self, s):
+    def clean_patsy(self, s: str) -> str:
         s0 = str(s).replace('-', '_')
         if len(f := self.rx_patsy_factor.findall(s0)) > 0:
             s0 = f[0][0] + '_t_' + f[0][2] + f[0][4]
@@ -119,7 +121,7 @@ class TextCleaner:
         )  # (81)(.23)
         self.rx_number_junk = re.compile(r'[#$€£₤¥,;%]')
 
-    def fix_unicode(self, txt):
+    def fix_unicode(self, txt: str) -> str:
         """Fix bad unicode / emojis etc and try to remove crud"""
 
         t = ftfy.fix_text(txt, fix_character_width=False)  # fix encoding
@@ -127,7 +129,7 @@ class TextCleaner:
 
         return t
 
-    def basic_clean(self, txt):
+    def basic_clean(self, txt: str) -> str:
         """Clean up single raw text string where words have single spaces
         Note:
             doesnottokenise
@@ -145,8 +147,8 @@ class TextCleaner:
 
         return t
 
-    def convert_bad_number_representation_to_float(self, s):
-        """Accept a string that represents a number in a shitty way and convert to float
+    def convert_bad_number_representation_to_float(self, s: str) -> float:
+        """Accept a string that represents a number (poorly), convert to float
         Issues:
                 Currently limited to k and M.
                 Hard to catch all usecases so returns nan on fail
@@ -165,7 +167,7 @@ class TextCleaner:
             print(t, convert_bad_number_representation_to_float(t))
         """
         r = np.nan
-        s0 = self.rx_number_junk.sub('', s.strip().lower())
+        s0 = self.rx_number_junk.sub('', str(s).strip().lower())
         gm = self.rx_num_m.match(s0)
         gk = self.rx_num_k.match(s0)
         gn = self.rx_num.match(s0)
@@ -206,7 +208,7 @@ class StopWorder:
         self.lemtzr = WordNetLemmatizer()
         self.ng = NGrammer()
 
-    def _get_book(self, book_url=None):
+    def _get_book(self, book_url: str = None):
         """Download a book from project Gutenberg for testing"""
 
         if book_url is None:
@@ -461,7 +463,7 @@ class StopWorder:
         print('Created {} email filler words '.format(len(filler)))
         return filler
 
-    def create_stopwords(self, kind='lower'):
+    def create_stopwords(self, kind: str = 'lower') -> frozenset:
         """Create set of stopwords (lowercase or uppercase)
         lower: union of words from NLTK, sklearn, single characters
         upper: union of words from names, cities, locations
@@ -494,7 +496,7 @@ class StopWorder:
 
         return wordset
 
-    def create_bloomfilter(self, wordset):
+    def create_bloomfilter(self, wordset: frozenset) -> BloomFilter:
         """Setup Bloom filter wordset"""
 
         bf = BloomFilter(capacity=len(wordset), error_rate=0.001)

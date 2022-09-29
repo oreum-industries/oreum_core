@@ -26,38 +26,37 @@ __all__ = [
 
 
 # TODO see issue #2
-def fit_and_plot_fn(
-    obs: pd.Series, tail_kind: str = 'right'
-) -> tuple[figure.Figure, dict]:
+def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
     """Fit dists to 1d array of `obs`, report RMSE and plot the fits
     see https://stackoverflow.com/a/37616966
     """
 
-    if tail_kind not in set(['right', 'both']):
-        raise ValueError("tail_kind must be one of {'right', 'both'}")
+    dists_discrete_support_gte_zero = {
+        'poisson': stats.poisson,
+        # 'binom': stats.binom,  # placeholder
+        # 'nbinom': stats.nbinom,  # placeholder
+    }
 
-    # warnings.filterwarnings("error") # handle RuntimeWarning as error so can catch
-    # warnings.simplefilter(action='ignore', category='RuntimeWarning')
-
-    dists_discrete = {'poisson': stats.poisson}
-
-    dists_cont_right_tail = {
-        'expon': stats.expon,
-        'gamma': stats.gamma,
+    dists_cont_support_real = {
+        'norm': stats.norm,
+        'cauchy': stats.cauchy,
         'gumbel': stats.gumbel_r,
+        'invweibull': stats.invweibull,
+    }
+
+    dists_cont_support_gte_zero = {
+        'expon': stats.expon,
         'halfnorm': stats.halfnorm,
         'halfcauchy': stats.halfcauchy,
-        'invgamma': stats.invgamma,
-        # 'invgauss': stats.invgauss,
-        'invweibull': stats.invweibull,
-        'lognorm': stats.lognorm,
         'fisk': stats.fisk,
     }
-    # NOTE: not quite true since gumbel and invweibull can go neg
 
-    dists_cont_centered = {'norm': stats.norm, 'cauchy': stats.cauchy}
+    dists_cont_support_gt_zero = {
+        'gamma': stats.gamma,
+        'invgamma': stats.invgamma,
+        'lognorm': stats.lognorm,
+    }
 
-    obs_is_discrete = sum(obs == (obs // 1)) == len(obs)
     nbins = 50
     dist_kind = 'Continuous'
     params = {}
@@ -67,11 +66,19 @@ def fit_and_plot_fn(
     )
     line_kws = dict(lw=2, ls='--', ax=ax1d)
 
-    def _annotate_facets():
+    # handle nans and infs
+    n_nans = pd.isnull(obs).sum()
+    n_infs = np.isinf(obs).sum()
+    idx = pd.isnull(obs) | np.isinf(obs)
+    obs = obs.loc[~idx]
+
+    obs_is_discrete = sum(obs == (obs // 1)) == len(obs)
+    n_zeros = (obs == 0).sum()
+    n_negs = (obs < 0).sum()
+
+    def _annotate_facets(n_nans, n_infs, n_zeros):
         """Convenience to annotate, based on eda.plots.plot_float_dist"""
-        n_nans = pd.isnull(obs).sum()
         n_zeros = (obs == 0).sum()
-        n_infs = np.isinf(obs).sum()
         mean = obs.mean()
         med = obs.median()
         ax = plt.gca()
@@ -95,7 +102,7 @@ def fit_and_plot_fn(
         obs_count, bin_edges = np.histogram(obs, bins=nbins, density=False)
         bin_centers = (bin_edges + np.roll(bin_edges, -1))[:-1] / 2.0
         bin_centers_int = np.round(bin_centers)
-        dists = dists_discrete
+        dists = dists_discrete_support_gte_zero
 
         _ = sns.histplot(x=obs, bins=nbins, stat='count', **hist_kws)
 
@@ -116,10 +123,11 @@ def fit_and_plot_fn(
         obs_density, bin_edges = np.histogram(obs, bins=nbins, density=True)
         bin_centers = (bin_edges + np.roll(bin_edges, -1))[:-1] / 2.0
 
-        if tail_kind == 'both':
-            dists = dists_cont_centered
-        elif tail_kind == 'right':
-            dists = dists_cont_right_tail
+        dists = dists_cont_support_real
+        if n_negs == 0:
+            dists.update(dists_cont_support_gte_zero)
+        if n_zeros == 0:
+            dists.update(dists_cont_support_gt_zero)
 
         _ = sns.histplot(x=obs, bins=nbins, stat='density', **hist_kws)
 
@@ -130,9 +138,6 @@ def fit_and_plot_fn(
             shape, loc, scale = ps[:-2], ps[-2], ps[-1]
             params[d] = dict(shape=shape, loc=loc, scale=scale)
             pdf = dist.pdf(bin_centers, loc=loc, scale=scale, *shape)
-
-            # rmse not necessarily good for discrete count models
-            # https://stats.stackexchange.com/questions/48811/cost-function-for-validating-poisson-regression-models
             rmse = np.sqrt(np.sum(np.power(obs_density - pdf, 2.0)) / len(obs))
             _ = sns.lineplot(
                 x=bin_centers, y=pdf, label=f'{d}: {rmse:#.2g}', **line_kws
@@ -141,7 +146,7 @@ def fit_and_plot_fn(
     title = f'{dist_kind} function approximations to {obs.name}'
     _ = f.suptitle(title, y=0.97)
     _ = f.axes[0].legend(title='dist: RMSE', title_fontsize=10)
-    _annotate_facets()
+    _annotate_facets(n_nans, n_infs, n_zeros)
 
     return f, params
 
@@ -221,7 +226,7 @@ def calc_location_in_ecdf(baseline_arr, test_arr):
     return cdf_prop[idxs]
 
 
-def month_diff(a: pd.DataFrame, b: pd.DataFrame):
+def month_diff(a: pd.Series, b: pd.Series) -> pd.Series:
     """https://stackoverflow.com/a/40924041/1165112
 
     In recent pandas can equally use to_period(), though it's unwieldy
