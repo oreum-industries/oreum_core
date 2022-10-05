@@ -1,5 +1,7 @@
 # model.calc.py
 # copyright 2022 Oreum Industries
+import sys
+
 import numpy as np
 import pandas as pd
 import pymc3 as pm
@@ -408,3 +410,8 @@ def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
         )
 
     return prop_intersects_across_aref
+
+
+def numpy_invlogit(x, eps=sys.float_info.epsilon):
+    """The inverse of the logit function, 1 / (1 + exp(-x))."""
+    return (1.0 - 2.0 * eps) / (1.0 + np.exp(-x)) + eps
