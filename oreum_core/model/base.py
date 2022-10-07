@@ -75,11 +75,11 @@ class BasePYMC3Model:
         assert self._trace, "Must run sample() first!"
         return self._trace["diverging"].nonzero()[0].size
 
-    def build(self):
+    def build(self, **kwargs):
         """Build the model"""
         helper_txt = '' if self.model is None else 're'
         try:
-            self._build()
+            self._build(**kwargs)
             print(f'{helper_txt}built model {self.name} {self.version}')
         except AttributeError:
             raise NotImplementedError(
@@ -87,11 +87,12 @@ class BasePYMC3Model:
                 + ' subclass, containing the model definition'
             )
 
-    def extend_build(self):
-        """Extend the rebuilt model, initially developed toi help PPC of GRW"""
+    def extend_build(self, **kwargs):
+        """Rebuild and extend build, initially developed to help PPC of GRW"""
         try:
-            self._extend_build()
-            print(f'extended model {self.name} {self.version}')
+            self._build(**kwargs)
+            self._extend_build(**kwargs)
+            print(f'extended build of model {self.name} {self.version}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _extend_build() in your'
@@ -184,14 +185,11 @@ class BasePYMC3Model:
             _ = self._update_idata()
             return None
 
-    def replace_obs(self, new_obs, extend_build: bool = False):
-        """Replace the observations and force a rebuild,
+    def replace_obs(self, new_obs):
+        """Replace the observations,
         Optionally use `extend_build` for future time-dependent PPC
         """
         self.obs = new_obs
-        self.build()
-        if extend_build:
-            self.extend_build()
 
     def _create_idata(self, ppc=None):
         """Create Arviz InferenceData object
