@@ -7,8 +7,9 @@ import pymc3 as pm
 
 class BasePYMC3Model:
     """Base handler to build, sample, store traces for PyMC3 model.
-    To be inherited e.g. `super().__init__(*args, **kwargs)`
-    Children must declare a _build() method and define obs within __init__()
+    NOTE:
+    + This class is to be inherited e.g. `super().__init__(*args, **kwargs)`
+    + Children must declare a _build() method and define obs within __init__()
     """
 
     RSD = 42
@@ -23,13 +24,12 @@ class BasePYMC3Model:
         self._trace = None
         self._posterior_predictive = None
         self._idata = None
-        self.obs = obs  # TODO: I think we dont need / want this here. Leave this to child instances to do
         self.sample_prior_predictive_kws = dict(draws=500)
         self.sample_posterior_predictive_kws = dict(fast=True, store_ppc=False)
         self.sample_kws = dict(
             init='auto',  # aka jitter+adapt_diag
             random_seed=self.RSD,
-            tune=2000,  # NOTE: often need to bump this much higher e.g. 10000
+            tune=2000,  # NOTE: often need to bump this much higher e.g. 5000
             draws=500,
             chains=4,
             cores=4,
@@ -75,15 +75,28 @@ class BasePYMC3Model:
         assert self._trace, "Must run sample() first!"
         return self._trace["diverging"].nonzero()[0].size
 
-    def build(self):
+    def build(self, **kwargs):
+        """Build the model"""
         helper_txt = '' if self.model is None else 're'
         try:
-            self._build()
+            self._build(**kwargs)
             print(f'{helper_txt}built model {self.name} {self.version}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _build() in your'
                 + ' subclass, containing the model definition'
+            )
+
+    def extend_build(self, **kwargs):
+        """Rebuild and extend build, initially developed to help PPC of GRW"""
+        try:
+            self._build(**kwargs)
+            self._extend_build(**kwargs)
+            print(f'extended build of model {self.name} {self.version}')
+        except AttributeError:
+            raise NotImplementedError(
+                'Create a method _extend_build() in your'
+                + ' subclass, containing the model extension definition'
             )
 
     def sample_prior_predictive(self, **kwargs):
@@ -173,9 +186,10 @@ class BasePYMC3Model:
             return None
 
     def replace_obs(self, new_obs):
-        """Replace the observations and force rebuild"""
+        """Replace the observations,
+        Optionally use `extend_build` for future time-dependent PPC
+        """
         self.obs = new_obs
-        self.build()
 
     def _create_idata(self, ppc=None):
         """Create Arviz InferenceData object
@@ -193,6 +207,9 @@ class BasePYMC3Model:
         else:
             try:
                 k['prior'] = self.trace_prior
+            except AssertionError:
+                pass
+            try:
                 k['trace'] = self.trace
                 k['posterior_predictive'] = self.posterior_predictive
             except AssertionError:

@@ -13,6 +13,7 @@ from oreum_core.model.calc import (
     calc_r2,
     calc_rmse,
     log_jcd,
+    numpy_invlogit,
 )
 from oreum_core.model.describe import describe_dist, extract_yobs_yhat, model_desc
 from oreum_core.model.distributions import (  # Gamma,

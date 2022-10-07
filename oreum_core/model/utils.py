@@ -30,12 +30,14 @@ def write_azid(mdl, dir_traces: list = []):
     return f'Wrote: {fqn}'
 
 
-def save_graph(mdl, fp: list = [], format: str = 'png'):
+def save_graph(mdl, fp: list = [], fn_extra: str = '', format: str = 'png'):
     """Accept a BasePYMC3Model object mdl, get the graphviz representation,
     write to file and return the fqn
     """
     gv = pm.model_graph.model_to_graphviz(mdl.model, formatting='plain')
-    fqn = os.path.join(*fp, f'{mdl.name}')
+    if fn_extra != '':
+        fn_extra = f'_{fn_extra}'
+    fqn = os.path.join(*fp, f'{mdl.name}{fn_extra}')
 
     if format == 'png':
         gv.attr(dpi='300')

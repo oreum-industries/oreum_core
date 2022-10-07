@@ -17,24 +17,30 @@ __all__ = [
 
 
 def plot_ppc_loopit(
-    azid: az.data.inference_data.InferenceData, kde: bool = True
+    azid: az.data.inference_data.InferenceData, kind: str = 'kde', tgt: str = 'y'
 ) -> figure.Figure:
     """Plot PPC & LOO-PIT after run `mdl.sample_posterior_predictive()` also see
     https://oriolabrilpla.cat/python/arviz/pymc3/2019/07/31/loo-pit-tutorial.html
     """
-    plotkind = 'kde' if kde else 'cumulative'
     f = plt.figure(figsize=(12, 6))
     gs = gridspec.GridSpec(2, 2, width_ratios=[1, 1], height_ratios=[2, 1], figure=f)
     ax0 = f.add_subplot(gs[0, :])
     ax1 = f.add_subplot(gs[2])
     ax2 = f.add_subplot(gs[3], sharex=ax1)
-    _ = az.plot_ppc(azid, kind=plotkind, flatten=None, ax=ax0)
-    _ = az.plot_loo_pit(azid, y='yhat', ax=ax1)
-    _ = az.plot_loo_pit(azid, y='yhat', ecdf=True, ax=ax2)
+    _ = az.plot_ppc(
+        azid,
+        kind=kind,
+        flatten=None,
+        ax=ax0,
+        group='posterior',
+        data_pairs={f'{tgt}': f'{tgt}hat'},
+    )
+    _ = az.plot_loo_pit(azid, y=f'{tgt}hat', ax=ax1)
+    _ = az.plot_loo_pit(azid, y=f'{tgt}hat', ecdf=True, ax=ax2)
     _ = f.suptitle('In-sample PPC Evaluation')
-    _ = ax0.set_title('PPC Predicted(yhat) vs Observed(y)')
-    _ = ax1.set_title('yhat LOO-PIT')
-    _ = ax2.set_title('yhat LOO-PIT cumulative')
+    _ = ax0.set_title(f'PPC Predicted {tgt}hat vs Observed {tgt}')
+    _ = ax1.set_title(f'Predicted {tgt}hat LOO-PIT')
+    _ = ax2.set_title(f'Predicted {tgt}hat LOO-PIT cumulative')
     _ = f.tight_layout()
     return f
 

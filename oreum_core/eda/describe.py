@@ -11,7 +11,7 @@ RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
 
-def display_fw(df, max_rows: int = 20, latex: bool = False):
+def display_fw(df, max_rows: int = 50, latex: bool = False):
     """Conv fn: contextually display max rows"""
 
     display_latex_repr = False
