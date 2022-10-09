@@ -290,9 +290,9 @@ def plot_float_dist(
         return None
 
     if sort:
-        dfm = df[sorted(fts)].melt()
+        dfm = df[sorted(fts)].melt(var_name='variable')
     else:
-        dfm = df[fts].melt()
+        dfm = df[fts].melt(var_name='variable')
 
     idx_inf = np.isinf(dfm['value'])
     dfm = dfm.loc[~idx_inf].copy()
