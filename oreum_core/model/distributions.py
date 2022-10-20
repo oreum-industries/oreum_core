@@ -3,7 +3,11 @@
 import numpy as np
 import pymc3 as pm
 import theano.tensor as tt
-from pymc3.distributions.continuous import PositiveContinuous, assert_negative_support
+from pymc3.distributions.continuous import (
+    PositiveContinuous,
+    assert_negative_support,
+    get_tau_sigma,
+)
 from pymc3.distributions.dist_math import alltrue_elemwise, bound, logpow
 from pymc3.distributions.distribution import draw_values, generate_samples
 from pymc3.distributions.shape_utils import broadcast_distribution_samples
@@ -27,9 +31,6 @@ __all__ = [
     'boundzero_theano',
     'bound_numpy',
     'logpow_numpy',
-    'Gamma',
-    'GammaNumpy',
-    'Gumbel',
     'InverseWeibull',
     'InverseWeibullNumpy',
     'ZeroInflatedInverseWeibull',
@@ -37,8 +38,7 @@ __all__ = [
     'Kumaraswamy',
     'Lognormal',
     'LognormalNumpy',
-    'ZeroInflatedLognormal',
-    'ZeroInflatedLognormalNumpy',
+    'ZeroInflatedLogNormal',
     'Normal',
     'NormalNumpy',
 ]
@@ -72,97 +72,86 @@ def logpow_numpy(x, m):
     return np.where(x == 0, np.where(m == 0, 0.0, -np.inf), m * np.log(x))
 
 
-class Gamma(pm.Gamma):
-    """Inherit the pymc class, add cdf and invcdf"""
+# class GammaNumpy:
+#     """Gamma PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
+#     Manual implementations used in pymc3 custom distributions
+#     Helpful to compare these to scipy to confirm my correct implementation
+#     Ref: https://en.wikipedia.org/wiki/Gamma_distribution
+#     Params: x > 0, u in [0, 1], a (shape) > 0, b (rate) > 0
+#     """
 
-    def __init__(self):
+#     def __init__(self):
+#         self.name = 'Gamma'
+#         self.notation = {'notation': r'x \sim Gamma(\alpha, \beta)'}
+#         self.dist_natural = {
+#             'pdf': r'f(x \mid \alpha, \beta) = \frac{1}{\Gamma(\alpha)} \beta^{\alpha} x^{\alpha-1} e^{- \beta x}',
+#             'cdf': r'F(x \mid \alpha, \beta) = \frac{1}{\Gamma(\alpha)} \gamma(\alpha, \beta x)',
+#             'invcdf': r'F^{-1}(u \mid \alpha, \beta) = ',
+#         }
+#         self.dist_log = {
+#             'logpdf': r'\log f(x \mid \alpha, \beta) = -\log \Gamma(\alpha) + \log \beta^{\alpha} + \log x^{\alpha-1} - \beta x',
+#             'logcdf': r'\log F(x \mid \alpha, \beta) = -\log \Gamma(\alpha) + \log \gamma(\alpha, \beta x)',
+#             'loginvcdf': r'\log F^{-1}(u \mid \alpha, \beta) = ',
+#         }
+#         self.conditions = {
+#             'parameters': r'\alpha > 0 \, \text{(shape)}, \; \beta > 0 \, \text{(rate)}',
+#             'support': r'x \in (0, \infty), \; u \sim \text{Uniform([0, 1])}',
+#         }
+#         self.summary_stats = {
+#             'mean': r'\frac{\alpha}{\beta}',
+#             'mode': r'\frac{\alpha - 1}{\beta}, \; \text{for} \alpha \geq 1',
+#             'variance': r'\frac{\alpha}{\beta^{2}}',
+#         }
 
-        raise NotImplementedError(
-            """Consider that InvCDF is hard to calculate: even scipy uses C
-            functions Recommend use different dist in practice"""
-        )
+#     def pdf(self, x, a, b):
+#         """Gamma PDF
+#         compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2595
+#         """
+#         fn = (
+#             (1 / special.gamma(a))
+#             * np.power(b, a)
+#             * np.power(x, a - 1)
+#             * np.exp(-b * x)
+#         )
+#         return boundzero_numpy(fn, a > 0, b > 0, x >= 0)
 
+#     def cdf(self, x, a, b):
+#         """Gamma CDF:
+#         where $\gamma(a, bx)$ is lower incomplete gamma function [0, lim)
+#         compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2602
+#         """
+#         # fn = (1 / special.gamma(a)) * special.gammainc(a, b * x)
+#         fn = special.gammainc(a, b * x)
+#         return boundzero_numpy(fn, a > 0, b > 0, x >= 0)
 
-class GammaNumpy:
-    """Gamma PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
-    Manual implementations used in pymc3 custom distributions
-    Helpful to compare these to scipy to confirm my correct implementation
-    Ref: https://en.wikipedia.org/wiki/Gamma_distribution
-    Params: x > 0, u in [0, 1], a (shape) > 0, b (rate) > 0
-    """
+#     def invcdf(self, u, a, b):
+#         """Gamma Inverse CDF aka PPF:
+#         compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2608
+#         see sc.gammainc()
+#         """
+#         raise NotImplementedError('TODO gamma inverse CDF')
 
-    def __init__(self):
-        self.name = 'Gamma'
-        self.notation = {'notation': r'x \sim Gamma(\alpha, \beta)'}
-        self.dist_natural = {
-            'pdf': r'f(x \mid \alpha, \beta) = \frac{1}{\Gamma(\alpha)} \beta^{\alpha} x^{\alpha-1} e^{- \beta x}',
-            'cdf': r'F(x \mid \alpha, \beta) = \frac{1}{\Gamma(\alpha)} \gamma(\alpha, \beta x)',
-            'invcdf': r'F^{-1}(u \mid \alpha, \beta) = ',
-        }
-        self.dist_log = {
-            'logpdf': r'\log f(x \mid \alpha, \beta) = -\log \Gamma(\alpha) + \log \beta^{\alpha} + \log x^{\alpha-1} - \beta x',
-            'logcdf': r'\log F(x \mid \alpha, \beta) = -\log \Gamma(\alpha) + \log \gamma(\alpha, \beta x)',
-            'loginvcdf': r'\log F^{-1}(u \mid \alpha, \beta) = ',
-        }
-        self.conditions = {
-            'parameters': r'\alpha > 0 \, \text{(shape)}, \; \beta > 0 \, \text{(rate)}',
-            'support': r'x \in (0, \infty), \; u \sim \text{Uniform([0, 1])}',
-        }
-        self.summary_stats = {
-            'mean': r'\frac{\alpha}{\beta}',
-            'mode': r'\frac{\alpha - 1}{\beta}, \; \text{for} \alpha \geq 1',
-            'variance': r'\frac{\alpha}{\beta^{2}}',
-        }
+#     def logpdf(self, x, a, b):
+#         """Gamma log PDF
+#         compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2599
+#         """
+#         fn = -special.gammaln(a) + logpow_numpy(b, a) + logpow_numpy(x, a - 1) - b * x
+#         return bound_numpy(fn, a > 0, b > 0, x > 0)
 
-    def pdf(self, x, a, b):
-        """Gamma PDF
-        compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2595
-        """
-        fn = (
-            (1 / special.gamma(a))
-            * np.power(b, a)
-            * np.power(x, a - 1)
-            * np.exp(-b * x)
-        )
-        return boundzero_numpy(fn, a > 0, b > 0, x >= 0)
+#     def logcdf(self, x, a, b):
+#         """Gamma log CDF:
+#         where $\gamma(a, bx)$ is lower incomplete gamma function [0, lim)
+#         compare to https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L2614
+#         """
+#         return bound_numpy(
+#             (-special.gammaln(a)) + special.gammainc(a, b * x), a > 0, b > 0, x > 0
+#         )
 
-    def cdf(self, x, a, b):
-        """Gamma CDF:
-        where $\gamma(a, bx)$ is lower incomplete gamma function [0, lim)
-        compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2602
-        """
-        # fn = (1 / special.gamma(a)) * special.gammainc(a, b * x)
-        fn = special.gammainc(a, b * x)
-        return boundzero_numpy(fn, a > 0, b > 0, x >= 0)
-
-    def invcdf(self, u, a, b):
-        """Gamma Inverse CDF aka PPF:
-        compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2608
-        see sc.gammainc()
-        """
-        raise NotImplementedError('TODO gamma inverse CDF')
-
-    def logpdf(self, x, a, b):
-        """Gamma log PDF
-        compare to https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L2599
-        """
-        fn = -special.gammaln(a) + logpow_numpy(b, a) + logpow_numpy(x, a - 1) - b * x
-        return bound_numpy(fn, a > 0, b > 0, x > 0)
-
-    def logcdf(self, x, a, b):
-        """Gamma log CDF:
-        where $\gamma(a, bx)$ is lower incomplete gamma function [0, lim)
-        compare to https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L2614
-        """
-        return bound_numpy(
-            (-special.gammaln(a)) + special.gammainc(a, b * x), a > 0, b > 0, x > 0
-        )
-
-    def loginvcdf(self, u, a, b):
-        """Gamma log Inverse CDF aka log PPF:
-        see sc.gammaincinv()
-        """
-        raise NotImplementedError('TODO gamma log inverse CDF')
+#     def loginvcdf(self, u, a, b):
+#         """Gamma log Inverse CDF aka log PPF:
+#         see sc.gammaincinv()
+#         """
+#         raise NotImplementedError('TODO gamma log inverse CDF')
 
 
 class Gumbel(pm.Gumbel):
@@ -918,116 +907,7 @@ class LognormalNumpy:
         return bound_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
 
-# class ZeroInflatedLognormal(PositiveContinuous):
-#     r"""
-#     ZeroInflatedLognormal log-likelihood
-
-#     WIP! Mixture model to allow for observations dominated by zeros such as freq
-
-#     also see
-#     + McElreath 2014, http://xcelab.net/rmpubs/Mcelreath%20Koster%202014.pdf,
-#                       https://github.com/rmcelreath/mcelreath-koster-human-nature-2014
-#     + Jones 2013, https://royalsocietypublishing.org/doi/10.1098/rspb.2013.1210
-#     + https://stackoverflow.com/questions/42409761/pymc3-nuts-has-difficulty-sampling-from-a-hierarchical-zero-inflated-gamma-mode
-
-#     The pmf of this distribution is
-#     .. math::
-
-#         f(x \mid \psi, \mu, \sigma) = \left\{
-#             \begin{array}{l}
-#                 (1 - \psi), & \text{if } x = 0 \\
-#                 \psi \, \text{Lognormal}(\mu, \sigma), & \text{if } x > 0
-#             \end{array}
-#             \right.
-
-#     ========  ==========================
-#     Support   :math:`x \in \mathbb{N}_0`
-#     Mean      :math:`\psi \text{Lognormal}(\mu, \sigma)`
-#     Variance  :math: TODO
-#     ========  ==========================
-
-#     Parameters
-#     ----------
-#     psi: float
-#         Expected proportion of Lognormal variates (0 <= psi <= 1)
-#     mu: float
-#     sigma: float
-#     """
-
-#     def __init__(self, psi, mu, sigma, *args, **kwargs):
-#         super().__init__(*args, **kwargs)  # defaults=("mode",)
-
-#         self.psi = psi = tt.as_tensor_variable(floatX(psi))
-#         self.mu = mu = tt.as_tensor_variable(floatX(mu))
-#         self.sigma = sigma = tt.as_tensor_variable(floatX(sigma))
-#         self.lognorm = Lognormal.dist(mu, sigma)
-#         # self.bernoulli = stats.binom()
-
-#         # TODO
-#         self.mean = self.psi * self.lognorm.mean  # lognorm.mean = exp(mu + sigma^2 / 2)
-#         # self.median = tt.exp(self.mu)
-#         # self.mode = 0 #self.psi * self.lognorm.mode
-
-#         assert_negative_support(sigma, "sigma", "ZeroInflatedLognormal")
-
-#     # def _random(self, psi, mu, sigma, size=None):
-#     #     """ Not sure 2021-02-21
-#     #         `Note by definition any rvs_ from lognorm that are zero will
-#     #         correctly remain zero, covering the case x = 0`
-#     #     """
-#     #     rvs_ = stats.lognorm.rvs(s=sigma, scale=np.exp(mu), size=size)
-#     #     return rvs_ * psi
-
-#     def _random(self, psi, mu, sigma, size=None):
-#         """Inputs are numpy arrays"""
-#         rvs_ = stats.lognorm.rvs(s=sigma, scale=np.exp(mu), size=size)
-#         pi = stats.binom(n=np.repeat([1], len(psi)), p=psi).rvs(len(psi))
-#         return rvs_ * pi
-
-#     def random(self, point=None, size=None):
-#         """
-#         Draw random values from InverseWeibull PDF distribution.
-#         Parameters
-#         ----------
-#         point: dict, optional
-#             Dict of variable values on which random values are to be
-#             conditioned (uses default point if not specified).
-#         size: int, optional
-#             Desired size of random sample (returns one sample if not
-#             specified).
-#         Returns
-#         -------
-#         array
-#         """
-#         psi, mu, sigma = draw_values(
-#             [self.psi, self.mu, self.sigma], point=point, size=size
-#         )
-#         return generate_samples(
-#             self._random, psi, mu, sigma, dist_shape=self.shape, size=size
-#         )
-
-#     def logp(self, value):
-#         """LogPDF"""
-#         psi = self.psi
-#         logp_ = tt.switch(
-#             tt.gt(value, 0), tt.log(psi) + self.lognorm.logp(value), tt.log1p(-psi)
-#         )
-#         return bound(logp_, value >= 0, psi > 0, psi < 1)
-
-#     def cdf(self, value):
-#         """CDF"""
-#         psi = self.psi
-#         cdf_ = (1.0 - psi) * 1 + psi * self.lognorm.cdf(value)
-#         return boundzero_theano(cdf_, value >= 0, psi > 0, psi < 1)
-
-#     def invcdf(self, value):
-#         """InvCDF aka PPF"""
-#         psi = self.psi
-#         invcdf_ = self.lognorm.invcdf((value + psi - 1) / psi)
-#         return boundzero_theano(invcdf_, value >= 0, value <= 1, psi > 0, psi < 1)
-
-
-class ZeroInflatedLognormal(PositiveContinuous):
+class ZeroInflatedLogNormal(PositiveContinuous):
     R"""
     Structure borrowed from:
     pm.ZeroInflatedPoisson
@@ -1035,18 +915,28 @@ class ZeroInflatedLognormal(PositiveContinuous):
     and
     pm.Lognormal
     https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/distributions/continuous.py#L1781
+
+    psi is the mixing proportion for lognormal (psi is 1 where value is lognormal)
     """
 
-    def __init__(self, psi, mu, sigma, *args, **kwargs):
+    def __init__(self, psi=0, mu=0, sigma=None, tau=None, sd=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.psi = psi = tt.as_tensor_variable(floatX(psi))
+
+        tau, sigma = get_tau_sigma(tau=tau, sigma=sigma)
         self.mu = mu = tt.as_tensor_variable(floatX(mu))
-        self.sigma = sigma = tt.as_tensor_variable(floatX(sigma))
-        self.psi = tt.as_tensor_variable(floatX(psi))
-        self.lognormal = pm.Lognormal.dist(mu, sigma)
+        self.tau = tau = tt.as_tensor_variable(tau)
+        self.sigma = self.sd = sigma = tt.as_tensor_variable(sigma)
+
+        self.lognormal = pm.Lognormal.dist(mu=mu, tau=tau)
+
+    def _random_lognormal(self, mu, tau, size=None):
+        samples = np.random.normal(size=size)
+        return np.exp(mu + (tau**-0.5) * samples)
 
     def random(self, point=None, size=None):
-        r"""
-        Draw random values from ZeroInflatedLognormal distribution.
+        """
+        Draw random values from ZeroInflatedLogNormal distribution.
         Parameters
         ----------
         point: dict, optional
@@ -1059,8 +949,12 @@ class ZeroInflatedLognormal(PositiveContinuous):
         -------
         array
         """
-        psi = draw_values(self.psi, point=point, size=size)
-        g = self.lognormal.random(point=point, size=size)
+        psi, mu, tau = draw_values(
+            [self.psi, self.mu, self.tau], point=point, size=size
+        )
+        g = generate_samples(
+            self._random_lognormal, mu, tau, dist_shape=self.shape, size=size
+        )
         g, psi = broadcast_distribution_samples([g, psi], size=size)
         return g * (np.random.random(g.shape) < psi)
 
@@ -1079,9 +973,7 @@ class ZeroInflatedLognormal(PositiveContinuous):
         psi = self.psi
 
         logp_val = tt.switch(
-            tt.gt(value, 0),
-            tt.log(psi) + self.lognormal.logp(value),
-            tt.log1p(-psi),  # logaddexp(tt.log1p(-psi), tt.log(psi) - theta),
+            tt.gt(value, 0), tt.log(psi) + self.lognormal.logp(value), tt.log1p(-psi)
         )
 
         return bound(logp_val, 0 <= value, 0 <= psi, psi <= 1)
@@ -1105,83 +997,6 @@ class ZeroInflatedLognormal(PositiveContinuous):
         )
 
         return bound(logcdf_val, 0 <= value, 0 <= psi, psi <= 1)
-
-
-class ZeroInflatedLognormalNumpy:
-    """Zero-inflated Lognormal PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
-    Manual implementations potentially used if needed in pymc3 custom distributions
-    Helpful to compare these to ? (seems to be quite rare)
-    Ref: https://royalsocietypublishing.org/doi/10.1098/rspb.2013.1210
-    Ref:
-    Params: 0 < psi < 1 (prop lognormal), mu (location) > 0, sigma (variance) > 0
-    Support: x > 0, u in [0, 1],
-    """
-
-    def __init__(self):
-        self.name = 'ZeroInflatedLognormal'
-        self.notation = {'notation': r'x \sim ZILognormal(\psi, \mu, \sigma)'}
-        self.dist_natural = {
-            'pdf': r"""f(x \mid \psi, \mu, \sigma) = \left\{ \begin{array}{l}
-                    (1 - \psi), & \text{if } x = 0 \\
-                    \psi \text{LognormalPDF}(\mu, \sigma, x), & \text{if } x > 0 \\
-                    \end{array} \right.""",
-            'cdf': r"""F(x \mid \psi, \mu, \sigma) = (1 - \psi) + \psi \text{LognormalCDF}(\mu, \sigma)""",
-            'invcdf': r"""F^{-1}(u \mid \psi, \mu, \sigma) = \text{LognormalInvCDF} \left( \frac{u - 1}{\psi} + 1, \mu, \sigma \right)""",
-        }
-        self.dist_log = {
-            'logpdf': r"""\log f(x \mid \psi, \mu, \sigma) = \left\{\begin{array}{l}
-                            \log(1 - \psi), & \text{if } x = 0 \\
-                            \log(\psi) + \text{LognormalLogPDF}(\mu, \sigma, x), & \text{if } x > 0 \\
-                        \end{array} \right.""",
-            'logcdf': r"""\log F(x \mid \psi, \mu, \sigma) = \log((1 - \psi) + \psi \text{LognormalLogCDF}(\mu, \sigma, x))""",
-            'loginvcdf': r"""\log F^{-1}(u \mid \psi, \mu, \sigma) = \log(\text{LognormalLogInvCDF} \left( \frac{u + \psi - 1}{\psi}), \mu, \sigma) \right)""",
-        }
-        self.conditions = {
-            'parameters': r"""\psi \in (0, 1)\, \text{(prop. lognormal)}, \;
-                              \mu \in (-\infty, \infty) \, \text{(location)}, \;
-                              \sigma > 0 \, \text{(std. dev.)}""",
-            'support': r'x \in [0, \infty), \; u \sim \text{Uniform([0, 1])}',
-        }
-        self.summary_stats = {'mean': r'TODO', 'mode': r'TODO', 'variance': r'TODO'}
-        self.lognorm = LognormalNumpy()
-
-    def rvs(self, psi, mu, sigma):
-        """ZILognormal random variates"""
-        if len(psi) == len(mu):
-            rvs_ = stats.lognorm(s=sigma, scale=np.exp(mu)).rvs()
-            # pi = stats.binom(n=np.repeat([1], len(psi)), p=psi).rvs(len(psi))
-            pi = stats.binom(n=1, p=psi).rvs()
-        else:
-            raise ValueError('psi and mu must have ssame length')
-
-        return rvs_ * pi
-
-    def pdf(self, x, psi, mu, sigma):
-        """ZILognormal PDF"""
-        psi = np.float(psi)
-        mu = np.float(mu)
-        sigma = np.float(sigma)
-        pdf_ = np.where(x > 0, psi * self.lognorm.pdf(x, mu, sigma), 1.0 - psi)
-        return boundzero_numpy(pdf_, psi > 0, psi < 1, sigma > 0, x >= 0)
-
-    def cdf(self, x, psi, mu, sigma):
-        """ZILognormal CDF"""
-        psi = np.float(psi)
-        mu = np.float(mu)
-        sigma = np.float(sigma)
-        cdf_ = (1.0 - psi) + psi * self.lognorm.cdf(x, mu, sigma)
-        return boundzero_numpy(cdf_, psi > 0, psi < 1, sigma > 0, x >= 0)
-
-    def invcdf(self, u, psi, mu, sigma):
-        """ZILognormal Inverse CDF aka PPF:"""
-        psi = np.float(psi)
-        mu = np.float(mu)
-        sigma = np.float(sigma)
-        # z = (u + psi - 1.) / psi
-        z = ((u - 1.0) / psi) + 1  # better formulation avoid computational issues
-        invcdf_ = self.lognorm.invcdf(z, mu, sigma)
-        # return invcdf_
-        return boundzero_numpy(invcdf_, psi > 0, psi < 1, sigma > 0, u >= 0, u <= 1)
 
 
 class Normal(pm.Normal):

@@ -16,9 +16,7 @@ from oreum_core.model.calc import (
     numpy_invlogit,
 )
 from oreum_core.model.describe import describe_dist, extract_yobs_yhat, model_desc
-from oreum_core.model.distributions import (  # Gamma,
-    GammaNumpy,
-    Gumbel,
+from oreum_core.model.distributions import (
     InverseWeibull,
     InverseWeibullNumpy,
     Kumaraswamy,
@@ -27,8 +25,7 @@ from oreum_core.model.distributions import (  # Gamma,
     Normal,
     NormalNumpy,
     ZeroInflatedInverseWeibull,
-    ZeroInflatedLognormal,
-    ZeroInflatedLognormalNumpy,
+    ZeroInflatedLogNormal,
     boundzero_numpy,
     boundzero_theano,
 )

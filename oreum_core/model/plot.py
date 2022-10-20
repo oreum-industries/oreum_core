@@ -31,7 +31,7 @@ def plot_ppc_loopit(
             + 'it will plot them all its own way'
         )
 
-    f = plt.figure(figsize=(12, 4 * len(tgts)))
+    f = plt.figure(figsize=(12, 6 * len(tgts)))
     gs = gridspec.GridSpec(
         2 * len(tgts),
         2,
@@ -40,12 +40,13 @@ def plot_ppc_loopit(
         figure=f,
     )
 
+    # TODO: live issue this selection doesnt work in Arviz,
+    # it just plots every tgt. so this loop is a placeholder that does work
+    # if there's only a single tgt
     for i, (tgt, tgt_hat) in enumerate(tgts.items()):
-        print({tgt: tgt_hat})
         ax0 = f.add_subplot(gs[0 + 4 * i, :])
         ax1 = f.add_subplot(gs[2 + 4 * i])
         ax2 = f.add_subplot(gs[3 + 4 * i], sharex=ax1)
-        # TODO: live issue this selection doesnt work in Arviz, it just plots every tgt
         _ = az.plot_ppc(
             idata,
             kind=kind,
