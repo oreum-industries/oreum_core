@@ -186,15 +186,16 @@ class BasePYMC3Model:
             return None
 
     def replace_obs(self, new_obs):
-        """Replace the observations,
-        Optionally use `extend_build` for future time-dependent PPC
+        """Replace the observations
+        Assumes data lives in pm.Data contrainers in your _build() fn
+        Optionally afterwards call `extend_build()` for future time-dependent PPC
         """
         self.obs = new_obs
 
     def _create_idata(self, ppc=None):
         """Create Arviz InferenceData object
         NOTE: use ordered exceptions, with assumption that we always use
-            an ordered workflow: prior, trc, post
+            an ordered workflow: prior, trace, ppc
         """
         idata_kwargs = self.sample_kws['idata_kwargs']
 
@@ -214,7 +215,9 @@ class BasePYMC3Model:
                 k['posterior_predictive'] = self.posterior_predictive
             except AssertionError:
                 pass
-        return az.from_pymc3(**k)
+        idata = az.from_pymc3(**k)
+        # idata.observed_data = idata.observed_data.rename({'y_pi_hat': 'y_pi', 'y_nz_hat': 'y_nz'})
+        return idata
 
     def _update_idata(self):
         # raise ValueError(kwargs)

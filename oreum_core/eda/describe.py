@@ -33,11 +33,12 @@ def display_fw(df, max_rows: int = 50, latex: bool = False):
         display(df)
 
 
-def display_ht(df, nrows: int = 3, latex: bool = False):
+def display_ht(df, nrows: int = 3, latex: bool = False) -> str:
     """Convenience fn: Display head and tail n rows via display_fw"""
 
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
     display_fw(dfd, latex=latex)
+    return f'shape: {df.shape}'
 
 
 def custom_describe(

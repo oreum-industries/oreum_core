@@ -83,12 +83,6 @@ class DatatypeConverter:
                 if set(df[ft].unique()) != set([True, False, np.nan]):
                     # avoid converting anything not yet properly mapped
                     continue
-
-            # convert string representation of {'0', '1'}
-            # if set(df[ft].unique()) == set(['0', '1']):
-            #     df[ft] = df[ft].astype(float, errors='raise')
-            # if pd.isnull(df[ft]).sum() == 0:
-            #     df[ft] = df[ft].astype(bool)
             df[ft] = df[ft].convert_dtypes(convert_boolean=True)
 
         for ft in self.fts['fyear']:
@@ -135,6 +129,7 @@ class DatatypeConverter:
                 df.loc[df[ft].isin(self.strnans), ft] = np.nan
             df[ft] = df[ft].astype(float, errors='raise')
 
+        # NOTE verbatim will simply remain. Now at the end of the columns
         # TODO as/when add logging
         # for ft in self.fts['fverbatim]:
         #    log(f'kept verbatim: {ft}')
