@@ -17,36 +17,57 @@ __all__ = [
 
 
 def plot_ppc_loopit(
-    azid: az.data.inference_data.InferenceData, kind: str = 'kde', tgt: str = 'y'
+    idata: az.data.inference_data.InferenceData,
+    kind: str = 'kde',
+    tgts: dict = {'y': 'yhat'},
 ) -> figure.Figure:
-    """Plot PPC & LOO-PIT after run `mdl.sample_posterior_predictive()` also see
+    """Calc and Plot PPC & LOO-PIT after run `mdl.sample_posterior_predictive()`
+    also see
     https://oriolabrilpla.cat/python/arviz/pymc3/2019/07/31/loo-pit-tutorial.html
     """
-    f = plt.figure(figsize=(12, 6))
-    gs = gridspec.GridSpec(2, 2, width_ratios=[1, 1], height_ratios=[2, 1], figure=f)
-    ax0 = f.add_subplot(gs[0, :])
-    ax1 = f.add_subplot(gs[2])
-    ax2 = f.add_subplot(gs[3], sharex=ax1)
-    _ = az.plot_ppc(
-        azid,
-        kind=kind,
-        flatten=None,
-        ax=ax0,
-        group='posterior',
-        data_pairs={f'{tgt}': f'{tgt}hat'},
+    if len(tgts) > 1:
+        raise AttributeError(
+            'NOTE: live issue in Arviz, if more than one tgt '
+            + 'it will plot them all its own way'
+        )
+
+    f = plt.figure(figsize=(12, 4 * len(tgts)))
+    gs = gridspec.GridSpec(
+        2 * len(tgts),
+        2,
+        height_ratios=[1.5, 1] * len(tgts),
+        width_ratios=[1, 1],
+        figure=f,
     )
-    _ = az.plot_loo_pit(azid, y=f'{tgt}hat', ax=ax1)
-    _ = az.plot_loo_pit(azid, y=f'{tgt}hat', ecdf=True, ax=ax2)
+
+    for i, (tgt, tgt_hat) in enumerate(tgts.items()):
+        print({tgt: tgt_hat})
+        ax0 = f.add_subplot(gs[0 + 4 * i, :])
+        ax1 = f.add_subplot(gs[2 + 4 * i])
+        ax2 = f.add_subplot(gs[3 + 4 * i], sharex=ax1)
+        # TODO: live issue this selection doesnt work in Arviz, it just plots every tgt
+        _ = az.plot_ppc(
+            idata,
+            kind=kind,
+            flatten=None,
+            ax=ax0,
+            group='posterior',
+            data_pairs={tgt: tgt_hat},
+        )
+        _ = az.plot_loo_pit(idata, y=tgt_hat, ax=ax1)
+        _ = az.plot_loo_pit(idata, y=tgt_hat, ecdf=True, ax=ax2)
+
+        _ = ax0.set_title(f'PPC Predicted {tgt_hat} vs Observed {tgt}')
+        _ = ax1.set_title(f'Predicted {tgt_hat} LOO-PIT')
+        _ = ax2.set_title(f'Predicted {tgt_hat} LOO-PIT cumulative')
+
     _ = f.suptitle('In-sample PPC Evaluation')
-    _ = ax0.set_title(f'PPC Predicted {tgt}hat vs Observed {tgt}')
-    _ = ax1.set_title(f'Predicted {tgt}hat LOO-PIT')
-    _ = ax2.set_title(f'Predicted {tgt}hat LOO-PIT cumulative')
     _ = f.tight_layout()
     return f
 
 
 def facetplot_azid_dist(
-    azid: az.data.inference_data.InferenceData,
+    idata: az.data.inference_data.InferenceData,
     rvs: list,
     group: str = 'posterior',
     m: int = 3,
@@ -56,10 +77,10 @@ def facetplot_azid_dist(
     """Control facet positioning of Arviz Krushke style plots, data in azid
     Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """
-    # TODO unpack the compressed rvs from the azid
+    # TODO unpack the compressed rvs from the idata
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
-    _ = az.plot_posterior(azid, group=group, ax=axs, var_names=rvs, **kwargs)
+    _ = az.plot_posterior(idata, group=group, ax=axs, var_names=rvs, **kwargs)
     _ = f.suptitle(f'{group} {rvs}', y=0.96 + n * 0.005)
     _ = f.tight_layout()
     return f

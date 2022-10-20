@@ -6,6 +6,10 @@ import theano.tensor as tt
 from pymc3.distributions.continuous import PositiveContinuous, assert_negative_support
 from pymc3.distributions.dist_math import alltrue_elemwise, bound, logpow
 from pymc3.distributions.distribution import draw_values, generate_samples
+from pymc3.distributions.shape_utils import broadcast_distribution_samples
+from pymc3.math import (  # log1mexp, log1pexp, logit, logsumexp, sigmoid, tround
+    logaddexp,
+)
 from pymc3.theanof import floatX
 from scipy import special, stats
 
@@ -914,75 +918,135 @@ class LognormalNumpy:
         return bound_numpy(fn, sigma > 0, u >= 0, u <= 1)
 
 
+# class ZeroInflatedLognormal(PositiveContinuous):
+#     r"""
+#     ZeroInflatedLognormal log-likelihood
+
+#     WIP! Mixture model to allow for observations dominated by zeros such as freq
+
+#     also see
+#     + McElreath 2014, http://xcelab.net/rmpubs/Mcelreath%20Koster%202014.pdf,
+#                       https://github.com/rmcelreath/mcelreath-koster-human-nature-2014
+#     + Jones 2013, https://royalsocietypublishing.org/doi/10.1098/rspb.2013.1210
+#     + https://stackoverflow.com/questions/42409761/pymc3-nuts-has-difficulty-sampling-from-a-hierarchical-zero-inflated-gamma-mode
+
+#     The pmf of this distribution is
+#     .. math::
+
+#         f(x \mid \psi, \mu, \sigma) = \left\{
+#             \begin{array}{l}
+#                 (1 - \psi), & \text{if } x = 0 \\
+#                 \psi \, \text{Lognormal}(\mu, \sigma), & \text{if } x > 0
+#             \end{array}
+#             \right.
+
+#     ========  ==========================
+#     Support   :math:`x \in \mathbb{N}_0`
+#     Mean      :math:`\psi \text{Lognormal}(\mu, \sigma)`
+#     Variance  :math: TODO
+#     ========  ==========================
+
+#     Parameters
+#     ----------
+#     psi: float
+#         Expected proportion of Lognormal variates (0 <= psi <= 1)
+#     mu: float
+#     sigma: float
+#     """
+
+#     def __init__(self, psi, mu, sigma, *args, **kwargs):
+#         super().__init__(*args, **kwargs)  # defaults=("mode",)
+
+#         self.psi = psi = tt.as_tensor_variable(floatX(psi))
+#         self.mu = mu = tt.as_tensor_variable(floatX(mu))
+#         self.sigma = sigma = tt.as_tensor_variable(floatX(sigma))
+#         self.lognorm = Lognormal.dist(mu, sigma)
+#         # self.bernoulli = stats.binom()
+
+#         # TODO
+#         self.mean = self.psi * self.lognorm.mean  # lognorm.mean = exp(mu + sigma^2 / 2)
+#         # self.median = tt.exp(self.mu)
+#         # self.mode = 0 #self.psi * self.lognorm.mode
+
+#         assert_negative_support(sigma, "sigma", "ZeroInflatedLognormal")
+
+#     # def _random(self, psi, mu, sigma, size=None):
+#     #     """ Not sure 2021-02-21
+#     #         `Note by definition any rvs_ from lognorm that are zero will
+#     #         correctly remain zero, covering the case x = 0`
+#     #     """
+#     #     rvs_ = stats.lognorm.rvs(s=sigma, scale=np.exp(mu), size=size)
+#     #     return rvs_ * psi
+
+#     def _random(self, psi, mu, sigma, size=None):
+#         """Inputs are numpy arrays"""
+#         rvs_ = stats.lognorm.rvs(s=sigma, scale=np.exp(mu), size=size)
+#         pi = stats.binom(n=np.repeat([1], len(psi)), p=psi).rvs(len(psi))
+#         return rvs_ * pi
+
+#     def random(self, point=None, size=None):
+#         """
+#         Draw random values from InverseWeibull PDF distribution.
+#         Parameters
+#         ----------
+#         point: dict, optional
+#             Dict of variable values on which random values are to be
+#             conditioned (uses default point if not specified).
+#         size: int, optional
+#             Desired size of random sample (returns one sample if not
+#             specified).
+#         Returns
+#         -------
+#         array
+#         """
+#         psi, mu, sigma = draw_values(
+#             [self.psi, self.mu, self.sigma], point=point, size=size
+#         )
+#         return generate_samples(
+#             self._random, psi, mu, sigma, dist_shape=self.shape, size=size
+#         )
+
+#     def logp(self, value):
+#         """LogPDF"""
+#         psi = self.psi
+#         logp_ = tt.switch(
+#             tt.gt(value, 0), tt.log(psi) + self.lognorm.logp(value), tt.log1p(-psi)
+#         )
+#         return bound(logp_, value >= 0, psi > 0, psi < 1)
+
+#     def cdf(self, value):
+#         """CDF"""
+#         psi = self.psi
+#         cdf_ = (1.0 - psi) * 1 + psi * self.lognorm.cdf(value)
+#         return boundzero_theano(cdf_, value >= 0, psi > 0, psi < 1)
+
+#     def invcdf(self, value):
+#         """InvCDF aka PPF"""
+#         psi = self.psi
+#         invcdf_ = self.lognorm.invcdf((value + psi - 1) / psi)
+#         return boundzero_theano(invcdf_, value >= 0, value <= 1, psi > 0, psi < 1)
+
+
 class ZeroInflatedLognormal(PositiveContinuous):
-    r"""
-    ZeroInflatedLognormal log-likelihood
-
-    WIP! Mixture model to allow for observations dominated by zeros such as freq
-
-    also see
-    + McElreath 2014, http://xcelab.net/rmpubs/Mcelreath%20Koster%202014.pdf,
-                      https://github.com/rmcelreath/mcelreath-koster-human-nature-2014
-    + Jones 2013, https://royalsocietypublishing.org/doi/10.1098/rspb.2013.1210
-    + https://stackoverflow.com/questions/42409761/pymc3-nuts-has-difficulty-sampling-from-a-hierarchical-zero-inflated-gamma-mode
-
-    The pmf of this distribution is
-    .. math::
-
-        f(x \mid \psi, \mu, \sigma) = \left\{
-            \begin{array}{l}
-                (1 - \psi), & \text{if } x = 0 \\
-                \psi \, \text{Lognormal}(\mu, \sigma), & \text{if } x > 0
-            \end{array}
-            \right.
-
-    ========  ==========================
-    Support   :math:`x \in \mathbb{N}_0`
-    Mean      :math:`\psi \text{Lognormal}(\mu, \sigma)`
-    Variance  :math: TODO
-    ========  ==========================
-
-    Parameters
-    ----------
-    psi: float
-        Expected proportion of Lognormal variates (0 <= psi <= 1)
-    mu: float
-    sigma: float
+    R"""
+    Structure borrowed from:
+    pm.ZeroInflatedPoisson
+    https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/distributions/discrete.py#L1490
+    and
+    pm.Lognormal
+    https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/distributions/continuous.py#L1781
     """
 
     def __init__(self, psi, mu, sigma, *args, **kwargs):
-        super().__init__(*args, **kwargs)  # defaults=("mode",)
-
-        self.psi = psi = tt.as_tensor_variable(floatX(psi))
+        super().__init__(*args, **kwargs)
         self.mu = mu = tt.as_tensor_variable(floatX(mu))
         self.sigma = sigma = tt.as_tensor_variable(floatX(sigma))
-        self.lognorm = Lognormal.dist(mu, sigma)
-        # self.bernoulli = stats.binom()
-
-        # TODO
-        self.mean = self.psi * self.lognorm.mean  # lognorm.mean = exp(mu + sigma^2 / 2)
-        # self.median = tt.exp(self.mu)
-        # self.mode = 0 #self.psi * self.lognorm.mode
-
-        assert_negative_support(sigma, "sigma", "ZeroInflatedLognormal")
-
-    # def _random(self, psi, mu, sigma, size=None):
-    #     """ Not sure 2021-02-21
-    #         `Note by definition any rvs_ from lognorm that are zero will
-    #         correctly remain zero, covering the case x = 0`
-    #     """
-    #     rvs_ = stats.lognorm.rvs(s=sigma, scale=np.exp(mu), size=size)
-    #     return rvs_ * psi
-
-    def _random(self, psi, mu, sigma, size=None):
-        """Inputs are numpy arrays"""
-        rvs_ = stats.lognorm.rvs(s=sigma, scale=np.exp(mu), size=size)
-        pi = stats.binom(n=np.repeat([1], len(psi)), p=psi).rvs(len(psi))
-        return rvs_ * pi
+        self.psi = tt.as_tensor_variable(floatX(psi))
+        self.lognormal = pm.Lognormal.dist(mu, sigma)
 
     def random(self, point=None, size=None):
-        """
-        Draw random values from InverseWeibull PDF distribution.
+        r"""
+        Draw random values from ZeroInflatedLognormal distribution.
         Parameters
         ----------
         point: dict, optional
@@ -995,32 +1059,52 @@ class ZeroInflatedLognormal(PositiveContinuous):
         -------
         array
         """
-        psi, mu, sigma = draw_values(
-            [self.psi, self.mu, self.sigma], point=point, size=size
-        )
-        return generate_samples(
-            self._random, psi, mu, sigma, dist_shape=self.shape, size=size
-        )
+        psi = draw_values(self.psi, point=point, size=size)
+        g = self.lognormal.random(point=point, size=size)
+        g, psi = broadcast_distribution_samples([g, psi], size=size)
+        return g * (np.random.random(g.shape) < psi)
 
     def logp(self, value):
-        """LogPDF"""
+        r"""
+        Calculate log-probability of ZeroInflatedLognormal distribution at specified value.
+        Parameters
+        ----------
+        value: numeric
+            Value(s) for which log-probability is calculated. If the log probabilities for multiple
+            values are desired the values must be provided in a numpy array or theano tensor
+        Returns
+        -------
+        TensorVariable
+        """
         psi = self.psi
-        logp_ = tt.switch(
-            tt.gt(value, 0), tt.log(psi) + self.lognorm.logp(value), tt.log1p(-psi)
+
+        logp_val = tt.switch(
+            tt.gt(value, 0),
+            tt.log(psi) + self.lognormal.logp(value),
+            tt.log1p(-psi),  # logaddexp(tt.log1p(-psi), tt.log(psi) - theta),
         )
-        return bound(logp_, value >= 0, psi > 0, psi < 1)
 
-    def cdf(self, value):
-        """CDF"""
-        psi = self.psi
-        cdf_ = (1.0 - psi) * 1 + psi * self.lognorm.cdf(value)
-        return boundzero_theano(cdf_, value >= 0, psi > 0, psi < 1)
+        return bound(logp_val, 0 <= value, 0 <= psi, psi <= 1)
 
-    def invcdf(self, value):
-        """InvCDF aka PPF"""
+    def logcdf(self, value):
+        """
+        Compute the log of the cumulative distribution function for ZeroInflatedLognormal distribution
+        at the specified value.
+        Parameters
+        ----------
+        value: numeric or np.ndarray or theano.tensor
+            Value(s) for which log CDF is calculated. If the log CDF for multiple
+            values are desired the values must be provided in a numpy array or theano tensor.
+        Returns
+        -------
+        TensorVariable
+        """
         psi = self.psi
-        invcdf_ = self.lognorm.invcdf((value + psi - 1) / psi)
-        return boundzero_theano(invcdf_, value >= 0, value <= 1, psi > 0, psi < 1)
+        logcdf_val = logaddexp(
+            tt.log1p(-psi), tt.log(psi) + self.lognormal.logcdf(value)
+        )
+
+        return bound(logcdf_val, 0 <= value, 0 <= psi, psi <= 1)
 
 
 class ZeroInflatedLognormalNumpy:
