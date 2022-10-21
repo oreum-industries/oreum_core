@@ -50,12 +50,21 @@ def display_image_file(
 def output_data_dict(df: pd.DataFrame, dd_notes: dict, dir_docs: list, fn: str = ''):
     """Convenience fn: output data dict"""
 
+    # flag if is index
+    idx_names = list(df.index.names)
+    dfi = pd.DataFrame({'ft': idx_names, 'is_index': [True] * len(idx_names)})
+
     # get desc overview
     nrows = 3
     dfd = custom_describe(df, nrows=nrows, return_df=True)
     cols = dfd.columns.values
     cols[:nrows] = [f'example_row_{i}' for i in range(nrows)]
     dfd.columns = cols
+
+    # attach
+    dfd = pd.merge(dfi, dfd, how='right', on='ft')
+    dfd['is_index'] = dfd['is_index'].fillna(False)
+    dfd.set_index('ft', inplace=True)
 
     # set dtypes categorical
     df_dtypes = get_fts_by_dtype(df.reset_index(), as_dataframe=True)
@@ -82,7 +91,11 @@ def output_data_dict(df: pd.DataFrame, dd_notes: dict, dir_docs: list, fn: str =
             dfg = (df[ft].value_counts(dropna=False) / len(df)).to_frame('prop')
             dfg.index.name = 'value'
             dfg.reset_index().to_excel(
-                writer, sheet_name=ft, index=False, float_format='%.3f', na_rep='NULL'
+                writer,
+                sheet_name=f'{ft[:28]}...' if len(ft) >= 31 else ft,
+                index=False,
+                float_format='%.3f',
+                na_rep='NULL',
             )
 
     writer.save()
