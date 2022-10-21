@@ -216,7 +216,6 @@ class BasePYMC3Model:
             except AssertionError:
                 pass
         idata = az.from_pymc3(**k)
-        # idata.observed_data = idata.observed_data.rename({'y_pi_hat': 'y_pi', 'y_nz_hat': 'y_nz'})
         return idata
 
     def _update_idata(self):

@@ -1,5 +1,5 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2022-09-22
+# Last updated as-at 2022-10-21
 # Installation Notes:
 #  + This package is intended to be installed via a git+ egg
 #    e.g. this line would appear in a `pip_requirements.txt` file
@@ -34,3 +34,4 @@ scikit-learn>=1.1.2
 seaborn==0.11.2   # ignore recent version with broken API
 sqlalchemy>=1.4.*
 statsmodels>=0.13.2
+xlsxwriter>=3.0.3

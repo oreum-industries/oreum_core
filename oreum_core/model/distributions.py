@@ -913,7 +913,7 @@ class ZeroInflatedLogNormal(PositiveContinuous):
     pm.ZeroInflatedPoisson
     https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/distributions/discrete.py#L1490
     and
-    pm.Lognormal
+    pm.LogNormal
     https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/distributions/continuous.py#L1781
 
     psi is the mixing proportion for lognormal (psi is 1 where value is lognormal)
@@ -993,7 +993,7 @@ class ZeroInflatedLogNormal(PositiveContinuous):
         """
         psi = self.psi
         logcdf_val = logaddexp(
-            tt.log1p(-psi), tt.log(psi) + self.lognormal.logcdf(value)
+            tt.log(psi) + self.lognormal.logcdf(value), tt.log1p(-psi)
         )
 
         return bound(logcdf_val, 0 <= value, 0 <= psi, psi <= 1)
