@@ -1,10 +1,20 @@
 # eda.utils.py
 # copyright 2022 Oreum Industries
+import os
+
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib import figure
+
+from .describe import custom_describe, get_fts_by_dtype
+
+__all__ = ['display_image_file', 'output_data_dict']
 
 
-def display_image_file(fqn: str, title: str = None, figsize: tuple = (16, 9)):
+def display_image_file(
+    fqn: str, title: str = None, figsize: tuple = (16, 9)
+) -> figure.Figure:
     """Hacky way to display pre-created image file in a Notebook
     such that nbconvert can see it and render to PDF
     Force to max width 16 inches, for fullwidth render in live Notebook and PDF
@@ -35,3 +45,44 @@ def display_image_file(fqn: str, title: str = None, figsize: tuple = (16, 9)):
     if title is not None:
         _ = f.suptitle(f'{title}', y=1.0)
     return f
+
+
+def output_data_dict(df: pd.DataFrame, dd_notes: dict, dir_docs: list, fn: str = ''):
+    """Convenience fn: output data dict"""
+
+    # get desc overview
+    nrows = 3
+    dfd = custom_describe(df, nrows=nrows, return_df=True)
+    cols = dfd.columns.values
+    cols[:nrows] = [f'example_row_{i}' for i in range(nrows)]
+    dfd.columns = cols
+
+    # set dtypes categorical
+    df_dtypes = get_fts_by_dtype(df.reset_index(), as_dataframe=True)
+    dfd['dtype'] = df_dtypes['dtype']
+    del df_dtypes
+
+    # attached notes
+    df_dd_notes = pd.DataFrame(dd_notes, index=['notes']).T
+    df_dd_notes.index.name = 'ft'
+    dfd = pd.merge(dfd, df_dd_notes, how='left', left_index=True, right_index=True)
+
+    # write overview
+    if fn != '':
+        fn = f'_{fn}'
+    writer = pd.ExcelWriter(
+        os.path.join(*dir_docs, f'datadict{fn}.xlsx'), engine='xlsxwriter'
+    )
+    dfd.to_excel(writer, sheet_name='overview', index=True)
+
+    # write cats to separate sheets for levels (but not indexes since they're unique)
+    for ft in dfd.loc[dfd['dtype'].isin(['categorical', 'cat'])].index.values:
+        if ft not in df.index.names:
+            print(ft)
+            dfg = (df[ft].value_counts(dropna=False) / len(df)).to_frame('prop')
+            dfg.index.name = 'value'
+            dfg.reset_index().to_excel(
+                writer, sheet_name=ft, index=False, float_format='%.3f', na_rep='NULL'
+            )
+
+    writer.save()
