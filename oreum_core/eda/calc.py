@@ -226,15 +226,21 @@ def calc_location_in_ecdf(baseline_arr, test_arr):
     return cdf_prop[idxs]
 
 
-def month_diff(a: pd.Series, b: pd.Series) -> pd.Series:
-    """https://stackoverflow.com/a/40924041/1165112
+def month_diff(
+    a: pd.Series, b: pd.Series, series_name: str = 'month_diff'
+) -> pd.Series:
+    """Integer month count between dates a to b
+
+    https://stackoverflow.com/a/40924041/1165112
 
     In recent pandas can equally use to_period(), though it's unwieldy
     e.g
     [x.n for x in (df['obs_date'].dt.to_period('M') -
                     df['reported_date'].dt.to_period('M'))]
     """
-    return 12 * (a.dt.year - b.dt.year) + (a.dt.month - b.dt.month)
+    s = 12 * (b.dt.year - a.dt.year) + (b.dt.month - a.dt.month)
+    s.name = series_name
+    return s
 
 
 def tril_nan(m: np.ndarray, k: int = 0) -> np.ndarray:
