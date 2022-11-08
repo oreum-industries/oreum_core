@@ -54,13 +54,6 @@ def get_version():
     raise RuntimeError(f"Unable to find version in {VERSIONFILE}.")
 
 
-def _get_nltk_dictionaries_post_install():
-    pass
-    # TODO fix ModuleNotFoundError: No module named 'nltk'
-    # import nltk
-    # nltk.downloader.download(['stopwords', 'treebank', 'wordnet','punkt'])
-
-
 class DevelopCommand(develop):
     """Pre / Post-installation for development / editable mode.
     https://stackoverflow.com/a/36902139/1165112
@@ -71,7 +64,6 @@ class DevelopCommand(develop):
         # pass
         develop.run(self)
         ## post
-        _get_nltk_dictionaries_post_install()
 
 
 class InstallCommand(install):
@@ -84,7 +76,6 @@ class InstallCommand(install):
         # pass
         install.run(self)
         ## post
-        _get_nltk_dictionaries_post_install()
 
 
 if __name__ == "__main__":
@@ -106,7 +97,4 @@ if __name__ == "__main__":
         python_requires=">=3.9",
         install_requires=install_reqs,
         cmdclass={'develop': DevelopCommand, 'install': InstallCommand},
-        # entry_points = {
-        #     'console_scripts': ['data_extractor=oreum_core.data_stractor:extract'],
-        # }
     )

@@ -28,17 +28,6 @@ in that fashion.**
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
-### Post Install:
-
-Currently requires post-install manual step:
-
-1. Download and install NLTK files, e.g.
-
-```python
-import nltk
-nltk.downloader.download(['stopwords', 'treebank', 'wordnet','punkt'])
-```
-
 ---
 
 Copyright 2022 Oreum OÜ t/a Oreum Industries. All rights reserved.
