@@ -1,11 +1,12 @@
-# eda.descibe.py
+# eda.describe.py
 # copyright 2022 Oreum Industries
-import os
-
 import numpy as np
 import pandas as pd
 from IPython.display import display
 from scipy import stats
+
+__all__ = ['display_fw', 'display_ht', 'custom_describe', 'get_fts_by_dtype']
+
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)

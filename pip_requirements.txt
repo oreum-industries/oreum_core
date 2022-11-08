@@ -14,22 +14,18 @@
 #    rely on https://github.com/pymc-devs/pymc/blob/main/requirements.txt
 #    unless we have to hard-pin for compatibility (not yet needed)
 #  + Lower-pinned packages to 3-level version >= a.b.c
+#  + Also see https://github.com/pymc-devs/pymc/blob/v3/requirements.txt
 arviz==0.12.*
 csv2md>=1.1.2
 dask>=2022.3.0
 ftfy>=6.1.1
-graphviz==0.20.*
+graphviz<=0.18.*           # capped https://stackoverflow.com/a/69997168/4473230
 hypothesis>=6.39.4
 matplotlib==3.5.2
 matplotlib-inline==0.1.2   # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
-nltk>=3.7
-ordered-set>=4.1.0
 patsy>=0.5.*
 pillow>=9.0.1
 pre-commit>=2.18.*
-pyarrow>=7.0.0
-pybloomfiltermmap3>=0.5.5
-requests>=2.28.1
 scikit-learn>=1.1.2
 seaborn==0.11.2   # ignore recent version with broken API
 sqlalchemy>=1.4.*

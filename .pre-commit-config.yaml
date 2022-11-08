@@ -8,10 +8,15 @@ repos:
     hooks:
       - id: check-added-large-files
         args: ['--maxkb=1024']
-        exclude: "(^[a-zA-Z0-9_]{1,}\\.ipynb|^.+?\\.png)"
+        exclude: "([a-zA-Z0-9_]{1,}\\.ipynb|.+?\\.png)"
       - id: check-merge-conflict
       - id: check-toml
       - id: check-yaml
+      - id: check-json
+        exclude : ^.vscode/
+      - id: pretty-format-json
+        args: ['--autofix']
+        exclude : ^.vscode/
       - id: debug-statements
       - id: detect-private-key
       - id: check-case-conflict
@@ -26,7 +31,7 @@ repos:
   #     - id: no-print-statements
   #       files: ^oreum_core/
   - repo: https://github.com/psf/black  # black formatter
-    rev: 22.8.0
+    rev: 22.10.0
     hooks:
       - id: black
         files: ^oreum_core/

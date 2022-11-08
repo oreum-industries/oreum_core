@@ -1,7 +1,6 @@
 # curate.data_transform.py
 # copyright 2022 Oreum Industries
 import re
-from distutils.log import error
 
 import numpy as np
 import pandas as pd
@@ -102,32 +101,40 @@ class DatatypeConverter:
 
         for ft in self.fts['fdate']:
             df[ft] = pd.to_datetime(df[ft], errors='raise', format=self.date_format)
+        try:
+            for ft in self.fts['fint']:
+                if df.dtypes[ft] == object:
+                    df[ft] = (
+                        df[ft]
+                        .astype(str)
+                        .str.strip()
+                        .str.lower()
+                        .map(lambda x: self.rx_number_junk.sub('', x))
+                    )
+                    df.loc[df[ft].isin(self.strnans), ft] = np.nan
+                df[ft] = df[ft].astype(float, errors='raise')
+                if pd.isnull(df[ft]).sum() == 0:
+                    df[ft] = df[ft].astype(int, errors='raise')
+        except Exception as e:
+            raise Exception(f'{str(e)} in ft: {ft}').with_traceback(
+                e.__traceback__
+            )  # from e
 
-        for ft in self.fts['fint']:
-            if df.dtypes[ft] == object:
-                df[ft] = (
-                    df[ft]
-                    .astype(str)
-                    .str.strip()
-                    .str.lower()
-                    .map(lambda x: self.rx_number_junk.sub('', x))
-                )
-                df.loc[df[ft].isin(self.strnans), ft] = np.nan
-            df[ft] = df[ft].astype(float, errors='raise')
-            if pd.isnull(df[ft]).sum() == 0:
-                df[ft] = df[ft].astype(int, errors='raise')
-
-        for ft in self.fts['ffloat']:
-            if df.dtypes[ft] == object:
-                df[ft] = (
-                    df[ft]
-                    .astype(str)
-                    .str.strip()
-                    .str.lower()
-                    .map(lambda x: self.rx_number_junk.sub('', x))
-                )
-                df.loc[df[ft].isin(self.strnans), ft] = np.nan
-            df[ft] = df[ft].astype(float, errors='raise')
+        try:
+            for ft in self.fts['ffloat']:
+                if df.dtypes[ft] == object:
+                    df[ft] = (
+                        df[ft]
+                        .astype(str)
+                        .str.strip()
+                        .str.lower()
+                        .map(lambda x: self.rx_number_junk.sub('', x))
+                    )
+                    df.loc[df[ft].isin(self.strnans), ft] = np.nan
+                df[ft] = df[ft].astype(float, errors='raise')
+        except Exception as e:
+            print(ft)
+            raise e
 
         # NOTE verbatim will simply remain. Now at the end of the columns
         # TODO as/when add logging

@@ -5,9 +5,6 @@ import os
 import subprocess
 import warnings
 
-import pyarrow
-import pyarrow.parquet as pq
-
 
 class PandasParquetIO:
     """Deprecated helper class to convert pandas to parquet and save to local
