@@ -7,14 +7,14 @@ import arviz as az
 import pymc3 as pm
 
 
-def read_azid(dir_traces: list = [], fn: str = 'azid'):
+def read_idata(dir_traces: list = [], fn: str = 'idata'):
     """Convenience: read arviz.InferenceData object from file"""
     # with az.rc_context(rc={'data.load': 'eager'}):   # alternative: 'lazy'
-    azid = az.from_netcdf(os.path.join(*dir_traces, f'{fn}.netcdf'))
-    return azid
+    idata = az.from_netcdf(os.path.join(*dir_traces, f'{fn}.netcdf'))
+    return idata
 
 
-def write_azid(mdl, dir_traces: list = []):
+def write_idata(mdl, dir_traces: list = []) -> str:
     """Accept a BasePYMC3Model object mdl, and write the
     mdl.idata (an arviz.InferenceData object) to file using mdl.name
     """

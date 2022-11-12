@@ -157,7 +157,7 @@ class BasePYMC3Model:
         use self.sample_posterior_predictive_kws or passed kwargs
         Note defaults aimed toward PPC in production
             + Use pm.fast_sample_posterior_predictive()
-            + Don't store ppc on model object and just return a new azid
+            + Don't store ppc on model object and just return a new idata
         """
         random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
         fast = kwargs.pop('fast', self.sample_posterior_predictive_kws['fast'])

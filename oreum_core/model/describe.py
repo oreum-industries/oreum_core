@@ -29,13 +29,13 @@ def model_desc(fml):
     return f'patsy linear model desc:\n{r}\n'
 
 
-def extract_yobs_yhat(azid, obs='y', pred='yhat'):
-    """Convenience: extract y_obs, y_hat from azid
+def extract_yobs_yhat(idata, obs='y', pred='yhat'):
+    """Convenience: extract y_obs, y_hat from idata
     get yhat in the shape (nsamples, nobs)
     """
-    nsamp = np.product(azid.posterior_predictive[pred].shape[:-1])
-    yobs = azid.constant_data[obs].values  # (nobs,)
-    yhat = azid.posterior_predictive[pred].values.reshape(nsamp, -1)  # (nsamp, nobs)
+    nsamp = np.product(idata.posterior_predictive[pred].shape[:-1])
+    yobs = idata.constant_data[obs].values  # (nobs,)
+    yhat = idata.posterior_predictive[pred].values.reshape(nsamp, -1)  # (nsamp, nobs)
     return yobs, yhat
 
 
