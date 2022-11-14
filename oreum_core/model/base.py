@@ -189,35 +189,33 @@ class BasePYMC3Model:
         NOTE: use ordered exceptions, with assumption that we always use
             an ordered workflow: prior, trace, ppc
         """
-        idata_kwargs = self.sample_kws['idata_kwargs']
         k = dict(model=self.model)
-        if idata_kwargs is not None:
+
+        if (
+            idata_kwargs := kwargs.get('idata_kwargs', self.sample_kws['idata_kwargs'])
+        ) is not None:
             k.update(**idata_kwargs)
 
-        if (prior := kwargs.get('prior', None)) is None:
-            try:
-                k['prior'] = self.idata.prior
-            except AssertionError:
-                pass  # idata doesnt exist
-            except AttributeError:
-                pass  # idata.prior doesnt exist
-        else:
-            k['prior'] = prior
-
-        if (posterior := kwargs.get('posterior', None)) is None:
-            try:
-                k['trace'] = self.idata.posterior
-            except AssertionError:
-                pass  # idata doesnt exist
-            except AttributeError:
-                pass  # idata.posterior doesnt exist
-        else:
-            k['trace'] = posterior
-
+        # update dict with pymc3 outputs
         if (ppc := kwargs.get('posterior_predictive', None)) is not None:
             k['posterior_predictive'] = ppc
 
+        if (posterior := kwargs.get('posterior', None)) is None:
+            k['trace'] = posterior
+
+        if (prior := kwargs.get('prior', None)) is not None:
+            k['prior'] = prior
+
         idata = az.from_pymc3(**k)
+
+        # extend idata with any other older data
+        try:
+            idata.extend(self.idata, join='left')
+        except AssertionError:
+            pass  # idata doesnt exist
+        except AttributeError:
+            pass  # idata.prior doesnt exist
+
         return idata
 
     def update_idata(self, idata: az.InferenceData = None, **kwargs):
