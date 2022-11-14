@@ -10,6 +10,7 @@ class BasePYMC3Model:
     NOTE:
     + This class is to be inherited e.g. `super().__init__(*args, **kwargs)`
     + Children must declare a _build() method and define obs within __init__()
+    + To get prior, posterior, and ppc traces, please use the .idata attribute
     """
 
     RSD = 42
@@ -20,9 +21,6 @@ class BasePYMC3Model:
         https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/sampling.py#L277
         """
         self.model = None
-        self._trace_prior = None
-        self._trace = None
-        self._posterior_predictive = None
         self._idata = None
         self.sample_prior_predictive_kws = dict(draws=500)
         self.sample_posterior_predictive_kws = dict(fast=True, store_ppc=False)
@@ -42,38 +40,10 @@ class BasePYMC3Model:
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
     @property
-    def trace_prior(self):
-        """Returns trace_prior from a previous run of
-        sample_prior_predictive()
-        """
-        assert self._trace_prior, "Run sample_prior_predictive() first"
-        return self._trace_prior
-
-    @property
-    def trace(self):
-        """Returns trace from a previous sample()"""
-        assert self._trace, "Must run sample() first!"
-        return self._trace
-
-    @property
-    def posterior_predictive(self):
-        """Returns the posterior predictive from a previous run of
-        sample_posterior_predictive()
-        """
-        assert self._posterior_predictive, "Run sample_posterior_predictive() first"
-        return self._posterior_predictive
-
-    @property
     def idata(self):
         """Returns Arviz InferenceData built from sampling to date"""
         assert self._idata, "Run update_idata() first"
         return self._idata
-
-    @property
-    def n_divergences(self):
-        """Returns the number of divergences from the current trace"""
-        assert self._trace, "Must run sample() first!"
-        return self._trace["diverging"].nonzero()[0].size
 
     def build(self, **kwargs):
         """Build the model"""
@@ -100,10 +70,9 @@ class BasePYMC3Model:
             )
 
     def sample_prior_predictive(self, **kwargs):
-        """Sample prior predictive, use base class defaults
-        self.sample_prior_predictive_kws or passed kwargs for
-        pm.sample_prior_predictive()
-
+        """Sample prior predictive:
+            use base class defaults self.sample_prior_predictive_kws
+            or passed kwargs for pm.sample_prior_predictive()
         NOTE:
         + It's not currently possible to run Prior Predictive Checks on a
           model with missing values, per my detailed
@@ -116,16 +85,15 @@ class BasePYMC3Model:
         random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
 
         with self.model:
-            self._trace_prior = pm.sample_prior_predictive(
+            prior = pm.sample_prior_predictive(
                 samples=draws, random_seed=random_seed, **kwargs
             )
-
-        _ = self._update_idata()
+        _ = self.update_idata(prior=prior)
         return None
 
     def sample(self, **kwargs):
-        """Sample posterior, use base class defaults self.sample_kws
-        or passed pm.sample() kwargs
+        """Sample posterior: use base class defaults self.sample_kws
+        or passed kwargs for pm.sample()
         """
         init = kwargs.pop('init', self.sample_kws['init'])
         random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
@@ -136,7 +104,7 @@ class BasePYMC3Model:
         target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
 
         with self.model:
-            self._trace = pm.sample(
+            posterior = pm.sample(
                 init=init,
                 random_seed=random_seed,
                 tune=tune,
@@ -148,16 +116,23 @@ class BasePYMC3Model:
                 return_inferencedata=False,
                 **kwargs,
             )
-        # TODO can put idata_kwargs into sample() above as/when allow return_inferencedata=True
-        _ = self._update_idata()
+        _ = self.update_idata(posterior=posterior)
         return None
+
+    def _get_posterior(self):
+        """Returns posterior from idata from previous run of sample"""
+        try:
+            self.idata.posterior
+        except AttributeError as e:
+            raise e("Run sample() first")
+        return self.idata.posterior
 
     def sample_posterior_predictive(self, **kwargs):
         """Sample posterior predictive
         use self.sample_posterior_predictive_kws or passed kwargs
         Note defaults aimed toward PPC in production
             + Use pm.fast_sample_posterior_predictive()
-            + Don't store ppc on model object and just return a new azid
+            + Don't store ppc on model object and just return an updated idata
         """
         random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
         fast = kwargs.pop('fast', self.sample_posterior_predictive_kws['fast'])
@@ -170,20 +145,23 @@ class BasePYMC3Model:
         with self.model:
             if fast:
                 ppc = pm.fast_sample_posterior_predictive(
-                    self.trace, random_seed=random_seed, samples=n_samples, **kwargs
+                    trace=self._get_posterior(),
+                    random_seed=random_seed,
+                    samples=n_samples,
+                    **kwargs,
                 )
             else:
                 ppc = pm.sample_posterior_predictive(
-                    self.trace, random_seed=random_seed, samples=n_samples, **kwargs
+                    trace=self._get_posterior(),
+                    random_seed=random_seed,
+                    samples=n_samples,
+                    **kwargs,
                 )
 
-        if store_ppc is False:
-            # the default as expected for forward-pass stateless prediction
-            return self._create_idata(ppc)
+        if store_ppc:
+            _ = self.update_idata(posterior_predictive=ppc)
         else:
-            self._posterior_predictive = ppc
-            _ = self._update_idata()
-            return None
+            return self._create_idata(posterior_predictive=ppc)
 
     def replace_obs(self, new_obs):
         """Replace the observations
@@ -192,47 +170,47 @@ class BasePYMC3Model:
         """
         self.obs = new_obs
 
-    def _create_idata(self, ppc=None):
+    def _create_idata(self, **kwargs):
         """Create Arviz InferenceData object
         NOTE: use ordered exceptions, with assumption that we always use
             an ordered workflow: prior, trace, ppc
         """
-        idata_kwargs = self.sample_kws['idata_kwargs']
-
         k = dict(model=self.model)
-        if idata_kwargs is not None:
+
+        if (
+            idata_kwargs := kwargs.get('idata_kwargs', self.sample_kws['idata_kwargs'])
+        ) is not None:
             k.update(**idata_kwargs)
 
-        if ppc is not None:
+        # update dict with pymc3 outputs
+        if (prior := kwargs.get('prior', None)) is not None:
+            k['prior'] = prior
+
+        if (ppc := kwargs.get('posterior_predictive', None)) is not None:
             k['posterior_predictive'] = ppc
+            # by logic in sample_postrior_predictive there exists self.idata.posterior
+        elif (posterior := kwargs.get('posterior', None)) is not None:
+            k['trace'] = posterior
         else:
-            try:
-                k['prior'] = self.trace_prior
-            except AssertionError:
-                pass
-            try:
-                k['trace'] = self.trace
-                k['posterior_predictive'] = self.posterior_predictive
-            except AssertionError:
-                pass
+            pass
+
         idata = az.from_pymc3(**k)
+
+        # extend idata with any other older data
+        try:
+            idata.extend(self.idata, join='left')
+        except AssertionError:
+            pass  # idata doesnt exist
+
         return idata
 
-    def _update_idata(self):
-        # raise ValueError(kwargs)
-        """Create and update Arviz InferenceData object on-model"""
-        self._idata = self._create_idata()
+    def update_idata(self, idata: az.InferenceData = None, **kwargs):
+        """Create (and updated) an Arviz InferenceData object on-model
+        from current set of self.attributes
+        or from a passed-in presampled idata object
+        """
+        if idata is not None:
+            self._idata = idata
+        else:
+            self._idata = self._create_idata(**kwargs)
         return None
-
-
-# TODO save and check cache e.g
-# https://discourse.pymc.io/t/jupyter-idiom-for-cached-results/6782
-# idata_file = "myfilename.nc"
-# if os.path.exists(idata_file):
-# idata = az.from_netcdf(idata_file)
-# else:
-# idata = <some expensive computation>
-# if not os.path.exists(idata_file):
-# az.to_netcdf(idata, idata_file)
-# also:
-# _inference_data.posterior.attrs["model_version"] = self.version

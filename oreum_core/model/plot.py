@@ -9,7 +9,7 @@ from matplotlib import figure, gridspec
 
 __all__ = [
     'plot_ppc_loopit',
-    'facetplot_azid_dist',
+    'facetplot_idata_dist',
     'facetplot_df_dist',
     'plot_dist_fns_over_x',
     'plot_dist_fns_over_x_manual_only',
@@ -67,7 +67,7 @@ def plot_ppc_loopit(
     return f
 
 
-def facetplot_azid_dist(
+def facetplot_idata_dist(
     idata: az.data.inference_data.InferenceData,
     rvs: list,
     group: str = 'posterior',
@@ -75,7 +75,7 @@ def facetplot_azid_dist(
     rvs_hack: int = 0,
     **kwargs,
 ) -> figure.Figure:
-    """Control facet positioning of Arviz Krushke style plots, data in azid
+    """Control facet positioning of Arviz Krushke style plots, data in idata
     Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """
     # TODO unpack the compressed rvs from the idata
