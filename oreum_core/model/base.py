@@ -39,25 +39,11 @@ class BasePYMC3Model:
         self.version = getattr(self, 'version', 'unversioned_model')
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
-    # @property
-    # def posterior_predictive(self):
-    #     """Returns the posterior predictive from a previous run of
-    #     sample_posterior_predictive()
-    #     """
-    #     assert self._posterior_predictive, "Run sample_posterior_predictive() first"
-    #     return self._posterior_predictive
-
     @property
     def idata(self):
         """Returns Arviz InferenceData built from sampling to date"""
         assert self._idata, "Run update_idata() first"
         return self._idata
-
-    @property
-    def n_divergences(self):
-        """Returns the number of divergences from the current trace"""
-        assert self._trace, "Must run sample() first!"
-        return self._trace["diverging"].nonzero()[0].size
 
     def build(self, **kwargs):
         """Build the model"""
@@ -197,14 +183,16 @@ class BasePYMC3Model:
             k.update(**idata_kwargs)
 
         # update dict with pymc3 outputs
-        if (ppc := kwargs.get('posterior_predictive', None)) is not None:
-            k['posterior_predictive'] = ppc
-
-        if (posterior := kwargs.get('posterior', None)) is None:
-            k['trace'] = posterior
-
         if (prior := kwargs.get('prior', None)) is not None:
             k['prior'] = prior
+
+        if (ppc := kwargs.get('posterior_predictive', None)) is not None:
+            k['posterior_predictive'] = ppc
+            # by logic in sample_postrior_predictive there exists self.idata.posterior
+        elif (posterior := kwargs.get('posterior', None)) is not None:
+            k['trace'] = posterior
+        else:
+            pass
 
         idata = az.from_pymc3(**k)
 
@@ -213,8 +201,6 @@ class BasePYMC3Model:
             idata.extend(self.idata, join='left')
         except AssertionError:
             pass  # idata doesnt exist
-        except AttributeError:
-            pass  # idata.prior doesnt exist
 
         return idata
 
