@@ -214,16 +214,3 @@ class BasePYMC3Model:
         else:
             self._idata = self._create_idata(**kwargs)
         return None
-
-
-# TODO save and check cache e.g
-# https://discourse.pymc.io/t/jupyter-idiom-for-cached-results/6782
-# idata_file = "myfilename.nc"
-# if os.path.exists(idata_file):
-# idata = az.from_netcdf(idata_file)
-# else:
-# idata = <some expensive computation>
-# if not os.path.exists(idata_file):
-# az.to_netcdf(idata, idata_file)
-# also:
-# _inference_data.posterior.attrs["model_version"] = self.version
