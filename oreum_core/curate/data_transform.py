@@ -133,8 +133,8 @@ class DatatypeConverter:
                     df.loc[df[ft].isin(self.strnans), ft] = np.nan
                 df[ft] = df[ft].astype(float, errors='raise')
         except Exception as e:
-            print(ft)
-            raise e
+            # print(ft)
+            raise e(ft)
 
         # NOTE verbatim will simply remain. Now at the end of the columns
         # TODO as/when add logging
@@ -209,14 +209,14 @@ class DatasetReshaper:
         for ft in fts.get('ffloat'):
             dfcmb[ft] = 1.0
 
-        print(
-            'Reduced df ({} rows, {:,.0f} KB) to dfcmb ({} rows, {:,.0f} KB)'.format(
-                df.shape[0],
-                df.values.nbytes / 1e3,
-                dfcmb.shape[0],
-                dfcmb.values.nbytes / 1e3,
-            )
-        )
+        # print(
+        #     'Reduced df ({} rows, {:,.0f} KB) to dfcmb ({} rows, {:,.0f} KB)'.format(
+        #         df.shape[0],
+        #         df.values.nbytes / 1e3,
+        #         dfcmb.shape[0],
+        #         dfcmb.values.nbytes / 1e3,
+        #     )
+        # )
 
         return dfcmb
 
@@ -253,14 +253,14 @@ class DatasetReshaper:
         for ft in fts.get('ffloat'):
             dfcmb[ft] = 1.0
 
-        print(
-            'Reduced df ({} rows, {:,.0f} KB) to dfcmb ({} rows, {:,.0f} KB)'.format(
-                df.shape[0],
-                df.values.nbytes / 1e3,
-                dfcmb.shape[0],
-                dfcmb.values.nbytes / 1e3,
-            )
-        )
+        # print(
+        #     'Reduced df ({} rows, {:,.0f} KB) to dfcmb ({} rows, {:,.0f} KB)'.format(
+        #         df.shape[0],
+        #         df.values.nbytes / 1e3,
+        #         dfcmb.shape[0],
+        #         dfcmb.values.nbytes / 1e3,
+        #     )
+        # )
 
         return dfcmb
 
@@ -336,7 +336,7 @@ class Transformer:
 
                 # replace F() in fml so patsy can work as normal w/ our new int type
                 fml = fml.replace(ft_f[0], ft_f[1])
-        print(fml)
+        # print(fml)
         # TODO add option to output matrix   # np.asarray(mx_ex)
         # TODO add check for fml contains `~` and handle accordingly
 
@@ -518,11 +518,11 @@ def compress_factor_levels(df: pd.DataFrame, fts: list, topn: int = 20) -> pd.Da
     for ft in fts:
         vc = df[ft].value_counts(dropna=False)
         # print(f'{ft}: compress {vc[:topn].sum()} ({vc[:topn].sum()/vc.sum():.1%})')
-        print(
-            f'{ft}: compressed {len(vc)}-{topn} ({len(vc)-topn}) levels '
-            + 'into `other`, '
-            + f'{vc[topn:].sum()} rows ({vc[topn:].sum() / len(df):.1%}) affected'
-        )
+        # print(
+        #     f'{ft}: compressed {len(vc)}-{topn} ({len(vc)-topn}) levels '
+        #     + 'into `other`, '
+        #     + f'{vc[topn:].sum()} rows ({vc[topn:].sum() / len(df):.1%}) affected'
+        # )
         vc_map = {
             k: (k if i < topn else 'other')
             for i, (k, v) in enumerate(vc.to_dict().items())
