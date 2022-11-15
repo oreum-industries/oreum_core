@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import warnings
+from pathlib import Path
 
 __all__ = ['SimpleStringIO', 'copy_csv2md']
 
@@ -26,31 +27,30 @@ class SimpleStringIO:
         + 'json' to read/write dicts <-> json
     """
 
-    def __init__(self, relpath: list = [], kind: str = 'txt'):
-        self.relpath = relpath
+    def __init__(self, kind: str = 'txt'):
         assert kind in set(['txt', 'json']), "kind must be in {'txt', 'json'}"
         self.kind = kind
 
-    def read(self, fn: str, relpath: list = []) -> str:
-        if len(relpath) == 0:
-            relpath = self.relpath
-        fqn = os.path.join(*relpath, f'{fn}.{self.kind}')
-        assert os.path.exists(fqn)
-        with open(fqn, 'r') as f:
+    def read(self, fqn: str) -> str:
+        """Read a file from fqn according to kind of this object"""
+        path = Path(fqn)
+        if not path.exists():
+            raise FileNotFoundError(f'Required file does not exist {str(path)}')
+        with open(str(path), 'r') as f:
             s = f.read().rstrip('\n')
             f.close()
         if self.kind == 'json':
             s = json.loads(s)
         return s
 
-    def write(self, s: str, fn: str, relpath: list = []) -> str:
-        if len(relpath) == 0:
-            relpath = self.relpath
-        fqn = os.path.join(*relpath, f'{fn}.{self.kind}')
-        assert os.path.exists(fqn)
+    def write(self, s: str, fqn: str) -> str:
+        path = Path(fqn)
+        dr = Path(*path.parts[:-1])
+        if not dr.is_dir():
+            raise FileNotFoundError(f'Required dir does not exist {str(dr)}')
         if self.kind == 'json':
             s = json.dumps(s)
-        with open(fqn, 'w') as f:
+        with open(str(path), 'w') as f:
             f.write(f'{s}\n')
             f.close()
         return f'Written to {fqn}'

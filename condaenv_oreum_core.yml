@@ -1,6 +1,6 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2022-09-22
-# Lower-pinned packages to 3-level version >= a.b.c
+# Last updated as-at 2022-11-15
+# Lower-pinned packages to 3-level version >= a.b.*
 # REIMINDER: these packages are not picked up by packing into dist, so must be
 # separately installed in the conda env calling this dist
 name: oreum_core
