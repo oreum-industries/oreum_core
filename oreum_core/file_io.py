@@ -38,6 +38,8 @@ class BaseFileIO:
     def get_path_write(self, fqn: str) -> Path:
         """Create and test dir existance for write"""
         path = Path(fqn)
+        if self.rootdir is not None:
+            path = self.rootdir.joinpath(path)
         dr = Path(*path.parts[:-1])
         if not dr.is_dir():
             raise FileNotFoundError(f'Required dir does not exist {str(dr)}')

@@ -37,4 +37,3 @@ from oreum_core.model.plot import (
     plot_dist_fns_over_x_manual_only,
     plot_ppc_loopit,
 )
-from oreum_core.model.utils import save_graph

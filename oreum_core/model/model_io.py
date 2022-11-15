@@ -3,31 +3,54 @@
 from pathlib import Path
 
 import arviz as az
+from pymc3.model_graph import model_to_graphviz
 
 from oreum_core.file_io import BaseFileIO
 from oreum_core.model import BasePYMC3Model
 
 
 class ModelIO(BaseFileIO):
-    """Helper class to read/write NetCDF files for Arviz inference data
+    """Helper class to read/write NetCDF files for Arviz inference data.
+    Can also write model graphs to file
     Note similar behaviour to curate.data_io.SimpleStringIO
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def read(self, fqn: str) -> az.InferenceData:
+    def read_idata(self, fqn: str) -> az.InferenceData:
         """Read arviz.InferenceData object from fqn e.g. `model/mdl.netcdf`"""
         path = self.get_path_read(fqn)
         return az.from_netcdf(str(path))
 
-    def write(self, mdl: BasePYMC3Model, fqn: str, use_model_name: bool = False) -> str:
+    def write_idata(self, mdl: BasePYMC3Model, fqn: str = '') -> str:
         """Accept a BasePYMC3Model object mdl, and fqn e.g. `model/mdl.netcdf`
         write to fqn, optionally set `use_model_name` True to overwrite the
         filename with mdl.name
         """
         path = self.get_path_write(fqn)
-        if use_model_name:
-            path = Path(*path.parts[:-1], f'{mdl.name}.netcdf')
+        if fqn == '':
+            path = path.joinpath(Path(f'{mdl.name}.netcdf'))
         mdl.idata.to_netcdf(str(path))
         return f'Written to {str(path)}'
+
+    def write_graph(
+        self, mdl: BasePYMC3Model, fqn: str = '', format: str = 'png'
+    ) -> str:
+        """Accept a BasePYMC3Model object mdl, get the graphviz representation
+        Write to file and return the fqn to allow use within eda.display_image_file()
+        """
+        path = self.get_path_write(fqn)
+        if fqn == '':
+            path = path.joinpath(Path(f'{mdl.name}.{format}'))
+        gv = model_to_graphviz(mdl.model, formatting='plain')
+        if format == 'png':
+            gv.attr(dpi='300')
+        elif format == 'svg':
+            pass
+        else:
+            raise ValueError('format must be in {"png", "svg"}')
+
+        # gv auto adds the file extension, so pre-remove if present
+        gv.render(filename=str(path.with_suffix('')), format=format, cleanup=True)
+        return str(path)
