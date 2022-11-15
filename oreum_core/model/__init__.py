@@ -29,6 +29,7 @@ from oreum_core.model.distributions import (
     boundzero_numpy,
     boundzero_theano,
 )
+from oreum_core.model.model_io import ModelIO
 from oreum_core.model.plot import (
     facetplot_df_dist,
     facetplot_idata_dist,
@@ -36,4 +37,3 @@ from oreum_core.model.plot import (
     plot_dist_fns_over_x_manual_only,
     plot_ppc_loopit,
 )
-from oreum_core.model.utils import read_idata, save_graph, write_idata
