@@ -1,4 +1,4 @@
-# curate.data_load.py
+# curate.io.py
 # copyright 2022 Oreum Industries
 import json
 import os
@@ -53,7 +53,7 @@ class SimpleStringIO:
         with open(str(path), 'w') as f:
             f.write(f'{s}\n')
             f.close()
-        return f'Written to {fqn}'
+        return f'Written to {str(path)}'
 
 
 def copy_csv2md(fqn: str) -> str:
