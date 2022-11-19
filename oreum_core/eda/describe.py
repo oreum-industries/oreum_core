@@ -12,20 +12,25 @@ RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
 
-def display_fw(df, max_rows: int = 50, latex: bool = False):
+def display_fw(df, **kwargs):
     """Conv fn: contextually display max rows"""
 
+    max_rows = kwargs.pop('max_rows', 50)
+    precision = kwargs.pop('precision', 2)
+    max_colwidth = kwargs.pop('max_colwidth', 200)
+    latex = kwargs.pop('latex', False)
     display_latex_repr = False
     display_latex_longtable = False
+
     if latex:
         display_latex_repr = True
         display_latex_longtable = True
 
     options = {
-        'display.precision': 2,
+        'display.precision': precision,
         'display.max_rows': max_rows,
         'display.max_columns': None,
-        'display.max_colwidth': 200,
+        'display.max_colwidth': max_colwidth,
         'display.latex.repr': display_latex_repr,
         'display.latex.longtable': display_latex_longtable,
     }
@@ -34,23 +39,24 @@ def display_fw(df, max_rows: int = 50, latex: bool = False):
         display(df)
 
 
-def display_ht(df, nrows: int = 3, latex: bool = False) -> str:
+def display_ht(df, **kwargs) -> str:
     """Convenience fn: Display head and tail n rows via display_fw"""
 
+    nrows = kwargs.pop('nrows', 3)
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
-    display_fw(dfd, latex=latex)
+    display_fw(dfd, **kwargs)
     return f'shape: {df.shape}'
 
 
 def custom_describe(
     df,
-    nrows=3,
+    nobs=3,
     nfeats=30,
     limit=50e6,
     get_mode=False,
     reset_index=True,
-    latex=False,
     return_df=False,
+    **kwargs,
 ):
     """Concat transposed topN rows, numerical desc & dtypes
     Beware a dataframe full of bools or categoricals will error
@@ -138,7 +144,7 @@ def custom_describe(
         fts_out.append(['mode', 'mode_count'])
 
     # select summary states and prepend random rows for example cases
-    rndidx = np.random.randint(0, len(df), nrows)
+    rndidx = np.random.randint(0, len(df), nobs)
     dfout = pd.concat(
         (df.iloc[rndidx].T, dfout[fts_out].copy()), axis=1, join='outer', sort=False
     )
@@ -148,7 +154,7 @@ def custom_describe(
         return dfout
     else:
         display_fw(
-            dfout.iloc[: nfeats + len_idx, :].fillna(''), max_rows=nfeats, latex=latex
+            dfout.iloc[: nfeats + len_idx, :].fillna(''), max_rows=nfeats, **kwargs
         )
 
 
