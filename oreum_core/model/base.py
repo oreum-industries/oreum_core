@@ -19,6 +19,10 @@ class BasePYMC3Model:
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
         https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/sampling.py#L277
+        Usage note: consider overriding kws on downstream object e.g.
+        def __init__(self, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.sample_kws.update(dict(tune=1000, draws=500, target_accept=0.85))
         """
         self.model = None
         self._idata = None
@@ -32,6 +36,7 @@ class BasePYMC3Model:
             chains=4,
             cores=4,
             target_accept=0.8,
+            # step=pm.NUTS,  # common alts: Metropolis, ADVI, or list for CompoundStep
             idata_kwargs=None,
         )
         self.rvs_for_posterior_plots = []
@@ -102,8 +107,16 @@ class BasePYMC3Model:
         chains = kwargs.pop('chains', self.sample_kws['chains'])
         cores = kwargs.pop('cores', self.sample_kws['cores'])
         target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
+        step = kwargs.pop('step', None)
 
         with self.model:
+            common_stepper_options = {
+                'nuts': pm.NUTS(target_accept=target_accept),
+                'metropolis': pm.Metropolis(target_accept=target_accept),
+                'advi': pm.ADVI(),
+            }
+            stepper = common_stepper_options.get(step, None)
+
             posterior = pm.sample(
                 init=init,
                 random_seed=random_seed,
@@ -111,8 +124,7 @@ class BasePYMC3Model:
                 draws=draws,
                 chains=chains,
                 cores=cores,
-                target_accept=target_accept,
-                # step=self.steppers,
+                step=stepper,
                 return_inferencedata=False,
                 **kwargs,
             )
