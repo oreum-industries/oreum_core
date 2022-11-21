@@ -42,7 +42,7 @@ def display_fw(df, **kwargs):
 def display_ht(df, **kwargs) -> str:
     """Convenience fn: Display head and tail n rows via display_fw"""
 
-    nrows = kwargs.pop('nrows', 3)
+    nrows = kwargs.pop('nrows', 3) if len(df) >= 3 else len(df)
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
     display_fw(dfd, **kwargs)
     return f'shape: {df.shape}'
