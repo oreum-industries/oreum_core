@@ -63,9 +63,8 @@ class BasePYMC3Model:
             )
 
     def extend_build(self, **kwargs):
-        """Rebuild and extend build, initially developed to help PPC of GRW"""
+        """Extend build, initially developed to help PPC of GRW and missing value imputation"""
         try:
-            self._build(**kwargs)
             self._extend_build(**kwargs)
             print(f'extended build of model {self.name} {self.version}')
         except AttributeError:
@@ -177,7 +176,8 @@ class BasePYMC3Model:
 
     def replace_obs(self, new_obs):
         """Replace the observations
-        Assumes data lives in pm.Data contrainers in your _build() fn
+        Assumes data lives in pm.Data containers in your _build() function
+        You must call `build()` afterward
         Optionally afterwards call `extend_build()` for future time-dependent PPC
         """
         self.obs = new_obs
