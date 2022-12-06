@@ -151,7 +151,7 @@ class BasePYMC3Model:
             'store_ppc', self.sample_posterior_predictive_kws['store_ppc']
         )
         # expect n_samples as default None, but allow for exceptional override
-        n_samples = kwargs.get('n_samples')
+        n_samples = kwargs.get('n_samples', None)
 
         with self.model:
             if fast:
