@@ -492,7 +492,7 @@ class Standardizer:
         self.scale = scale
         return self.standardize(mx)
 
-    def get_means_sdevs_scale(self):
+    def get_scale(self):
         """Get values followuing fit_standardize. Persist values over time."""
         means_sdevs = pd.DataFrame(
             {'means': self.means, 'sdevs': self.sdevs},
@@ -501,7 +501,7 @@ class Standardizer:
 
         return means_sdevs, self.scale
 
-    def set_means_sdevs_scale(self, means_sdevs, scale: int = 2):
+    def set_scale(self, means_sdevs, scale: int = 2):
         """Set values saved from a prior fit_standardize. Now can run
         standardize for new data
         """

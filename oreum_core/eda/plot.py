@@ -1,5 +1,7 @@
 # eda.plot.py
 # copyright 2022 Oreum Industries
+from textwrap import wrap
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -1324,26 +1326,29 @@ def plot_grp_year_sum_dist_count(
     return gs
 
 
-def plot_heatmap_corr(dfx_corr, title_add=''):
+def plot_heatmap_corr(dfx_corr: pd.DataFrame, title_add: str = '') -> figure.Figure:
     """Convenience plot correlation as heatmap"""
     f, axs = plt.subplots(
-        1, 1, figsize=(3 + 0.5 * len(dfx_corr), 1 + 0.5 * len(dfx_corr))
+        1, 1, figsize=(6 + 0.25 * len(dfx_corr), 4 + 0.25 * len(dfx_corr))
     )
     _ = sns.heatmap(
         dfx_corr,
-        mask=np.tril(np.ones(dfx_corr.shape)),
+        mask=np.triu(np.ones_like(dfx_corr), k=0),
         cmap='RdBu_r',
         square=True,
         ax=axs,
-        cbar=False,
         annot=True,
         fmt='.2f',
         linewidths=0.5,
         vmin=-1,
         vmax=1,
+        center=0,
     )
-    _ = f.suptitle(f'Feature correlations: {title_add}')
     _ = axs.set_xticklabels(axs.get_xticklabels(), rotation=40, ha='right')
+    title_add_wrapped = '\n'.join(wrap(title_add, 80))
+    _ = f.suptitle(f'Feature correlations: {title_add_wrapped}', fontsize=12)
+    _ = f.tight_layout()
+    return f
 
 
 def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add='psi'):

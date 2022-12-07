@@ -3,5 +3,6 @@
         "ms-python.python",
         "ms-python.vscode-pylance",
         "github.github-vscode-theme",
+        "tal7aouy.theme",
     ]
 }

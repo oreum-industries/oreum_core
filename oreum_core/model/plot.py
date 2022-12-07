@@ -20,6 +20,7 @@ def plot_ppc_loopit(
     idata: az.data.inference_data.InferenceData,
     kind: str = 'kde',
     tgts: dict = {'y': 'yhat'},
+    **kwargs,
 ) -> figure.Figure:
     """Calc and Plot PPC & LOO-PIT after run `mdl.sample_posterior_predictive()`
     also see
@@ -39,6 +40,7 @@ def plot_ppc_loopit(
         width_ratios=[1, 1],
         figure=f,
     )
+    var_names = kwargs.pop('var_names', None)
 
     # TODO: live issue this selection doesnt work in Arviz,
     # it just plots every tgt. so this loop is a placeholder that does work
@@ -54,9 +56,12 @@ def plot_ppc_loopit(
             ax=ax0,
             group='posterior',
             data_pairs={tgt: tgt_hat},
+            var_names=var_names,
+            **kwargs,
         )
-        _ = az.plot_loo_pit(idata, y=tgt_hat, ax=ax1)
-        _ = az.plot_loo_pit(idata, y=tgt_hat, ecdf=True, ax=ax2)
+        # using y=tgt_hat below. seems wrong, possibly a bug in arviz
+        _ = az.plot_loo_pit(idata, y=tgt_hat, ax=ax1, **kwargs)
+        _ = az.plot_loo_pit(idata, y=tgt_hat, ecdf=True, ax=ax2, **kwargs)
 
         _ = ax0.set_title(f'PPC Predicted {tgt_hat} vs Observed {tgt}')
         _ = ax1.set_title(f'Predicted {tgt_hat} LOO-PIT')
