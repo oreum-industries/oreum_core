@@ -5,7 +5,6 @@ import re
 import numpy as np
 import pandas as pd
 import patsy as pt
-from sklearn.model_selection import train_test_split
 
 from .text_clean import SnakeyLowercaser
 
@@ -264,29 +263,29 @@ class DatasetReshaper:
 
         return dfcmb
 
-    def split_train_test(
-        self,
-        df: pd.DataFrame,
-        stratify_ft=None,
-        test_size=0.2,
-        skip=1,
-        idx_ids_only=False,
-        random_state=None,
-    ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """Split `df` into training and test sets, optionally by `stratify_ft`"""
-        vec = None
-        if stratify_ft is not None:
-            vec = df.iloc[::skip][stratify_ft]
+    # def split_train_test(
+    #     self,
+    #     df: pd.DataFrame,
+    #     stratify_ft=None,
+    #     test_size=0.2,
+    #     skip=1,
+    #     idx_ids_only=False,
+    #     random_state=None,
+    # ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    #     """Split `df` into training and test sets, optionally by `stratify_ft`"""
+    #     vec = None
+    #     if stratify_ft is not None:
+    #         vec = df.iloc[::skip][stratify_ft]
 
-        df_train, df_test = train_test_split(
-            df.iloc[::skip],
-            test_size=test_size,
-            stratify=vec,
-            random_state=random_state,
-        )
-        if idx_ids_only:
-            return df_train.index.values, df_test.index.values
-        return df_train, df_test
+    #     df_train, df_test = train_test_split(
+    #         df.iloc[::skip],
+    #         test_size=test_size,
+    #         stratify=vec,
+    #         random_state=random_state,
+    #     )
+    #     if idx_ids_only:
+    #         return df_train.index.values, df_test.index.values
+    #     return df_train, df_test
 
 
 class Transformer:

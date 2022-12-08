@@ -1,34 +1,28 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2022-10-21
+# Last updated as-at 2022-12-08
 # Installation Notes:
 #  + This package is intended to be installed via a git+ egg
 #    e.g. this line would appear in a `pip_requirements.txt` file
-#    `git+https://github.com/oreum-industries/oreum_core.git@v0.3.0#egg=oreum_core`
+#    `git+https://github.com/oreum-industries/oreum_core.git@vx.y.z#egg=oreum_core`
 #  + We further intend this pip install is within a pre-created conda env
 #  + The parent conda env needs to have installed the requirements shown in
-#    this repos `condaenv_oreum_core.yml` file
-#  + This ensures that we get the correct `pymc3` and `pymc-theano` installs,
-#    see: https://github.com/pymc-devs/pymc/wiki/Installation-Guide-(MacOS)
+#    this repos `condaenv_oreum_core.yml` file. This ensures that we get the
+#    correct `pymc3` and `pymc-theano` installs, also see:
+#    https://github.com/pymc-devs/pymc/wiki/Installation-Guide-(MacOS)
 #  + Note that pymc3 itself installs several scientific packages that you might
 #    otherwise expect to see listed here: `arviz`, `pandas`, `scipy`, so we
-#    rely on https://github.com/pymc-devs/pymc/blob/main/requirements.txt
+#    rely on https://github.com/pymc-devs/pymc/blob/v3/requirements.txt
 #    unless we have to hard-pin for compatibility (not yet needed)
-#  + Lower-pinned packages to 3-level version >= a.b.c
-#  + Also see https://github.com/pymc-devs/pymc/blob/v3/requirements.txt
+#  + Lower-pinned packages to 2- or 3-level version >= a.b.c
 arviz==0.12.*
 csv2md>=1.1.2
-dask>=2022.3.0
 ftfy>=6.1.1
-graphviz<=0.18.*           # capped https://stackoverflow.com/a/69997168/4473230
-hypothesis>=6.39.4
+graphviz<=0.18.*   # capped https://stackoverflow.com/a/69997168/4473230
+hypothesis>=6.39.*
 matplotlib==3.5.2
-matplotlib-inline==0.1.2   # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
+matplotlib-inline==0.1.2  # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
 patsy>=0.5.*
-pillow>=9.0.1
-pre-commit>=2.20.*   # needed for package dev
+pre-commit>=2.20.*  # needed during package development
 regex>=2022.10.*
-scikit-learn>=1.1.2
-seaborn==0.11.2   # ignore recent version with broken API
-sqlalchemy>=1.4.*
-statsmodels>=0.13.2
+seaborn==0.11.2  # ignore the recent version with broken API
 xlsxwriter>=3.0.3
