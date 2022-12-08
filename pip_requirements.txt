@@ -16,7 +16,6 @@
 #  + Lower-pinned packages to 3-level version >= a.b.c
 arviz==0.14.*
 csv2md>=1.1.2
-dask>=2022.3.0
 ftfy>=6.1.1
 graphviz<=0.18.*   # capped https://stackoverflow.com/a/69997168/4473230
 hypothesis>=6.39.4
