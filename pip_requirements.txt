@@ -6,9 +6,9 @@
 #    `git+https://github.com/oreum-industries/oreum_core.git@v0.4.2#egg=oreum_core`
 #  + We further intend this pip install is within a pre-created conda env
 #  + The parent conda env needs to have installed the requirements shown in
-#    this repos `condaenv_oreum_core.yml` file
-#  + This ensures that we get the correct `pymc3` and `pymc-theano` installs,
-#    see: https://github.com/pymc-devs/pymc/wiki/Installation-Guide-(MacOS)
+#    this repos `condaenv_oreum_core.yml` file. This ensures that we get the
+#    correct `pymc3` and `pymc-theano` installs, also see:
+#    https://github.com/pymc-devs/pymc/wiki/Installation-Guide-(MacOS)
 #  + Note that pymc3 itself installs several scientific packages that you might
 #    otherwise expect to see listed here: `arviz`, `pandas`, `scipy`, so we
 #    rely on https://github.com/pymc-devs/pymc/blob/v3/requirements.txt
@@ -23,10 +23,7 @@ hypothesis>=6.39.4
 matplotlib==3.5.2
 matplotlib-inline==0.1.2  # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
 patsy>=0.5.*
-pillow>=9.0.1
 pre-commit>=2.20.*  # needed during package development
 regex>=2022.10.*
 seaborn==0.11.2  # ignore the recent version with broken API
-sqlalchemy>=1.4.*
-statsmodels>=0.13.2
 xlsxwriter>=3.0.3
