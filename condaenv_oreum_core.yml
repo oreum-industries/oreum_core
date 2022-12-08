@@ -1,15 +1,15 @@
 # Manually created as-at 2021-12-01
 # Last updated as-at 2022-11-15
-# Lower-pinned packages to 3-level version >= a.b.*
+# Lower-pinned packages to 2- or 3-level version >= a.b.*
 # REIMINDER: these packages are not picked up by packing into dist, so must be
 # separately installed in the conda env that calls this dist
 name: oreum_core
 channels:
 - defaults
 dependencies:
-- mkl>=2021.4.0
-- mkl-service>=2.4.0
-- numpy>=1.23.*                      # install here to compile w/ Intel MKL BLAS
+- mkl>=2022.1.*
+- mkl-service>=2.4.*
+- numpy>=1.21.*                      # install here to compile w/ Intel MKL BLAS
 - pip>=22.1.*
 - python==3.9.*
 - conda-forge::pymc3==3.11.4         # install here to compile w/ Intel MKL BLAS
