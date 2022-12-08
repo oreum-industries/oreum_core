@@ -13,7 +13,6 @@ dependencies:
   - liblapack=*[build=*mkl]  # force mamba install MKL
   - mkl==2022.1.*
   - mkl-service==2.4.*
-  - numpy>=1.21.*                      # install here to compile w/ Intel MKL BLAS
   - pip>=22.1.*
   - python==3.9.*
   - conda-forge::pymc3==3.11.4         # install here to compile w/ Intel MKL BLAS
