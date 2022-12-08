@@ -5,13 +5,16 @@
 # separately installed in the conda env that calls this dist
 name: oreum_core
 channels:
-- defaults
+  - defaults
+  - conda-forge
 dependencies:
-- libblas=*[build=*mkl]  # force mamba to install MKL https://github.com/mamba-org/mamba/issues/1130
-- mkl==2022.1.*
-- mkl-service==2.4.*
-- numpy>=1.21.*                      # install here to compile w/ Intel MKL BLAS
-- pip>=22.1.*
-- python==3.9.*
-- conda-forge::pymc3==3.11.4         # install here to compile w/ Intel MKL BLAS
-- conda-forge::theano-pymc==1.1.2    # install here to compile w/ Intel MKL BLAS
+  - libblas=*[build=*mkl]  # force mamba install MKL
+  - libcblas=*[build=*mkl]  # force mamba install MKL
+  - liblapack=*[build=*mkl]  # force mamba install MKL
+  - mkl==2022.1.*
+  - mkl-service==2.4.*
+  - numpy>=1.21.*                      # install here to compile w/ Intel MKL BLAS
+  - pip>=22.1.*
+  - python==3.9.*
+  - conda-forge::pymc3==3.11.4         # install here to compile w/ Intel MKL BLAS
+  - conda-forge::theano-pymc==1.1.2    # install here to compile w/ Intel MKL BLAS
