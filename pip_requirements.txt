@@ -3,7 +3,7 @@
 # Installation Notes:
 #  + This package is intended to be installed via a git+ egg
 #    e.g. this line would appear in a `pip_requirements.txt` file
-#    `git+https://github.com/oreum-industries/oreum_core.git@v0.4.2#egg=oreum_core`
+#    `git+https://github.com/oreum-industries/oreum_core.git@vx.y.z#egg=oreum_core`
 #  + We further intend this pip install is within a pre-created conda env
 #  + The parent conda env needs to have installed the requirements shown in
 #    this repos `condaenv_oreum_core.yml` file. This ensures that we get the
