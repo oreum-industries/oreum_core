@@ -1,2 +1,6 @@
 # copyright 2022 Oreum Industries
-__version__ = "0.4.4"
+import logging
+
+__version__ = "0.4.5"
+
+logging.getLogger('oreum_core').addHandler(logging.NullHandler())

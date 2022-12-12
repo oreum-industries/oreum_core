@@ -1,8 +1,12 @@
 # model.base.py
 # copyright 2022 Oreum Industries
+import logging
+
 import arviz as az
 import pandas as pd
 import pymc3 as pm
+
+_log = logging.getLogger(__name__)
 
 
 class BasePYMC3Model:
@@ -95,10 +99,10 @@ class BasePYMC3Model:
 
     def build(self, **kwargs):
         """Build the model"""
-        helper_txt = '' if self.model is None else 're'
+        helper_txt = 'B' if self.model is None else 'Reb'
         try:
             self._build(**kwargs)
-            print(f'{helper_txt}built model {self.name} {self.version}')
+            _log.info(f'{helper_txt}uilt model {self.name} {self.version}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _build() in your'
@@ -109,7 +113,7 @@ class BasePYMC3Model:
         """Extend build, initially developed to help PPC of GRW and missing value imputation"""
         try:
             self._extend_build(**kwargs)
-            print(f'extended build of model {self.name} {self.version}')
+            _log.info(f'Extended build of model {self.name} {self.version}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _extend_build() in your'

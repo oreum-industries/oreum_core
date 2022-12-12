@@ -100,7 +100,6 @@ def output_data_dict(df: pd.DataFrame, dd_notes: dict, dir_docs: list, fn: str =
     # write cats to separate sheets for levels (but not indexes since they're unique)
     for ft in dfd.loc[dfd['dtype'].isin(['categorical', 'cat'])].index.values:
         if ft not in df.index.names:
-            # print(ft)
             dfg = (df[ft].value_counts(dropna=False) / len(df)).to_frame('prop')
             dfg.index.name = 'value'
             dfg.reset_index().to_excel(
