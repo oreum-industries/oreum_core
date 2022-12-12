@@ -1,6 +1,5 @@
 # file_io.py
 # copyright 2022 Oreum Industries
-
 from pathlib import Path
 
 
@@ -27,7 +26,7 @@ class BaseFileIO:
             self.rootdir = None
 
     def get_path_read(self, fqn: str) -> Path:
-        """Create and test path existance for read"""
+        """Create and test fqn file existence for read"""
         path = Path(fqn)
         if self.rootdir is not None:
             path = self.rootdir.joinpath(path)
@@ -36,7 +35,7 @@ class BaseFileIO:
         return path
 
     def get_path_write(self, fqn: str) -> Path:
-        """Create and test dir existance for write"""
+        """Create and test dir existence for write"""
         path = Path(fqn)
         if self.rootdir is not None:
             path = self.rootdir.joinpath(path)

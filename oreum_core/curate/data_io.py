@@ -1,8 +1,8 @@
 # curate.data_io.py
 # copyright 2022 Oreum Industries
 import json
-import os
 import subprocess
+from pathlib import Path
 
 import pandas as pd
 
@@ -65,8 +65,10 @@ class SimpleStringIO(BaseFileIO):
 
 def copy_csv2md(fqn: str) -> str:
     """Convenience to copy csv 'path/x.csv' to markdown 'path/x.md'"""
-    assert os.path.exists(fqn)
-    r = subprocess.run(['csv2md', f'{fqn}'], capture_output=True)
-    with open(f'{fqn[:-3] + "md"}', 'wb') as f:
+    path = Path(fqn)
+    if not path.exists():
+        raise FileNotFoundError(f'Required file does not exist {str(path)}')
+    r = subprocess.run(['csv2md', f'{path}'], capture_output=True)
+    with open(f'{path[:-3] + "md"}', 'wb') as f:
         f.write(r.stdout)
-    return f'Created file {fqn} and {fqn[:-3]}md'
+    return f'Created file {path} and {path[:-3]}md'

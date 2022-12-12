@@ -1,15 +1,30 @@
-# eda.utils.py
+# eda.eda_io.py
 # copyright 2022 Oreum Industries
-import os
+from pathlib import Path
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import figure
 
+from oreum_core.file_io import BaseFileIO
+
 from .describe import custom_describe, get_fts_by_dtype
 
-__all__ = ['display_image_file', 'output_data_dict']
+__all__ = ['FigureIO', 'display_image_file', 'output_data_dict']
+
+
+class FigureIO(BaseFileIO):
+    """Helper class to save matplotlib.figure.Figure objects to image file."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def write(self, f: figure.Figure, fn: str) -> str:
+        """Accept figure.Figure & fqn e.g. `plots/plot.png`, write to fqn"""
+        path = self.get_path_write(fn)
+        f.savefig(fname=path, format='png', bbox_inches='tight', dpi=300)
+        return f'Written to {str(path)}'
 
 
 def display_image_file(
@@ -79,9 +94,7 @@ def output_data_dict(df: pd.DataFrame, dd_notes: dict, dir_docs: list, fn: str =
     # write overview
     if fn != '':
         fn = f'_{fn}'
-    writer = pd.ExcelWriter(
-        os.path.join(*dir_docs, f'datadict{fn}.xlsx'), engine='xlsxwriter'
-    )
+    writer = pd.ExcelWriter(Path(*dir_docs, f'datadict{fn}.xlsx'), engine='xlsxwriter')
     dfd.to_excel(writer, sheet_name='overview', index=True)
 
     # write cats to separate sheets for levels (but not indexes since they're unique)
