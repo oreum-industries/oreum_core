@@ -15,7 +15,12 @@ from oreum_core.model.calc import (
     log_jcd,
     numpy_invlogit,
 )
-from oreum_core.model.describe import describe_dist, extract_yobs_yhat, model_desc
+from oreum_core.model.describe import (
+    describe_dist,
+    extract_yobs_yhat,
+    get_posterior_summary,
+    model_desc,
+)
 from oreum_core.model.distributions import (
     InverseWeibull,
     InverseWeibullNumpy,
