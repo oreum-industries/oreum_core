@@ -17,6 +17,7 @@ from oreum_core.eda.describe import (
     display_ht,
     get_fts_by_dtype,
 )
+from oreum_core.eda.eda_io import FigureIO, display_image_file, output_data_dict
 from oreum_core.eda.plot import (
     plot_accuracy,
     plot_binary_performance,
@@ -45,4 +46,3 @@ from oreum_core.eda.plot import (
     plot_rmse_range_pair,
     plot_roc_precrec,
 )
-from oreum_core.eda.utils import display_image_file, output_data_dict

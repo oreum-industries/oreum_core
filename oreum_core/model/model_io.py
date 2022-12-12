@@ -25,8 +25,7 @@ class ModelIO(BaseFileIO):
 
     def write_idata(self, mdl: BasePYMC3Model, fqn: str = '') -> str:
         """Accept a BasePYMC3Model object mdl, and fqn e.g. `model/mdl.netcdf`
-        write to fqn, optionally set `use_model_name` True to overwrite the
-        filename with mdl.name
+        write to fqn
         """
         path = self.get_path_write(fqn)
         if fqn == '':

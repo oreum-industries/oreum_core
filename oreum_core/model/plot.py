@@ -8,66 +8,32 @@ import seaborn as sns
 from matplotlib import figure, gridspec
 
 __all__ = [
-    'plot_ppc_loopit',
+    'plot_trace',
     'facetplot_idata_dist',
     'facetplot_df_dist',
     'plot_dist_fns_over_x',
     'plot_dist_fns_over_x_manual_only',
+    'plot_ppc_loopit',
 ]
 
+sns.set(
+    style='darkgrid',
+    palette='muted',
+    context='notebook',
+    rc={'savefig.dpi': 300, 'figure.figsize': (12, 6)},
+)
 
-def plot_ppc_loopit(
-    idata: az.data.inference_data.InferenceData,
-    kind: str = 'kde',
-    tgts: dict = {'y': 'yhat'},
-    **kwargs,
+
+def plot_trace(
+    idata: az.data.inference_data.InferenceData, rvs: list, **kwargs
 ) -> figure.Figure:
-    """Calc and Plot PPC & LOO-PIT after run `mdl.sample_posterior_predictive()`
-    also see
-    https://oriolabrilpla.cat/python/arviz/pymc3/2019/07/31/loo-pit-tutorial.html
-    """
-    if len(tgts) > 1:
-        raise AttributeError(
-            'NOTE: live issue in Arviz, if more than one tgt '
-            + 'it will plot them all its own way'
-        )
-
-    f = plt.figure(figsize=(12, 6 * len(tgts)))
-    gs = gridspec.GridSpec(
-        2 * len(tgts),
-        2,
-        height_ratios=[1.5, 1] * len(tgts),
-        width_ratios=[1, 1],
-        figure=f,
-    )
-    var_names = kwargs.pop('var_names', None)
-
-    # TODO: live issue this selection doesnt work in Arviz,
-    # it just plots every tgt. so this loop is a placeholder that does work
-    # if there's only a single tgt
-    for i, (tgt, tgt_hat) in enumerate(tgts.items()):
-        ax0 = f.add_subplot(gs[0 + 4 * i, :])
-        ax1 = f.add_subplot(gs[2 + 4 * i])
-        ax2 = f.add_subplot(gs[3 + 4 * i], sharex=ax1)
-        _ = az.plot_ppc(
-            idata,
-            kind=kind,
-            flatten=None,
-            ax=ax0,
-            group='posterior',
-            data_pairs={tgt: tgt_hat},
-            var_names=var_names,
-            **kwargs,
-        )
-        # using y=tgt_hat below. seems wrong, possibly a bug in arviz
-        _ = az.plot_loo_pit(idata, y=tgt_hat, ax=ax1, **kwargs)
-        _ = az.plot_loo_pit(idata, y=tgt_hat, ecdf=True, ax=ax2, **kwargs)
-
-        _ = ax0.set_title(f'PPC Predicted {tgt_hat} vs Observed {tgt}')
-        _ = ax1.set_title(f'Predicted {tgt_hat} LOO-PIT')
-        _ = ax2.set_title(f'Predicted {tgt_hat} LOO-PIT cumulative')
-
-    _ = f.suptitle('In-sample PPC Evaluation')
+    """Create traceplot for passed idata"""
+    kind = kwargs.pop('kind', 'rank_vlines')
+    mdlname = kwargs.pop('mdlname', None)
+    txtadd = kwargs.pop('txtadd', None)
+    _ = az.plot_trace(idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
+    f = plt.gcf()
+    _ = f.suptitle(' - '.join(['Posterior Traceplot', mdlname, txtadd]))
     _ = f.tight_layout()
     return f
 
@@ -84,10 +50,12 @@ def facetplot_idata_dist(
     Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """
     # TODO unpack the compressed rvs from the idata
+    mdlname = kwargs.pop('mdlname', None)
+    txtadd = kwargs.pop('txtadd', None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(idata, group=group, ax=axs, var_names=rvs, **kwargs)
-    _ = f.suptitle(f'{group} {rvs}', y=0.96 + n * 0.005)
+    _ = f.suptitle(' - '.join(['Distribution plot', group, mdlname, txtadd]))
     _ = f.tight_layout()
     return f
 
@@ -181,4 +149,60 @@ def plot_dist_fns_over_x_manual_only(
     dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
     ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])
     _ = ax2.set_title(f"{lg}InvCDF")
+    return f
+
+
+def plot_ppc_loopit(
+    idata: az.data.inference_data.InferenceData,
+    kind: str = 'kde',
+    tgts: dict = {'y': 'yhat'},
+    **kwargs,
+) -> figure.Figure:
+    """Calc and Plot PPC & LOO-PIT after run `mdl.sample_posterior_predictive()`
+    also see
+    https://oriolabrilpla.cat/python/arviz/pymc3/2019/07/31/loo-pit-tutorial.html
+    """
+    if len(tgts) > 1:
+        raise AttributeError(
+            'NOTE: live issue in Arviz, if more than one tgt '
+            + 'it will plot them all its own way'
+        )
+
+    f = plt.figure(figsize=(12, 6 * len(tgts)))
+    gs = gridspec.GridSpec(
+        2 * len(tgts),
+        2,
+        height_ratios=[1.5, 1] * len(tgts),
+        width_ratios=[1, 1],
+        figure=f,
+    )
+    var_names = kwargs.pop('var_names', None)
+
+    # TODO: live issue this selection doesnt work in Arviz,
+    # it just plots every tgt. so this loop is a placeholder that does work
+    # if there's only a single tgt
+    for i, (tgt, tgt_hat) in enumerate(tgts.items()):
+        ax0 = f.add_subplot(gs[0 + 4 * i, :])
+        ax1 = f.add_subplot(gs[2 + 4 * i])
+        ax2 = f.add_subplot(gs[3 + 4 * i], sharex=ax1)
+        _ = az.plot_ppc(
+            idata,
+            kind=kind,
+            flatten=None,
+            ax=ax0,
+            group='posterior',
+            data_pairs={tgt: tgt_hat},
+            var_names=var_names,
+            **kwargs,
+        )
+        # using y=tgt_hat below. seems wrong, possibly a bug in arviz
+        _ = az.plot_loo_pit(idata, y=tgt_hat, ax=ax1, **kwargs)
+        _ = az.plot_loo_pit(idata, y=tgt_hat, ecdf=True, ax=ax2, **kwargs)
+
+        _ = ax0.set_title(f'PPC Predicted {tgt_hat} vs Observed {tgt}')
+        _ = ax1.set_title(f'Predicted {tgt_hat} LOO-PIT')
+        _ = ax2.set_title(f'Predicted {tgt_hat} LOO-PIT cumulative')
+
+    _ = f.suptitle('In-sample PPC Evaluation')
+    _ = f.tight_layout()
     return f

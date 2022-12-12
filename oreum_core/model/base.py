@@ -19,7 +19,7 @@ class BasePYMC3Model:
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
         https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/sampling.py#L277
-        Usage note: consider overriding kws on downstream object e.g.
+        Usage note: you override kws directly on downstream instance e.g.
         def __init__(self, **kwargs):
             super().__init__(*args, **kwargs)
             self.sample_kws.update(dict(tune=1000, draws=500, target_accept=0.85))
@@ -38,11 +38,54 @@ class BasePYMC3Model:
             target_accept=0.8,
             # step=pm.NUTS,  # common alts: Metropolis, ADVI, or list for CompoundStep
             idata_kwargs=None,
+            progressbar=True,
         )
         self.rvs_for_posterior_plots = []
         self.name = getattr(self, 'name', 'unnamed_model')
         self.version = getattr(self, 'version', 'unversioned_model')
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
+
+    def _create_idata(self, **kwargs):
+        """Create Arviz InferenceData object
+        NOTE: use ordered exceptions, with assumption that we always use
+            an ordered workflow: prior, trace, ppc
+        """
+        k = dict(model=self.model)
+
+        if (
+            idata_kwargs := kwargs.get('idata_kwargs', self.sample_kws['idata_kwargs'])
+        ) is not None:
+            k.update(**idata_kwargs)
+
+        # update dict with pymc3 outputs
+        if (prior := kwargs.get('prior', None)) is not None:
+            k['prior'] = prior
+
+        if (ppc := kwargs.get('posterior_predictive', None)) is not None:
+            k['posterior_predictive'] = ppc
+            # by logic in sample_postrior_predictive there exists self.idata.posterior
+        elif (posterior := kwargs.get('posterior', None)) is not None:
+            k['trace'] = posterior
+        else:
+            pass
+
+        idata = az.from_pymc3(**k)
+
+        # extend idata with any other older data
+        try:
+            idata.extend(self.idata, join='left')
+        except AssertionError:
+            pass  # idata doesnt exist
+
+        return idata
+
+    def _get_posterior(self):
+        """Returns posterior from idata from previous run of sample"""
+        try:
+            self.idata.posterior
+        except AttributeError as e:
+            raise e("Run sample() first")
+        return self.idata.posterior
 
     @property
     def idata(self):
@@ -107,6 +150,7 @@ class BasePYMC3Model:
         cores = kwargs.pop('cores', self.sample_kws['cores'])
         target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
         step = kwargs.pop('step', None)
+        progressbar = kwargs.pop('progressbar', self.sample_kws['progressbar'])
 
         with self.model:
             common_stepper_options = {
@@ -125,18 +169,11 @@ class BasePYMC3Model:
                 cores=cores,
                 step=stepper,
                 return_inferencedata=False,
+                progressbar=progressbar,
                 **kwargs,
             )
         _ = self.update_idata(posterior=posterior)
         return None
-
-    def _get_posterior(self):
-        """Returns posterior from idata from previous run of sample"""
-        try:
-            self.idata.posterior
-        except AttributeError as e:
-            raise e("Run sample() first")
-        return self.idata.posterior
 
     def sample_posterior_predictive(self, **kwargs):
         """Sample posterior predictive
@@ -181,40 +218,6 @@ class BasePYMC3Model:
         Optionally afterwards call `extend_build()` for future time-dependent PPC
         """
         self.obs = new_obs
-
-    def _create_idata(self, **kwargs):
-        """Create Arviz InferenceData object
-        NOTE: use ordered exceptions, with assumption that we always use
-            an ordered workflow: prior, trace, ppc
-        """
-        k = dict(model=self.model)
-
-        if (
-            idata_kwargs := kwargs.get('idata_kwargs', self.sample_kws['idata_kwargs'])
-        ) is not None:
-            k.update(**idata_kwargs)
-
-        # update dict with pymc3 outputs
-        if (prior := kwargs.get('prior', None)) is not None:
-            k['prior'] = prior
-
-        if (ppc := kwargs.get('posterior_predictive', None)) is not None:
-            k['posterior_predictive'] = ppc
-            # by logic in sample_postrior_predictive there exists self.idata.posterior
-        elif (posterior := kwargs.get('posterior', None)) is not None:
-            k['trace'] = posterior
-        else:
-            pass
-
-        idata = az.from_pymc3(**k)
-
-        # extend idata with any other older data
-        try:
-            idata.extend(self.idata, join='left')
-        except AssertionError:
-            pass  # idata doesnt exist
-
-        return idata
 
     def update_idata(self, idata: az.InferenceData = None, **kwargs):
         """Create (and updated) an Arviz InferenceData object on-model
