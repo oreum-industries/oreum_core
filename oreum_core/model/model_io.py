@@ -52,4 +52,4 @@ class ModelIO(BaseFileIO):
 
         # gv auto adds the file extension, so pre-remove if present
         gv.render(filename=str(path.with_suffix('')), format=format, cleanup=True)
-        return str(path)
+        return f'Written to {str(path)}'
