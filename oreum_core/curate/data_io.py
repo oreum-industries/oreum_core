@@ -1,5 +1,6 @@
 # curate.data_io.py
 # copyright 2022 Oreum Industries
+import csv
 import json
 import subprocess
 from pathlib import Path
@@ -8,7 +9,7 @@ import pandas as pd
 
 from oreum_core.file_io import BaseFileIO
 
-__all__ = ['PandasParquetIO', 'SimpleStringIO', 'copy_csv2md']
+__all__ = ['PandasParquetIO', 'PandasToCSV', 'SimpleStringIO', 'copy_csv2md']
 
 
 class PandasParquetIO(BaseFileIO):
@@ -25,9 +26,22 @@ class PandasParquetIO(BaseFileIO):
         return pd.read_parquet(str(path))
 
     def write(self, df: pd.DataFrame, fqn: str) -> str:
-        """Accept pandas DataFrame & fqn e.g. `data/df.parquet`, write to fqn"""
+        """Accept pandas DataFrame and fqn e.g. `data/df.parquet`, write to fqn"""
         path = self.get_path_write(fqn)
         df.to_parquet(str(path))
+        return f'Written to {str(path)}'
+
+
+class PandasToCSV(BaseFileIO):
+    """Very simple helper class to write a Pandas dataframe to CSV fil in a consistent way"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def write(self, df: pd.DataFrame, fqn: str) -> str:
+        """Accept pandas DataFrame and fqn e.g. `data/df.parquet`, write to fqn"""
+        path = self.get_path_write(fqn)
+        df.to_csv(str(path), index_label='rowid', quoting=csv.QUOTE_NONNUMERIC)
         return f'Written to {str(path)}'
 
 
