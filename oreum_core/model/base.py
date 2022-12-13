@@ -7,6 +7,8 @@ import pandas as pd
 import pymc3 as pm
 
 _log = logging.getLogger(__name__)
+_log_pymc = logging.getLogger('pymc3')  # prevent pymc3 chatty prints to log
+_log_pymc.setLevel(logging.WARNING)
 
 
 class BasePYMC3Model:
@@ -19,7 +21,7 @@ class BasePYMC3Model:
 
     RSD = 42
 
-    def __init__(self, obs: pd.DataFrame = None, **kwargs):
+    def __init__(self, **kwargs):
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
         https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/sampling.py#L277
@@ -40,7 +42,6 @@ class BasePYMC3Model:
             chains=4,
             cores=4,
             target_accept=0.8,
-            # step=pm.NUTS,  # common alts: Metropolis, ADVI, or list for CompoundStep
             idata_kwargs=None,
             progressbar=True,
         )
@@ -83,7 +84,7 @@ class BasePYMC3Model:
 
         return idata
 
-    def _get_posterior(self):
+    def get_posterior(self):
         """Returns posterior from idata from previous run of sample"""
         try:
             self.idata.posterior
@@ -94,7 +95,10 @@ class BasePYMC3Model:
     @property
     def idata(self):
         """Returns Arviz InferenceData built from sampling to date"""
-        assert self._idata, "Run update_idata() first"
+        try:
+            assert self._idata, "Run update_idata() first"
+        except AssertionError as e:
+            _log.error(e)  # exc_info=e)
         return self._idata
 
     def build(self, **kwargs):
@@ -146,15 +150,19 @@ class BasePYMC3Model:
         """Sample posterior: use base class defaults self.sample_kws
         or passed kwargs for pm.sample()
         """
-        init = kwargs.pop('init', self.sample_kws['init'])
-        random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
-        tune = kwargs.pop('tune', self.sample_kws['tune'])
-        draws = kwargs.pop('draws', self.sample_kws['draws'])
-        chains = kwargs.pop('chains', self.sample_kws['chains'])
-        cores = kwargs.pop('cores', self.sample_kws['cores'])
+        kws_sample = dict(
+            init=kwargs.pop('init', self.sample_kws['init']),
+            random_seed=kwargs.pop('random_seed', self.sample_kws['random_seed']),
+            tune=kwargs.pop('tune', self.sample_kws['tune']),
+            draws=kwargs.pop('draws', self.sample_kws['draws']),
+            chains=kwargs.pop('chains', self.sample_kws['chains']),
+            cores=kwargs.pop('cores', self.sample_kws['cores']),
+            progressbar=kwargs.pop('progressbar', self.sample_kws['progressbar']),
+            return_inferencedata=False,
+        )
+
         target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
-        step = kwargs.pop('step', None)
-        progressbar = kwargs.pop('progressbar', self.sample_kws['progressbar'])
+        step = (kwargs.pop('step', None),)
 
         with self.model:
             common_stepper_options = {
@@ -162,21 +170,10 @@ class BasePYMC3Model:
                 'metropolis': pm.Metropolis(target_accept=target_accept),
                 'advi': pm.ADVI(),
             }
-            stepper = common_stepper_options.get(step, None)
+            kws_sample['step'] = common_stepper_options.get(step, None)
 
             try:
-                posterior = pm.sample(
-                    init=init,
-                    random_seed=random_seed,
-                    tune=tune,
-                    draws=draws,
-                    chains=chains,
-                    cores=cores,
-                    step=stepper,
-                    return_inferencedata=False,
-                    progressbar=progressbar,
-                    **kwargs,
-                )
+                posterior = pm.sample(**{**kws_sample, **kwargs})
             except UserWarning as e:
                 _log.warning('Warning in sample()', exc_info=e)
             finally:
@@ -195,7 +192,7 @@ class BasePYMC3Model:
             'store_ppc', self.sample_posterior_predictive_kws['store_ppc']
         )
         kws = dict(
-            trace=self._get_posterior(),
+            trace=self.get_posterior(),
             random_seed=kwargs.pop('random_seed', self.sample_kws['random_seed']),
             samples=kwargs.get('n_samples', None),
         )
