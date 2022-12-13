@@ -23,7 +23,8 @@ class ModelIO(BaseFileIO):
 
     def read_idata(self, fqn: str) -> az.InferenceData:
         """Read arviz.InferenceData object from fqn e.g. `model/mdl.netcdf`"""
-        path = self.get_path_read(fqn)
+        path = self.get_path_read(fqn, use_rootdir=False)
+        _log.info(f'Read idata from {str(path)}')
         return az.from_netcdf(str(path))
 
     def write_idata(self, mdl: BasePYMC3Model, fqn: str = '') -> Path:
