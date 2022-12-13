@@ -30,7 +30,7 @@ class ModelIO(BaseFileIO):
         """Accept a BasePYMC3Model object mdl, and fqn e.g. `model/mdl.netcdf`
         write to fqn
         """
-        path = self.get_path_write(fqn)
+        path = self.get_path_write(fqn, use_rootdir=False)
         if fqn == '':
             path = path.joinpath(Path(f'{mdl.name}.netcdf'))
         mdl.idata.to_netcdf(str(path))
