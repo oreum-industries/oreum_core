@@ -25,7 +25,7 @@ class BasePYMC3Model:
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
         https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/sampling.py#L277
-        Usage note: you override kws directly on downstream instance e.g.
+        Usage note: override kws directly on downstream instance e.g.
         def __init__(self, **kwargs):
             super().__init__(*args, **kwargs)
             self.sample_kws.update(dict(tune=1000, draws=500, target_accept=0.85))
@@ -95,10 +95,7 @@ class BasePYMC3Model:
     @property
     def idata(self):
         """Returns Arviz InferenceData built from sampling to date"""
-        try:
-            assert self._idata, "Run update_idata() first"
-        except AssertionError as e:
-            _log.error(e)  # exc_info=e)
+        assert self._idata, "Run update_idata() first"
         return self._idata
 
     def build(self, **kwargs):
@@ -144,6 +141,7 @@ class BasePYMC3Model:
                 samples=draws, random_seed=random_seed, **kwargs
             )
         _ = self.update_idata(prior=prior)
+        _log.info(f'Sampled prior predictive for {self.name} {self.version}')
         return None
 
     def sample(self, **kwargs):
@@ -178,6 +176,8 @@ class BasePYMC3Model:
                 _log.warning('Warning in sample()', exc_info=e)
             finally:
                 _ = self.update_idata(posterior=posterior)
+
+        _log.info(f'Sampled posterior for {self.name} {self.version}')
         return None
 
     def sample_posterior_predictive(self, **kwargs):
@@ -208,6 +208,8 @@ class BasePYMC3Model:
         else:
             return self._create_idata(posterior_predictive=ppc)
 
+        _log.info(f'Sampled ppc for {self.name} {self.version}')
+
     def replace_obs(self, new_obs):
         """Replace the observations
         Assumes data lives in pm.Data containers in your _build() function
@@ -215,6 +217,7 @@ class BasePYMC3Model:
         Optionally afterwards call `extend_build()` for future time-dependent PPC
         """
         self.obs = new_obs
+        _log.info(f'Replaced obs {self.name} {self.version}')
 
     def update_idata(self, idata: az.InferenceData = None, **kwargs):
         """Create (and updated) an Arviz InferenceData object on-model

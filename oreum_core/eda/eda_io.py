@@ -1,5 +1,6 @@
 # eda.eda_io.py
 # copyright 2022 Oreum Industries
+import logging
 from pathlib import Path
 
 import matplotlib.image as mpimg
@@ -13,6 +14,8 @@ from .describe import custom_describe, get_fts_by_dtype
 
 __all__ = ['FigureIO', 'display_image_file', 'output_data_dict']
 
+_log = logging.getLogger(__name__)
+
 
 class FigureIO(BaseFileIO):
     """Helper class to save matplotlib.figure.Figure objects to image file."""
@@ -20,11 +23,12 @@ class FigureIO(BaseFileIO):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def write(self, f: figure.Figure, fn: str) -> str:
+    def write(self, f: figure.Figure, fn: str) -> Path:
         """Accept figure.Figure & fqn e.g. `plots/plot.png`, write to fqn"""
         path = self.get_path_write(fn)
         f.savefig(fname=path, format='png', bbox_inches='tight', dpi=300)
-        return f'Written to {str(path)}'
+        _log.info(f'Written to {str(path)}')
+        return path
 
 
 def display_image_file(
