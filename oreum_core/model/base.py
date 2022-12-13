@@ -164,19 +164,23 @@ class BasePYMC3Model:
             }
             stepper = common_stepper_options.get(step, None)
 
-            posterior = pm.sample(
-                init=init,
-                random_seed=random_seed,
-                tune=tune,
-                draws=draws,
-                chains=chains,
-                cores=cores,
-                step=stepper,
-                return_inferencedata=False,
-                progressbar=progressbar,
-                **kwargs,
-            )
-        _ = self.update_idata(posterior=posterior)
+            try:
+                posterior = pm.sample(
+                    init=init,
+                    random_seed=random_seed,
+                    tune=tune,
+                    draws=draws,
+                    chains=chains,
+                    cores=cores,
+                    step=stepper,
+                    return_inferencedata=False,
+                    progressbar=progressbar,
+                    **kwargs,
+                )
+            except UserWarning as e:
+                _log.warning('Warning in sample()', exc_info=e)
+            finally:
+                _ = self.update_idata(posterior=posterior)
         return None
 
     def sample_posterior_predictive(self, **kwargs):
@@ -186,29 +190,21 @@ class BasePYMC3Model:
             + Use pm.fast_sample_posterior_predictive()
             + Don't store ppc on model object and just return an updated idata
         """
-        random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
         fast = kwargs.pop('fast', self.sample_posterior_predictive_kws['fast'])
         store_ppc = kwargs.pop(
             'store_ppc', self.sample_posterior_predictive_kws['store_ppc']
         )
-        # expect n_samples as default None, but allow for exceptional override
-        n_samples = kwargs.get('n_samples', None)
+        kws = dict(
+            trace=self._get_posterior(),
+            random_seed=kwargs.pop('random_seed', self.sample_kws['random_seed']),
+            samples=kwargs.get('n_samples', None),
+        )
 
         with self.model:
             if fast:
-                ppc = pm.fast_sample_posterior_predictive(
-                    trace=self._get_posterior(),
-                    random_seed=random_seed,
-                    samples=n_samples,
-                    **kwargs,
-                )
+                ppc = pm.fast_sample_posterior_predictive(**{**kws, **kwargs})
             else:
-                ppc = pm.sample_posterior_predictive(
-                    trace=self._get_posterior(),
-                    random_seed=random_seed,
-                    samples=n_samples,
-                    **kwargs,
-                )
+                ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
 
         if store_ppc:
             _ = self.update_idata(posterior_predictive=ppc)
