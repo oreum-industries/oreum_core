@@ -84,7 +84,7 @@ class BasePYMC3Model:
 
         return idata
 
-    def get_posterior(self):
+    def _get_posterior(self):
         """Returns posterior from idata from previous run of sample"""
         try:
             self.idata.posterior
@@ -192,7 +192,7 @@ class BasePYMC3Model:
             'store_ppc', self.sample_posterior_predictive_kws['store_ppc']
         )
         kws = dict(
-            trace=self.get_posterior(),
+            trace=self._get_posterior(),
             random_seed=kwargs.pop('random_seed', self.sample_kws['random_seed']),
             samples=kwargs.get('n_samples', None),
         )
