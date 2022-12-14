@@ -1,5 +1,7 @@
 # eda.describe.py
 # copyright 2022 Oreum Industries
+import logging
+
 import numpy as np
 import pandas as pd
 from IPython.display import display
@@ -7,6 +9,7 @@ from scipy import stats
 
 __all__ = ['display_fw', 'display_ht', 'custom_describe', 'get_fts_by_dtype']
 
+_log = logging.getLogger(__name__)
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
@@ -71,10 +74,10 @@ def custom_describe(
             nfeats + len_idx, df.shape[1]
         )
 
-    print(f'Array shape: {df.shape}')
-    print(f'Array memsize: {df.values.nbytes // 1000:,} kB')
-    print(f'Index levels: {df.index.names}')
-    print(f'{note}')
+    _log.info(f'Array shape: {df.shape}')
+    _log.info(f'Array memsize: {df.values.nbytes // 1000:,} kB')
+    _log.info(f'Index levels: {df.index.names}')
+    _log.info(f'{note}')
 
     if df.values.nbytes > limit:
         return 'Array memsize > 50MB limit, avoid performing descriptions'

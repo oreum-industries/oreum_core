@@ -25,19 +25,19 @@ class BaseFileIO:
         else:
             self.rootdir = None
 
-    def get_path_read(self, fqn: str) -> Path:
+    def get_path_read(self, fqn: str, use_rootdir: bool = True) -> Path:
         """Create and test fqn file existence for read"""
         path = Path(fqn)
-        if self.rootdir is not None:
+        if (self.rootdir is not None) & use_rootdir:
             path = self.rootdir.joinpath(path)
         if not path.exists():
             raise FileNotFoundError(f'Required file does not exist {str(path)}')
         return path
 
-    def get_path_write(self, fqn: str) -> Path:
+    def get_path_write(self, fqn: str, use_rootdir: bool = True) -> Path:
         """Create and test dir existence for write"""
         path = Path(fqn)
-        if self.rootdir is not None:
+        if (self.rootdir is not None) & use_rootdir:
             path = self.rootdir.joinpath(path)
         dr = Path(*path.parts[:-1])
         if not dr.is_dir():

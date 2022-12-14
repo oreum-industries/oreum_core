@@ -1,8 +1,14 @@
 # model.base.py
 # copyright 2022 Oreum Industries
+import logging
+
 import arviz as az
 import pandas as pd
 import pymc3 as pm
+
+_log = logging.getLogger(__name__)
+_log_pymc = logging.getLogger('pymc3')  # prevent pymc3 chatty prints to log
+_log_pymc.setLevel(logging.WARNING)
 
 
 class BasePYMC3Model:
@@ -15,11 +21,11 @@ class BasePYMC3Model:
 
     RSD = 42
 
-    def __init__(self, obs: pd.DataFrame = None, **kwargs):
+    def __init__(self, **kwargs):
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
         https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/sampling.py#L277
-        Usage note: you override kws directly on downstream instance e.g.
+        Usage note: override kws directly on downstream instance e.g.
         def __init__(self, **kwargs):
             super().__init__(*args, **kwargs)
             self.sample_kws.update(dict(tune=1000, draws=500, target_accept=0.85))
@@ -36,7 +42,6 @@ class BasePYMC3Model:
             chains=4,
             cores=4,
             target_accept=0.8,
-            # step=pm.NUTS,  # common alts: Metropolis, ADVI, or list for CompoundStep
             idata_kwargs=None,
             progressbar=True,
         )
@@ -95,10 +100,10 @@ class BasePYMC3Model:
 
     def build(self, **kwargs):
         """Build the model"""
-        helper_txt = '' if self.model is None else 're'
+        helper_txt = 'B' if self.model is None else 'Reb'
         try:
             self._build(**kwargs)
-            print(f'{helper_txt}built model {self.name} {self.version}')
+            _log.info(f'{helper_txt}uilt model {self.name} {self.version}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _build() in your'
@@ -109,7 +114,7 @@ class BasePYMC3Model:
         """Extend build, initially developed to help PPC of GRW and missing value imputation"""
         try:
             self._extend_build(**kwargs)
-            print(f'extended build of model {self.name} {self.version}')
+            _log.info(f'Extended build of model {self.name} {self.version}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _extend_build() in your'
@@ -136,21 +141,26 @@ class BasePYMC3Model:
                 samples=draws, random_seed=random_seed, **kwargs
             )
         _ = self.update_idata(prior=prior)
+        _log.info(f'Sampled prior predictive for {self.name} {self.version}')
         return None
 
     def sample(self, **kwargs):
         """Sample posterior: use base class defaults self.sample_kws
         or passed kwargs for pm.sample()
         """
-        init = kwargs.pop('init', self.sample_kws['init'])
-        random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
-        tune = kwargs.pop('tune', self.sample_kws['tune'])
-        draws = kwargs.pop('draws', self.sample_kws['draws'])
-        chains = kwargs.pop('chains', self.sample_kws['chains'])
-        cores = kwargs.pop('cores', self.sample_kws['cores'])
+        kws_sample = dict(
+            init=kwargs.pop('init', self.sample_kws['init']),
+            random_seed=kwargs.pop('random_seed', self.sample_kws['random_seed']),
+            tune=kwargs.pop('tune', self.sample_kws['tune']),
+            draws=kwargs.pop('draws', self.sample_kws['draws']),
+            chains=kwargs.pop('chains', self.sample_kws['chains']),
+            cores=kwargs.pop('cores', self.sample_kws['cores']),
+            progressbar=kwargs.pop('progressbar', self.sample_kws['progressbar']),
+            return_inferencedata=False,
+        )
+
         target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
-        step = kwargs.pop('step', None)
-        progressbar = kwargs.pop('progressbar', self.sample_kws['progressbar'])
+        step = (kwargs.pop('step', None),)
 
         with self.model:
             common_stepper_options = {
@@ -158,21 +168,16 @@ class BasePYMC3Model:
                 'metropolis': pm.Metropolis(target_accept=target_accept),
                 'advi': pm.ADVI(),
             }
-            stepper = common_stepper_options.get(step, None)
+            kws_sample['step'] = common_stepper_options.get(step, None)
 
-            posterior = pm.sample(
-                init=init,
-                random_seed=random_seed,
-                tune=tune,
-                draws=draws,
-                chains=chains,
-                cores=cores,
-                step=stepper,
-                return_inferencedata=False,
-                progressbar=progressbar,
-                **kwargs,
-            )
-        _ = self.update_idata(posterior=posterior)
+            try:
+                posterior = pm.sample(**{**kws_sample, **kwargs})
+            except UserWarning as e:
+                _log.warning('Warning in sample()', exc_info=e)
+            finally:
+                _ = self.update_idata(posterior=posterior)
+
+        _log.info(f'Sampled posterior for {self.name} {self.version}')
         return None
 
     def sample_posterior_predictive(self, **kwargs):
@@ -182,29 +187,23 @@ class BasePYMC3Model:
             + Use pm.fast_sample_posterior_predictive()
             + Don't store ppc on model object and just return an updated idata
         """
-        random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
         fast = kwargs.pop('fast', self.sample_posterior_predictive_kws['fast'])
         store_ppc = kwargs.pop(
             'store_ppc', self.sample_posterior_predictive_kws['store_ppc']
         )
-        # expect n_samples as default None, but allow for exceptional override
-        n_samples = kwargs.get('n_samples', None)
+        kws = dict(
+            trace=self._get_posterior(),
+            random_seed=kwargs.pop('random_seed', self.sample_kws['random_seed']),
+            samples=kwargs.get('n_samples', None),
+        )
 
         with self.model:
             if fast:
-                ppc = pm.fast_sample_posterior_predictive(
-                    trace=self._get_posterior(),
-                    random_seed=random_seed,
-                    samples=n_samples,
-                    **kwargs,
-                )
+                ppc = pm.fast_sample_posterior_predictive(**{**kws, **kwargs})
             else:
-                ppc = pm.sample_posterior_predictive(
-                    trace=self._get_posterior(),
-                    random_seed=random_seed,
-                    samples=n_samples,
-                    **kwargs,
-                )
+                ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
+
+        _log.info(f'Sampled ppc for {self.name} {self.version}')
 
         if store_ppc:
             _ = self.update_idata(posterior_predictive=ppc)
@@ -218,6 +217,7 @@ class BasePYMC3Model:
         Optionally afterwards call `extend_build()` for future time-dependent PPC
         """
         self.obs = new_obs
+        _log.info(f'Replaced obs in {self.name} {self.version}')
 
     def update_idata(self, idata: az.InferenceData = None, **kwargs):
         """Create (and updated) an Arviz InferenceData object on-model

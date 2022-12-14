@@ -1,6 +1,8 @@
 # curate.data_io.py
 # copyright 2022 Oreum Industries
+import csv
 import json
+import logging
 import subprocess
 from pathlib import Path
 
@@ -8,7 +10,9 @@ import pandas as pd
 
 from oreum_core.file_io import BaseFileIO
 
-__all__ = ['PandasParquetIO', 'SimpleStringIO', 'copy_csv2md']
+__all__ = ['PandasParquetIO', 'PandasToCSV', 'SimpleStringIO', 'copy_csv2md']
+
+_log = logging.getLogger(__name__)
 
 
 class PandasParquetIO(BaseFileIO):
@@ -22,13 +26,29 @@ class PandasParquetIO(BaseFileIO):
     def read(self, fqn: str) -> pd.DataFrame:
         """Read arviz.InferenceData object from fqn e.g. `model/mdl.netcdf`"""
         path = self.get_path_read(fqn)
+        _log.info(f'Read df from {str(path)}')
         return pd.read_parquet(str(path))
 
-    def write(self, df: pd.DataFrame, fqn: str) -> str:
-        """Accept pandas DataFrame & fqn e.g. `data/df.parquet`, write to fqn"""
+    def write(self, df: pd.DataFrame, fqn: str) -> Path:
+        """Accept pandas DataFrame and fqn e.g. `data/df.parquet`, write to fqn"""
         path = self.get_path_write(fqn)
         df.to_parquet(str(path))
-        return f'Written to {str(path)}'
+        _log.info(f'Written to {str(path)}')
+        return path
+
+
+class PandasToCSV(BaseFileIO):
+    """Very simple helper class to write a Pandas dataframe to CSV fil in a consistent way"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def write(self, df: pd.DataFrame, fqn: str) -> str:
+        """Accept pandas DataFrame and fqn e.g. `data/df.parquet`, write to fqn"""
+        path = self.get_path_write(fqn)
+        df.to_csv(str(path), index_label='rowid', quoting=csv.QUOTE_NONNUMERIC)
+        _log.info(f'Written to {str(path)}')
+        return path
 
 
 class SimpleStringIO(BaseFileIO):
@@ -60,7 +80,8 @@ class SimpleStringIO(BaseFileIO):
         with open(str(path), 'w') as f:
             f.write(f'{s}\n')
             f.close()
-        return f'Written to {str(path)}'
+        _log.info(f'Written to {str(path)}')
+        return path
 
 
 def copy_csv2md(fqn: str) -> str:
@@ -71,4 +92,6 @@ def copy_csv2md(fqn: str) -> str:
     r = subprocess.run(['csv2md', f'{path}'], capture_output=True)
     with open(f'{path[:-3] + "md"}', 'wb') as f:
         f.write(r.stdout)
-    return f'Created file {path} and {path[:-3]}md'
+    # return f'Created file {path} and {path[:-3]}md'
+    _log.info(f'Written to {str(path)}')
+    return path
