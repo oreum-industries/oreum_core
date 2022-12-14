@@ -26,9 +26,10 @@ class PandasParquetIO(BaseFileIO):
     def read(self, fqn: str) -> pd.DataFrame:
         """Read arviz.InferenceData object from fqn e.g. `model/mdl.netcdf`"""
         path = self.get_path_read(fqn)
+        _log.info(f'Read df from {str(path)}')
         return pd.read_parquet(str(path))
 
-    def write(self, df: pd.DataFrame, fqn: str) -> str:
+    def write(self, df: pd.DataFrame, fqn: str) -> Path:
         """Accept pandas DataFrame and fqn e.g. `data/df.parquet`, write to fqn"""
         path = self.get_path_write(fqn)
         df.to_parquet(str(path))

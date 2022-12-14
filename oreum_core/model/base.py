@@ -203,12 +203,12 @@ class BasePYMC3Model:
             else:
                 ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
 
+        _log.info(f'Sampled ppc for {self.name} {self.version}')
+
         if store_ppc:
             _ = self.update_idata(posterior_predictive=ppc)
         else:
             return self._create_idata(posterior_predictive=ppc)
-
-        _log.info(f'Sampled ppc for {self.name} {self.version}')
 
     def replace_obs(self, new_obs):
         """Replace the observations
@@ -217,7 +217,7 @@ class BasePYMC3Model:
         Optionally afterwards call `extend_build()` for future time-dependent PPC
         """
         self.obs = new_obs
-        _log.info(f'Replaced obs {self.name} {self.version}')
+        _log.info(f'Replaced obs in {self.name} {self.version}')
 
     def update_idata(self, idata: az.InferenceData = None, **kwargs):
         """Create (and updated) an Arviz InferenceData object on-model
