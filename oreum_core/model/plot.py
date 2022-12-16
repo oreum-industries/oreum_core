@@ -1,5 +1,7 @@
 # model.plot.py
 # copyright 2022 Oreum Industries
+from enum import Enum
+
 import arviz as az
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,8 +11,9 @@ from matplotlib import figure, gridspec
 
 __all__ = [
     'plot_trace',
-    'facetplot_idata_dist',
+    'facetplot_krushke',
     'facetplot_df_dist',
+    'pairplot_corr',
     'plot_dist_fns_over_x',
     'plot_dist_fns_over_x_manual_only',
     'plot_ppc_loopit',
@@ -22,6 +25,11 @@ sns.set(
     context='notebook',
     rc={'savefig.dpi': 300, 'figure.figsize': (12, 6)},
 )
+
+
+class IDataGroupName(str, Enum):
+    prior = 'prior'
+    posterior = 'posterior'
 
 
 def plot_trace(
@@ -38,15 +46,15 @@ def plot_trace(
     return f
 
 
-def facetplot_idata_dist(
+def facetplot_krushke(
     idata: az.data.inference_data.InferenceData,
-    rvs: list,
-    group: str = 'posterior',
-    m: int = 3,
+    rvs: list[str],
+    group: IDataGroupName = IDataGroupName.posterior.value,
+    m: int = 1,
     rvs_hack: int = 0,
     **kwargs,
 ) -> figure.Figure:
-    """Control facet positioning of Arviz Krushke style plots, data in idata
+    """Create Krushke-style plots using Arviz, univariate RVs, control faceting
     Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """
     # TODO unpack the compressed rvs from the idata
@@ -55,7 +63,9 @@ def facetplot_idata_dist(
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(idata, group=group, ax=axs, var_names=rvs, **kwargs)
-    _ = f.suptitle(' - '.join(['Distribution plot', group, mdlname, txtadd]))
+    _ = f.suptitle(
+        ' - '.join(filter(None, ['Distribution plot', group, mdlname, txtadd]))
+    )
     _ = f.tight_layout()
     return f
 
@@ -78,6 +88,52 @@ def facetplot_df_dist(
         axarr.set_title(ft)
     title = kwargs.get('title', '')
     _ = f.suptitle(f'{title} {rvs}', y=0.96 + n * 0.005)
+    _ = f.tight_layout()
+    return f
+
+
+def pairplot_corr(
+    idata: az.data.inference_data.InferenceData,
+    rvs: list[str],
+    colnames=list[str],
+    **kwargs,
+) -> figure.Figure:
+    """Create posterior pair / correlation plots using Arviz, corrrlated RVs,
+    Pass-through kwargs to az.plot_pair, e.g. ref_val
+    """
+    mdlname = kwargs.pop('mdlname', None)
+    txtadd = kwargs.pop('txtadd', None)
+    kind = kwargs.pop('kind', 'kde')
+
+    pair_kws = dict(
+        var_names=rvs,
+        divergences=True,
+        marginals=True,
+        kind=kind,
+        kde_kwargs=dict(
+            contourf_kwargs=dict(alpha=0.5, cmap='Blues'),
+            contour_kwargs=dict(colors=None, cmap='Blues'),
+            hdi_probs=[0.5, 0.94, 0.99],
+        ),
+        figsize=(2 + 1.8 * len(rvs), 2 + 1.8 * len(rvs)),
+    )
+
+    axs = az.plot_pair(idata, **pair_kws)
+    corr = pd.DataFrame(
+        idata.posterior[rvs].stack(dims=('chain', 'draw')).values.T, columns=colnames
+    ).corr()
+    i, j = np.tril_indices(n=len(corr), k=-1)
+    for ij in zip(i, j):
+        axs[ij].set_title(f'rho: {corr.iloc[ij]:.2f}', fontsize=8, loc='right', pad=2)
+    vh_y = dict(rotation=0, va='center', ha='right')
+    vh_x = dict(rotation=40, va='top', ha='center')
+    _ = [a.set_ylabel(a.get_ylabel(), **vh_y) for ax in axs for a in ax]
+    _ = [a.set_xlabel(a.get_xlabel(), **vh_x) for ax in axs for a in ax]
+
+    f = plt.gcf()
+    _ = f.suptitle(
+        ' - '.join(filter(None, ['Posterior Pairplot', mdlname, txtadd, rvs]))
+    )
     _ = f.tight_layout()
     return f
 
