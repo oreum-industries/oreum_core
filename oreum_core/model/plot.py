@@ -86,7 +86,7 @@ def forestplot_single_level(
     clr_offset = kwargs.pop('clr_offset', 0)
     dp = kwargs.pop('dp', 1)
     kws = dict(
-        colors=sns.color_palette('tab20c', n_colors=16).as_hex()[::-1][clr_offset:],
+        colors=sns.color_palette('tab20c', n_colors=16).as_hex()[clr_offset:][0],
         ess=False,
         combined=False,
     )
