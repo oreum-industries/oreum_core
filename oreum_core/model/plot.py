@@ -10,14 +10,14 @@ import seaborn as sns
 import xarray
 from matplotlib import figure, gridspec
 
-from oreum_core import model as mt
+# from oreum_core import model as mt
 
 __all__ = [
     'plot_trace',
     'facetplot_krushke',
     'pairplot_corr',
-    'forestplot_levels',
-    'forestplot_single_level',
+    'forestplot_single',
+    'forestplot_multiple',
     'plot_dist_fns_over_x',
     'plot_dist_fns_over_x_manual_only',
     'plot_ppc_loopit',
@@ -75,68 +75,94 @@ def facetplot_krushke(
     return f
 
 
-def forestplot_single_level(
+def forestplot_single(
     data: xarray.core.dataarray.DataArray,
     group: IDataGroupName = IDataGroupName.posterior.value,
     **kwargs,
 ) -> figure.Figure:
-    """Plot forestplot for a single RV subgroup (provided as an xarray)"""
+    """Plot forestplot for a single RV (optionally with factor sublevels)"""
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
     clr_offset = kwargs.pop('clr_offset', 0)
     dp = kwargs.pop('dp', 1)
+    plot_med = kwargs.pop('plot_med', True)
+    plot_combined = kwargs.pop('plot_combined', False)
     kws = dict(
         colors=sns.color_palette('tab20c', n_colors=16).as_hex()[clr_offset:][0],
         ess=False,
-        combined=False,
+        combined=plot_combined,
     )
 
-    itr = data.median()
-    itr50 = data.quantile([0.25, 0.75])
-    itr94 = data.quantile([0.03, 0.97])
+    qs = np.quantile(data, q=[0.03, 0.25, 0.5, 0.75, 0.97])
     desc = (
-        f'med {itr.values:.{dp}f}, HDI50 ['
-        + ', '.join([f'{v:.{dp}f}' for v in itr50.values])
+        f'med {qs[2]:.{dp}f}, HDI50 ['
+        + ', '.join([f'{qs[v]:.{dp}f}' for v in [1, 3]])
         + '], HDI94 ['
-        + ', '.join([f'{v:.{dp}f}' for v in itr94.values])
+        + ', '.join([f'{qs[v]:.{dp}f}' for v in [0, 4]])
         + ']'
     )
 
-    f = plt.figure(figsize=(12, 2))
+    f = plt.figure(figsize=(12, 2 + 0.15 * (np.prod(data.shape[2:]))))
     ax0 = f.add_subplot()
     _ = az.plot_forest(data, ax=ax0, **kws)
-    _ = ax0.axvline(itr, color='#ADD8E6', ls='--', lw=3, zorder=-1)
+    if plot_med:
+        _ = ax0.axvline(qs[2], color='#ADD8E6', ls='--', lw=3, zorder=-1)
     _ = f.suptitle(
-        ' - '.join(filter(None, ['Forestplot sublevel', mdlname, group, txtadd, desc]))
+        ' - '.join(filter(None, ['Forestplot levels', mdlname, group, txtadd, desc]))
     )
     _ = f.tight_layout()
     return f
 
 
-def forestplot_levels(
-    idata: az.data.inference_data.InferenceData,
-    rv: str,
+def forestplot_multiple(
+    datasets: dict[str, xarray.core.dataarray.DataArray],
     group: IDataGroupName = IDataGroupName.posterior.value,
     **kwargs,
 ) -> figure.Figure:
-    """Plot forestplot for an RV with grouped levels"""
+    """Plot set of forestplots for related datasets RVs
+    Useful for a linear model of RVs, where each RV can have sublevel factors
+    TODO This makes a few too many assumptions, will improve in future
+    """
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
-    invlogit = kwargs.pop('invlogit', False)
-    kws = dict(
-        colors=sns.color_palette('tab20c', n_colors=16).as_hex(),
-        ess=True,
-        combined=True,
-        figsize=(12, 8),
-    )
+    clr_offset = kwargs.pop('clr_offset', 0)
+    dp = kwargs.pop('dp', 1)
+    plot_med = kwargs.pop('plot_med', True)
+    plot_combined = kwargs.pop('plot_combined', False)
+    desc = ''
 
-    data = idata[group][rv]
-    if invlogit:
-        data = mt.numpy_invlogit(data)
-    _ = az.plot_forest(data, **kws)
-    f = plt.gcf()
+    hs = [0.22 * (np.prod(data.shape[2:])) for data in datasets.values()]
+    f = plt.figure(figsize=(12, 2 + sum(hs)))
+    gs = gridspec.GridSpec(len(hs), 1, height_ratios=hs, figure=f)
+
+    for i, (txt, data) in enumerate(datasets.items()):
+        ax = f.add_subplot(gs[i])
+        _ = az.plot_forest(
+            data,
+            ax=ax,
+            colors=sns.color_palette('tab20c', n_colors=16).as_hex()[clr_offset:][i],
+            ess=False,
+            combined=plot_combined,
+        )
+
+        _ = ax.set_title(txt)
+        if plot_med:
+            if i == 0:
+                qs = np.quantile(data, q=[0.03, 0.25, 0.5, 0.75, 0.97])
+                _ = ax.axvline(qs[2], color='#ADD8E6', ls='--', lw=3, zorder=-1)
+                desc = (
+                    f'med {qs[2]:.{dp}f}, HDI50 ['
+                    + ', '.join([f'{qs[v]:.{dp}f}' for v in [1, 3]])
+                    + '], HDI94 ['
+                    + ', '.join([f'{qs[v]:.{dp}f}' for v in [0, 4]])
+                    + ']'
+                )
+            else:
+                _ = ax.axvline(1, color='#ADD8E6', ls='--', lw=3, zorder=-1)
+
     _ = f.suptitle(
-        ' - '.join(filter(None, ['Forestplot levels', mdlname, group, rv, txtadd]))
+        ' - '.join(filter(None, ['Forestplot levels', mdlname, group, txtadd]))
+        + f'\n{desc}'
     )
     _ = f.tight_layout()
     return f
