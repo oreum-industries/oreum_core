@@ -36,8 +36,9 @@ from oreum_core.model.distributions import (
 )
 from oreum_core.model.model_io import ModelIO
 from oreum_core.model.plot import (
-    facetplot_df_dist,
     facetplot_krushke,
+    forestplot_levels,
+    forestplot_single_level,
     pairplot_corr,
     plot_dist_fns_over_x,
     plot_dist_fns_over_x_manual_only,
