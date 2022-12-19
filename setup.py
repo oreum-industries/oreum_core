@@ -1,6 +1,5 @@
 # setup.py
 # copyright 2022 Oreum Industries
-
 import re
 from codecs import open
 from os.path import dirname, join, realpath

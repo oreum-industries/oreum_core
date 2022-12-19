@@ -10,8 +10,6 @@ import seaborn as sns
 import xarray
 from matplotlib import figure, gridspec
 
-# from oreum_core import model as mt
-
 __all__ = [
     'plot_trace',
     'facetplot_krushke',

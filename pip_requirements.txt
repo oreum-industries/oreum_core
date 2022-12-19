@@ -1,5 +1,5 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2022-12-08
+# Last updated as-at 2022-12-19
 # Installation Notes:
 #  + This package is intended to be installed via a git+ egg
 #    e.g. this line would appear in a `pip_requirements.txt` file
@@ -22,7 +22,6 @@ hypothesis>=6.39.*
 matplotlib==3.5.2
 matplotlib-inline==0.1.2  # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
 patsy>=0.5.*
-pre-commit>=2.20.*  # needed during package development
 regex>=2022.10.*
 seaborn==0.11.2  # ignore the recent version with broken API
 xlsxwriter>=3.0.3

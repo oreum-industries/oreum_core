@@ -3,7 +3,6 @@
 import logging
 
 import arviz as az
-import pandas as pd
 import pymc3 as pm
 
 _log = logging.getLogger(__name__)
@@ -160,7 +159,7 @@ class BasePYMC3Model:
         )
 
         target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
-        step = (kwargs.pop('step', None),)
+        step = kwargs.pop('step', 'nuts')
 
         with self.model:
             common_stepper_options = {
