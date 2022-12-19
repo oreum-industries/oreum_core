@@ -6,7 +6,7 @@ import arviz as az
 import pymc3 as pm
 
 _log = logging.getLogger(__name__)
-_log_pymc = logging.getLogger('pymc3')  # prevent pymc3 chatty prints to log
+_log_pymc = logging.getLogger('pymc3')  # force pymc3 chatty prints to log
 _log_pymc.setLevel(logging.WARNING)
 
 
