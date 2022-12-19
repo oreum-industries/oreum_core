@@ -1,16 +1,21 @@
 # model.plot.py
 # copyright 2022 Oreum Industries
+from enum import Enum
+
 import arviz as az
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import xarray
 from matplotlib import figure, gridspec
 
 __all__ = [
     'plot_trace',
-    'facetplot_idata_dist',
-    'facetplot_df_dist',
+    'facetplot_krushke',
+    'pairplot_corr',
+    'forestplot_single',
+    'forestplot_multiple',
     'plot_dist_fns_over_x',
     'plot_dist_fns_over_x_manual_only',
     'plot_ppc_loopit',
@@ -24,6 +29,11 @@ sns.set(
 )
 
 
+class IDataGroupName(str, Enum):
+    prior = 'prior'
+    posterior = 'posterior'
+
+
 def plot_trace(
     idata: az.data.inference_data.InferenceData, rvs: list, **kwargs
 ) -> figure.Figure:
@@ -33,20 +43,20 @@ def plot_trace(
     txtadd = kwargs.pop('txtadd', None)
     _ = az.plot_trace(idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
     f = plt.gcf()
-    _ = f.suptitle(' - '.join(['Posterior Traceplot', mdlname, txtadd]))
+    _ = f.suptitle(' - '.join(['Traceplot', mdlname, 'posterior', rvs, txtadd]))
     _ = f.tight_layout()
     return f
 
 
-def facetplot_idata_dist(
+def facetplot_krushke(
     idata: az.data.inference_data.InferenceData,
-    rvs: list,
-    group: str = 'posterior',
-    m: int = 3,
+    rvs: list[str],
+    group: IDataGroupName = IDataGroupName.posterior.value,
+    m: int = 1,
     rvs_hack: int = 0,
     **kwargs,
 ) -> figure.Figure:
-    """Control facet positioning of Arviz Krushke style plots, data in idata
+    """Create Krushke-style plots using Arviz, univariate RVs, control faceting
     Pass-through kwargs to az.plot_posterior, e.g. ref_val
     """
     # TODO unpack the compressed rvs from the idata
@@ -55,29 +65,149 @@ def facetplot_idata_dist(
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(idata, group=group, ax=axs, var_names=rvs, **kwargs)
-    _ = f.suptitle(' - '.join(['Distribution plot', group, mdlname, txtadd]))
+    s = 's' if len(rvs) > 1 else ''
+    _ = f.suptitle(
+        ' - '.join(filter(None, [f'Distribution plot{s}', mdlname, group, txtadd]))
+    )
     _ = f.tight_layout()
     return f
 
 
-def facetplot_df_dist(
-    df: pd.DataFrame, rvs: list, m: int = 3, rvs_hack: int = 0, **kwargs
+def forestplot_single(
+    data: xarray.core.dataarray.DataArray,
+    group: IDataGroupName = IDataGroupName.posterior.value,
+    **kwargs,
 ) -> figure.Figure:
-    """Control facet positioning of Arviz Krushke style plots, data in df
-    Pass-through kwargs to az.plot_posterior, e.g. ref_val
-    """
-    n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
-    sharex = kwargs.get('sharex', False)
-    f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n), sharex=sharex)
-    ref_val = kwargs.get('ref_val', [None for i in range(len(df))])
+    """Plot forestplot for a single RV (optionally with factor sublevels)"""
+    mdlname = kwargs.pop('mdlname', None)
+    txtadd = kwargs.pop('txtadd', None)
+    clr_offset = kwargs.pop('clr_offset', 0)
+    dp = kwargs.pop('dp', 1)
+    plot_med = kwargs.pop('plot_med', True)
+    plot_combined = kwargs.pop('plot_combined', False)
+    kws = dict(
+        colors=sns.color_palette('tab20c', n_colors=16).as_hex()[clr_offset:][0],
+        ess=False,
+        combined=plot_combined,
+    )
 
-    for i, ft in enumerate(df.columns):
-        axarr = az.plot_posterior(
-            df[ft].values, ax=axs.flatten()[i], ref_val=ref_val[i]
+    qs = np.quantile(data, q=[0.03, 0.25, 0.5, 0.75, 0.97])
+    desc = (
+        f'med {qs[2]:.{dp}f}, HDI50 ['
+        + ', '.join([f'{qs[v]:.{dp}f}' for v in [1, 3]])
+        + '], HDI94 ['
+        + ', '.join([f'{qs[v]:.{dp}f}' for v in [0, 4]])
+        + ']'
+    )
+
+    f = plt.figure(figsize=(12, 2 + 0.15 * (np.prod(data.shape[2:]))))
+    ax0 = f.add_subplot()
+    _ = az.plot_forest(data, ax=ax0, **kws)
+    if plot_med:
+        _ = ax0.axvline(qs[2], color='#ADD8E6', ls='--', lw=3, zorder=-1)
+    _ = f.suptitle(
+        ' - '.join(filter(None, ['Forestplot levels', mdlname, group, txtadd, desc]))
+    )
+    _ = f.tight_layout()
+    return f
+
+
+def forestplot_multiple(
+    datasets: dict[str, xarray.core.dataarray.DataArray],
+    group: IDataGroupName = IDataGroupName.posterior.value,
+    **kwargs,
+) -> figure.Figure:
+    """Plot set of forestplots for related datasets RVs
+    Useful for a linear model of RVs, where each RV can have sublevel factors
+    TODO This makes a few too many assumptions, will improve in future
+    """
+    mdlname = kwargs.pop('mdlname', None)
+    txtadd = kwargs.pop('txtadd', None)
+    clr_offset = kwargs.pop('clr_offset', 0)
+    dp = kwargs.pop('dp', 1)
+    plot_med = kwargs.pop('plot_med', True)
+    plot_combined = kwargs.pop('plot_combined', False)
+    desc = ''
+
+    hs = [0.22 * (np.prod(data.shape[2:])) for data in datasets.values()]
+    f = plt.figure(figsize=(12, 2 + sum(hs)))
+    gs = gridspec.GridSpec(len(hs), 1, height_ratios=hs, figure=f)
+
+    for i, (txt, data) in enumerate(datasets.items()):
+        ax = f.add_subplot(gs[i])
+        _ = az.plot_forest(
+            data,
+            ax=ax,
+            colors=sns.color_palette('tab20c', n_colors=16).as_hex()[clr_offset:][i],
+            ess=False,
+            combined=plot_combined,
         )
-        axarr.set_title(ft)
-    title = kwargs.get('title', '')
-    _ = f.suptitle(f'{title} {rvs}', y=0.96 + n * 0.005)
+
+        _ = ax.set_title(txt)
+        if plot_med:
+            if i == 0:
+                qs = np.quantile(data, q=[0.03, 0.25, 0.5, 0.75, 0.97])
+                _ = ax.axvline(qs[2], color='#ADD8E6', ls='--', lw=3, zorder=-1)
+                desc = (
+                    f'med {qs[2]:.{dp}f}, HDI50 ['
+                    + ', '.join([f'{qs[v]:.{dp}f}' for v in [1, 3]])
+                    + '], HDI94 ['
+                    + ', '.join([f'{qs[v]:.{dp}f}' for v in [0, 4]])
+                    + ']'
+                )
+            else:
+                _ = ax.axvline(1, color='#ADD8E6', ls='--', lw=3, zorder=-1)
+
+    _ = f.suptitle(
+        ' - '.join(filter(None, ['Forestplot levels', mdlname, group, txtadd]))
+        + f'\n{desc}'
+    )
+    _ = f.tight_layout()
+    return f
+
+
+def pairplot_corr(
+    idata: az.data.inference_data.InferenceData,
+    rvs: list[str],
+    group: IDataGroupName = IDataGroupName.posterior.value,
+    colnames=list[str],
+    **kwargs,
+) -> figure.Figure:
+    """Create posterior pair / correlation plots using Arviz, corrrlated RVs,
+    Pass-through kwargs to az.plot_pair, e.g. ref_val
+    """
+    mdlname = kwargs.pop('mdlname', None)
+    txtadd = kwargs.pop('txtadd', None)
+    kind = kwargs.pop('kind', 'kde')
+
+    pair_kws = dict(
+        group=group,
+        var_names=rvs,
+        divergences=True,
+        marginals=True,
+        kind=kind,
+        kde_kwargs=dict(
+            contourf_kwargs=dict(alpha=0.5, cmap='Blues'),
+            contour_kwargs=dict(colors=None, cmap='Blues'),
+            hdi_probs=[0.5, 0.94, 0.99],
+        ),
+        figsize=(2 + 1.8 * len(rvs), 2 + 1.8 * len(rvs)),
+    )
+
+    axs = az.plot_pair(idata, **pair_kws)
+    corr = pd.DataFrame(
+        idata[group][rvs].stack(dims=('chain', 'draw')).values.T, columns=colnames
+    ).corr()
+    i, j = np.tril_indices(n=len(corr), k=-1)
+    for ij in zip(i, j):
+        axs[ij].set_title(f'rho: {corr.iloc[ij]:.2f}', fontsize=8, loc='right', pad=2)
+    vh_y = dict(rotation=0, va='center', ha='right')
+    vh_x = dict(rotation=40, va='top', ha='right')
+    _ = [a.set_ylabel(a.get_ylabel(), **vh_y) for ax in axs for a in ax]
+    _ = [a.set_xlabel(a.get_xlabel(), **vh_x) for ax in axs for a in ax]
+
+    f = plt.gcf()
+    _ = f.suptitle(' - '.join(filter(None, ['Pairplot', mdlname, group, rvs, txtadd])))
     _ = f.tight_layout()
     return f
 
@@ -206,3 +336,26 @@ def plot_ppc_loopit(
     _ = f.suptitle('In-sample PPC Evaluation')
     _ = f.tight_layout()
     return f
+
+
+def facetplot_df_dist(
+    df: pd.DataFrame, rvs: list, m: int = 3, rvs_hack: int = 0, **kwargs
+) -> figure.Figure:
+    """Control facet positioning of Arviz Krushke style plots, data in df
+    Pass-through kwargs to az.plot_posterior, e.g. ref_val
+    """
+    raise DeprecationWarning('No longer needed, will deprecate in future versions')
+    # n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
+    # sharex = kwargs.get('sharex', False)
+    # f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n), sharex=sharex)
+    # ref_val = kwargs.get('ref_val', [None for i in range(len(df))])
+
+    # for i, ft in enumerate(df.columns):
+    #     axarr = az.plot_posterior(
+    #         df[ft].values, ax=axs.flatten()[i], ref_val=ref_val[i]
+    #     )
+    #     axarr.set_title(ft)
+    # title = kwargs.get('title', '')
+    # _ = f.suptitle(f'{title} {rvs}', y=0.96 + n * 0.005)
+    # _ = f.tight_layout()
+    # return f

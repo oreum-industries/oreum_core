@@ -9,6 +9,9 @@ docs/private/
 # Addtional files that are sometimes useful docs (only block if in data/ dir)
 data/*.xls*
 
+# Additional files for local dev
+blas_info.txt
+
 # Created by https://www.toptal.com/developers/gitignore/api/data,linux,macos,python,pycharm,database,microsoftoffice,visualstudiocode,windows,azurefunctions
 # Edit at https://www.toptal.com/developers/gitignore?templates=data,linux,macos,python,pycharm,database,microsoftoffice,visualstudiocode,windows,azurefunctions
 
