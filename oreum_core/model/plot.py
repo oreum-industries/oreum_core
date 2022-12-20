@@ -294,6 +294,8 @@ def plot_ppc_loopit(
     also see
     https://oriolabrilpla.cat/python/arviz/pymc3/2019/07/31/loo-pit-tutorial.html
     """
+    mdlname = kwargs.pop('mdlname', None)
+    txtadd = kwargs.pop('txtadd', None)
     if len(tgts) > 1:
         raise AttributeError(
             'NOTE: live issue in Arviz, if more than one tgt '
@@ -335,7 +337,7 @@ def plot_ppc_loopit(
         _ = ax1.set_title(f'Predicted {tgt_hat} LOO-PIT')
         _ = ax2.set_title(f'Predicted {tgt_hat} LOO-PIT cumulative')
 
-    _ = f.suptitle('In-sample PPC Evaluation')
+    _ = f.suptitle(' - '.join(filter(None, ['In-sample PPC', mdlname, txtadd])))
     _ = f.tight_layout()
     return f
 

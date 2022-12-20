@@ -27,12 +27,12 @@ class FigureIO(BaseFileIO):
         """Accept figure.Figure & fqn e.g. `plots/plot.png`, write to fqn"""
         path = self.get_path_write(fn)
         f.savefig(fname=path, format='png', bbox_inches='tight', dpi=300)
-        _log.info(f'Written to {str(path)}')
+        _log.info(f'Written to {path.resolve()}')
         return path
 
 
 def display_image_file(
-    fqn: str, title: str = None, figsize: tuple = (16, 9)
+    fqn: str, title: str = None, figsize: tuple = (12, 6)
 ) -> figure.Figure:
     """Hacky way to display pre-created image file in a Notebook
     such that nbconvert can see it and render to PDF
@@ -63,10 +63,13 @@ def display_image_file(
     )
     if title is not None:
         _ = f.suptitle(f'{title}', y=1.0)
+    _ = f.tight_layout()
     return f
 
 
-def output_data_dict(df: pd.DataFrame, dd_notes: dict, dir_docs: list, fn: str = ''):
+def output_data_dict(
+    df: pd.DataFrame, dd_notes: dict[str, str], dir_docs: list[str], fn: str = ''
+):
     """Convenience fn: output data dict"""
 
     # flag if is index
