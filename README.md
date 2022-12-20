@@ -5,6 +5,8 @@
 This is an ever-growing package of core tools for use on client projects by
 Oreum Industries.
 
+![https://github.com/oreum-industries/oreum_core/workflows/black/badge.svg](https://github.com/oreum-industries/oreum_core/workflows/black/badge.svg)
+![https://github.com/oreum-industries/oreum_core/workflows/interrogate/interrogate_badge.svg](https://github.com/oreum-industries/oreum_core/workflows/interrogate/interrogate_badge.svg)
 
 ### Notes
 
