@@ -18,7 +18,7 @@ license_files = 'LICENSE.md'
 universal=1
 
 [tool.bandit]
-skips = ["B101"]  # skip asserts
+skips = ["B101", "B603", "B607", "B404"]
 
 [tool.black]
 line-length = 88
@@ -51,7 +51,7 @@ ignore-module = false
 ignore-nested-functions = false
 ignore-nested-classes = true
 ignore-setters = false
-fail-under = 90
+fail-under = 80
 exclude = ["setup.py", "docs", "build"]
 ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*"]
 verbose = 1

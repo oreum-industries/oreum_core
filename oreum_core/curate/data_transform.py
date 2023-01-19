@@ -1,5 +1,6 @@
 # curate.data_transform.py
 # copyright 2022 Oreum Industries
+"""Data Transformations"""
 import logging
 import re
 
