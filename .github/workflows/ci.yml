@@ -1,0 +1,15 @@
+name: ci
+on: [pull_request]
+jobs:
+  qc_coding_standards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set Up Basic Python Env
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Run Linter Checks
+        run: make linter_check
+      - name: Run Security Checks
+        run: make security_check

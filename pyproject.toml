@@ -1,13 +1,100 @@
+[project]
+name = "oreum_core"
+version = "0.4.9"
+description = "Core tools for use on projects by Oreum Industries"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+authors = [{ name = "Jonathan Sedar", email = "jonathan.sedar@oreum.io" }]
+requires-python = ">=3.9"
+
+[project.urls]
+homepage = "https://github.com/oreum-industries/oreum_core"
+
+[metadata]
+description-file = 'README.md'
+license_files = 'LICENSE.md'
+
+[bdist_wheel]
+universal=1
+
 [tool.black]
 line-length = 88
 target-version = ["py39"]
 skip-string-normalization = true
 skip-magic-trailing-comma = true
-include = "oreum_core/"
+include = '\.py$'
 extend-exclude = """/(__pycache__)/"""
+# check = true # diff = true  # allow for different calls to use this
+color = true
+fast = false
+verbose = true
+
 
 [tool.isort]
 profile = 'black'
 multi_line_output = 3
-line_length = 88
+skip_gitignore = true
 py_version = 39
+
+
+[tool.interrogate]
+ignore-init-method = false
+ignore-init-module = true  # doesnt work with precommit see https://github.com/econchick/interrogate/issues/100
+ignore-magic = false
+ignore-semiprivate = false
+ignore-private = false
+ignore-property-decorators = false
+ignore-module = false
+ignore-nested-functions = false
+ignore-nested-classes = true
+ignore-setters = false
+fail-under = 90
+exclude = ["setup.py", "docs", "build"]
+ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*"]
+verbose = 1
+quiet = false
+whitelist-regex = []
+color = true
+omit-covered-files = false
+generate-badge = "assets/img/"
+badge-format = "svg"
+badge-style = "flat"
+
+
+[tool.sqlfluff.core]
+dialect = "tsql"
+sql_file_exts = ".sql"
+encoding = "utf-8"
+exclude_rules = "L031, L034"
+format = "github-annotation-native"
+
+[tool.sqlfluff.layout.type.comma]
+spacing_before = "touch"
+line_position = "trailing"
+
+[tool.sqlfluff.indentation]
+tab_space_size = 4
+
+[tool.sqlfluff.rules]
+allow_scalar = true
+single_table_references = "consistent"
+
+[tool.sqlfluff.rules.L010]
+capitalisation_policy = "consistent"
+
+[tool.sqlfluff.rules.L011]
+aliasing = "explicit"
+
+[tool.sqlfluff.rules.L014]
+extended_capitalisation_policy = "consistent"
+unquoted_identifiers_policy = "aliases"
+
+[tool.sqlfluff.rules.L016]
+ignore_comment_clauses = true
+ignore_comment_lines = true
+max_line_length = 120
+indent_unit = "space"
+
+[tool.sqlfluff.rules.L057]
+additional_allowed_characters = "/[]$"
+allow_space_in_identifier = true

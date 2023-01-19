@@ -1,4 +1,5 @@
 # .pre-commit-config.yaml
+# runs locally prior to local commit
 default_language_version:
   python: python3.9
 default_stages: [commit, push]
@@ -25,23 +26,40 @@ repos:
       - id: end-of-file-fixer
       - id: no-commit-to-branch
         args: [--branch, master]
-  - repo: https://github.com/MarcoGorelli/madforhooks  # not yet
-    rev: 0.3.0
+  - repo: https://github.com/MarcoGorelli/madforhooks  # additional hooks
+    rev: 0.4.1
     hooks:
       - id: no-print-statements
-        files: ^oreum_core/
+        files: ^src/
   - repo: https://github.com/psf/black  # black formatter
     rev: 22.12.0
     hooks:
       - id: black
-        files: ^oreum_core/
-  - repo: https://github.com/PyCQA/isort  # isort import sorter
-    rev: v5.11.3
+        files: ^src/
+  - repo: https://github.com/PyCQA/isort  # isort sort imports
+    rev: 5.11.4
     hooks:
       - id: isort
-        files: ^oreum_core/
+        files: ^src/
   - repo: https://github.com/pycqa/flake8  # flake8 linter
     rev: 6.0.0
     hooks:
       - id: flake8
-        files: ^oreum_core/
+        files: ^src/
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.4
+    hooks:
+    - id: bandit
+      args: ["--config", "pyproject.toml"]
+      additional_dependencies: ["bandit[toml]"]
+  - repo: https://github.com/nbQA-dev/nbQA  # generalised notebook QA
+    rev: 1.6.1
+    hooks:
+      - id: nbqa-isort
+        additional_dependencies: [isort==5.10.1]
+  - repo: https://github.com/econchick/interrogate
+    rev: 1.5.0
+    hooks:
+      - id: interrogate
+        files: ^src/
+        args: [--config, pyproject.toml]
