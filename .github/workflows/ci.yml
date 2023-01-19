@@ -1,7 +1,7 @@
 name: ci
 on: [pull_request]
 jobs:
-  qc_coding_standards:
+  code_qc:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
