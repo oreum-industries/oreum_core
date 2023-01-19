@@ -1,5 +1,6 @@
 # curate.data_transform.py
 # copyright 2022 Oreum Industries
+"""Data Transformations"""
 import logging
 import re
 
@@ -412,9 +413,9 @@ class Standardizer:
             for i in np.arange(len(self.design_info.column_names))
         ]
 
-        self.means = None
-        self.sdevs = None
-        self.scale = None
+        self.means = None  # will become np.ndarray
+        self.sdevs = None  # will become np.ndarray
+        self.scale = None  # will become int
 
     def standardize(self, df: pd.DataFrame) -> pd.DataFrame:
         """Standardize input df to mean-centered, 2sd unit variance,

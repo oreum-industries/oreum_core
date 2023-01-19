@@ -1,5 +1,6 @@
 # model.describe.py
 # copyright 2022 Oreum Industries
+"""Model Descriptions"""
 import re
 
 import arviz as az

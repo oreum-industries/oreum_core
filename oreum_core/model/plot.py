@@ -1,5 +1,6 @@
 # model.plot.py
 # copyright 2022 Oreum Industries
+"""Model Plotting"""
 from enum import Enum
 
 import arviz as az

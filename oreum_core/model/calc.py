@@ -1,5 +1,6 @@
 # model.calc.py
 # copyright 2022 Oreum Industries
+"""Common Calculations for Model Evaluation"""
 import sys
 
 import numpy as np
@@ -7,6 +8,23 @@ import pandas as pd
 import pymc3 as pm
 import theano
 import theano.tensor as tt
+
+__all__ = [
+    'calc_f_measure',
+    'calc_binary_performance_measures',
+    'calc_mse',
+    'calc_rmse',
+    'calc_r2',
+    'calc_bayesian_r2',
+    'calc_ppc_coverage',
+    'expand_packed_triangular',
+    'calc_dist_fns_over_x',
+    'calc_dist_fns_over_x_manual_only',
+    'log_jcd',
+    'calc_2_sample_delta_prop',
+    'numpy_invlogit',
+]
+
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)

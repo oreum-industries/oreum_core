@@ -1,5 +1,6 @@
 # eda.calc.py
 # copyright 2022 Oreum Industries
+"""Calculations to help EDA"""
 import warnings
 
 import matplotlib.pyplot as plt

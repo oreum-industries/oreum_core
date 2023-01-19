@@ -1,5 +1,6 @@
 # curate.text_clean.py
 # copyright 2022 Oreum Industries
+"""Text Cleaning"""
 import string
 
 import ftfy

@@ -1,5 +1,6 @@
 # model.model_io.py
 # copyright 2022 Oreum Industries
+"""Model Posterior Samples Handling"""
 import logging
 from pathlib import Path
 

@@ -1,5 +1,6 @@
 # eda.eda_io.py
 # copyright 2022 Oreum Industries
+"""Image File Handling"""
 import logging
 from pathlib import Path
 

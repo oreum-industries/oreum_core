@@ -1,5 +1,5 @@
 # file_io.py
-# copyright 2022 Oreum Industries
+"""Common File IO"""
 from pathlib import Path
 
 

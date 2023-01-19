@@ -1,5 +1,6 @@
 # eda.plot.py
 # copyright 2022 Oreum Industries
+"""Plotting"""
 from textwrap import wrap
 
 import matplotlib.pyplot as plt

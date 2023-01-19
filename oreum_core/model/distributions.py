@@ -1,5 +1,7 @@
 # model.distributions.py
 # copyright 2022 Oreum Industries
+"""Some Probability Distributions"""
+
 import numpy as np
 import pymc3 as pm
 import theano.tensor as tt

@@ -1,9 +1,12 @@
 # model.base.py
 # copyright 2022 Oreum Industries
+"""Base Model Class"""
 import logging
 
 import arviz as az
 import pymc3 as pm
+
+__all__ = ['BasePYMC3Model']
 
 _log = logging.getLogger(__name__)
 _log_pymc = logging.getLogger('pymc3')  # force pymc3 chatty prints to log

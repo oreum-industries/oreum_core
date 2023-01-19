@@ -1,9 +1,14 @@
-# README.md
-
-## Oreum Core Tools `oreum_core`
+# Oreum Core Tools `oreum_core`
 
 This is an ever-growing package of core tools for use on client projects by
 Oreum Industries.
+
+[![CI](https://github.com/oreum-industries/oreum_core/workflows/ci/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/ci.yml)
+[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![code style: flake8](https://img.shields.io/badge/code%20style-flake8-331188.svg)](https://flake8.pycqa.org/en/latest/)
+[![code style: isort](https://img.shields.io/badge/code%20style-isort-%231674b1?style=flat)](https://pycqa.github.io/isort/)
+[![code style: interrogate](assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
+[![code security: bandit](https://img.shields.io/badge/code%20security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
 
 
 ### Notes
