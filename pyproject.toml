@@ -17,6 +17,9 @@ license_files = 'LICENSE.md'
 [bdist_wheel]
 universal=1
 
+[tool.bandit]
+skips = ["B101"]  # skip asserts
+
 [tool.black]
 line-length = 88
 target-version = ["py39"]
@@ -59,42 +62,3 @@ omit-covered-files = false
 generate-badge = "assets/img/"
 badge-format = "svg"
 badge-style = "flat"
-
-
-[tool.sqlfluff.core]
-dialect = "tsql"
-sql_file_exts = ".sql"
-encoding = "utf-8"
-exclude_rules = "L031, L034"
-format = "github-annotation-native"
-
-[tool.sqlfluff.layout.type.comma]
-spacing_before = "touch"
-line_position = "trailing"
-
-[tool.sqlfluff.indentation]
-tab_space_size = 4
-
-[tool.sqlfluff.rules]
-allow_scalar = true
-single_table_references = "consistent"
-
-[tool.sqlfluff.rules.L010]
-capitalisation_policy = "consistent"
-
-[tool.sqlfluff.rules.L011]
-aliasing = "explicit"
-
-[tool.sqlfluff.rules.L014]
-extended_capitalisation_policy = "consistent"
-unquoted_identifiers_policy = "aliases"
-
-[tool.sqlfluff.rules.L016]
-ignore_comment_clauses = true
-ignore_comment_lines = true
-max_line_length = 120
-indent_unit = "space"
-
-[tool.sqlfluff.rules.L057]
-additional_allowed_characters = "/[]$"
-allow_space_in_identifier = true
