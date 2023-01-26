@@ -27,14 +27,14 @@ class PandasParquetIO(BaseFileIO):
     def read(self, fqn: str) -> pd.DataFrame:
         """Read arviz.InferenceData object from fqn e.g. `model/mdl.netcdf`"""
         path = self.get_path_read(fqn)
-        _log.info(f'Read df from {path.resolve()}')
+        _log.info(f'Read df from {str(path.resolve())}')
         return pd.read_parquet(str(path))
 
     def write(self, df: pd.DataFrame, fqn: str) -> Path:
         """Accept pandas DataFrame and fqn e.g. `data/df.parquet`, write to fqn"""
         path = self.get_path_write(fqn)
         df.to_parquet(str(path))
-        _log.info(f'Written to {path.resolve()}')
+        _log.info(f'Written to {str(path.resolve())}')
         return path
 
 
@@ -48,7 +48,7 @@ class PandasToCSV(BaseFileIO):
         """Accept pandas DataFrame and fqn e.g. `data/df.parquet`, write to fqn"""
         path = self.get_path_write(fqn)
         df.to_csv(str(path), index_label='rowid', quoting=csv.QUOTE_NONNUMERIC)
-        _log.info(f'Written to {path.resolve()}')
+        _log.info(f'Written to {str(path.resolve())}')
         return path
 
 
@@ -70,7 +70,7 @@ class SimpleStringIO(BaseFileIO):
         with open(str(path), 'r') as f:
             s = f.read().rstrip('\n')
             f.close()
-        _log.info(f'Read text from {path.resolve()}')
+        _log.info(f'Read text from {str(path.resolve())}')
         if self.kind == 'json':
             s = json.loads(s)
         return s
@@ -82,7 +82,7 @@ class SimpleStringIO(BaseFileIO):
         with open(str(path), 'w') as f:
             f.write(f'{s}\n')
             f.close()
-        _log.info(f'Written to {path.resolve()}')
+        _log.info(f'Written to {str(path.resolve())}')
         return path
 
 
