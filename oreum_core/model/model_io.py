@@ -25,7 +25,7 @@ class ModelIO(BaseFileIO):
     def read_idata(self, fqn: str) -> az.InferenceData:
         """Read arviz.InferenceData object from fqn e.g. `model/mdl.netcdf`"""
         path = self.get_path_read(fqn, use_rootdir=False)
-        _log.info(f'Read idata from {path.resolve()}')
+        _log.info(f'Read idata from {str(path.resolve())}')
         return az.from_netcdf(str(path.resolve()))
 
     def write_idata(self, mdl: BasePYMC3Model, fqn: str = '') -> Path:
@@ -36,7 +36,7 @@ class ModelIO(BaseFileIO):
         if fqn == '':
             path = path.joinpath(Path(f'{mdl.name}.netcdf'))
         mdl.idata.to_netcdf(str(path.resolve()))
-        _log.info(f'Written to {path.resolve()}')
+        _log.info(f'Written to {str(path.resolve())}')
         return path
 
     def write_graph(
@@ -58,5 +58,5 @@ class ModelIO(BaseFileIO):
 
         # gv auto adds the file extension, so pre-remove if present
         gv.render(filename=str(path.with_suffix('')), format=format, cleanup=True)
-        _log.info(f'Written to {path.resolve()}')
+        _log.info(f'Written to {str(path.resolve())}')
         return path
