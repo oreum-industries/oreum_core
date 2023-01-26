@@ -20,7 +20,7 @@ class BaseFileIO:
             self.rootdir = Path(*rootdir)
             if not self.rootdir.is_dir():
                 raise FileNotFoundError(
-                    f'Required dir does not exist {self.rootdir.resolve()}'
+                    f'Required dir does not exist {str(self.rootdir.resolve())}'
                 )
         else:
             self.rootdir = None
@@ -31,7 +31,9 @@ class BaseFileIO:
         if (self.rootdir is not None) & use_rootdir:
             path = self.rootdir.joinpath(path)
         if not path.exists():
-            raise FileNotFoundError(f'Required file does not exist {path.resolve()}')
+            raise FileNotFoundError(
+                f'Required file does not exist {str(path.resolve())}'
+            )
         return path
 
     def get_path_write(self, fqn: str, use_rootdir: bool = True) -> Path:
@@ -41,5 +43,5 @@ class BaseFileIO:
             path = self.rootdir.joinpath(path)
         dr = Path(*path.parts[:-1])
         if not dr.is_dir():
-            raise FileNotFoundError(f'Required dir does not exist {dr.resolve()}')
+            raise FileNotFoundError(f'Required dir does not exist {str(dr.resolve())}')
         return path
