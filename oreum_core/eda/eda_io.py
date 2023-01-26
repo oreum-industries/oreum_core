@@ -28,7 +28,7 @@ class FigureIO(BaseFileIO):
         """Accept figure.Figure & fqn e.g. `plots/plot.png`, write to fqn"""
         path = self.get_path_write(fn)
         f.savefig(fname=path, format='png', bbox_inches='tight', dpi=300)
-        _log.info(f'Written to {str(path.resolve())}')
+        _log.info(f'Written to {path.resolve()}')
         return path
 
 

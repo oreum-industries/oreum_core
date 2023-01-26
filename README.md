@@ -30,7 +30,9 @@ and inconveniences to the user
 + This package is solely designed for ease of use and rapid development by
 employees of Oreum Industries, and selected clients with guidance
 + This package is **not** intended for public usage and will not be supported
-for public usage
+in that fashion
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 
 ---
 
