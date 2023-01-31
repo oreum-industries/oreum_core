@@ -64,3 +64,9 @@ repos:
       - id: interrogate
         files: ^oreum_core/
         args: [--config, pyproject.toml]
+  - repo: https://gitlab.com/iam-cms/pre-commit-hooks
+    rev: v0.1.1
+    hooks:
+      - id: apache-license
+        files: ^oreum_core/
+        args: ["-a", "Oreum Industries"]

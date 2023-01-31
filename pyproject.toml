@@ -1,6 +1,6 @@
 [project]
 name = "oreum_core"
-version = "0.4.10"
+version = "0.4.11"
 description = "Core tools for use on projects by Oreum Industries"
 readme = "README.md"
 license = {file = "LICENSE.md"}
