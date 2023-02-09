@@ -6,16 +6,12 @@ PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
 PYTHON = $(or $($$HOME/opt/miniconda3/envs/oreum_core/bin/python), $(PYTHON_DEFAULT))
 
 build:  ## build package oreum_core
-	$(PYTHON) -m pip install --upgrade pip
-	$(PYTHON) -m pip install build
-	$(PYTHON) -m build
+	$(PYTHON) -m pip install flit
+	$(PYTHON) -m flit build
 
-publish:  ## build and publish to pypi from local dev machine
-	rm -rf dist
-	make build
-	$(PYTHON) -m pip install twine
-	$(PYTHON) -m twine check dist/*
-	$(PYTHON) -m twine upload dist/*
+publish_to_test:  ## build and publish to testpypi from local dev machine
+	$(PYTHON) -m pip install flit keyring
+	$(PYTHON) -m flit publish --repository testpypi
 
 conda:  ## get miniconda for MacOS x64 (Intel)
 	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O ~/miniconda.sh
@@ -39,7 +35,7 @@ dev:  # create local condaenv for dev
 
 # pip install oreum_core[linter_check]
 check_linting:  ## run code linters (checks only)
-	pip install black flake8 interrogate isort
+	$(PYTHON) -m pip install black flake8 interrogate isort
 	black --check --diff --config pyproject.toml oreum_core/
 	isort --check-only oreum_core/
 	flake8 oreum_core/
@@ -47,7 +43,7 @@ check_linting:  ## run code linters (checks only)
 
 # pip install oreum_core[security_check]
 check_security:  ## run basic python code security check
-	pip install bandit
+	$(PYTHON) -m pip install bandit
 	bandit --config pyproject.toml -r oreum_core/
 
 
