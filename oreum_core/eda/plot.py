@@ -1258,7 +1258,6 @@ def plot_grp_year_sum_dist_count(
     ax0d, ax1d, ax2d = {}, {}, {}
 
     for i, yr in enumerate(yrs):  # ugly loop over years
-
         dfs = df.loc[df[year] == yr].copy()
         grpsort = sorted(dfs[grp].unique())[::-1]
 
