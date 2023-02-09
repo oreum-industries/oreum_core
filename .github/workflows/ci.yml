@@ -2,14 +2,18 @@ name: ci
 on: [pull_request]
 jobs:
   code_qc:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: ["ubuntu-latest"]
+        python-version: ["3.9"]
     steps:
       - uses: actions/checkout@v3
-      - name: Set Up Basic Python Env
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
-      - name: Run Linter Checks
-        run: make linter_check
-      - name: Run Security Checks
-        run: make security_check
+          python-version: ${{ matrix.python-version }}
+      - name: Run Linting and Security Checks
+        run: |
+          make check_linting
+          make check_security

@@ -1,11 +1,68 @@
+[build-system]
+requires = ["flit_core >=3.4, <4"]
+build-backend = "flit_core.buildapi"
+
 [project]
 name = "oreum_core"
-version = "0.4.10"
-description = "Core tools for use on projects by Oreum Industries"
 readme = "README.md"
 license = {file = "LICENSE.md"}
-authors = [{ name = "Jonathan Sedar", email = "jonathan.sedar@oreum.io" }]
-requires-python = ">=3.9"
+authors = [
+    { name = "Oreum Industries", email = "info@oreum.io" }
+]
+requires-python = "==3.9.*"
+dependencies = [
+    "arviz==0.12.1",
+    "csv2md>=1.1.2",
+    "ftfy>=6.1.1",
+    "graphviz<=0.18",   # capped https://stackoverflow.com/a/69997168/4473230
+    "hypothesis>=6.39.0",
+    "matplotlib==3.5.2",
+    "matplotlib-inline==0.1.2",  # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
+    "patsy>=0.5.0",  # TODO consider using formulae
+    "pymc3==3.11.4",  # TODO will soon upgrade to pymc v5
+    "regex>=2022.10.*",  # TODO simplify and refactor to use normal re
+    "seaborn==0.11.2",  # ignore the recent version with broken API
+    "theano-pymc==1.1.2",  # TODO will soon upgrade to pymc v5
+    "xlsxwriter>=3.0.3",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Operating System :: MacOS",
+    "Operating System :: Unix",
+    "License :: OSI Approved :: Apache Software License",
+]
+dynamic = ["version", "description"]
+
+[project.optional-dependencies]
+dev = [
+    "pip-licenses",
+    "pre-commit",
+    "black",
+    "flake8",
+    "interrogate",
+    "isort",
+]
+linter = [
+    "black",
+    "flake8",
+    "interrogate",
+    "isort",
+]
+publish = [
+    "build",
+    "twine",
+]
+security = [
+    "bandit",
+]
 
 [project.urls]
 homepage = "https://github.com/oreum-industries/oreum_core"
@@ -32,13 +89,11 @@ color = true
 fast = false
 verbose = true
 
-
 [tool.isort]
 profile = 'black'
 multi_line_output = 3
 skip_gitignore = true
 py_version = 39
-
 
 [tool.interrogate]
 ignore-init-method = false
@@ -52,7 +107,7 @@ ignore-nested-functions = false
 ignore-nested-classes = true
 ignore-setters = false
 fail-under = 80
-exclude = ["setup.py", "docs", "build"]
+exclude = ["dev", "docs", "dist"]
 ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*"]
 verbose = 1
 quiet = false
@@ -62,3 +117,10 @@ omit-covered-files = false
 generate-badge = "assets/img/"
 badge-format = "svg"
 badge-style = "flat"
+
+[tool.flit.module]
+name = "oreum_core"
+
+[tool.setuptools.dynamic]
+version = {attr = "oreum_core.__version__"}
+description = {attr = "oreum_core.__init__"}
