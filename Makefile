@@ -10,7 +10,7 @@ build:  ## build package oreum_core
 	$(PYTHON) -m pip install build
 	$(PYTHON) -m build
 
-publish:  ## build and publish to pypi
+publish:  ## build and publish to pypi from local dev machine
 	rm -rf dist
 	make build
 	$(PYTHON) -m pip install twine
