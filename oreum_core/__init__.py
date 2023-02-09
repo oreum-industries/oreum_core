@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""oreum_core"""
+"""Core tools for use on projects by Oreum Industries"""
 import logging
 
 __version__ = "0.4.11"

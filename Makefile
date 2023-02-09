@@ -1,13 +1,21 @@
 # Makefile
 # Assumes MacOS x64 (Intel) using Homebrew
 SHELL := /bin/bash
-.PHONY: build conda dev env-remove linter security
-PYTHON = $(or $($$HOME/opt/miniconda3/envs/oreum_core/bin/python), $(shell which python))
+.PHONY: build publish conda dev linter security
+PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
+PYTHON = $(or $($$HOME/opt/miniconda3/envs/oreum_core/bin/python), $(PYTHON_DEFAULT))
 
 build:  ## build package oreum_core
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install build
 	$(PYTHON) -m build
+
+publish:  ## build and publish to pypi
+	rm -rf dist
+	make build
+	$(PYTHON) -m pip install twine
+	$(PYTHON) -m twine check dist/*
+	$(PYTHON) -m twine upload dist/*
 
 conda:  ## get miniconda for MacOS x64 (Intel)
 	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O ~/miniconda.sh
@@ -29,16 +37,21 @@ dev:  # create local condaenv for dev
 		export CONDA_DEFAULT_ENV=oreum_core; \
 		source dev_env_install.sh
 
+# pip install oreum_core[linter_check]
 linter:  ## run code linters (checks only)
-	pip install oreum_core[linter_check]
+
+	pip install black flake8 interrogate isort
 	black -SC --check --diff --config pyproject.toml oreum_core/
 	isort --check-only oreum_core/
 	flake8 oreum_core/
 	interrogate oreum_core/
 
+# pip install oreum_core[security_check]
 security:  ## run basic python code security check
-	pip install oreum_core[security_check]
+	pip install bandit
 	bandit --config pyproject.toml -r oreum_core/
+
+
 
 # for ref
 # $(eval PYTHON = /Users/jon/opt/miniconda3/envs/oreum_core/bin/python)
