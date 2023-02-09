@@ -10,12 +10,15 @@ build:  ## build package oreum_core
 	$(PYTHON) -m pip install build
 	$(PYTHON) -m build
 
-publish:  ## build and publish to pypi from local dev machine
+publish_to_test:  ## build and publish to pypi test from local dev machine
 	rm -rf dist
 	make build
-	$(PYTHON) -m pip install twine
-	$(PYTHON) -m twine check dist/*
-	$(PYTHON) -m twine upload dist/*
+	$(PYTHON) -m pip install flit
+	flit publish --no-setup-py --repository testpypi
+
+# $(PYTHON) -m pip install twine
+# $(PYTHON) -m twine check --strict dist/*
+# $(PYTHON) -m twine upload -r testpypi -u __token__ --verbose dist/*
 
 conda:  ## get miniconda for MacOS x64 (Intel)
 	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O ~/miniconda.sh
