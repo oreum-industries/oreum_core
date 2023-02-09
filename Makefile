@@ -38,16 +38,15 @@ dev:  # create local condaenv for dev
 		source dev_env_install.sh
 
 # pip install oreum_core[linter_check]
-linter:  ## run code linters (checks only)
-
+check_linting:  ## run code linters (checks only)
 	pip install black flake8 interrogate isort
-	black -SC --check --diff --config pyproject.toml oreum_core/
+	black --check --diff --config pyproject.toml oreum_core/
 	isort --check-only oreum_core/
 	flake8 oreum_core/
 	interrogate oreum_core/
 
 # pip install oreum_core[security_check]
-security:  ## run basic python code security check
+check_security:  ## run basic python code security check
 	pip install bandit
 	bandit --config pyproject.toml -r oreum_core/
 
