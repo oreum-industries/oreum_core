@@ -1,15 +1,8 @@
 # Makefile
-# Assumes MacOS x64 (Intel) using Homebrew and ZSH
-# SHELL := /opt/homebrew/bin/zsh
+# Assumes MacOS x64 (Intel) using Homebrew
 SHELL := /bin/bash
 .PHONY: build conda dev env-remove linter security
-# export CONDA_ENV_PATH=None
-# export CONDA_DEFAULT_ENV=None
 PYTHON = $(or $($$HOME/opt/miniconda3/envs/oreum_core/bin/python), $(shell which python))
-
-yo:
-	echo $(PYTHON)
-	echo $(HOME)
 
 build:  ## build package oreum_core
 	$(PYTHON) -m pip install --upgrade pip

@@ -7,24 +7,10 @@ name = "oreum_core"
 description = "Core tools for use on projects by Oreum Industries"
 readme = "README.md"
 license = {file = "LICENSE.md"}
-authors = [{ name = "Oreum Industries", email = "info@oreum.io" }]
-requires-python = "==3.9.*"
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Intended Audience :: Science/Research",
-    "Intended Audience :: Financial and Insurance Industry",
-    "Topic :: Scientific/Engineering",
-    "Topic :: Scientific/Engineering :: Information Analysis",
-    "Topic :: Scientific/Engineering :: Visualization",
-    "Operating System :: MacOS",
-    "Operating System :: Unix",
-    "License :: OSI Approved :: Apache Software License",
+authors = [
+    { name = "Oreum Industries", email = "info@oreum.io" }
 ]
-dynamic = ["version"]  #, "description"]
-
+requires-python = "==3.9.*"
 dependencies = [
     "arviz==0.12.1",
     "csv2md>=1.1.2",
@@ -40,6 +26,21 @@ dependencies = [
     "theano-pymc==1.1.2",  # TODO will soon upgrade to pymc v5
     "xlsxwriter>=3.0.3",
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Operating System :: MacOS",
+    "Operating System :: Unix",
+    "License :: OSI Approved :: Apache Software License",
+]
+dynamic = ["version"]  #, "description"]
 
 [project.optional-dependencies]
 dev = [
