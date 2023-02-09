@@ -9,7 +9,8 @@ Oreum Industries.
 [![code style: isort](https://img.shields.io/badge/code%20style-isort-%231674b1?style=flat)](https://pycqa.github.io/isort/)
 [![code style: interrogate](assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
 [![code security: bandit](https://img.shields.io/badge/code%20security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
-
+[![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
+[![Conda Forge](https://img.shields.io/conda/vn/oreum-industries/oreum_core.svg)](https://anaconda.org/oreum-industries/oreum_core)
 
 ### Notes
 

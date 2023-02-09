@@ -1,24 +1,18 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2022-12-18
+# Last updated as-at 2023-02-09
 # NOTE:
-#  + Lower-pinned general packages to 2-level version >= a.b.*
-#  + Hard-pinned pymc3 packages to 3-level version == a.b.c
+#  + Creates an env for local dev
+#  + Install with mamba via Makefile, must force MKL via libblas (note not "blas")
 #  + Assume running on Intel x86 AMD64 processors
-#  + Package versions specified for docker container (see Dockerfile)
-#  + Assume install using mamba, need to force MKL via libblas (note not "blas")
-# REMINDER: these packages are not picked up by packing into dist, so must be
-#   separately installed in the conda env that calls this dist
+#  + Hard-pinned pymc3 packages to 3-level version == a.b.c
 name: oreum_core
 dependencies:
 - mkl==2021.4.*  # NOTE 2022 version(s) dont work on MacOS https://stackoverflow.com/a/71640311/1165112
 - mkl-service==2.4.*
-- pip>=22.1.*
+- numpy>=1.23.5                         # force compile w/ Intel MKL BLAS
 - python==3.9.*
-- conda-forge::libblas=*[build=*mkl]  # force mamba install MKL
-- conda-forge::libcblas=*[build=*mkl]  # force mamba install MKL
+- conda-forge::libblas=*[build=*mkl]    # force mamba install MKL
+- conda-forge::libcblas=*[build=*mkl]   # force mamba install MKL
 - conda-forge::liblapack=*[build=*mkl]  # force mamba install MKL
-- conda-forge::pymc3==3.11.4         # install here to compile w/ Intel MKL BLAS
-- conda-forge::theano-pymc==1.1.2    # install here to compile w/ Intel MKL BLAS
-- pip:
-  - pip-licenses>=3.5.*
-  - pre-commit>=2.20.*
+- conda-forge::pymc3==3.11.4            # force compile w/ Intel MKL BLAS
+- conda-forge::theano-pymc==1.1.2       # force compile w/ Intel MKL BLAS
