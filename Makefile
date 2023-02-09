@@ -7,17 +7,11 @@ PYTHON = $(or $($$HOME/opt/miniconda3/envs/oreum_core/bin/python), $(PYTHON_DEFA
 
 build:  ## build package oreum_core
 	$(PYTHON) -m pip install flit
-	$(PYTHON) -m flit build --no-setup-py
+	$(PYTHON) -m flit build
 
-publish_to_test:  ## build and publish to pypi test from local dev machine
-	$(PYTHON) -m pip install flit
-	$(PYTHON) -m flit publish --no-setup-py
-
-#--repository testpypi
-
-# $(PYTHON) -m pip install twine
-# $(PYTHON) -m twine check --strict dist/*
-# $(PYTHON) -m twine upload -r testpypi -u __token__ --verbose dist/*
+publish_to_test:  ## build and publish to testpypi from local dev machine
+	$(PYTHON) -m pip install flit keyring
+	$(PYTHON) -m flit publish --repository testpypi
 
 conda:  ## get miniconda for MacOS x64 (Intel)
 	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O ~/miniconda.sh
