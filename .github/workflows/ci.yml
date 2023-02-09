@@ -13,7 +13,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Run Linter and Security Checks
+      - name: Run Linting and Security Checks
         run: |
-          make linter
-          make security
+          make check_linting
+          make check_security
