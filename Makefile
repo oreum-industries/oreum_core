@@ -13,14 +13,14 @@ endif
 
 build:  ## build package oreum_core
 	$(PYTHON_DEFAULT) -m pip install --upgrade pip
-	$(PYTHON_DEFAULT) -m pip install oreum_core[publish]
+	$(PYTHON_DEFAULT) -m pip install .[publish]
 	export SOURCE_DATE_EPOCH=$(shell date +%s)
 	$(PYTHON_DEFAULT) -m flit build
 
 
 publish:  ## build and publish to pypi
 	$(PYTHON_DEFAULT) -m pip install --upgrade pip
-	$(PYTHON_DEFAULT) -m pip install oreum_core[publish]
+	$(PYTHON_DEFAULT) -m pip install .[publish]
 	export FLIT_INDEX_URL=https://upload.pypi.org/legacy/; \
 		export FLIT_USERNAME=__token__; \
 		$(PYTHON_DEFAULT) -m flit publish
@@ -28,7 +28,7 @@ publish:  ## build and publish to pypi
 
 publish_to_testpypi:  ## build and publish to testpypi
 	$(PYTHON_DEFAULT) -m pip install --upgrade pip
-	$(PYTHON_DEFAULT) -m pip install oreum_core[publish]
+	$(PYTHON_DEFAULT) -m pip install .[publish]
 	export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
 		export FLIT_USERNAME=__token__; \
 		$(PYTHON_DEFAULT) -m flit publish
@@ -57,7 +57,7 @@ dev:  # create local condaenv for dev
 
 
 lint:  ## run code lint & security checks
-	$(PYTHON) -m pip install oreum_core[lint]
+	$(PYTHON) -m pip install .[lint]
 	black --check --diff --config pyproject.toml oreum_core/
 	isort --check-only oreum_core/
 	flake8 oreum_core/
