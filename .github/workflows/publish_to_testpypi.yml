@@ -11,11 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.9
+      - name: Setup Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
       - name: Build package
         run: make build
       - name: Publish to PyPI
-        run: FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }} make publish
+        run: FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }} make publish_to_testpypi
+
+# ref
+# https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows
