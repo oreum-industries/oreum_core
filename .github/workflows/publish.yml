@@ -1,10 +1,10 @@
 name: publish
 on:
   pull_request_target:
-    branches:
-      - master
     types:
       - closed
+    branches:
+      - master
 
 jobs:
   publish:
@@ -19,11 +19,7 @@ jobs:
       - name: Build package
         run: make build
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN_OREUM_CORE_GITHUB }}
-          verbose: true
-          print_hash: true
+        run: FLIT_PASSWORD=${{ secrets.PYPI_TOKEN_OREUM_CORE_GITHUB }} make publish
+
 
 # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#running-your-pull_request_target-workflow-when-a-pull-request-merges

@@ -20,10 +20,18 @@ build:  ## build package oreum_core
 	$(PYTHON_DEFAULT) -m flit build
 
 
-publish_to_testpypi:  ## build and publish to testpypi from local dev machine
+publish_to_testpypi:  ## build and publish to testpypi
 	make upgrade_pip
 	$(PYTHON_DEFAULT) -m pip install flit keyring
 	export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
+		export FLIT_USERNAME=__token__; \
+		$(PYTHON_DEFAULT) -m flit publish
+
+
+publish:  ## build and publish to pypi
+	make upgrade_pip
+	$(PYTHON_DEFAULT) -m pip install flit keyring
+	export FLIT_INDEX_URL=https://upload.pypi.org/legacy/; \
 		export FLIT_USERNAME=__token__; \
 		$(PYTHON_DEFAULT) -m flit publish
 
