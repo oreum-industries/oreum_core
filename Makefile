@@ -10,8 +10,8 @@ else
     PYTHON = $(PYTHON_DEFAULT)
 endif
 
-TARGET ?= testpypi
-ifeq ($(TARGET),"pypi")  # pass TARGET=pypi in call to make, else default to testpypi
+TARGET ?= test
+ifeq ($(TARGET),pypi)  # pass TARGET=pypi in call to make, else default to testpypi
 	FLIT_INDEX_URL = https://upload.pypi.org/legacy/
 else
 	FLIT_INDEX_URL = https://test.pypi.org/legacy/
