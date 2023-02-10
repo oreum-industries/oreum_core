@@ -3,8 +3,8 @@ on:
   pull_request:
     types:
       - ready_for_review
-    branches:
-      - master
+    # branches:
+    #   - master
 
 jobs:
   publish_to_testpypi:
