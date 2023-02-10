@@ -17,5 +17,9 @@ import logging
 
 __version__ = "0.4.16a1"
 
-# logger goes to null handler by default. importing packages can set elsewhere
+# logger goes to null handler by default
+# packages that import oreum_core can override this and direct elsewhere
+# e.g.
+# logger = logging.getLogger('oreum_core')
+# logger.addHandler(logging.FileHandler('log.log', mode='a', encoding='utf-8'))
 logging.getLogger('oreum_core').addHandler(logging.NullHandler())
