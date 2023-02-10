@@ -1,10 +1,11 @@
 name: publish
 on:
   pull_request_target:
-    types:
-      - closed
     branches:
       - master
+    types:
+      - closed
+
 jobs:
   publish:
     if: github.event.pull_request.merged == true

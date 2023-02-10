@@ -1,17 +1,26 @@
 # Makefile
 # Assumes MacOS x64 (Intel) using Homebrew
+.PHONY: build publish_to_testpypi conda dev linter security
 SHELL := /bin/bash
-.PHONY: build publish conda dev linter security
-PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
-PYTHON = $(or $($$HOME/opt/miniconda3/envs/oreum_core/bin/python), $(PYTHON_DEFAULT))
+PYTHON_DEFAULT := $(or $(shell which python3), $(shell which python))
+PYTHON := $(or $${HOME}/opt/miniconda3/envs/oreum_core/bin/python, $(PYTHON_DEFAULT))
 
 build:  ## build package oreum_core
 	$(PYTHON) -m pip install flit
+	export SOURCE_DATE_EPOCH=$(shell date +%s)
 	$(PYTHON) -m flit build
 
-publish_to_test:  ## build and publish to testpypi from local dev machine
+
+# publish_to_test:  ## build and publish to testpypi from local dev machine
+# 	$(PYTHON) -m pip install flit keyring
+# 	$(PYTHON) -m flit publish --repository testpypi
+
+publish_to_testpypi:  ## build and publish to testpypi from local dev machine
 	$(PYTHON) -m pip install flit keyring
-	$(PYTHON) -m flit publish --repository testpypi
+	export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
+		export FLIT_USERNAME=__token__; \
+		$(PYTHON) -m flit publish
+
 
 conda:  ## get miniconda for MacOS x64 (Intel)
 	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O ~/miniconda.sh
