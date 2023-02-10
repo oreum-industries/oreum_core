@@ -22,6 +22,6 @@ jobs:
         run: FLIT_PASSWORD=${{ secrets.PYPI_TOKEN_OREUM_CORE_GITHUB }} make publish
 
 # NOTE
-# This will execute upon PR close if it was merged,
+# This will execute upon PR close if it was merged (and targeted master),
 # using the contents of the master branch at that point
 # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#running-your-pull_request_target-workflow-when-a-pull-request-merges
