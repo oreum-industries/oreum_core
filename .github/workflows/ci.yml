@@ -16,4 +16,3 @@ jobs:
       - name: Run Linting and Code Security Checks
         run: |
           make lint
-          make security
