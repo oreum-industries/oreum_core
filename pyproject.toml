@@ -50,17 +50,17 @@ dev = [
     "interrogate",
     "isort",
 ]
-linter = [
+linter_check = [
     "black",
     "flake8",
     "interrogate",
     "isort",
 ]
 publish = [
-    "build",
-    "twine",
+    "flit",
+    "keyring",
 ]
-security = [
+security_check = [
     "bandit",
 ]
 

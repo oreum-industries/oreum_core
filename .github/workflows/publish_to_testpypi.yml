@@ -1,0 +1,21 @@
+name: publish_to_testpypi
+on:
+  pull_request_target:
+    types:
+      - ready_for_review
+    branches:
+      - master
+
+jobs:
+  publish_to_testpypi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - name: Build package
+        run: make build
+      - name: Publish to PyPI
+        run: FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }} make publish
