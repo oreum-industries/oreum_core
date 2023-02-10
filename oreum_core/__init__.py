@@ -15,7 +15,7 @@
 """Core tools for use on projects by Oreum Industries"""
 import logging
 
-__version__ = "0.4.15a4"
+__version__ = "0.4.15"
 
 # logger goes to null handler by default. importing packages can set elsewhere
 logging.getLogger('oreum_core').addHandler(logging.NullHandler())
