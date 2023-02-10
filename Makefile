@@ -3,7 +3,7 @@
 .PHONY: build publish_to_testpypi conda dev linter security
 SHELL := /bin/bash
 PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
-PYTHON = $(or $$HOME/opt/miniconda3/envs/oreum_core/bin/python, $(PYTHON_DEFAULT))
+PYTHON = $(or $($$HOME/opt/miniconda3/envs/oreum_core/bin/python), $(PYTHON_DEFAULT))
 
 build:  ## build package oreum_core
 	$(PYTHON) -m pip install flit
