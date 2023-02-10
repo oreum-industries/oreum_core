@@ -10,21 +10,6 @@ authors = [
     { name = "Oreum Industries", email = "info@oreum.io" }
 ]
 requires-python = "==3.9.*"
-dependencies = [
-    "arviz==0.12.1",
-    "csv2md>=1.1.2",
-    "ftfy>=6.1.1",
-    "graphviz<=0.18",   # capped https://stackoverflow.com/a/69997168/4473230
-    "hypothesis>=6.39.0",
-    "matplotlib==3.5.2",
-    "matplotlib-inline==0.1.2",  # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
-    "patsy>=0.5.0",  # TODO consider using formulae
-    "pymc3==3.11.4",  # TODO will soon upgrade to pymc v5
-    "regex>=2022.10.*",  # TODO simplify and refactor to use normal re
-    "seaborn==0.11.2",  # ignore the recent version with broken API
-    "theano-pymc==1.1.2",  # TODO will soon upgrade to pymc v5
-    "xlsxwriter>=3.0.3",
-]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python",
@@ -40,6 +25,21 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
 ]
 dynamic = ["version", "description"]
+dependencies = [
+    "arviz==0.12.1",
+    "csv2md>=1.1.2",
+    "ftfy>=6.1.1",
+    "graphviz<=0.18",   # capped https://stackoverflow.com/a/69997168/4473230
+    "hypothesis>=6.39.0",
+    "matplotlib==3.5.2",
+    "matplotlib-inline==0.1.2",  # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
+    "patsy>=0.5.0",  # TODO consider using formulae
+    "pymc3==3.11.4",  # TODO will soon upgrade to pymc v5
+    "regex>=2022.10.*",  # TODO simplify and refactor to use normal re
+    "seaborn==0.11.2",  # ignore the recent version with broken API
+    "theano-pymc==1.1.2",  # TODO will soon upgrade to pymc v5
+    "xlsxwriter>=3.0.3",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -49,18 +49,6 @@ dev = [
     "flake8",
     "interrogate",
     "isort",
-]
-linter_check = [
-    "black",
-    "flake8",
-    "interrogate",
-    "isort",
-]
-publish = [
-    "flit",
-    "keyring",
-]
-security_check = [
     "bandit",
 ]
 
