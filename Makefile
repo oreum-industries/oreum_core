@@ -1,14 +1,27 @@
 # Makefile
 # Assumes MacOS x64 (Intel) using Homebrew
-.PHONY: build publish_to_testpypi conda dev linter security
+.PHONY: build publish_to_testpypi conda dev lint security upgrade_pip
 SHELL := /bin/bash
 PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
-PYTHON = $(or $($$HOME/opt/miniconda3/envs/oreum_core/bin/python), $(PYTHON_DEFAULT))
+# PYTHON_ENV = $$HOME/opt/miniconda3/envs/oreum_core/bin/python
+PYTHON_ENV = $(HOME)/opt/miniconda3/envs/oreum_core/bin/python
+
+ifneq ("$(wildcard $(PYTHON_ENV))","")
+    PYTHON = $(PYTHON_ENV)
+else
+    PYTHON = $(PYTHON_DEFAULT)
+endif
+
+# PYTHON_ENV = $(or $($$HOME/opt/miniconda3/envs/oreum_core/bin/python), $(PYTHON_DEFAULT))
+
+yo:
+	echo $(PYTHON)
 
 build:  ## build package oreum_core
-	$(PYTHON) -m pip install flit
+	make upgrade_pip
+	$(PYTHON_DEFAULT) -m pip install flit
 	export SOURCE_DATE_EPOCH=$(shell date +%s)
-	$(PYTHON) -m flit build
+	$(PYTHON_DEFAULT) -m flit build
 
 
 # publish_to_test:  ## build and publish to testpypi from local dev machine
@@ -16,10 +29,11 @@ build:  ## build package oreum_core
 # 	$(PYTHON) -m flit publish --repository testpypi
 
 publish_to_testpypi:  ## build and publish to testpypi from local dev machine
-	$(PYTHON) -m pip install flit keyring
+	make upgrade_pip
+	$(PYTHON_DEFAULT) -m pip install flit keyring
 	export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
 		export FLIT_USERNAME=__token__; \
-		$(PYTHON) -m flit publish
+		$(PYTHON_DEFAULT) -m flit publish
 
 
 conda:  ## get miniconda for MacOS x64 (Intel)
@@ -43,7 +57,7 @@ dev:  # create local condaenv for dev
 		source dev_env_install.sh
 
 # pip install oreum_core[linter_check]
-check_linting:  ## run code linters (checks only)
+lint:  ## run code linters (checks only)
 	$(PYTHON) -m pip install black flake8 interrogate isort
 	black --check --diff --config pyproject.toml oreum_core/
 	isort --check-only oreum_core/
@@ -51,11 +65,13 @@ check_linting:  ## run code linters (checks only)
 	interrogate oreum_core/
 
 # pip install oreum_core[security_check]
-check_security:  ## run basic python code security check
+security:  ## run basic python code security check
 	$(PYTHON) -m pip install bandit
 	bandit --config pyproject.toml -r oreum_core/
 
 
+upgrade_pip:
+	$(PYTHON_DEFAULT) -m pip install --upgrade pip
 
 # for ref
 # $(eval PYTHON = /Users/jon/opt/miniconda3/envs/oreum_core/bin/python)
