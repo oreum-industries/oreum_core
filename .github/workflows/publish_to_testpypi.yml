@@ -19,3 +19,6 @@ jobs:
         run: make build
       - name: Publish to PyPI
         run: FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }} make publish
+
+# ref
+# https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows
