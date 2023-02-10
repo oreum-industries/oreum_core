@@ -15,22 +15,24 @@ endif
 
 build:  ## build package oreum_core
 	make upgrade_pip
-	$(PYTHON_DEFAULT) -m pip install flit
+	$(PYTHON_DEFAULT) -m pip install oreum_core[publish]
 	export SOURCE_DATE_EPOCH=$(shell date +%s)
 	$(PYTHON_DEFAULT) -m flit build
 
 
 publish_to_testpypi:  ## build and publish to testpypi
 	make upgrade_pip
-	$(PYTHON_DEFAULT) -m pip install flit keyring
+	$(PYTHON_DEFAULT) -m pip install oreum_core[publish]
 	export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
 		export FLIT_USERNAME=__token__; \
 		$(PYTHON_DEFAULT) -m flit publish
 
 
+#	$(PYTHON_DEFAULT) -m pip install flit keyring
+
 publish:  ## build and publish to pypi
 	make upgrade_pip
-	$(PYTHON_DEFAULT) -m pip install flit keyring
+	$(PYTHON_DEFAULT) -m pip install oreum_core[publish]
 	export FLIT_INDEX_URL=https://upload.pypi.org/legacy/; \
 		export FLIT_USERNAME=__token__; \
 		$(PYTHON_DEFAULT) -m flit publish
@@ -58,18 +60,20 @@ dev:  # create local condaenv for dev
 		source dev_env_install.sh
 
 
-# pip install oreum_core[linter_check]
+# $(PYTHON) -m pip install oreum_core[linter_check]
+# $(PYTHON) -m pip install black flake8 interrogate isort
 lint:  ## run code linters (checks only)
-	$(PYTHON) -m pip install black flake8 interrogate isort
+	$(PYTHON) -m pip install oreum_core[linter_check]
 	black --check --diff --config pyproject.toml oreum_core/
 	isort --check-only oreum_core/
 	flake8 oreum_core/
 	interrogate oreum_core/
 
 
-# pip install oreum_core[security_check]
+# $(PYTHON) -m pip install oreum_core[security_check]
+# $(PYTHON) -m pip install bandit
 security:  ## run basic python code security check
-	$(PYTHON) -m pip install bandit
+	$(PYTHON) -m pip install oreum_core[security_check]
 	bandit --config pyproject.toml -r oreum_core/
 
 
