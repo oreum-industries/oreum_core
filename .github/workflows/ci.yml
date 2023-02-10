@@ -15,5 +15,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run Linting and Security Checks
         run: |
+          make yo
           make lint
           make security

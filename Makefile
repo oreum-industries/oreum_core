@@ -2,10 +2,10 @@
 # Assumes MacOS x64 (Intel) using Homebrew
 .PHONY: build publish_to_testpypi conda dev lint security upgrade_pip
 SHELL := /bin/bash
-PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
-# PYTHON_ENV = $$HOME/opt/miniconda3/envs/oreum_core/bin/python
-PYTHON_ENV = $(HOME)/opt/miniconda3/envs/oreum_core/bin/python
 
+# Get python from miniconda env or get default (e.g. on GH Action machine)
+PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
+PYTHON_ENV = $(HOME)/opt/miniconda3/envs/oreum_core/bin/python
 ifneq ("$(wildcard $(PYTHON_ENV))","")
     PYTHON = $(PYTHON_ENV)
 else
@@ -15,6 +15,8 @@ endif
 # PYTHON_ENV = $(or $($$HOME/opt/miniconda3/envs/oreum_core/bin/python), $(PYTHON_DEFAULT))
 
 yo:
+	echo $(PYTHON_DEFAULT)
+	echo $(PYTHON_ENV)
 	echo $(PYTHON)
 
 build:  ## build package oreum_core
