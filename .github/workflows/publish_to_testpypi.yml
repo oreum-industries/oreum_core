@@ -20,5 +20,6 @@ jobs:
       - name: Publish to TestPyPI
         run: FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }} make publish_to_testpypi
 
-# ref
-# https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows
+# NOTE
+# This will execute when a draft PR (that targets master) is marked ready for review,
+# using the contents of the inbound branch at that point
