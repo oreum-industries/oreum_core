@@ -1,11 +1,11 @@
-name: publish_to_testpypi
+name: publish_to_test
 on:
   pull_request:
     types:
       - ready_for_review
 
 jobs:
-  publish_to_testpypi:
+  publish_to_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
