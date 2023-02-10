@@ -37,26 +37,24 @@ lint:  ## run code lint & security checks
 
 
 build:  ## build package oreum_core
-	$(PYTHON_DEFAULT) -m pip install --upgrade pip
-	$(PYTHON_DEFAULT) -m pip install flit
+	rm -rf dist
+	$(PYTHON) -m pip install flit
 	export SOURCE_DATE_EPOCH=$(shell date +%s)
-	$(PYTHON_DEFAULT) -m flit build
+	$(PYTHON) -m flit build
 
 
 publish:  ## build and publish to pypi
-	$(PYTHON_DEFAULT) -m pip install --upgrade pip
-	$(PYTHON_DEFAULT) -m pip install flit keyring
+	$(PYTHON) -m pip install flit keyring
 	export FLIT_INDEX_URL=https://upload.pypi.org/legacy/; \
 		export FLIT_USERNAME=__token__; \
-		$(PYTHON_DEFAULT) -m flit publish
+		$(PYTHON) -m flit publish
 
 
 publish_test:  ## build and publish to testpypi
-	$(PYTHON_DEFAULT) -m pip install --upgrade pip
-	$(PYTHON_DEFAULT) -m pip install flit keyring
+	$(PYTHON) -m pip install flit keyring
 	export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
 		export FLIT_USERNAME=__token__; \
-		$(PYTHON_DEFAULT) -m flit publish
+		$(PYTHON) -m flit publish
 
 
 conda:  ## get miniconda for MacOS x64 (Intel)
