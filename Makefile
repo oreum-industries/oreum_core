@@ -11,11 +11,6 @@ else
 endif
 
 
-get_pip_for_publish:
-	$(PYTHON_DEFAULT) -m pip install --upgrade pip
-	$(PYTHON_DEFAULT) -m pip install flit keyring
-
-
 build:  ## build package oreum_core
 	make get_pip_for_publish
 	export SOURCE_DATE_EPOCH=$(shell date +%s)
@@ -65,6 +60,11 @@ lint:  ## run code lint & security checks
 	flake8 oreum_core/
 	interrogate oreum_core/
 	bandit --config pyproject.toml -r oreum_core/
+
+
+get_pip_for_publish:  ## keep build & publish a little more dry
+	$(PYTHON_DEFAULT) -m pip install --upgrade pip
+	$(PYTHON_DEFAULT) -m pip install flit keyring
 
 
 # TODO install again post-publish
