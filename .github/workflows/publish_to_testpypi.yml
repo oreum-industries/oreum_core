@@ -16,7 +16,7 @@ jobs:
       - name: Build package
         run: make build
       - name: Publish to TestPyPI
-        run: FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }} make publish_to_testpypi
+        run: FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }} make publish_test
 
 # NOTE
 # This will execute when a draft PR is marked ready for review,

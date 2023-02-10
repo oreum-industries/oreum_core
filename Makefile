@@ -1,6 +1,6 @@
 # Makefile
 # Assume dev on MacOS x64 (Intel) using brew & miniconda, publish via GH Actions
-.PHONY: dev lint build publish conda
+.PHONY: dev lint build publish publish_test conda
 SHELL := /bin/bash
 PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
 PYTHON_ENV = $(HOME)/opt/miniconda3/envs/oreum_core/bin/python
@@ -8,13 +8,6 @@ ifneq ("$(wildcard $(PYTHON_ENV))","")
     PYTHON = $(PYTHON_ENV)
 else
     PYTHON = $(PYTHON_DEFAULT)
-endif
-
-TARGET ?= test
-ifeq ($(TARGET),pypi)  # pass TARGET=pypi in call to make, else default to testpypi
-	FLIT_INDEX_URL = https://upload.pypi.org/legacy/
-else
-	FLIT_INDEX_URL = https://test.pypi.org/legacy/
 endif
 
 
@@ -33,8 +26,6 @@ dev:  # create local condaenv for dev
 		pip-licenses -saud -f markdown --output-file LICENSES_THIRD_PARTY.md; \
 		pre-commit install; \
 		pre-commit autoupdate
-
-# source dev_env_install.sh
 
 lint:  ## run code lint & security checks
 	$(PYTHON) -m pip install black flake8 interrogate isort bandit
@@ -55,7 +46,15 @@ build:  ## build package oreum_core
 publish:  ## build and publish to pypi
 	$(PYTHON_DEFAULT) -m pip install --upgrade pip
 	$(PYTHON_DEFAULT) -m pip install flit keyring
-	export FLIT_INDEX_URL=$(FLIT_INDEX_URL); \
+	export FLIT_INDEX_URL=https://upload.pypi.org/legacy/; \
+		export FLIT_USERNAME=__token__; \
+		$(PYTHON_DEFAULT) -m flit publish
+
+
+publish_test:  ## build and publish to testpypi
+	$(PYTHON_DEFAULT) -m pip install --upgrade pip
+	$(PYTHON_DEFAULT) -m pip install flit keyring
+	export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
 		export FLIT_USERNAME=__token__; \
 		$(PYTHON_DEFAULT) -m flit publish
 
