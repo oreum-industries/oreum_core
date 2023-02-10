@@ -66,4 +66,4 @@ lint:  ## run code lint & security checks
 
 
 # TODO install again post-publish
-# $(PYTHON) -m pip install -e $(shell pwd)
+# https://flit.pypa.io/en/stable/cmdline.html#flit-install
