@@ -17,7 +17,7 @@ jobs:
           python-version: "3.9"
       - name: Build package
         run: make build
-      - name: Publish to PyPI
+      - name: Publish to TestPyPI
         run: FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }} make publish_to_testpypi
 
 # ref
