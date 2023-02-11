@@ -1,27 +1,68 @@
 name: publish
 on:
-  pull_request_target:
+  release:
     types:
-      - closed
+      - created
     branches:
       - master
 
 jobs:
-  publish:
-    if: github.event.pull_request.merged == true
+  build:
+    name: Build package from source
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: ["ubuntu-latest"]
+        python-version: ["3.9"]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build package
+        run: make build
+
+
+  test_publish:
+    name: All-in-one build & publish package to TestPyPi and test install it
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
       - name: Setup Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - name: Build package
-        run: make build
-      - name: Publish to PyPI
-        run: FLIT_PASSWORD=${{ secrets.PYPI_TOKEN_OREUM_CORE_GITHUB }} make publish
+      - name: Build and Publish package to TestPyPI
+        env:
+          FLIT_USERNAME=__token__
+          FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }}
+        run: make test_publish
+      - name: Test download and install package from TestPyPI
+        env:
+          VERSION='${{ github.ref_name }}'
+        run: make test_install
+
+
+  publish:
+    name: All-in-one build & publish package to PyPi
+    needs: [build, test_publish]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - name: Build and Publish package to PyPI
+        env:
+          FLIT_USERNAME=__token__
+          FLIT_PASSWORD=${{ secrets.PYPI_TOKEN_OREUM_CORE_GITHUB }}
+          VERSION='${{  github.ref_name }}'
+        run: make publish
+
 
 # NOTE
-# This will execute upon PR close if it was merged (and targeted master),
+# This will execute upon release created
 # using the contents of the master branch at that point
 # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#running-your-pull_request_target-workflow-when-a-pull-request-merges
