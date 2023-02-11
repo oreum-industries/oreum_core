@@ -1,6 +1,6 @@
 # Makefile
 # Assume dev on MacOS x64 (Intel) using brew & miniconda, publish via GH Actions
-.PHONY: dev lint build publish publish_test conda
+.PHONY: conda dev lint pre_build build publish test_publish
 SHELL := /bin/bash
 PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
 PYTHON_ENV = $(HOME)/opt/miniconda3/envs/oreum_core/bin/python
@@ -9,6 +9,15 @@ ifneq ("$(wildcard $(PYTHON_ENV))","")
 else
     PYTHON = $(PYTHON_DEFAULT)
 endif
+
+
+conda:  ## get miniconda for MacOS x64 (Intel)
+	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O ~/miniconda.sh
+	sleep 1
+	bash ~/miniconda.sh -b -p $$HOME/miniconda
+	sleep 1
+	export PATH=$$HOME/miniconda/bin:$$PATH; \
+	conda update --prefix $$HOME/miniconda --yes conda
 
 
 dev:  # create local condaenv for dev
@@ -27,6 +36,7 @@ dev:  # create local condaenv for dev
 		pre-commit install; \
 		pre-commit autoupdate
 
+
 lint:  ## run code lint & security checks
 	$(PYTHON) -m pip install black flake8 interrogate isort bandit
 	black --check --diff --config pyproject.toml oreum_core/
@@ -36,35 +46,28 @@ lint:  ## run code lint & security checks
 	bandit --config pyproject.toml -r oreum_core/
 
 
-build:  ## build package oreum_core
+pre_build:  # setup env for flit build or flit publish
 	rm -rf dist
-	$(PYTHON) -m pip install flit
+	$(PYTHON) -m pip install flit keyring
 	export SOURCE_DATE_EPOCH=$(shell date +%s)
+
+
+build:  ## build package oreum_core (actually more of an "assemble" than build)
+	make pre_build
 	$(PYTHON) -m flit build
 
 
-publish:  ## build and publish to pypi
-	$(PYTHON) -m pip install flit keyring
+publish:  ## all-in-one build and publish to pypi
+	make pre_build
 	export FLIT_INDEX_URL=https://upload.pypi.org/legacy/; \
-		export FLIT_USERNAME=__token__; \
 		$(PYTHON) -m flit publish
 
 
-publish_test:  ## build and publish to testpypi
-	$(PYTHON) -m pip install flit keyring
+test_publish:  ## all-in-one build and publish to testpypi
+	make pre_build
 	export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
-		export FLIT_USERNAME=__token__; \
 		$(PYTHON) -m flit publish
 
-
-conda:  ## get miniconda for MacOS x64 (Intel)
-	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O ~/miniconda.sh
-	sleep 1
-	bash ~/miniconda.sh -b -p $$HOME/miniconda
-	sleep 1
-	export PATH=$$HOME/miniconda/bin:$$PATH; \
-	conda update --prefix $$HOME/miniconda --yes conda
-
-
-# TODO install again post-publish
-# https://flit.pypa.io/en/stable/cmdline.html#flit-install
+# sleep 10
+# $(PYTHON) -m pip install -i https://test.pypi.org/simple/ oreum_core==${{  github.ref_name }}
+# $(PYTHON) -c "import oreum_core; assert oreum_core.__version__ == '${{  github.ref_name }}'"
