@@ -28,8 +28,8 @@ dynamic = ["version", "description"]
 dependencies = [
     "arviz==0.12.1",
     "csv2md>=1.1.2",
-    "ftfy>=6.1.1",
-    "graphviz<=0.18",   # capped https://stackoverflow.com/a/69997168/4473230
+    "ftfy>=5.4.1",   # NOTE MacOS has 6.1.1
+    "graphviz<=0.18",   # NOTE capped https://stackoverflow.com/a/69997168/4473230
     "hypothesis>=6.39.0",
     "matplotlib==3.5.2",
     "matplotlib-inline==0.1.2",  # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
