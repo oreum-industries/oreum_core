@@ -44,7 +44,9 @@ jobs:
       - name: Test download and install package from TestPyPI
         env:
           VVERSION: '${{ github.ref_name }}'
-        run: make test_install
+        run: |
+          sleep 10
+          make test_install
 
 
   publish:
