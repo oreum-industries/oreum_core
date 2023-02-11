@@ -30,6 +30,8 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
       - name: Setup Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -50,6 +52,8 @@ jobs:
     needs: [build, test_publish]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
       - name: Setup Python 3.9
         uses: actions/setup-python@v4
         with:
