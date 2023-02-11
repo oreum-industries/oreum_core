@@ -36,12 +36,12 @@ jobs:
           python-version: "3.9"
       - name: Build and Publish package to TestPyPI
         env:
-          FLIT_USERNAME=__token__
-          FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }}
+          FLIT_USERNAME: __token__
+          FLIT_PASSWORD: ${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }}
         run: make test_publish
       - name: Test download and install package from TestPyPI
         env:
-          VERSION='${{ github.ref_name }}'
+          VVERSION: '${{ github.ref_name }}'
         run: make test_install
 
 
@@ -56,9 +56,8 @@ jobs:
           python-version: "3.9"
       - name: Build and Publish package to PyPI
         env:
-          FLIT_USERNAME=__token__
-          FLIT_PASSWORD=${{ secrets.PYPI_TOKEN_OREUM_CORE_GITHUB }}
-          VERSION='${{  github.ref_name }}'
+          FLIT_USERNAME: __token__
+          FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN_OREUM_CORE_GITHUB }}
         run: make publish
 
 
