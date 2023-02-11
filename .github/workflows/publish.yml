@@ -45,7 +45,7 @@ jobs:
         env:
           VVERSION: '${{ github.ref_name }}'
         run: |
-          sleep 60
+          sleep 30
           make test_install
 
 
