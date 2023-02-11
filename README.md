@@ -10,8 +10,9 @@ Oreum Industries.
 [![code style: interrogate](https://raw.githubusercontent.com/oreum-industries/oreum_core/master/assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
 [![code security: bandit](https://img.shields.io/badge/code%20security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
 [![GitHub Release](https://img.shields.io/github/v/release/oreum-industries/oreum_core?display_name=tag&sort=semver)](https://github.com/oreum-industries/oreum_core/releases)
+[![publish](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml)
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
-[![Conda Forge](https://img.shields.io/conda/vn/oreum-industries/oreum_core.svg)](https://anaconda.org/oreum-industries/oreum_core)
+<!-- [![Conda Forge](https://img.shields.io/conda/vn/oreum-industries/oreum_core.svg)](https://anaconda.org/oreum-industries/oreum_core) -->
 
 ### Notes
 

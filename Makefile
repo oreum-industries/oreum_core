@@ -9,6 +9,7 @@ ifneq ("$(wildcard $(PYTHON_ENV))","")
 else
     PYTHON = $(PYTHON_DEFAULT)
 endif
+VERSION := $(shell echo $(VVERSION) | sed 's/v//')
 
 
 conda:  ## get miniconda for MacOS x64 (Intel)
