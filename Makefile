@@ -1,6 +1,6 @@
 # Makefile
 # Assume dev on MacOS x64 (Intel) using brew & miniconda, publish via GH Actions
-.PHONY: conda dev lint pre_build build publish test_publish
+.PHONY: conda dev lint pre_build build publish test_publish test_install
 SHELL := /bin/bash
 PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
 PYTHON_ENV = $(HOME)/opt/miniconda3/envs/oreum_core/bin/python
@@ -68,6 +68,8 @@ test_publish:  ## all-in-one build and publish to testpypi
 	export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
 		$(PYTHON) -m flit publish
 
-# sleep 10
-# $(PYTHON) -m pip install -i https://test.pypi.org/simple/ oreum_core==${{  github.ref_name }}
-# $(PYTHON) -c "import oreum_core; assert oreum_core.__version__ == '${{  github.ref_name }}'"
+
+test_install:  # test dl & install from testpypi, set env var or pass in VERSION
+	$(PYTHON) -m pip uninstall -y oreum_core
+	$(PYTHON) -m pip install -i https://test.pypi.org/simple/ oreum_core==$(VERSION)
+	$(PYTHON) -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'"

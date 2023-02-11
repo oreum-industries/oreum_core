@@ -3,6 +3,8 @@ on:
   release:
     types:
       - created
+    branches:
+      - master
 
 jobs:
   build:
@@ -36,8 +38,11 @@ jobs:
         env:
           FLIT_USERNAME=__token__
           FLIT_PASSWORD=${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }}
-          PACKAGE_VERSION='${{  github.ref_name }}'
         run: make test_publish
+      - name: Test download and install package from TestPyPI
+        env:
+          VERSION='${{ github.ref_name }}'
+        run: make test_install
 
 
   publish:
@@ -53,7 +58,7 @@ jobs:
         env:
           FLIT_USERNAME=__token__
           FLIT_PASSWORD=${{ secrets.PYPI_TOKEN_OREUM_CORE_GITHUB }}
-          PACKAGE_VERSION='${{  github.ref_name }}'
+          VERSION='${{  github.ref_name }}'
         run: make publish
 
 
