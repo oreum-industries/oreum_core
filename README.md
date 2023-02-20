@@ -14,27 +14,108 @@ Oreum Industries.
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
 <!-- [![Conda Forge](https://img.shields.io/conda/vn/oreum-industries/oreum_core.svg)](https://anaconda.org/oreum-industries/oreum_core) -->
 
-### Notes
 
-+ Uses a scientific Python stack for scripting
-+ Hosted on
-[Oreum Industries' GitHub](https://github.com/oreum-industries/oreum_core)
+
+---
+
+## 1. Description and Scope
+
+This project uses a scientific Python stack, and enables & supports:
+
++ Exploratory data analysis via custom tabulations and plots using `seaborn`
++ Bayesian inferential modelling in R&D and Production via model helpers and custom distributions in `pymc` and `arviz`
++ Assorted data transformations, text cleaning, sql scripting and file handling
+
+
+### Technical Overview
+
 + Project began on 2021-01-01
-+ The README.md is MacOS and POSIX oriented
-+ See LICENCE.md for licensing and copyright details
-+ See CONTRIBUTORS.md for list of contributors
++ The `README.md` is MacOS and POSIX oriented
++ See `LICENCE.md` for licensing and copyright details
++ See `CONTRIBUTORS.md` for list of contributors
 + This uses a logger named `'oreum_core'`, feel free to incorporate or ignore
++ Hosting:
+  + Source code repo on [GitHub](https://github.com/oreum-industries/oreum_core)
+  + Source code release on [GitHub](https://github.com/oreum-industries/oreum_core/releases)
+  + Package release on [PyPi](https://pypi.org/project/oreum_core)
 
 
-### Further Notes:
+### Scope
 
-+ This package is a work in progress (v0.y.z) and liable to breaking changes
-and inconveniences to the user
-+ This package is solely designed for ease of use and rapid development by
-employees of Oreum Industries, and selected clients with guidance
-+ This package is **not** intended for public usage and will not be supported
-for public usage
++ **This package is:**
+  + A work in progress (v0.y.z) and liable to breaking changes and inconveniences to the user
+  + Solely designed for ease of use and rapid development by employees of Oreum Industries, and selected clients with guidance
 
++ **This package is not:**
+  + Intended for public usage** and will not be supported for public usage
+  + Intended for contributions by anyone not an employee of Oreum Industries, and unsolicitied contributions will not be accepted
+
+
+
+## 2. Instructions to Create Dev Environment
+
+For local development on MacOS
+
+
+### 2.0 Pre-requisite installs via `homebrew`
+
+1. Install Homebrew, see instuctions at [https://brew.sh](https://brew.sh)
+2. Install `git` and `direnv`
+
+```zsh
+$> brew update && upgrade
+$> brew install git direnv
+```
+
+
+### 2.1 Git clone the repo
+
+Assumes `git` and `direnv` already installed
+
+```zsh
+$> git clone https://github.com/oreum-industries/oreum_core
+$> cd oreum_core
+```
+
+Then allow `direnv` on MacOS to automatically run file `.envrc` upon directory open
+
+
+### 2.2 Create virtual environment and install dev packages
+
+Notes:
+
++ We use `conda` virtual envs provided by `miniconda`
++ We install packages with compound method handled by `mamba` (quicker than `conda`) `for the main environment and packages,
+and `pip` for selected packages that are handled better by pip and/or more up to date on pypi
++ Packages might not be the very latest because we want stability for `pymc3`
+which is usually in a state of development flux
++ See [cheat sheet of conda commands](https://conda.io/docs/_downloads/conda-cheatsheet.pdf)
+
+
+```zsh
+$> make dev
+```
+
+### 2.3 Code Linting & Repo Control
+
+#### 2.3.1 Pre-commit
+
+We use [pre-commit](https://pre-commit.com) to run a suite of automated tests
+for code linting & quality control and repo control prior to commit on local
+development machines.
+
++ See [`.pre-commit-config.yaml`](.pre-commit-config.yaml) for details
+
+
+#### 2.3.2 Github Actions
+
+We use [Github Actions](https://docs.github.com/en/actions/using-workflows) aka Workflows to
+run a suite of automated tests for commits received at the origin (i.e. GitHub)
+
++ See `.github/workflows/*` for details
+
+
+---
 ---
 
 Copyright 2023 Oreum OÜ t/a Oreum Industries. All rights reserved.
