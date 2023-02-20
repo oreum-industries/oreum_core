@@ -90,11 +90,14 @@ and `pip` for selected packages that are handled better by pip and/or more up to
 + Packages might not be the very latest because we want stability for `pymc3`
 which is usually in a state of development flux
 + See [cheat sheet of conda commands](https://conda.io/docs/_downloads/conda-cheatsheet.pdf)
++ The `Makefile` creates a dev env and will also download and preinstall `Miniconda` if not yet installed on your system.
 
 
 ```zsh
 $> make dev
 ```
+
+
 
 ### 2.3 Code Linting & Repo Control
 
@@ -104,6 +107,8 @@ We use [pre-commit](https://pre-commit.com) to run a suite of automated tests
 for code linting & quality control and repo control prior to commit on local
 development machines.
 
++ Precommit is already installed by the `make dev` command (which itself calls `pip install -e .[dev]`)
++ The pre-commit script will then run on your system upon `git commit`
 + See [`.pre-commit-config.yaml`](.pre-commit-config.yaml) for details
 
 
@@ -112,7 +117,8 @@ development machines.
 We use [Github Actions](https://docs.github.com/en/actions/using-workflows) aka Workflows to
 run a suite of automated tests for commits received at the origin (i.e. GitHub)
 
-+ See `.github/workflows/*` for details
++ See `Makefile` for the CLI commands that are issued
++ See `.github/workflows/*` for workflow details
 
 
 ---
