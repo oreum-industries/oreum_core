@@ -109,7 +109,7 @@ development machines.
 
 + Precommit is already installed by the `make dev` command (which itself calls `pip install -e .[dev]`)
 + The pre-commit script will then run on your system upon `git commit`
-+ See [`.pre-commit-config.yaml`](.pre-commit-config.yaml) for details
++ See this project's `.pre-commit-config.yaml` for details
 
 
 #### 2.3.2 Github Actions
