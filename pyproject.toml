@@ -35,7 +35,6 @@ dependencies = [
     "matplotlib-inline==0.1.2",  # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
     "patsy>=0.5.0",  # TODO consider using formulae
     "pymc3==3.11.4",  # TODO will soon upgrade to pymc v5
-    "regex>=2022.10.*",  # TODO simplify and refactor to use normal re
     "seaborn==0.11.2",  # ignore the recent version with broken API
     "theano-pymc==1.1.2",  # TODO will soon upgrade to pymc v5
     "xarray<2023.2.0",  # upper pin to avoid issue https://github.com/Unidata/netcdf4-python/issues/1205, see also https://github.com/pydata/xarray/blob/main/doc/whats-new.rst#v2023020-feb-7-2023

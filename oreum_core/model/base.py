@@ -27,7 +27,7 @@ _log_pymc.setLevel(logging.WARNING)
 
 
 class BasePYMC3Model:
-    """Base handler to build, sample, store traces for PyMC3 model.
+    """Base handler / wrapper to build, sample, store traces for a PyMC3 model.
     NOTE:
     + This class is to be inherited e.g. `super().__init__(*args, **kwargs)`
     + Children must declare a _build() method and define obs within __init__()

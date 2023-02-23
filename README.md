@@ -42,12 +42,12 @@ This project uses a scientific Python stack, and enables & supports:
 
 ### Scope
 
-+ **This package is:**
++ This package **is**:
   + A work in progress (v0.y.z) and liable to breaking changes and inconveniences to the user
   + Solely designed for ease of use and rapid development by employees of Oreum Industries, and selected clients with guidance
 
-+ **This package is not:**
-  + Intended for public usage** and will not be supported for public usage
++ This package **is not**:
+  + Intended for public usage and will not be supported for public usage
   + Intended for contributions by anyone not an employee of Oreum Industries, and unsolicitied contributions will not be accepted
 
 
@@ -76,7 +76,6 @@ Assumes `git` and `direnv` already installed
 $> git clone https://github.com/oreum-industries/oreum_core
 $> cd oreum_core
 ```
-
 Then allow `direnv` on MacOS to automatically run file `.envrc` upon directory open
 
 
@@ -96,7 +95,6 @@ which is usually in a state of development flux
 ```zsh
 $> make dev
 ```
-
 
 
 ### 2.3 Code Linting & Repo Control

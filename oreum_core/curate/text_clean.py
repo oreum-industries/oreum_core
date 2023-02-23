@@ -14,11 +14,11 @@
 
 # curate.text_clean.py
 """Text Cleaning"""
+import re
 import string
 
 import ftfy
 import numpy as np
-import regex as re
 
 __all__ = ['SnakeyLowercaser', 'TextCleaner']
 
@@ -31,6 +31,7 @@ class SnakeyLowercaser:
     """
 
     def __init__(self):
+        """Init and setup lots of regexes"""
         punct_to_remove = re.sub(r'_', '', string.punctuation)
         self.rx_to_underscore = re.compile(r'[-/]')
         self.rx_punct = re.compile('[{}]'.format(re.escape(punct_to_remove)))
@@ -66,7 +67,12 @@ class SnakeyLowercaser:
 
 
 class TextCleaner:
+    """Potentially useful text cleaing - strips lots of crud.
+    Originally developed a number of years ago, so may need revision
+    """
+
     def __init__(self):
+        """Init with lots of regexes"""
         self.rx_line = re.compile(re.escape('=\n'))  # "=\n"
         self.rx_nbsp = re.compile(r'&nbsp;')  # nbsp
         self.rx_copy = re.compile(r'&copy;')  # nbsp

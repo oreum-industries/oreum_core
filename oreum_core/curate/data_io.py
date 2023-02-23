@@ -35,6 +35,7 @@ class PandasParquetIO(BaseFileIO):
     """
 
     def __init__(self, *args, **kwargs):
+        """Inherit super"""
         super().__init__(*args, **kwargs)
 
     def read(self, fqn: str) -> pd.DataFrame:
@@ -55,6 +56,7 @@ class PandasToCSV(BaseFileIO):
     """Very simple helper class to write a Pandas dataframe to CSV fil in a consistent way"""
 
     def __init__(self, *args, **kwargs):
+        """Inherit super"""
         super().__init__(*args, **kwargs)
 
     def write(self, df: pd.DataFrame, fqn: str) -> str:
@@ -73,6 +75,7 @@ class SimpleStringIO(BaseFileIO):
     """
 
     def __init__(self, kind: str = 'txt', *args, **kwargs):
+        """Init for txt and json only"""
         super().__init__(*args, **kwargs)
         assert kind in set(['txt', 'json']), "kind must be in {'txt', 'json'}"
         self.kind = kind
