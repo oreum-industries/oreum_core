@@ -53,7 +53,8 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://github.com/oreum-industries/oreum_core"
+"Homepage" = "https://oreum.io"
+"Source Code" = "https://github.com/oreum-industries/oreum_core"
 
 [metadata]
 description-file = 'README.md'
@@ -95,7 +96,7 @@ ignore-nested-functions = false
 ignore-nested-classes = true
 ignore-setters = false
 fail-under = 80
-exclude = ["dev", "docs", "dist"]
+exclude = ["assets", "dev", "dist"]
 ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*"]
 verbose = 1
 quiet = false
