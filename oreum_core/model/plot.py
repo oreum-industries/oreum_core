@@ -190,6 +190,7 @@ def pairplot_corr(
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
     colnames=list[str],
+    ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
     """Create posterior pair / correlation plots using Arviz, corrrlated RVs,
@@ -198,12 +199,11 @@ def pairplot_corr(
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
     kind = kwargs.pop('kind', 'kde')
-    ref_vals = (kwargs.pop('ref_vals', None),)
 
     pair_kws = dict(
         group=group,
         var_names=rvs,
-        reference_values=ref_vals,  # deal with inconsistency
+        reference_values=ref_vals,  # deal with inconsist naming
         divergences=True,
         marginals=True,
         kind=kind,
