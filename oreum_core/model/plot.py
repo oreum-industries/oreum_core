@@ -58,7 +58,9 @@ def plot_trace(
     _ = az.plot_trace(idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
     f = plt.gcf()
     _ = f.suptitle(
-        ' - '.join(['Traceplot', mdlname, 'posterior', ', '.join(rvs), txtadd])
+        ' - '.join(
+            filter(None, ['Traceplot', mdlname, 'posterior', ', '.join(rvs), txtadd])
+        )
     )
     _ = f.tight_layout()
     return f

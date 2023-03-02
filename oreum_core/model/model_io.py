@@ -47,7 +47,7 @@ class ModelIO(BaseFileIO):
         """
         path = self.get_path_write(fqn, use_rootdir=False)
         if fqn == '':
-            path = path.joinpath(Path(f'{mdl.name}.netcdf'))
+            path = path.joinpath(Path(f'idata_{mdl.name}.netcdf'))
         mdl.idata.to_netcdf(str(path.resolve()))
         _log.info(f'Written to {str(path.resolve())}')
         return path
