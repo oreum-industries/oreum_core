@@ -78,7 +78,7 @@ def facetplot_krushke(
     # TODO unpack the compressed rvs from the idata
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
-    ref_vals = (kwargs.pop('ref_vals', None),)
+    ref_vals = kwargs.pop('ref_vals', None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(
