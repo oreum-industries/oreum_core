@@ -58,7 +58,9 @@ def plot_trace(
     _ = az.plot_trace(idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
     f = plt.gcf()
     _ = f.suptitle(
-        ' - '.join(['Traceplot', mdlname, 'posterior', ', '.join(rvs), txtadd])
+        ' - '.join(
+            filter(None, ['Traceplot', mdlname, 'posterior', ', '.join(rvs), txtadd])
+        )
     )
     _ = f.tight_layout()
     return f
@@ -72,15 +74,16 @@ def facetplot_krushke(
     rvs_hack: int = 0,
     **kwargs,
 ) -> figure.Figure:
-    """Create Krushke-style plots using Arviz, univariate RVs, control faceting
-    Pass-through kwargs to az.plot_posterior, e.g. ref_val
-    """
+    """Create Krushke-style plots using Arviz, univariate RVs, control faceting"""
     # TODO unpack the compressed rvs from the idata
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
+    ref_vals = kwargs.pop('ref_vals', None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
-    _ = az.plot_posterior(idata, group=group, ax=axs, var_names=rvs, **kwargs)
+    _ = az.plot_posterior(
+        idata, group=group, ax=axs, var_names=rvs, ref_val=ref_vals, **kwargs
+    )
     s = 's' if len(rvs) > 1 else ''
     _ = f.suptitle(
         ' - '.join(filter(None, [f'Distribution plot{s}', mdlname, group, txtadd]))
@@ -187,10 +190,11 @@ def pairplot_corr(
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
     colnames=list[str],
+    ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
     """Create posterior pair / correlation plots using Arviz, corrrlated RVs,
-    Pass-through kwargs to az.plot_pair, e.g. ref_val
+    Pass-through kwargs to az.plot_pair, e.g. ref_vals
     """
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
@@ -199,6 +203,7 @@ def pairplot_corr(
     pair_kws = dict(
         group=group,
         var_names=rvs,
+        reference_values=ref_vals,  # deal with inconsist naming
         divergences=True,
         marginals=True,
         kind=kind,

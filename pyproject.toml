@@ -26,16 +26,14 @@ classifiers = [
 ]
 dynamic = ["version", "description"]
 dependencies = [
-    "arviz==0.12.1",
+    "arviz==0.14.*",   # NOTE v0.15 is incompatible due to removal of from_pymc3
     "csv2md>=1.1.2",
     "ftfy>=5.4.1",   # NOTE MacOS has 6.1.1
     "graphviz<=0.18",   # NOTE capped https://stackoverflow.com/a/69997168/4473230
-    "hypothesis>=6.39.0",
     "matplotlib==3.5.2",
     "matplotlib-inline==0.1.2",  # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
     "patsy>=0.5.0",  # TODO consider using formulae
     "pymc3==3.11.4",  # TODO will soon upgrade to pymc v5
-    "regex>=2022.10.*",  # TODO simplify and refactor to use normal re
     "seaborn==0.11.2",  # ignore the recent version with broken API
     "theano-pymc==1.1.2",  # TODO will soon upgrade to pymc v5
     "xarray<2023.2.0",  # upper pin to avoid issue https://github.com/Unidata/netcdf4-python/issues/1205, see also https://github.com/pydata/xarray/blob/main/doc/whats-new.rst#v2023020-feb-7-2023
@@ -44,17 +42,21 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pip-licenses",
-    "pre-commit",
+    "bandit",
     "black",
     "flake8",
+    "hypothesis",
     "interrogate",
     "isort",
-    "bandit",
+    "nose",
+    "pip-licenses",
+    "pre-commit",
+    "pytest",
 ]
 
 [project.urls]
-homepage = "https://github.com/oreum-industries/oreum_core"
+"Homepage" = "https://oreum.io"
+"Source Code" = "https://github.com/oreum-industries/oreum_core"
 
 [metadata]
 description-file = 'README.md'
@@ -64,7 +66,12 @@ license_files = 'LICENSE.md'
 universal=1
 
 [tool.bandit]
-skips = ["B101", "B603", "B607", "B404"]
+skips = [
+    "B101",  # skip asserts
+    "B404",
+    "B603",
+    "B607",
+]
 
 [tool.black]
 line-length = 88
@@ -96,7 +103,7 @@ ignore-nested-functions = false
 ignore-nested-classes = true
 ignore-setters = false
 fail-under = 80
-exclude = ["dev", "docs", "dist"]
+exclude = ["assets", "dev", "dist"]
 ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*"]
 verbose = 1
 quiet = false
