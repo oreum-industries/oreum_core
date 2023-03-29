@@ -54,13 +54,13 @@ lint:  ## run code lint & security checks
 help:
 	@echo "Use \`make <target>' where <target> is:"
 	@echo "  build         build package oreum_core"
-	@echo "  dev           create local condaenv for dev"
+	@echo "  dev           create local dev env"
 	@echo "  lint          run code lint & security checks"
 	@echo "  pub           all-in-one build and publish to pypi"
 	@echo "  pub-test      all-in-one build and publish to testpypi"
-	@echo "  test-dev-env  test the dev env install of critial numeric packages"
+	@echo "  test-dev-env  optional test the local dev env numeric packages"
 	@echo "  test-dl-ins   test dl & install from testpypi"
-	@echo "  uninstall     uninstall local condaenv for dev"
+	@echo "  uninstall     uninstall local dev env (use from parent dir as `make -C oreum_core uninstall`)"
 
 
 pre-build:  # setup env for flit build or flit publish

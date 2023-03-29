@@ -137,16 +137,13 @@ development machines.
 #### 2.3.2 Github Actions
 
 We use [Github Actions](https://docs.github.com/en/actions/using-workflows) aka
-Github Workflows to run a suite of automated tests for commits received at the
-origin (i.e. GitHub)
+Github Workflows to run:
+
+1. A suite of automated tests for commits received at the origin (i.e. GitHub)
+2. Publishing to PyPi upon creating a GH Release
 
 + See `Makefile` for the CLI commands that are issued
 + See `.github/workflows/*` for workflow details
-
-
-### 2.4 To publish to PyPi
-
-This is handled by the GH Action (Workflow) in `.github/workflows/publish.yml`
 
 
 ---
