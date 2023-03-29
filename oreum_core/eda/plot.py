@@ -396,8 +396,9 @@ def plot_joint_numeric(
         _ = gd.ax_marg_x.set_xscale('log')
         _ = gd.ax_marg_y.set_yscale('log')
 
+    t = '' if subtitle is None else f'\n{subtitle}'
     _ = gd.figure.suptitle(
-        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)} obs{subtitle}', y=1.02, fontsize=12
+        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)} obs{t}', y=1.02, fontsize=12
     )
     _ = gd.fig.tight_layout(pad=0.8)
     return gd
