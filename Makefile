@@ -75,3 +75,7 @@ test_install:  # test dl & install from testpypi, set env var or pass in VERSION
 	$(PYTHON) -m pip index versions --pre -i https://test.pypi.org/simple/ oreum_core
 	$(PYTHON) -m pip install --pre -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple oreum_core==$(VERSION)
 	$(PYTHON) -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'"
+
+
+uninstall:  # uninstall local condaenv for dev (run from base env)
+	mamba env remove --name oreum_core

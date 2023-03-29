@@ -31,7 +31,7 @@ repos:
       - id: no-print-statements
         files: ^oreum_core/
   - repo: https://github.com/psf/black  # black formatter
-    rev: 23.1.0
+    rev: 23.3.0
     hooks:
       - id: black
         files: ^oreum_core/
@@ -46,7 +46,7 @@ repos:
       - id: flake8
         files: ^oreum_core/
   - repo: https://github.com/pycqa/bandit  # basic security checks for python code
-    rev: 1.7.4
+    rev: 1.7.5
     hooks:
       - id: bandit
         files: ^oreum_core/

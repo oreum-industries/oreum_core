@@ -98,7 +98,6 @@ if not yet installed on your system.
 $> make dev
 ```
 
-
 ### 2.3 Code Linting & Repo Control
 
 #### 2.3.1 Pre-commit
@@ -122,6 +121,14 @@ origin (i.e. GitHub)
 + See `Makefile` for the CLI commands that are issued
 + See `.github/workflows/*` for workflow details
 
+
+## 2.4 To remove the dev environment
+
+Using the base environment, from a dir above the oreum_core project dir:
+
+```zsh
+$> make -C oreum_core uninstall
+```
 
 ---
 ---
