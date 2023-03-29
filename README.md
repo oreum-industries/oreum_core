@@ -43,8 +43,10 @@ This project uses a scientific Python stack, and enables & supports:
 ### Scope
 
 + This package **is**:
-  + A work in progress (v0.y.z) and liable to breaking changes and inconveniences to the user
-  + Solely designed for ease of use and rapid development by employees of Oreum Industries, and selected clients with guidance
+  + A work in progress (v0.y.z) and liable to breaking changes and inconveniences
+  to the user
+  + Solely designed for ease of use and rapid development by employees of Oreum
+  Industries, and selected clients with guidance
 
 + This package **is not**:
   + Intended for public usage and will not be supported for public usage
@@ -56,21 +58,19 @@ This project uses a scientific Python stack, and enables & supports:
 
 For local development on MacOS
 
-
 ### 2.0 Pre-requisite installs via `homebrew`
 
 1. Install Homebrew, see instuctions at [https://brew.sh](https://brew.sh)
-2. Install `git` and `direnv`
+2. Install `direnv`, `git`, `git-lfs`, `graphviz`
 
 ```zsh
 $> brew update && upgrade
-$> brew install git direnv
+$> brew install direnv git git-lfs graphviz
 ```
-
 
 ### 2.1 Git clone the repo
 
-Assumes `git` and `direnv` already installed
+Assumes `git`, `git-lfs` and `direnv` installed as above
 
 ```zsh
 $> git clone https://github.com/oreum-industries/oreum_core
@@ -84,12 +84,14 @@ Then allow `direnv` on MacOS to automatically run file `.envrc` upon directory o
 Notes:
 
 + We use `conda` virtual envs provided by `miniconda`
-+ We install packages with compound method handled by `mamba` (quicker than `conda`) `for the main environment and packages,
-and `pip` for selected packages that are handled better by pip and/or more up to date on pypi
++ We install packages with compound method handled by `mamba` (quicker than `conda`)
+for the main environment and packages, and `pip` for selected packages that are
+handled better by pip and/or more up to date on pypi
 + Packages might not be the very latest because we want stability for `pymc3`
 which is usually in a state of development flux
 + See [cheat sheet of conda commands](https://conda.io/docs/_downloads/conda-cheatsheet.pdf)
-+ The `Makefile` creates a dev env and will also download and preinstall `Miniconda` if not yet installed on your system.
++ The `Makefile` creates a dev env and will also download and preinstall `Miniconda`
+if not yet installed on your system.
 
 
 ```zsh
@@ -105,15 +107,17 @@ We use [pre-commit](https://pre-commit.com) to run a suite of automated tests
 for code linting & quality control and repo control prior to commit on local
 development machines.
 
-+ Precommit is already installed by the `make dev` command (which itself calls `pip install -e .[dev]`)
++ Precommit is already installed by the `make dev` command (which itself calls
+`pip install -e .[dev]`)
 + The pre-commit script will then run on your system upon `git commit`
 + See this project's `.pre-commit-config.yaml` for details
 
 
 #### 2.3.2 Github Actions
 
-We use [Github Actions](https://docs.github.com/en/actions/using-workflows) aka Workflows to
-run a suite of automated tests for commits received at the origin (i.e. GitHub)
+We use [Github Actions](https://docs.github.com/en/actions/using-workflows) aka
+Github Workflows to run a suite of automated tests for commits received at the
+origin (i.e. GitHub)
 
 + See `Makefile` for the CLI commands that are issued
 + See `.github/workflows/*` for workflow details

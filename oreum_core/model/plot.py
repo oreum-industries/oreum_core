@@ -72,13 +72,13 @@ def facetplot_krushke(
     group: IDataGroupName = IDataGroupName.posterior.value,
     m: int = 1,
     rvs_hack: int = 0,
+    ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
     """Create Krushke-style plots using Arviz, univariate RVs, control faceting"""
     # TODO unpack the compressed rvs from the idata
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
-    ref_vals = kwargs.pop('ref_vals', None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(
@@ -203,7 +203,7 @@ def pairplot_corr(
     pair_kws = dict(
         group=group,
         var_names=rvs,
-        reference_values=ref_vals,  # deal with inconsist naming
+        reference_values=ref_vals,  # deal with inconsistent naming
         divergences=True,
         marginals=True,
         kind=kind,

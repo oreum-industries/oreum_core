@@ -116,7 +116,7 @@ def plot_cat_count(
         if df[ft].dtype == np.bool:
             counts_all = counts_all.sort_index()  # sort so true plots on top
 
-        counts = counts_all[-topn:]
+        counts = counts_all.iloc[-topn:]
         ax = counts.plot(
             kind='barh',
             ax=ax2d[i // 2, i % 2],

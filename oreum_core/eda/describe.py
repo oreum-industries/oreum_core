@@ -34,7 +34,7 @@ def display_fw(df, **kwargs):
 
     max_rows = kwargs.pop('max_rows', 50)
     precision = kwargs.pop('precision', 2)
-    max_colwidth = kwargs.pop('max_colwidth', 200)
+    max_colwidth = kwargs.pop('max_colwidth', 30)
     latex = kwargs.pop('latex', False)
     display_latex_repr = False
     display_latex_longtable = False
