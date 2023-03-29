@@ -14,7 +14,7 @@
 
 # model/
 """Various classes & functions for modelling, primarily using pymc"""
-from oreum_core.model.base import BasePYMC3Model
+from oreum_core.model.base import BasePYMCModel
 from oreum_core.model.calc import (
     calc_2_sample_delta_prop,
     calc_bayesian_r2,
@@ -34,19 +34,20 @@ from oreum_core.model.describe import (
     get_posterior_summary,
     model_desc,
 )
-from oreum_core.model.distributions import (
-    InverseWeibull,
-    InverseWeibullNumpy,
-    Kumaraswamy,
-    Lognormal,
-    LognormalNumpy,
-    Normal,
-    NormalNumpy,
-    ZeroInflatedInverseWeibull,
-    ZeroInflatedLogNormal,
-    boundzero_numpy,
-    boundzero_theano,
-)
+
+# from oreum_core.model.distributions import (
+#     InverseWeibull,
+#     InverseWeibullNumpy,
+#     Kumaraswamy,
+#     Lognormal,
+#     LognormalNumpy,
+#     Normal,
+#     NormalNumpy,
+#     ZeroInflatedInverseWeibull,
+#     ZeroInflatedLogNormal,
+#     boundzero_numpy,
+#     boundzero_theano,
+# )
 from oreum_core.model.model_io import ModelIO
 from oreum_core.model.plot import (
     facetplot_krushke,

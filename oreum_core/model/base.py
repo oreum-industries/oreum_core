@@ -19,14 +19,14 @@ import logging
 import arviz as az
 import pymc as pm
 
-__all__ = ['BasePYMC3Model']
+__all__ = ['BasePYMCModel']
 
 _log = logging.getLogger(__name__)
 _log_pymc = logging.getLogger('pymc')  # force pymc chatty prints to log
 _log_pymc.setLevel(logging.WARNING)
 
 
-class BasePYMC3Model:
+class BasePYMCModel:
     """Base handler / wrapper to build, sample, store traces for a pymc model.
     NOTE:
     + This class is to be inherited e.g. `super().__init__(*args, **kwargs)`
