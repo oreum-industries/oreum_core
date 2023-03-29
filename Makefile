@@ -81,9 +81,9 @@ pub-test:  ## all-in-one build and publish to testpypi
 
 test-dev-env: ## test the dev machine install of critial numeric packages
 	export PATH=$$HOME/opt/miniconda3/bin:$$PATH; \
-		export PATH=$$HOME/opt/miniconda3/envs/oreum_lab/bin:$$PATH; \
-		export CONDA_ENV_PATH=$$HOME/opt/miniconda3/envs/oreum_lab/bin; \
-		export CONDA_DEFAULT_ENV=oreum_lab; \
+		export PATH=$$HOME/opt/miniconda3/envs/oreum_core/bin:$$PATH; \
+		export CONDA_ENV_PATH=$$HOME/opt/miniconda3/envs/oreum_core/bin; \
+		export CONDA_DEFAULT_ENV=oreum_core; \
 		$(PYTHON_ENV) -c "import numpy as np; np.test()" > tests/results/numpy.txt; \
 		$(PYTHON_ENV) -c "import scipy as sp; sp.test()" > tests/results/scipy.txt
 
