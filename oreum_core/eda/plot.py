@@ -332,7 +332,7 @@ def plot_float_dist(
 
     if log:
         _ = gd.set(xscale='log')  # , title=ft, ylabel='log(count)')
-    gd.fig.tight_layout(pad=0.8)
+    _ = gd.fig.tight_layout(pad=0.8)
     return gd
 
 
@@ -347,8 +347,15 @@ def plot_joint_numeric(
     nsamp: int = None,
 ) -> sns.JointGrid:
     """Jointplot of 2 numeric fts. Suitable for int or float"""
-    kde_kws = dict(zorder=0, levels=7, cut=0, fill=True)
-    scatter_kws = dict(alpha=0.6, marker='o', linewidths=0.05, edgecolor='#999999')
+    kde_kws = dict(zorder=0, levels=7, cut=0, fill=True, color=f'C{colori%5}')
+    scatter_kws = dict(
+        alpha=0.6,
+        marker='o',
+        linewidths=0.05,
+        edgecolor='#999999',
+        color=f'C{colori%5}',
+    )
+    rug_kws = dict(height=0.1, color=f'C{colori%5}')
 
     if nsamp is not None:
         df = df.sample(nsamp, random_state=RSD).copy()
@@ -356,11 +363,19 @@ def plot_joint_numeric(
     gd = sns.JointGrid(x=ft0, y=ft1, data=df, height=6)
 
     if kind == 'kde':
-        _ = gd.plot_joint(sns.kdeplot, **kde_kws, color=f'C{colori%5}')
+        _ = gd.plot_joint(sns.kdeplot, **kde_kws)
     elif kind == 'scatter':
+        _ = gd.plot_joint(sns.scatterplot, **scatter_kws)
+        _ = gd.plot_marginals(sns.rugplot, **rug_kws)
+    elif kind == 'kde+scatter':
+        _ = gd.plot_joint(sns.kdeplot, **kde_kws)
+        _ = gd.plot_joint(sns.scatterplot, **scatter_kws)
+        _ = gd.plot_marginals(sns.rugplot, **rug_kws)
+    elif kind == 'reg':
         _ = gd.plot_joint(sns.regplot, scatter_kws=scatter_kws, color=f'C{colori%5}')
+        _ = gd.plot_marginals(sns.rugplot, **rug_kws)
     else:
-        raise ValueError('provide `kind` as kde or scatter')
+        raise ValueError('kwarg `kind` must be in {kde, scatter, kde+scatter, reg}')
 
     _ = gd.plot_marginals(sns.histplot, kde=True, color=f'C{colori%5}')
     r = stats.linregress(x=df[ft0], y=df[ft1])
@@ -381,10 +396,10 @@ def plot_joint_numeric(
         _ = gd.ax_marg_x.set_xscale('log')
         _ = gd.ax_marg_y.set_yscale('log')
 
-    t = ('', 0.0) if subtitle is None else (f'\n{subtitle}', 0.04)
-    _ = gd.fig.suptitle(
-        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)} obs{t[0]}', y=1.02 + t[1]
+    _ = gd.figure.suptitle(
+        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)} obs{subtitle}', y=1.02, fontsize=12
     )
+    _ = gd.fig.tight_layout(pad=0.8)
     return gd
 
 
