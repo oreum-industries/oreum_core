@@ -53,7 +53,7 @@ class PandasParquetIO(BaseFileIO):
 
 
 class PandasToCSV(BaseFileIO):
-    """Very simple helper class to write a Pandas dataframe to CSV fil in a consistent way"""
+    """Very simple helper class to write a Pandas dataframe to CSV file in a consistent way"""
 
     def __init__(self, *args, **kwargs):
         """Inherit super"""
