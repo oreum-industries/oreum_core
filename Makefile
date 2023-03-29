@@ -89,7 +89,6 @@ test-dev-env: ## test the dev machine install of critial numeric packages
 
 # $(PYTHON_ENV) -c "import pymc as pm; pm.test()" > tests/results/pymc.txt; \
 
-
 test-dl-ins:  # test dl & install from testpypi, set env var or pass in VERSION
 	$(PYTHON) -m pip uninstall -y oreum_core
 	$(PYTHON) -m pip index versions --pre -i https://test.pypi.org/simple/ oreum_core
