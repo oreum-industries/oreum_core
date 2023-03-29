@@ -38,8 +38,8 @@ dependencies = [
 ]
 
 # NOTE PYMC: deps include a nest of package deps including:
-# arviz (xarray), numpy, pandas (matplotlib, fastparquet, pyarrow, xlsxwriter),
-# pytensor, scipy
+# arviz (xarray), numpy, pytensor, scipy,
+# pandas (fastparquet, matplotlib, numba, pyarrow, psycopg2, SQLAlchemy, xlsxwriter)
 
 [project.optional-dependencies]
 dev = [

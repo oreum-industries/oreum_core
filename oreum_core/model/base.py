@@ -17,17 +17,17 @@
 import logging
 
 import arviz as az
-import pymc3 as pm
+import pymc as pm
 
 __all__ = ['BasePYMC3Model']
 
 _log = logging.getLogger(__name__)
-_log_pymc = logging.getLogger('pymc3')  # force pymc3 chatty prints to log
+_log_pymc = logging.getLogger('pymc')  # force pymc chatty prints to log
 _log_pymc.setLevel(logging.WARNING)
 
 
 class BasePYMC3Model:
-    """Base handler / wrapper to build, sample, store traces for a PyMC3 model.
+    """Base handler / wrapper to build, sample, store traces for a pymc model.
     NOTE:
     + This class is to be inherited e.g. `super().__init__(*args, **kwargs)`
     + Children must declare a _build() method and define obs within __init__()
@@ -39,7 +39,7 @@ class BasePYMC3Model:
     def __init__(self, **kwargs):
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
-        https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/sampling.py#L277
+        https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc/sampling.py#L277
         Usage note: override kws directly on downstream instance e.g.
         def __init__(self, **kwargs):
             super().__init__(*args, **kwargs)
@@ -77,7 +77,7 @@ class BasePYMC3Model:
         ) is not None:
             k.update(**idata_kwargs)
 
-        # update dict with pymc3 outputs
+        # update dict with pymc outputs
         if (prior := kwargs.get('prior', None)) is not None:
             k['prior'] = prior
 
@@ -146,7 +146,7 @@ class BasePYMC3Model:
           [MRE Notebook gist](https://gist.github.com/jonsedar/070319334bcf033773cc3e9495c79ea0)
           that illustrates the issue.
         + I have created and tested a fix as described in my
-        [issue ticket](https://github.com/pymc-devs/pymc3/issues/4598)
+        [issue ticket](https://github.com/pymc-devs/pymc/issues/4598)
         """
         draws = kwargs.pop('draws', self.sample_prior_predictive_kws['draws'])
         random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])

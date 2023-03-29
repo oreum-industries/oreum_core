@@ -13,23 +13,21 @@
 # limitations under the License.
 
 # model.distributions.py
-"""Some Probability Distributions in pymc3 and numpy"""
+"""Some Probability Distributions in pymc and numpy"""
 
 import numpy as np
-import pymc3 as pm
-import theano.tensor as tt
-from pymc3.distributions.continuous import (
+import pymc as pm
+import pytensor.tensor as pyt
+from pymc.distributions.continuous import (
     PositiveContinuous,
     assert_negative_support,
     get_tau_sigma,
 )
-from pymc3.distributions.dist_math import alltrue_elemwise, bound, logpow
-from pymc3.distributions.distribution import draw_values, generate_samples
-from pymc3.distributions.shape_utils import broadcast_distribution_samples
-from pymc3.math import (  # log1mexp, log1pexp, logit, logsumexp, sigmoid, tround
-    logaddexp,
-)
-from pymc3.theanof import floatX
+from pymc.distributions.dist_math import alltrue_elemwise, bound, logpow
+from pymc.distributions.distribution import draw_values, generate_samples
+from pymc.distributions.shape_utils import broadcast_distribution_samples
+from pymc.math import logaddexp  # log1mexp, log1pexp, logit, logsumexp, sigmoid, tround
+from pymc.theanof import floatX
 from scipy import special, stats
 
 RSD = 42
@@ -37,7 +35,7 @@ rng = np.random.default_rng(seed=RSD)
 
 # NOTE hack to clip values away from {0, 1} for invcdfs
 # Whilst value = {0, 1} is theoretically allowed, is seems to cause a
-# numeric compuational issue somewhere in tt.erfcinv which throws infs.
+# numeric compuational issue somewhere in pyt.erfcinv which throws infs.
 # This screws up the downstream, so clip slightly away from {0, 1}
 CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS = 1e-15  # 1e-18 too small
 
@@ -61,27 +59,27 @@ __all__ = [
 
 def boundzero_numpy(vals, *conditions):
     """Bound natural unit distribution params, return 0 for out-of-bounds
-    Copy from pymc.bound pymc3.distributions.dist_math.py
+    Copy from pymc.bound pymc.distributions.dist_math.py
     """
     return np.where(alltrue_elemwise(conditions), vals, 0.0)
 
 
 def boundzero_theano(vals, *conditions):
     """Bound natural unit distribution params, return 0 for out-of-bounds
-    Copy from pymc.bound pymc3.distributions.dist_math.py
+    Copy from pymc.bound pymc.distributions.dist_math.py
     """
-    return tt.switch(alltrue_elemwise(conditions), vals, 0.0)
+    return pyt.switch(alltrue_elemwise(conditions), vals, 0.0)
 
 
 def bound_numpy(vals, *conditions):
     """Bound log unit distribution params, return -inf for out-of-bounds
-    Copied from pymc.bound pymc3.distributions.dist_math.py
+    Copied from pymc.bound pymc.distributions.dist_math.py
     """
     return np.where(alltrue_elemwise(conditions), vals, -np.inf)
 
 
 def logpow_numpy(x, m):
-    """Copy from pymc3
+    """Copy from pymc
     Safe calc log(x**m) since m*log(x) will fail when m, x = 0.
     """
     return np.where(x == 0, np.where(m == 0, 0.0, -np.inf), m * np.log(x))
@@ -89,7 +87,7 @@ def logpow_numpy(x, m):
 
 # class GammaNumpy:
 #     """Gamma PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
-#     Manual implementations used in pymc3 custom distributions
+#     Manual implementations used in pymc custom distributions
 #     Helpful to compare these to scipy to confirm my correct implementation
 #     Ref: https://en.wikipedia.org/wiki/Gamma_distribution
 #     Params: x > 0, u in [0, 1], a (shape) > 0, b (rate) > 0
@@ -156,7 +154,7 @@ def logpow_numpy(x, m):
 #     def logcdf(self, x, a, b):
 #         """Gamma log CDF:
 #         where $\gamma(a, bx)$ is lower incomplete gamma function [0, lim)
-#         compare to https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L2614
+#         compare to https://github.com/pymc-devs/pymc/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc/distributions/continuous.py#L2614
 #         """
 #         return bound_numpy(
 #             (-special.gammaln(a)) + special.gammainc(a, b * x), a > 0, b > 0, x > 0
@@ -203,7 +201,7 @@ class Gumbel(pm.Gumbel):
         beta = self.beta
         z = (value - mu) / beta
 
-        logp = -tt.log(beta) - z - tt.exp(-z)
+        logp = -pyt.log(beta) - z - pyt.exp(-z)
 
         return bound(logp, beta > 0)
 
@@ -231,7 +229,7 @@ class Gumbel(pm.Gumbel):
         beta = self.beta
         mu = self.mu
 
-        logcdf = -tt.exp(-(value - mu) / beta)
+        logcdf = -pyt.exp(-(value - mu) / beta)
 
         return bound(logcdf, beta > 0)
 
@@ -257,7 +255,7 @@ class Gumbel(pm.Gumbel):
         beta = self.beta
         mu = self.mu
 
-        loginvcdf = tt.log(mu) + tt.log(1 - (beta * tt.log(-tt.log(value)) / mu))
+        loginvcdf = pyt.log(mu) + pyt.log(1 - (beta * pyt.log(-pyt.log(value)) / mu))
 
         return bound(loginvcdf, beta > 0)
 
@@ -310,9 +308,9 @@ class InverseWeibull(PositiveContinuous):
     def __init__(self, alpha=None, s=1.0, *args, **kwargs):
         super().__init__(*args, defaults=("mode",), **kwargs)
 
-        self.alpha = alpha = tt.as_tensor_variable(floatX(alpha))
-        self.s = s = tt.as_tensor_variable(floatX(s))
-        self.mode = s * tt.power(alpha / (1.0 + alpha), 1.0 / alpha)
+        self.alpha = alpha = pyt.as_tensor_variable(floatX(alpha))
+        self.s = s = pyt.as_tensor_variable(floatX(s))
+        self.mode = s * pyt.power(alpha / (1.0 + alpha), 1.0 / alpha)
 
         assert_negative_support(alpha, "alpha", "InverseWeibull")
         assert_negative_support(s, "s", "InverseWeibull")
@@ -364,10 +362,10 @@ class InverseWeibull(PositiveContinuous):
         s = self.s
         return bound(
             (
-                tt.log(alpha)
-                - tt.log(s)
+                pyt.log(alpha)
+                - pyt.log(s)
                 + logpow(s / value, 1.0 + alpha)
-                - tt.power(
+                - pyt.power(
                     s / value, alpha
                 )  # this term grossly dominates if alpha >> 2
             ),
@@ -380,7 +378,7 @@ class InverseWeibull(PositiveContinuous):
         """InverseWeibull CDF"""
         alpha = self.alpha
         s = self.s
-        fn = tt.exp(-tt.power(value / s, -alpha))
+        fn = pyt.exp(-pyt.power(value / s, -alpha))
         return boundzero_theano(fn, alpha > 0, s > 0, value > 0)
 
     def logcdf(self, value):
@@ -389,19 +387,19 @@ class InverseWeibull(PositiveContinuous):
         """
         alpha = self.alpha
         s = self.s
-        fn = -tt.power(value / s, -alpha)
+        fn = -pyt.power(value / s, -alpha)
         return bound(fn, alpha > 0, s > 0, value > 0)
 
     def invcdf(self, value):
         """InverseWeibull Inverse CDF aka PPF"""
         alpha = self.alpha
         s = self.s
-        value = tt.clip(
+        value = pyt.clip(
             value,
             CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS,
             1 - CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS,
         )
-        fn = s * tt.power(-tt.log(value), -1.0 / alpha)
+        fn = s * pyt.power(-pyt.log(value), -1.0 / alpha)
         return boundzero_theano(fn, alpha > 0, s > 0, value >= 0, value <= 1)
 
     def loginvcdf(self, value):
@@ -410,13 +408,13 @@ class InverseWeibull(PositiveContinuous):
         """
         alpha = self.alpha
         s = self.s
-        fn = tt.log(s) - (1.0 / alpha) * tt.log(-tt.log(value))
+        fn = pyt.log(s) - (1.0 / alpha) * pyt.log(-pyt.log(value))
         return bound(fn, alpha > 0, s > 0, value >= 0, value <= 1)
 
 
 class InverseWeibullNumpy:
     """Inverse Weibull PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
-    Manual implementations potentially used if needed in pymc3 custom distributions
+    Manual implementations potentially used if needed in pymc custom distributions
     Helpful to compare these to scipy to confirm my correct implementation
     NOTE: I'm lazy and have set m=0 throughout: this suits my usecase anyhow
     Ref: https://en.wikipedia.org/wiki/Fréchet_distribution
@@ -533,7 +531,7 @@ class ZeroInflatedInverseWeibull(PositiveContinuous):
     + McElreath 2014, http://xcelab.net/rmpubs/Mcelreath%20Koster%202014.pdf,
                       https://github.com/rmcelreath/mcelreath-koster-human-nature-2014
     + Jones 2013, https://royalsocietypublishing.org/doi/10.1098/rspb.2013.1210
-    + https://stackoverflow.com/questions/42409761/pymc3-nuts-has-difficulty-sampling-from-a-hierarchical-zero-inflated-gamma-mode
+    + https://stackoverflow.com/questions/42409761/pymc-nuts-has-difficulty-sampling-from-a-hierarchical-zero-inflated-gamma-mode
 
     The pmf of this distribution is
     .. math::
@@ -562,9 +560,9 @@ class ZeroInflatedInverseWeibull(PositiveContinuous):
     def __init__(self, psi, alpha, s, *args, **kwargs):
         super().__init__(*args, defaults=("mode",), **kwargs)
 
-        self.psi = psi = tt.as_tensor_variable(floatX(psi))
-        self.alpha = alpha = tt.as_tensor_variable(floatX(alpha))
-        self.s = s = tt.as_tensor_variable(floatX(s))
+        self.psi = psi = pyt.as_tensor_variable(floatX(psi))
+        self.alpha = alpha = pyt.as_tensor_variable(floatX(alpha))
+        self.s = s = pyt.as_tensor_variable(floatX(s))
         self.invweibull = InverseWeibull.dist(alpha=alpha, s=s)
 
         # TODO
@@ -609,10 +607,10 @@ class ZeroInflatedInverseWeibull(PositiveContinuous):
     def logp(self, value):
         """LogPDF"""
         psi = self.psi
-        logp_ = tt.switch(
-            tt.neq(value, 0),  # or use tt.gt(value, 0), dunno which faster
-            tt.log(psi) + self.invweibull.logp(value),
-            tt.log1p(-psi),
+        logp_ = pyt.switch(
+            pyt.neq(value, 0),  # or use pyt.gt(value, 0), dunno which faster
+            pyt.log(psi) + self.invweibull.logp(value),
+            pyt.log1p(-psi),
         )
         return bound(logp_, value >= 0, psi > 0, psi < 1)
 
@@ -631,7 +629,7 @@ class ZeroInflatedInverseWeibull(PositiveContinuous):
 
 class ZeroInflatedInverseWeibullNumpy:
     """Zero-inflated Inverse Weibull PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
-    Manual implementations potentially used if needed in pymc3 custom distributions
+    Manual implementations potentially used if needed in pymc custom distributions
     Helpful to compare these ? seems rare
     NOTE: I'm lazy and have set m=0 throughout: this suits my usecase anyhow
     Ref: https://en.wikipedia.org/wiki/Fréchet_distribution
@@ -765,7 +763,7 @@ class Kumaraswamy(pm.Kumaraswamy):
         a = self.a
         b = self.b
 
-        logcdf = tt.log(1 - (1 - value**a) ** b)
+        logcdf = pyt.log(1 - (1 - value**a) ** b)
 
         return bound(logcdf, value >= 0, value <= 1, a > 0, b > 0)
 
@@ -791,7 +789,7 @@ class Kumaraswamy(pm.Kumaraswamy):
         a = self.a
         b = self.b
 
-        loginvcdf = (1 / a) * tt.log(1 - (1 - value) ** (1 / b))
+        loginvcdf = (1 / a) * pyt.log(1 - (1 - value) ** (1 / b))
 
         return bound(loginvcdf, value >= 0, value <= 1, a > 0, b > 0)
 
@@ -806,23 +804,23 @@ class Lognormal(pm.Lognormal):
         """Lognormal CDF"""
         mu = self.mu
         sigma = self.sigma
-        z = (tt.log(value) - mu) / sigma
-        fn = 0.5 * tt.erfc(-z / tt.sqrt(2.0))
-        # convenience alt use pymc3's invprobit: # fn = pm.math.invprobit(z)
+        z = (pyt.log(value) - mu) / sigma
+        fn = 0.5 * pyt.erfc(-z / pyt.sqrt(2.0))
+        # convenience alt use pymc's invprobit: # fn = pm.math.invprobit(z)
         return boundzero_theano(fn, sigma > 0, value > 0)
 
     def invcdf(self, value):
         """Lognormal Inverse CDF aka PPF"""
         mu = self.mu
         sigma = self.sigma
-        # value = tt.clip(value, CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS, 1-CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS)
-        fn = tt.exp(mu - sigma * tt.sqrt(2) * tt.erfcinv(2 * value))
+        # value = pyt.clip(value, CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS, 1-CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS)
+        fn = pyt.exp(mu - sigma * pyt.sqrt(2) * pyt.erfcinv(2 * value))
         return boundzero_theano(fn, sigma > 0, value >= 0, value <= 1)
 
 
 class LognormalNumpy:
     """Lognormal PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
-    Manual implementations potentially used if needed in pymc3 custom distributions
+    Manual implementations potentially used if needed in pymc custom distributions
     Helpful to compare these to scipy to confirm my correct implementation
     Ref: https://en.wikipedia.org/wiki/Log-normal_distribution
     Ref: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.lognorm.html?highlight=lognorm#scipy.stats.lognorm
@@ -891,7 +889,7 @@ class LognormalNumpy:
     def logpdf(self, x, mu, sigma):
         """Lognormal log PDF
         ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5054
-        ref: https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L1887
+        ref: https://github.com/pymc-devs/pymc/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc/distributions/continuous.py#L1887
         """
         mu = np.array(mu).astype(np.float)  # , casting='no')
         sigma = np.array(sigma).astype(np.float)  # , casting='no')
@@ -905,7 +903,7 @@ class LognormalNumpy:
     def logcdf(self, x, mu, sigma):
         """Lognormal log CDF
         ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L5060
-        ref: https://github.com/pymc-devs/pymc3/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc3/distributions/continuous.py#L1913
+        ref: https://github.com/pymc-devs/pymc/blob/41a25d561b3aa40c75039955bf071b9632064a66/pymc/distributions/continuous.py#L1913
         """
         mu = np.array(mu).astype(np.float)  # , casting='no')
         sigma = np.array(sigma).astype(np.float)  # , casting='no')
@@ -926,22 +924,22 @@ class ZeroInflatedLogNormal(PositiveContinuous):
     R"""
     Structure borrowed from:
     pm.ZeroInflatedPoisson
-    https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/distributions/discrete.py#L1490
+    https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc/distributions/discrete.py#L1490
     and
     pm.LogNormal
-    https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/distributions/continuous.py#L1781
+    https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc/distributions/continuous.py#L1781
 
     psi is the mixing proportion for lognormal (psi is 1 where value is lognormal)
     """
 
     def __init__(self, psi=0, mu=0, sigma=None, tau=None, sd=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.psi = psi = tt.as_tensor_variable(floatX(psi))
+        self.psi = psi = pyt.as_tensor_variable(floatX(psi))
 
         tau, sigma = get_tau_sigma(tau=tau, sigma=sigma)
-        self.mu = mu = tt.as_tensor_variable(floatX(mu))
-        self.tau = tau = tt.as_tensor_variable(tau)
-        self.sigma = self.sd = sigma = tt.as_tensor_variable(sigma)
+        self.mu = mu = pyt.as_tensor_variable(floatX(mu))
+        self.tau = tau = pyt.as_tensor_variable(tau)
+        self.sigma = self.sd = sigma = pyt.as_tensor_variable(sigma)
 
         self.lognormal = pm.Lognormal.dist(mu=mu, tau=tau)
 
@@ -987,8 +985,8 @@ class ZeroInflatedLogNormal(PositiveContinuous):
         """
         psi = self.psi
 
-        logp_val = tt.switch(
-            tt.gt(value, 0), tt.log(psi) + self.lognormal.logp(value), tt.log1p(-psi)
+        logp_val = pyt.switch(
+            pyt.gt(value, 0), pyt.log(psi) + self.lognormal.logp(value), pyt.log1p(-psi)
         )
 
         return bound(logp_val, 0 <= value, 0 <= psi, psi <= 1)
@@ -1008,7 +1006,7 @@ class ZeroInflatedLogNormal(PositiveContinuous):
         """
         psi = self.psi
         logcdf_val = logaddexp(
-            tt.log(psi) + self.lognormal.logcdf(value), tt.log1p(-psi)
+            pyt.log(psi) + self.lognormal.logcdf(value), pyt.log1p(-psi)
         )
 
         return bound(logcdf_val, 0 <= value, 0 <= psi, psi <= 1)
@@ -1024,12 +1022,12 @@ class Normal(pm.Normal):
         """Normal inverse cdf $F^{-1}(u | \mu,\sigma) -\sqrt{2} * \text{erfcinv}(2u)$"""
         mu = self.mu
         sigma = self.sigma
-        value = tt.clip(
+        value = pyt.clip(
             value,
             CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS,
             1 - CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS,
         )
-        fn = mu - sigma * tt.sqrt(2.0) * tt.erfcinv(2.0 * value)
+        fn = mu - sigma * pyt.sqrt(2.0) * pyt.erfcinv(2.0 * value)
         return boundzero_theano(fn, value >= 0.0, value <= 1.0)
 
     def loginvcdf(self, value):
@@ -1038,14 +1036,14 @@ class Normal(pm.Normal):
         """
         mu = self.mu
         sigma = self.sigma
-        fn = np.log(mu - sigma * tt.sqrt(2.0) * tt.erfcinv(2.0 * value))
+        fn = np.log(mu - sigma * pyt.sqrt(2.0) * pyt.erfcinv(2.0 * value))
         # fn = np.log(mu - sigma * np.sqrt(2.) * special.erfcinv(2 * u))
         return bound(fn, value >= 0.0, value <= 1.0)
 
 
 class NormalNumpy:
     """Normal PDF, CDF, InvCDF and logPDF, logCDF, logInvCDF
-    Manual implementations potentially used if needed in pymc3 custom distributions
+    Manual implementations potentially used if needed in pymc custom distributions
     Helpful to compare these to scipy to confirm my correct implementation
     Ref: https://en.wikipedia.org/wiki/Normal_distribution
     Ref: https://github.com/scipy/scipy/blob/ab1c0907fe9255582397db04592d6066745018d3/scipy/stats/_continuous_distns.py#L274

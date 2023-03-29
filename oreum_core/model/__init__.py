@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # model/
-"""Various classes & functions for modelling, primarily using pymc3"""
+"""Various classes & functions for modelling, primarily using pymc"""
 from oreum_core.model.base import BasePYMC3Model
 from oreum_core.model.calc import (
     calc_2_sample_delta_prop,

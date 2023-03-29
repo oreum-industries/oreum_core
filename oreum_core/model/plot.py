@@ -311,7 +311,7 @@ def plot_ppc_loopit(
 ) -> figure.Figure:
     """Calc and Plot PPC & LOO-PIT after run `mdl.sample_posterior_predictive()`
     also see
-    https://oriolabrilpla.cat/python/arviz/pymc3/2019/07/31/loo-pit-tutorial.html
+    https://oriolabrilpla.cat/python/arviz/pymc/2019/07/31/loo-pit-tutorial.html
     """
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)

@@ -87,7 +87,7 @@ Notes:
 + We install packages with compound method handled by `mamba` (quicker than `conda`)
 for the main environment and packages, and `pip` for selected packages that are
 handled better by pip and/or more up to date on pypi
-+ Packages might not be the very latest because we want stability for `pymc3`
++ Packages might not be the very latest because we want stability for `pymc`
 which is usually in a state of development flux
 + See [cheat sheet of conda commands](https://conda.io/docs/_downloads/conda-cheatsheet.pdf)
 + The `Makefile` creates a dev env and will also download and preinstall `Miniconda`

@@ -18,9 +18,9 @@ import sys
 
 import numpy as np
 import pandas as pd
-import pymc3 as pm
-import theano
-import theano.tensor as tt
+import pymc as pm
+import pytensor
+import pytensor.tensor as pyt
 
 __all__ = [
     'calc_f_measure',
@@ -247,13 +247,13 @@ def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
         diag_idxs = np.arange(2, n + 2)[::-1].cumsum() - n - 1
         return packed[diag_idxs]
     elif lower:
-        out = tt.zeros((n, n), dtype=theano.config.floatX)
+        out = pyt.zeros((n, n), dtype=pytensor.config.floatX)
         idxs = np.tril_indices(n)
-        return tt.set_subtensor(out[idxs], packed)
+        return pyt.set_subtensor(out[idxs], packed)
     elif not lower:
-        out = tt.zeros((n, n), dtype=theano.config.floatX)
+        out = pyt.zeros((n, n), dtype=pytensor.config.floatX)
         idxs = np.triu_indices(n)
-        return tt.set_subtensor(out[idxs], packed)
+        return pyt.set_subtensor(out[idxs], packed)
 
 
 def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
@@ -339,10 +339,10 @@ def calc_dist_fns_over_x_manual_only(d_manual, params, **kwargs):
 def log_jcd(f_inv_x, x):
     """Calc the log of Jacobian determinant
     used to aid log-likelihood maximisation of copula marginals
-    see JPL: https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
+    see JPL: https://github.com/junpenglao/advance-bayesian-modelling-with-pymc/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
     """
-    grad = tt.reshape(pm.theanof.gradient(tt.sum(f_inv_x), [x]), x.shape)
-    return tt.log(tt.abs_(grad))
+    grad = pyt.reshape(pm.theanof.gradient(pyt.sum(f_inv_x), [x]), x.shape)
+    return pyt.log(pyt.abs_(grad))
 
 
 def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):

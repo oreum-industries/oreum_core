@@ -18,7 +18,7 @@ import logging
 from pathlib import Path
 
 import arviz as az
-from pymc3.model_graph import model_to_graphviz
+from pymc.model_graph import model_to_graphviz
 
 from oreum_core.file_io import BaseFileIO
 from oreum_core.model import BasePYMC3Model
