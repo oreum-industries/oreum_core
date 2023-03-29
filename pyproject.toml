@@ -32,21 +32,22 @@ dependencies = [
     # "matplotlib>=3.5.2",
     # "matplotlib-inline==0.1.2",  # 0.1.6 causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
     "patsy>=0.5.3",  # TODO consider using formulae
-    "pymc>=5.0.2",  # brings along arviz (xarray), numpy, pandas (matplotlib), pytensor, scipy
+    "pymc>=5.0.2",  # brings along lots of deps, see NOTE PYMC
     "seaborn==0.11.2",  # ignore the recent version with broken API
     # "xarray>=2023.2.0",  # upper pin to avoid issue https://github.com/Unidata/netcdf4-python/issues/1205, see also https://github.com/pydata/xarray/blob/main/doc/whats-new.rst#v2023020-feb-7-2023
-    "xlsxwriter==3.0.8",
 ]
+
+# NOTE PYMC: deps include a nest of package deps including:
+# arviz (xarray), numpy, pandas (matplotlib, fastparquet, pyarrow, xlsxwriter),
+# pytensor, scipy
 
 [project.optional-dependencies]
 dev = [
     "bandit",
     "black",
     "flake8",
-    # "hypothesis",
     "interrogate",
     "isort",
-    # "nose",
     "pip-licenses",
     "pre-commit",
     "pytest",
