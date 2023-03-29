@@ -5,6 +5,7 @@
 # Additional local dirs
 dev/
 docs/private/
+tests/results/*.txt
 
 # Addtional files that are sometimes useful docs (only block if in data/ dir)
 data/*.xls*

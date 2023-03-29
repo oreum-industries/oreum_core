@@ -1,4 +1,4 @@
-name: publish
+name: pub
 on:
   release:
     types:
@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         platform: ["ubuntu-latest"]
-        python-version: ["3.9"]
+        python-version: ["3.10"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -25,46 +25,46 @@ jobs:
         run: make build
 
 
-  test_publish:
+  test-pub:
     name: All-in-one build & publish package to TestPyPi and test install it
     needs: [build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-      - name: Setup Python 3.9
+      - name: Setup Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
       - name: Build and Publish package to TestPyPI
         env:
           FLIT_USERNAME: __token__
           FLIT_PASSWORD: ${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }}
-        run: make test_publish
+        run: make test-pub
       - name: Test download and install package from TestPyPI
         env:
           VVERSION: '${{ github.ref_name }}'
         run: |
           sleep 10
-          make test_install
+          make test-dl-ins
 
 
-  publish:
+  pub:
     name: All-in-one build & publish package to PyPi
-    needs: [build, test_publish]
+    needs: [build, test-pub]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-      - name: Setup Python 3.9
+      - name: Setup Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
       - name: Build and Publish package to PyPI
         env:
           FLIT_USERNAME: __token__
           FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN_OREUM_CORE_GITHUB }}
-        run: make publish
+        run: make pub
 
 
 # NOTE

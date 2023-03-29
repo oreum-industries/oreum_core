@@ -93,9 +93,31 @@ which is usually in a state of development flux
 + The `Makefile` creates a dev env and will also download and preinstall `Miniconda`
 if not yet installed on your system.
 
+#### 2.2.1 Create the dev environment
 
 ```zsh
 $> make dev
+```
+This will add a file `tests/results/blas_info.txt` which will detail
+successful `BLAS MKL` installation (or not)
+
+
+#### 2.2.2 (Optional best practice) Test successful installation of dev environment
+
+```zsh
+$> make test-dev-env
+```
+
+This will add files `tests/results/[numpy|scipy|pymc].txt` which will detail
+successful installation (or not) for `numpy`, `scipy` ~~, and `pmyc`~~
+
+
+#### 2.2.3 (Useful during env install experimentation): To remove the dev environment
+
+Using the base environment, from a dir above the oreum_core project dir:
+
+```zsh
+$> make -C oreum_core uninstall
 ```
 
 ### 2.3 Code Linting & Repo Control
@@ -122,13 +144,10 @@ origin (i.e. GitHub)
 + See `.github/workflows/*` for workflow details
 
 
-## 2.4 To remove the dev environment
+### 2.4 To publish to PyPi
 
-Using the base environment, from a dir above the oreum_core project dir:
+This is handled by the GH Action (Workflow) in `.github/workflows/publish.yml`
 
-```zsh
-$> make -C oreum_core uninstall
-```
 
 ---
 ---
