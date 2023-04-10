@@ -732,6 +732,10 @@ class Lognormal(pm.Lognormal):
         mu = self.mu
         sigma = self.sigma
         # value = pyt.clip(value, CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS, 1-CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS)
+        # Note for prior predictive, note the use of
+        # mt.distributions.CLIP_U_AWAY_FROM_ZERO_ONE_FOR_INVCDFS
+        # to prevent infs in copula_obs. This is acute in the tails of the
+        # marginals: uniform transform hits 1 and can round slightly over 1
         fn = pyt.exp(mu - sigma * pyt.sqrt(2) * pyt.erfcinv(2 * value))
         return boundzero_theano(fn, sigma > 0, value >= 0, value <= 1)
 
