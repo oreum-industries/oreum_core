@@ -27,6 +27,7 @@ classifiers = [
 dynamic = ["version", "description"]
 dependencies = [
     "csv2md>=1.1.2",
+    "fastparquet",
     "ftfy>=5.4.1",   # NOTE MacOS has 6.1.1
     "graphviz<=0.18",   # NOTE capped https://stackoverflow.com/a/69997168/4473230
     # "matplotlib>=3.5.2",
@@ -39,7 +40,8 @@ dependencies = [
 
 # NOTE PYMC: deps include a nest of package deps including:
 # arviz (xarray), numpy, pytensor, scipy,
-# pandas (fastparquet, matplotlib, numba, pyarrow, psycopg2, SQLAlchemy, xlsxwriter)
+# pandas (matplotlib, numba, pyarrow, psycopg2, SQLAlchemy, xlsxwriter)  (not fastparquet?)
+
 
 [project.optional-dependencies]
 dev = [
