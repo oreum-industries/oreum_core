@@ -98,8 +98,12 @@ if not yet installed on your system.
 ```zsh
 $> make dev
 ```
-This will add a file `tests/results/blas_info.txt` which will detail
-successful `BLAS MKL` installation (or not)
+
+This will also create some files to help confirm / diagnose successful installation:
+
++ `dev/install_log/blas_info.txt` for the `BLAS MKL` installation for `numpy`
++ `dev/install_log/pip_deps_reversed.txt` shows where an installed apackage came from
++ `LICENSES_THRID_PARTY.md` details the license each package used
 
 
 #### 2.2.2 (Optional best practice) Test successful installation of dev environment
@@ -108,7 +112,7 @@ successful `BLAS MKL` installation (or not)
 $> make test-dev-env
 ```
 
-This will add files `tests/results/[numpy|scipy|pymc].txt` which will detail
+This will also add files `dev/install_log/[numpy|scipy|pymc].txt` which detail
 successful installation (or not) for `numpy`, `scipy` ~~, and `pmyc`~~
 
 

@@ -23,6 +23,8 @@ import seaborn as sns
 from matplotlib import figure, gridspec, lines, ticker
 from scipy import integrate, stats
 
+from . import get_fts_by_dtype
+
 __all__ = [
     'plot_cat_count',
     'plot_bool_count',
@@ -340,27 +342,35 @@ def plot_joint_numeric(
     df: pd.DataFrame,
     ft0: str,
     ft1: str,
+    hue: str = None,
     kind: str = 'kde',
     log: bool = False,
     subtitle: str = None,
     colori: int = 0,
     nsamp: int = None,
 ) -> sns.JointGrid:
-    """Jointplot of 2 numeric fts. Suitable for int or float"""
-    kde_kws = dict(zorder=0, levels=7, cut=0, fill=True, color=f'C{colori%5}')
-    scatter_kws = dict(
-        alpha=0.6,
-        marker='o',
-        linewidths=0.05,
-        edgecolor='#999999',
-        color=f'C{colori%5}',
-    )
-    rug_kws = dict(height=0.1, color=f'C{colori%5}')
+    """Jointplot of 2 numeric fts with optional hue shading.
+    Suitable for int or float"""
+
+    dfp = df.copy()
+    kws = dict(color=f'C{colori%5}', legend=False)
 
     if nsamp is not None:
-        df = df.sample(nsamp, random_state=RSD).copy()
+        dfp = dfp.sample(nsamp, random_state=RSD).copy()
 
-    gd = sns.JointGrid(x=ft0, y=ft1, data=df, height=6)
+    if hue is not None:
+        ftsd = get_fts_by_dtype(dfp)
+        if hue in ftsd['int'] + ftsd['float']:  # bin according to quantiles
+            dfp[hue] = pd.qcut(dfp[hue].values, q=5)
+            kws['palette'] = 'viridis'
+
+    gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=6, hue=hue)
+
+    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=True)
+    scatter_kws = kws | dict(
+        alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd'
+    )
+    rug_kws = kws | dict(height=0.1)
 
     if kind == 'kde':
         _ = gd.plot_joint(sns.kdeplot, **kde_kws)
@@ -372,14 +382,13 @@ def plot_joint_numeric(
         _ = gd.plot_joint(sns.scatterplot, **scatter_kws)
         _ = gd.plot_marginals(sns.rugplot, **rug_kws)
     elif kind == 'reg':
-        _ = gd.plot_joint(sns.regplot, scatter_kws=scatter_kws, color=f'C{colori%5}')
+        _ = gd.plot_joint(sns.regplot, scatter_kws=scatter_kws, **kws)
         _ = gd.plot_marginals(sns.rugplot, **rug_kws)
     else:
         raise ValueError('kwarg `kind` must be in {kde, scatter, kde+scatter, reg}')
 
-    _ = gd.plot_marginals(sns.histplot, kde=True, color=f'C{colori%5}')
-    r = stats.linregress(x=df[ft0], y=df[ft1])
-
+    _ = gd.plot_marginals(sns.histplot, kde=True, **kws)
+    r = stats.linregress(x=dfp[ft0], y=dfp[ft1])
     _ = gd.ax_joint.text(
         0.98,
         0.98,

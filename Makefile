@@ -37,7 +37,8 @@ dev:  # create local condaenv for dev
 		export CONDA_ENV_PATH=$$HOME/opt/miniconda3/envs/oreum_core/bin; \
 		export CONDA_DEFAULT_ENV=oreum_core; \
 		$(PYTHON_ENV) -m pip install -e .[dev]; \
-		$(PYTHON_ENV) -c "import numpy as np; np.__config__.show()" > tests/results/blas_info.txt; \
+		$(PYTHON_ENV) -c "import numpy as np; np.__config__.show()" > dev/install_log/blas_info.txt; \
+		pipdeptree -a -r > dev/install_log/pip_deps_reversed.txt; \
 		pip-licenses -saud -f markdown --output-file LICENSES_THIRD_PARTY.md; \
 		pre-commit install; \
 		pre-commit autoupdate
@@ -84,10 +85,10 @@ test-dev-env: ## test the dev machine install of critial numeric packages
 		export PATH=$$HOME/opt/miniconda3/envs/oreum_core/bin:$$PATH; \
 		export CONDA_ENV_PATH=$$HOME/opt/miniconda3/envs/oreum_core/bin; \
 		export CONDA_DEFAULT_ENV=oreum_core; \
-		$(PYTHON_ENV) -c "import numpy as np; np.test()" > tests/results/numpy.txt; \
-		$(PYTHON_ENV) -c "import scipy as sp; sp.test()" > tests/results/scipy.txt
+		$(PYTHON_ENV) -c "import numpy as np; np.test()" > dev/install_log/numpy.txt; \
+		$(PYTHON_ENV) -c "import scipy as sp; sp.test()" > dev/install_log/scipy.txt
 
-# $(PYTHON_ENV) -c "import pymc as pm; pm.test()" > tests/results/pymc.txt; \
+# $(PYTHON_ENV) -c "import pymc as pm; pm.test()" > dev/install_log/pymc.txt; \
 
 test-dl-ins:  # test dl & install from testpypi, set env var or pass in VERSION
 	$(PYTHON) -m pip uninstall -y oreum_core

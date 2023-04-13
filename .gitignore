@@ -3,9 +3,8 @@
 *.netcdf
 
 # Additional local dirs
-dev/
-docs/private/
-tests/results/*.txt
+local/*
+dev/install_log/*.txt
 
 # Addtional files that are sometimes useful docs (only block if in data/ dir)
 data/*.xls*

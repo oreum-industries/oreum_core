@@ -337,7 +337,7 @@ class Transformer:
         self.design_info = df_ex.design_info
 
         # force patsy transform of an F() to int feature back to int not float
-        fts_force_to_int = []
+        fts_force_to_int = ['intercept']  # also force intercept
         fts_force_to_int = list(self.fts_fact_mapping.keys())
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
