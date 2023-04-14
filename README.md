@@ -112,8 +112,8 @@ This will also create some files to help confirm / diagnose successful installat
 $> make test-dev-env
 ```
 
-This will also add files `dev/install_log/[numpy|scipy|pymc].txt` which detail
-successful installation (or not) for `numpy`, `scipy` ~~, and `pmyc`~~
+This will also add files `dev/install_log/[numpy|scipy].txt` which detail
+successful installation (or not) for `numpy`, `scipy`
 
 
 #### 2.2.3 (Useful during env install experimentation): To remove the dev environment

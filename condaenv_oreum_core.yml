@@ -13,4 +13,4 @@ dependencies:
 - conda-forge::libblas=*[build=*mkl]    # force mamba install MKL
 - conda-forge::libcblas=*[build=*mkl]   # force mamba install MKL
 - conda-forge::liblapack=*[build=*mkl]  # force mamba install MKL
-- conda-forge::pymc>=5.0.2              # force compile w/ Intel MKL BLAS
+# - conda-forge::pymc>=5.2.0              # force compile w/ Intel MKL BLAS

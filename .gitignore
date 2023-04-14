@@ -5,6 +5,8 @@
 # Additional local dirs
 local/*
 dev/install_log/*.txt
+dev/*.md
+dev/*.py
 
 # Addtional files that are sometimes useful docs (only block if in data/ dir)
 data/*.xls*

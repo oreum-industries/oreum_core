@@ -38,7 +38,8 @@ dev:  # create local condaenv for dev
 		export CONDA_DEFAULT_ENV=oreum_core; \
 		$(PYTHON_ENV) -m pip install -e .[dev]; \
 		$(PYTHON_ENV) -c "import numpy as np; np.__config__.show()" > dev/install_log/blas_info.txt; \
-		pipdeptree -a -r > dev/install_log/pip_deps_reversed.txt; \
+		pipdeptree -a > dev/install_log/pipdeptree.txt; \
+		pipdeptree -a -r > dev/install_log/pipdeptree_rev.txt; \
 		pip-licenses -saud -f markdown --output-file LICENSES_THIRD_PARTY.md; \
 		pre-commit install; \
 		pre-commit autoupdate
@@ -99,3 +100,4 @@ test-dl-ins:  # test dl & install from testpypi, set env var or pass in VERSION
 
 uninstall:  # uninstall local condaenv for dev (run from base env)
 	mamba env remove --name oreum_core
+	mamba clean -afy
