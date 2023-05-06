@@ -353,7 +353,7 @@ def plot_joint_numeric(
     Suitable for int or float"""
 
     dfp = df.copy()
-    kws = dict(color=f'C{colori%5}', legend=False)
+    kws = dict(color=f'C{colori%5}')
 
     if nsamp is not None:
         dfp = dfp.sample(nsamp, random_state=RSD).copy()
@@ -366,11 +366,11 @@ def plot_joint_numeric(
 
     gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=6, hue=hue)
 
-    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=True)
+    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=True, legend=False)
     scatter_kws = kws | dict(
         alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd'
     )
-    rug_kws = kws | dict(height=0.1)
+    rug_kws = kws | dict(height=0.1, legend=False)
 
     if kind == 'kde':
         _ = gd.plot_joint(sns.kdeplot, **kde_kws)
@@ -392,8 +392,7 @@ def plot_joint_numeric(
     _ = gd.ax_joint.text(
         0.98,
         0.98,
-        # f"pearsonr = {stats.pearsonr(df[ft0], df[ft1])[0]:.4g}",
-        f"y = {r.slope:.2f}x + {r.intercept:.2f}\npearsonr = {r.rvalue:.2f}",
+        f"y = {r.slope:.2f}x + {r.intercept:.2f}\nρ = {r.rvalue:.2f}",
         transform=gd.ax_joint.transAxes,
         ha='right',
         va='top',
@@ -407,9 +406,9 @@ def plot_joint_numeric(
 
     t = '' if subtitle is None else f'\n{subtitle}'
     _ = gd.figure.suptitle(
-        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)} obs{t}', y=1.02, fontsize=12
+        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)} obs{t}', y=1.02, fontsize=14
     )
-    _ = gd.fig.tight_layout(pad=0.8)
+    _ = gd.fig.tight_layout(pad=0.95)
     return gd
 
 
