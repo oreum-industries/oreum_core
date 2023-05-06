@@ -32,25 +32,16 @@ rng = np.random.default_rng(seed=RSD)
 def display_fw(df, **kwargs):
     """Conv fn: contextually display max rows"""
 
-    max_rows = kwargs.pop('max_rows', 50)
-    precision = kwargs.pop('precision', 2)
-    max_colwidth = kwargs.pop('max_colwidth', 30)
-    latex = kwargs.pop('latex', False)
-    display_latex_repr = False
-    display_latex_longtable = False
-
-    if latex:
-        display_latex_repr = True
-        display_latex_longtable = True
-
     options = {
-        'display.precision': precision,
-        'display.max_rows': max_rows,
+        'display.precision': kwargs.pop('precision', 2),
+        'display.max_colwidth': kwargs.pop('max_colwidth', 30),
+        'display.max_rows': kwargs.pop('max_rows', 50),
         'display.max_columns': None,
-        'display.max_colwidth': max_colwidth,
-        'display.latex.repr': display_latex_repr,
-        'display.latex.longtable': display_latex_longtable,
     }
+
+    if kwargs.pop('latex', False):
+        options['styler.render.repr'] = 'latex'
+        options['styler.latex.environment'] = 'longtable'
 
     with pd.option_context(*[i for tup in options.items() for i in tup]):
         display(df)
