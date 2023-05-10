@@ -93,7 +93,7 @@ def custom_describe(
         df = df.reset_index()
 
     # start with pandas describe, add on dtypes
-    dfdesc = df.describe(include='all', datetime_is_numeric=True).T
+    dfdesc = df.describe(include='all').T
 
     dfout = pd.concat((dfdesc, df.dtypes), axis=1, join='outer', sort=False)
     dfout = dfout.loc[df.columns.values]
