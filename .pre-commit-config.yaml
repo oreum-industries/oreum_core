@@ -60,7 +60,7 @@ repos:
         args: [--config, pyproject.toml]
         pass_filenames: false  # see https://github.com/econchick/interrogate/issues/60#issuecomment-1180262851
   - repo: https://gitlab.com/iam-cms/pre-commit-hooks  # apply Apache2 header
-    rev: v0.1.1
+    rev: v0.2.0
     hooks:
       - id: apache-license
         files: ^oreum_core/

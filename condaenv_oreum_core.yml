@@ -1,16 +1,24 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2023-03-29
+# Last updated as-at 2023-06-21
 # NOTE:
-#  + Creates a conda env for local development
-#  + Install with mamba via Makefile, force MKL via "libblas" (note not "blas")
-#  + Assume running on Intel x86 AMD64 processors
+#  + Creates a virtual env for dev usage
+#  + Require running on Intel x86 AMD64 CPU (or Rosetta2 on MacOS)
+#  + Install with mamba via Makefile, must force MKL via libblas (note not "blas")
+#  + Install numpy alongside from defaults channel (the only one compiled against MKL)
+#    see https://github.com/conda-forge/numpy-feedstock/issues/84#issuecomment-385186685
+#  + This is a minimal set of packages dependent upon forcing MKL and conda-forge
+#  + There's also a fuller set of deps to be installed by pip in the pyproject.toml
 name: oreum_core
+channels:
+  - defaults
+  # - conda-forge  # commented out - we declare specifics per package and want numpy from defaults
 dependencies:
-- mkl==2021.4.*  # NOTE 2022 version(s) dont work on MacOS https://stackoverflow.com/a/71640311/1165112
-- mkl-service==2.4.*
-- numpy==1.23.*                         # force compile w/ Intel MKL BLAS
-- python==3.10.*
-- conda-forge::libblas=*[build=*mkl]    # force mamba install MKL
-- conda-forge::libcblas=*[build=*mkl]   # force mamba install MKL
-- conda-forge::liblapack=*[build=*mkl]  # force mamba install MKL
-# - conda-forge::pymc>=5.2.0              # force compile w/ Intel MKL BLAS
+- numpy>=1.24.3   # NOTE: the MKL version is only available in defaults
+- conda-forge::ipykernel>=6.23.1
+- conda-forge::libblas=*[build=*mkl]    # force MKL
+- conda-forge::libcblas=*[build=*mkl]   # force MKL
+- conda-forge::liblapack=*[build=*mkl]  # force MKL
+- conda-forge::mkl==2021.4.*  # NOTE 2022 version(s) dont work on MacOS https://stackoverflow.com/a/71640311/1165112
+- conda-forge::mkl-service==2.4.*
+- conda-forge::python==3.10.*
+- conda-forge::pymc>=5.5.0  # force install here to avoid C compiler issues
