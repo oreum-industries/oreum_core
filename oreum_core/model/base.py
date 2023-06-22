@@ -65,39 +65,39 @@ class BasePYMCModel:
         self.version = getattr(self, 'version', 'unversioned_model')
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
-    def _create_idata(self, **kwargs):
-        """Create Arviz InferenceData object
-        NOTE: use ordered exceptions, with assumption that we always use
-            an ordered workflow: prior, trace, ppc
-        """
-        k = dict(model=self.model)
+    # def _create_idata(self, **kwargs):
+    #     """Create Arviz InferenceData object
+    #     NOTE: use ordered exceptions, with assumption that we always use
+    #         an ordered workflow: prior, trace, ppc
+    #     """
+    #     k = dict(model=self.model)
 
-        if (
-            idata_kwargs := kwargs.get('idata_kwargs', self.sample_kws['idata_kwargs'])
-        ) is not None:
-            k.update(**idata_kwargs)
+    #     if (
+    #         idata_kwargs := kwargs.get('idata_kwargs', self.sample_kws['idata_kwargs'])
+    #     ) is not None:
+    #         k.update(**idata_kwargs)
 
-        # update dict with pymc outputs
-        if (prior := kwargs.get('prior', None)) is not None:
-            k['prior'] = prior
+    #     # update dict with pymc outputs
+    #     if (prior := kwargs.get('prior', None)) is not None:
+    #         k['prior'] = prior
 
-        if (ppc := kwargs.get('posterior_predictive', None)) is not None:
-            k['posterior_predictive'] = ppc
-            # by logic in sample_postrior_predictive there exists self.idata.posterior
-        elif (posterior := kwargs.get('posterior', None)) is not None:
-            k['trace'] = posterior
-        else:
-            pass
+    #     if (ppc := kwargs.get('posterior_predictive', None)) is not None:
+    #         k['posterior_predictive'] = ppc
+    #         # by logic in sample_postrior_predictive there exists self.idata.posterior
+    #     elif (posterior := kwargs.get('posterior', None)) is not None:
+    #         k['trace'] = posterior
+    #     else:
+    #         pass
 
-        idata = az.from_pymc3(**k)
+    #     idata = az.from_pymc3(**k)
 
-        # extend idata with any other older data
-        try:
-            idata.extend(self.idata, join='left')
-        except AssertionError:
-            pass  # idata doesnt exist
+    #     # extend idata with any other older data
+    #     try:
+    #         idata.extend(self.idata, join='left')
+    #     except AssertionError:
+    #         pass  # idata doesnt exist
 
-        return idata
+    #     return idata
 
     def _get_posterior(self):
         """Returns posterior from idata from previous run of sample"""
@@ -155,7 +155,7 @@ class BasePYMCModel:
             prior = pm.sample_prior_predictive(
                 samples=draws, random_seed=random_seed, **kwargs
             )
-        _ = self.update_idata(prior=prior)
+        _ = self.update_idata(prior)
         _log.info(f'Sampled prior predictive for {self.name} {self.version}')
         return None
 
@@ -171,7 +171,6 @@ class BasePYMCModel:
             chains=kwargs.pop('chains', self.sample_kws['chains']),
             cores=kwargs.pop('cores', self.sample_kws['cores']),
             progressbar=kwargs.pop('progressbar', self.sample_kws['progressbar']),
-            return_inferencedata=False,
         )
 
         target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
@@ -190,7 +189,7 @@ class BasePYMCModel:
             except UserWarning as e:
                 _log.warning('Warning in sample()', exc_info=e)
             finally:
-                _ = self.update_idata(posterior=posterior)
+                _ = self.update_idata(posterior)
 
         _log.info(f'Sampled posterior for {self.name} {self.version}')
         return None
@@ -221,11 +220,11 @@ class BasePYMCModel:
         _log.info(f'Sampled ppc for {self.name} {self.version}')
 
         if store_ppc:
-            _ = self.update_idata(posterior_predictive=ppc)
+            _ = self.update_idata(ppc)
         else:
-            return self._create_idata(posterior_predictive=ppc)
+            return ppc
 
-    def replace_obs(self, new_obs):
+    def replace_obs(self, new_obs) -> None:
         """Replace the observations
         Assumes data lives in pm.Data containers in your _build() function
         You must call `build()` afterward
@@ -234,13 +233,12 @@ class BasePYMCModel:
         self.obs = new_obs
         _log.info(f'Replaced obs in {self.name} {self.version}')
 
-    def update_idata(self, idata: az.InferenceData = None, **kwargs):
-        """Create (and updated) an Arviz InferenceData object on-model
-        from current set of self.attributes
-        or from a passed-in presampled idata object
+    def update_idata(self, idata: az.InferenceData, replace: bool = False) -> None:
+        """Create (and update) an Arviz InferenceData object on-model from a
+        passed-in presampled InferenceData object
         """
-        if idata is not None:
+        if self._idata is None:
             self._idata = idata
         else:
-            self._idata = self._create_idata(**kwargs)
-        return None
+            side = 'right' if replace else 'left'
+            self._idata = self.idata.extend(idata, join=side)
