@@ -34,7 +34,7 @@ class BasePYMCModel:
     + To get prior, posterior, and ppc traces, please use the .idata attribute
     """
 
-    RSD = 42
+    rsd = 42
 
     def __init__(self, **kwargs):
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
@@ -47,11 +47,10 @@ class BasePYMCModel:
         """
         self.model = None
         self._idata = None
-        self.sample_prior_predictive_kws = dict(draws=500)
+        self.sample_prior_predictive_kws = dict(samples=2000)
         self.sample_posterior_predictive_kws = dict(fast=True, store_ppc=False)
         self.sample_kws = dict(
             init='auto',  # aka jitter+adapt_diag
-            random_seed=self.RSD,
             tune=2000,  # NOTE: often need to bump this much higher e.g. 5000
             draws=500,
             chains=4,
@@ -64,40 +63,6 @@ class BasePYMCModel:
         self.name = getattr(self, 'name', 'unnamed_model')
         self.version = getattr(self, 'version', 'unversioned_model')
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
-
-    # def _create_idata(self, **kwargs):
-    #     """Create Arviz InferenceData object
-    #     NOTE: use ordered exceptions, with assumption that we always use
-    #         an ordered workflow: prior, trace, ppc
-    #     """
-    #     k = dict(model=self.model)
-
-    #     if (
-    #         idata_kwargs := kwargs.get('idata_kwargs', self.sample_kws['idata_kwargs'])
-    #     ) is not None:
-    #         k.update(**idata_kwargs)
-
-    #     # update dict with pymc outputs
-    #     if (prior := kwargs.get('prior', None)) is not None:
-    #         k['prior'] = prior
-
-    #     if (ppc := kwargs.get('posterior_predictive', None)) is not None:
-    #         k['posterior_predictive'] = ppc
-    #         # by logic in sample_postrior_predictive there exists self.idata.posterior
-    #     elif (posterior := kwargs.get('posterior', None)) is not None:
-    #         k['trace'] = posterior
-    #     else:
-    #         pass
-
-    #     idata = az.from_pymc3(**k)
-
-    #     # extend idata with any other older data
-    #     try:
-    #         idata.extend(self.idata, join='left')
-    #     except AssertionError:
-    #         pass  # idata doesnt exist
-
-    #     return idata
 
     def _get_posterior(self):
         """Returns posterior from idata from previous run of sample"""
@@ -148,13 +113,13 @@ class BasePYMCModel:
         + I have created and tested a fix as described in my
         [issue ticket](https://github.com/pymc-devs/pymc/issues/4598)
         """
-        draws = kwargs.pop('draws', self.sample_prior_predictive_kws['draws'])
-        random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
+        kws = dict(
+            random_seed=kwargs.pop('random_seed', self.rsd),
+            samples=kwargs.pop('samples', self.sample_prior_predictive_kws['samples']),
+        )
 
         with self.model:
-            prior = pm.sample_prior_predictive(
-                samples=draws, random_seed=random_seed, **kwargs
-            )
+            prior = pm.sample_prior_predictive(**{**kws, **kwargs})
         _ = self.update_idata(prior)
         _log.info(f'Sampled prior predictive for {self.name} {self.version}')
         return None
@@ -163,9 +128,9 @@ class BasePYMCModel:
         """Sample posterior: use base class defaults self.sample_kws
         or passed kwargs for pm.sample()
         """
-        kws_sample = dict(
+        kws = dict(
             init=kwargs.pop('init', self.sample_kws['init']),
-            random_seed=kwargs.pop('random_seed', self.sample_kws['random_seed']),
+            random_seed=kwargs.pop('random_seed', self.rsd),
             tune=kwargs.pop('tune', self.sample_kws['tune']),
             draws=kwargs.pop('draws', self.sample_kws['draws']),
             chains=kwargs.pop('chains', self.sample_kws['chains']),
@@ -182,10 +147,10 @@ class BasePYMCModel:
                 'metropolis': pm.Metropolis(target_accept=target_accept),
                 'advi': pm.ADVI(),
             }
-            kws_sample['step'] = common_stepper_options.get(step, None)
+            kws['step'] = common_stepper_options.get(step, None)
 
             try:
-                posterior = pm.sample(**{**kws_sample, **kwargs})
+                posterior = pm.sample(**{**kws, **kwargs})
             except UserWarning as e:
                 _log.warning('Warning in sample()', exc_info=e)
             finally:
@@ -207,8 +172,8 @@ class BasePYMCModel:
         )
         kws = dict(
             trace=self._get_posterior(),
-            random_seed=kwargs.pop('random_seed', self.sample_kws['random_seed']),
-            samples=kwargs.get('n_samples', None),
+            random_seed=kwargs.pop('random_seed', self.rsd),
+            samples=kwargs.pop('samples', None),
         )
 
         with self.model:
