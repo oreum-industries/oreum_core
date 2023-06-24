@@ -152,7 +152,7 @@ class BasePYMCModel:
             try:
                 posterior = pm.sample(**{**kws, **kwargs})
             except UserWarning as e:
-                _log.warning('Warning in sample()', exc_info=e)
+                _log.warning('Warning in mdl.sample()', exc_info=e)
             finally:
                 _ = self.update_idata(posterior)
 
@@ -202,8 +202,9 @@ class BasePYMCModel:
         """Create (and update) an Arviz InferenceData object on-model from a
         passed-in presampled InferenceData object
         """
+        # TODO improve this logic to use self.idata
         if self._idata is None:
             self._idata = idata
         else:
             side = 'right' if replace else 'left'
-            self._idata = self.idata.extend(idata, join=side)
+            self._idata.extend(idata, join=side)
