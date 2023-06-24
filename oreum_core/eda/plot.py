@@ -348,8 +348,9 @@ def plot_joint_numeric(
     subtitle: str = None,
     colori: int = 0,
     nsamp: int = None,
+    linreg: bool = True,
 ) -> sns.JointGrid:
-    """Jointplot of 2 numeric fts with optional hue shading.
+    """Jointplot of 2 numeric fts with optional: hue shading, linear regression
     Suitable for int or float"""
 
     dfp = df.copy()
@@ -388,16 +389,19 @@ def plot_joint_numeric(
         raise ValueError('kwarg `kind` must be in {kde, scatter, kde+scatter, reg}')
 
     _ = gd.plot_marginals(sns.histplot, kde=True, **kws)
-    r = stats.linregress(x=dfp[ft0], y=dfp[ft1])
-    _ = gd.ax_joint.text(
-        0.98,
-        0.98,
-        f"y = {r.slope:.2f}x + {r.intercept:.2f}\nρ = {r.rvalue:.2f}",
-        transform=gd.ax_joint.transAxes,
-        ha='right',
-        va='top',
-        fontsize=8,
-    )
+
+    if linreg:
+        r = stats.linregress(x=dfp[ft0], y=dfp[ft1])
+        _ = gd.ax_joint.text(
+            0.98,
+            0.98,
+            f"y = {r.slope:.2f}x + {r.intercept:.2f}\nρ = {r.rvalue:.2f}",
+            transform=gd.ax_joint.transAxes,
+            ha='right',
+            va='top',
+            fontsize=8,
+        )
+
     if log:
         _ = gd.ax_joint.set_xscale('log')
         _ = gd.ax_joint.set_yscale('log')
