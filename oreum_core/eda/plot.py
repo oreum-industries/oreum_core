@@ -26,9 +26,9 @@ from scipy import integrate, stats
 from . import get_fts_by_dtype
 
 __all__ = [
-    'plot_cat_count',
-    'plot_bool_count',
-    'plot_date_count',
+    'plot_cat_ct',
+    'plot_bool_ct',
+    'plot_date_ct',
     'plot_int_dist',
     'plot_float_dist',
     'plot_joint_numeric',
@@ -47,11 +47,11 @@ __all__ = [
     'plot_bootstrap_lr_grp',
     'plot_bootstrap_grp',
     'plot_bootstrap_delta_grp',
-    'plot_grp_sum_dist_count',
-    'plot_grp_year_sum_dist_count',
+    'plot_grp_sum_dist_ct',
+    'plot_grp_year_sum_dist_ct',
     'plot_heatmap_corr',
     'plot_kj_summaries_for_linear_model',
-    'plot_grp_count',
+    'plot_grp_ct',
 ]
 
 
@@ -101,7 +101,7 @@ def _get_kws_styling() -> dict:
     return kws
 
 
-def plot_cat_count(
+def plot_cat_ct(
     df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2
 ) -> figure.Figure:
     """Conv fn: plot group counts for cats and bools"""
@@ -150,7 +150,7 @@ def plot_cat_count(
     return f
 
 
-def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figure:
+def plot_bool_ct(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figure:
     """Conv fn: plot group counts for bools"""
 
     if len(fts) == 0:
@@ -187,7 +187,7 @@ def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.F
     return f
 
 
-def plot_date_count(
+def plot_date_ct(
     df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.8
 ) -> figure.Figure:
     """Plot group sizes for dates by strftime format"""
@@ -1174,7 +1174,69 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
     return gs
 
 
-def plot_grp_sum_dist_count(
+def plot_sum_dist(
+    df: pd.DataFrame,
+    val: str = 'y_eloss',
+    title_add: str = '',
+    plot_outliers: bool = True,
+    palette: sns.palettes._ColorPalette = None,
+) -> gridspec.GridSpec:
+    """Plot simple diagnostics (sum, distribution) of numeric value `val`,
+    Returns a GridSpec
+    """
+    sty = _get_kws_styling()
+    idx = df[val].notnull()
+    dfp = df.loc[idx].copy()
+
+    f = plt.figure(figsize=(12, 2))
+    gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], figure=f)
+    ax0 = f.add_subplot(gs[0])
+    ax1 = f.add_subplot(gs[1])
+
+    ax0.set_title('Distribution of bootstrapped sum')
+    ax1.set_title('Distribution of indiv. values')
+
+    if palette is None:
+        palette = 'viridis'
+
+    _ = sns.pointplot(
+        x=val, data=dfp, palette=palette, estimator=np.sum, errorbar=('ci', 94), ax=ax0
+    )
+
+    sym = 'k' if plot_outliers else ''
+    _ = sns.boxplot(
+        x=val,
+        data=dfp,
+        palette=palette,
+        sym=sym,
+        whis=[3, 97],
+        showmeans=True,
+        meanprops=sty['mn_pt_kws'],
+        ax=ax1,
+    )
+
+    if title_add != '':
+        title_add = f'\n{title_add}'
+    title = f'Diagnostic 1D plots of `{val}`'
+    _ = f.suptitle(f'{title}{title_add}', fontsize=16)
+
+    if sum(idx) > 0:
+        t = (
+            f'Note: {sum(~idx):,.0f} NaNs found in value,'
+            f'\nplotted non-NaN dataset of {sum(idx):,.0f}'
+        )
+        _ = ax1.annotate(
+            t, xy=(0.96, 0.96), xycoords='figure fraction', ha='right', fontsize=8
+        )
+
+    ax0.xaxis.label.set_visible(False)
+    ax1.xaxis.label.set_visible(False)
+
+    _ = plt.tight_layout()
+    return gs
+
+
+def plot_grp_sum_dist_ct(
     df: pd.DataFrame,
     grp: str = 'grp',
     val: str = 'y_eloss',
@@ -1185,10 +1247,8 @@ def plot_grp_sum_dist_count(
     yorder_count: bool = True,
     palette: sns.palettes._ColorPalette = None,
 ) -> gridspec.GridSpec:
-    """Plot simple diagnostics (sum, distribution and count)
-    of a numeric value `val`, grouped by a categorical value `grp`, with group
-    ordered by count desc
-
+    """Plot simple diagnostics (sum, distribution, count) of numeric value `val`,
+    grouped by categorical value `grp`, with group, ordered by count desc
     Returns a GridSpec
     """
     sty = _get_kws_styling()
@@ -1279,7 +1339,7 @@ def plot_grp_sum_dist_count(
     return gs
 
 
-def plot_grp_year_sum_dist_count(
+def plot_grp_year_sum_dist_ct(
     df: pd.DataFrame,
     grp: str = 'grp',
     val: str = 'y_eloss',
@@ -1449,7 +1509,7 @@ def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add='psi'):
     return gd
 
 
-def plot_grp_count(
+def plot_grp_ct(
     df: pd.DataFrame, grp: str = 'grp', title_add: str = ''
 ) -> figure.Figure:
     """Simple countplot for factors in grp, label with percentages
