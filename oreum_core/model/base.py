@@ -24,6 +24,7 @@ __all__ = ['BasePYMCModel']
 _log = logging.getLogger(__name__)
 _log_pymc = logging.getLogger('pymc')  # force pymc chatty prints to log
 _log_pymc.setLevel(logging.WARNING)
+# logging.captureWarnings(True) # further force chatty pymc warnings to log (py.warnings)
 
 
 class BasePYMCModel:
@@ -111,7 +112,7 @@ class BasePYMCModel:
           [MRE Notebook gist](https://gist.github.com/jonsedar/070319334bcf033773cc3e9495c79ea0)
           that illustrates the issue.
         + I have created and tested a fix as described in my
-        [issue ticket](https://github.com/pymc-devs/pymc/issues/4598)
+          [issue ticket](https://github.com/pymc-devs/pymc/issues/4598)
         """
         kws = dict(
             random_seed=kwargs.pop('random_seed', self.rsd),
@@ -119,9 +120,13 @@ class BasePYMCModel:
         )
 
         with self.model:
-            prior = pm.sample_prior_predictive(**{**kws, **kwargs})
-        _ = self.update_idata(prior)
-        _log.info(f'Sampled prior predictive for {self.name} {self.version}')
+            try:
+                prior = pm.sample_prior_predictive(**{**kws, **kwargs})
+            except UserWarning as e:
+                _log.warning('Warning in mdl.sample_prior_predictive()', exc_info=e)
+            finally:
+                _ = self.update_idata(prior)
+            _log.info(f'Sampled prior predictive for {self.name} {self.version}')
         return None
 
     def sample(self, **kwargs):
