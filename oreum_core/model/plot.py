@@ -33,6 +33,7 @@ __all__ = [
     'plot_dist_fns_over_x',
     'plot_dist_fns_over_x_manual_only',
     'plot_ppc_loopit',
+    'plot_energy',
 ]
 
 sns.set(
@@ -357,6 +358,14 @@ def plot_ppc_loopit(
         _ = ax2.set_title(f'Predicted {tgt_hat} LOO-PIT cumulative')
 
     _ = f.suptitle(' - '.join(filter(None, ['In-sample PPC', mdlname, txtadd])))
+    _ = f.tight_layout()
+    return f
+
+
+def plot_energy(idata: az.data.inference_data.InferenceData, **kwargs) -> figure.Figure:
+    """Simple wrapper around energy plot to provide a simpler interface"""
+    _ = az.plot_energy(idata, figsize=(12, 2))
+    f = plt.gcf()
     _ = f.tight_layout()
     return f
 

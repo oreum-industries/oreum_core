@@ -56,6 +56,7 @@ from oreum_core.model.plot import (
     pairplot_corr,
     plot_dist_fns_over_x,
     plot_dist_fns_over_x_manual_only,
+    plot_energy,
     plot_ppc_loopit,
     plot_trace,
 )

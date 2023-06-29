@@ -24,12 +24,7 @@ from oreum_core.eda.calc import (
     month_diff,
     tril_nan,
 )
-from oreum_core.eda.describe import (
-    custom_describe,
-    display_fw,
-    display_ht,
-    get_fts_by_dtype,
-)
+from oreum_core.eda.describe import describe, display_fw, display_ht, get_fts_by_dtype
 from oreum_core.eda.eda_io import FigureIO, display_image_file, output_data_dict
 from oreum_core.eda.plot import (
     plot_accuracy,

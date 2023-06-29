@@ -349,25 +349,35 @@ def plot_joint_numeric(
     colori: int = 0,
     nsamp: int = None,
     linreg: bool = True,
+    kdeleg: bool = False,
 ) -> sns.JointGrid:
     """Jointplot of 2 numeric fts with optional: hue shading, linear regression
     Suitable for int or float"""
 
     dfp = df.copy()
-    kws = dict(color=f'C{colori%5}')
+    ngrps = 1
+    kws = dict()
 
     if nsamp is not None:
         dfp = dfp.sample(nsamp, random_state=RSD).copy()
 
     if hue is not None:
         ftsd = get_fts_by_dtype(dfp)
-        if hue in ftsd['int'] + ftsd['float']:  # bin according to quantiles
+        linreg = False
+        kdeleg = True
+        if (
+            hue in ftsd['int'] + ftsd['float']
+        ):  # bin according to 5 equal width quantiles
             dfp[hue] = pd.qcut(dfp[hue].values, q=5)
             kws['palette'] = 'viridis'
+        else:
+            ngrps = len(dfp[hue].unique())
+
+    kws = kws | dict(color=f'C{colori%ngrps}')
 
     gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=6, hue=hue)
 
-    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=True, legend=False)
+    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=True, legend=kdeleg)
     scatter_kws = kws | dict(
         alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd'
     )
@@ -410,7 +420,7 @@ def plot_joint_numeric(
 
     t = '' if subtitle is None else f'\n{subtitle}'
     _ = gd.figure.suptitle(
-        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)} obs{t}', y=1.02, fontsize=14
+        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)//ngrps} obs{t}', y=1.02, fontsize=14
     )
     _ = gd.fig.tight_layout(pad=0.95)
     return gd

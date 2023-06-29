@@ -21,7 +21,7 @@ import pandas as pd
 from IPython.display import display
 from scipy import stats
 
-__all__ = ['display_fw', 'display_ht', 'custom_describe', 'get_fts_by_dtype']
+__all__ = ['display_fw', 'display_ht', 'describe', 'get_fts_by_dtype']
 
 _log = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ def display_ht(df, **kwargs) -> str:
     return f'shape: {df.shape}'
 
 
-def custom_describe(
+def describe(
     df,
     nobs=3,
     nfeats=30,
