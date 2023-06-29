@@ -326,7 +326,12 @@ def plot_float_dist(
     )
     _ = gd.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
     _ = gd.map(
-        sns.pointplot, 'value', order='variable', color='C3', estimator=np.mean, ci=94
+        sns.pointplot,
+        'value',
+        order='variable',
+        color='C3',
+        estimator=np.mean,
+        errorbar=('ci', 94),
     )
     # https://stackoverflow.com/q/33486613/1165112
     # scatter_kws=(dict(edgecolor='k', edgewidth=100)))
@@ -344,6 +349,7 @@ def plot_joint_numeric(
     ft1: str,
     hue: str = None,
     kind: str = 'kde',
+    kdefill: bool = True,
     log: bool = False,
     subtitle: str = None,
     colori: int = 0,
@@ -356,7 +362,7 @@ def plot_joint_numeric(
 
     dfp = df.copy()
     ngrps = 1
-    kws = dict()
+    kws = dict(color=f'C{colori%5}')  # color rotation max 5
 
     if nsamp is not None:
         dfp = dfp.sample(nsamp, random_state=RSD).copy()
@@ -365,19 +371,18 @@ def plot_joint_numeric(
         ftsd = get_fts_by_dtype(dfp)
         linreg = False
         kdeleg = True
-        if (
-            hue in ftsd['int'] + ftsd['float']
-        ):  # bin according to 5 equal width quantiles
+        if hue in ftsd['int'] + ftsd['float']:  # bin into 5 equal quantiles
             dfp[hue] = pd.qcut(dfp[hue].values, q=5)
             kws['palette'] = 'viridis'
         else:
             ngrps = len(dfp[hue].unique())
-
-    kws = kws | dict(color=f'C{colori%ngrps}')
+            kws['palette'] = sns.color_palette(
+                [f'C{i + colori%5}' for i in range(ngrps)]
+            )
 
     gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=6, hue=hue)
 
-    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=True, legend=kdeleg)
+    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=kdefill, legend=kdeleg)
     scatter_kws = kws | dict(
         alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd'
     )
@@ -1178,6 +1183,7 @@ def plot_grp_sum_dist_count(
     plot_compact: bool = True,
     plot_grid: bool = True,
     yorder_count: bool = True,
+    palette: sns.palettes._ColorPalette = None,
 ) -> gridspec.GridSpec:
     """Plot simple diagnostics (sum, distribution and count)
     of a numeric value `val`, grouped by a categorical value `grp`, with group
@@ -1214,14 +1220,17 @@ def plot_grp_sum_dist_count(
     ax1.set_title('Distribution of indiv. values')
     ax2.set_title('Count')
 
+    if palette is None:
+        palette = 'viridis'
+
     _ = sns.pointplot(
         x=val,
         y=grp,
         order=ct.index.values,
         data=dfp,
-        palette='viridis',
+        palette=palette,
         estimator=np.sum,
-        ci=94,
+        errorbar=('ci', 94),
         ax=ax0,
     )
 
@@ -1231,7 +1240,7 @@ def plot_grp_sum_dist_count(
         y=grp,
         order=ct.index.values,
         data=dfp,
-        palette='viridis',
+        palette=palette,
         sym=sym,
         whis=[3, 97],
         showmeans=True,
@@ -1239,7 +1248,7 @@ def plot_grp_sum_dist_count(
         ax=ax1,
     )
 
-    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette='viridis', ax=ax2)
+    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette=palette, ax=ax2)
     _ = [
         ax2.annotate(
             f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **sty['count_txt_h_kws']
@@ -1335,7 +1344,7 @@ def plot_grp_year_sum_dist_count(
             ax=ax0d[i],
             palette='viridis',
             estimator=np.sum,
-            ci=94,
+            errorbar=('ci', 94),
             linestyles='-',
         )
 
