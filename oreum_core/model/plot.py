@@ -215,10 +215,10 @@ def pairplot_corr(
         ),
         figsize=(2 + 1.8 * len(rvs), 2 + 1.8 * len(rvs)),
     )
-
+    # idata[group][rvs].stack(dims=('chain', 'draw')).values.T,
     axs = az.plot_pair(idata, **pair_kws)
     corr = pd.DataFrame(
-        idata[group][rvs].stack(dims=('chain', 'draw')).values.T, columns=colnames
+        az.sel_utils.xarray_to_ndarray(idata.posterior, var_names=rvs)[1].T
     ).corr()
     i, j = np.tril_indices(n=len(corr), k=-1)
     for ij in zip(i, j):
@@ -229,7 +229,9 @@ def pairplot_corr(
     _ = [a.set_xlabel(a.get_xlabel(), **vh_x) for ax in axs for a in ax]
 
     f = plt.gcf()
-    _ = f.suptitle(' - '.join(filter(None, ['Pairplot', mdlname, group, rvs, txtadd])))
+    _ = f.suptitle(
+        ' - '.join(filter(None, ['Pairplot', mdlname, group, 'selected RVs', txtadd]))
+    )
     _ = f.tight_layout()
     return f
 

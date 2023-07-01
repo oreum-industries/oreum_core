@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import pymc as pm
 import pytensor
-import pytensor.tensor as pyt
+import pytensor.tensor as pt
 
 __all__ = [
     'calc_f_measure',
@@ -247,13 +247,13 @@ def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
         diag_idxs = np.arange(2, n + 2)[::-1].cumsum() - n - 1
         return packed[diag_idxs]
     elif lower:
-        out = pyt.zeros((n, n), dtype=pytensor.config.floatX)
+        out = pt.zeros((n, n), dtype=pytensor.config.floatX)
         idxs = np.tril_indices(n)
-        return pyt.set_subtensor(out[idxs], packed)
+        return pt.set_subtensor(out[idxs], packed)
     elif not lower:
-        out = pyt.zeros((n, n), dtype=pytensor.config.floatX)
+        out = pt.zeros((n, n), dtype=pytensor.config.floatX)
         idxs = np.triu_indices(n)
-        return pyt.set_subtensor(out[idxs], packed)
+        return pt.set_subtensor(out[idxs], packed)
 
 
 def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
@@ -339,10 +339,14 @@ def calc_dist_fns_over_x_manual_only(d_manual, params, **kwargs):
 def log_jcd(f_inv_x, x):
     """Calc the log of Jacobian determinant
     used to aid log-likelihood maximisation of copula marginals
-    see JPL: https://github.com/junpenglao/advance-bayesian-modelling-with-pymc/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
+    see JPL:
+    + https://github.com/junpenglao/
+        advance-bayesian-modelling-with-pymc/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
+        Planet_Sakaar_Data_Science/blob/e39072eb65535adf743c6f0cd319fdf941cb2798/PyMC3QnA/Box-Cox%20transformation.ipynb
+    + https://discourse.pymc.io/t/mixture-model-with-boxcox-transformation/988
     """
-    grad = pyt.reshape(pm.theanof.gradient(pyt.sum(f_inv_x), [x]), x.shape)
-    return pyt.log(pyt.abs_(grad))
+    grad = pt.reshape(pm.theanof.gradient(pt.sum(f_inv_x), [x]), x.shape)
+    return pt.log(pt.abs_(grad))
 
 
 def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
