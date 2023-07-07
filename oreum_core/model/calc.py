@@ -18,9 +18,9 @@ import sys
 
 import numpy as np
 import pandas as pd
-import pymc as pm
 import pytensor
 import pytensor.tensor as pt
+from pytensor.gradient import grad
 
 __all__ = [
     'calc_f_measure',
@@ -337,16 +337,14 @@ def calc_dist_fns_over_x_manual_only(d_manual, params, **kwargs):
 
 
 def log_jcd(f_inv_x, x):
-    """Calc the log of Jacobian determinant
-    used to aid log-likelihood maximisation of copula marginals
-    see JPL:
-    + https://github.com/junpenglao/
-        advance-bayesian-modelling-with-pymc/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
-        Planet_Sakaar_Data_Science/blob/e39072eb65535adf743c6f0cd319fdf941cb2798/PyMC3QnA/Box-Cox%20transformation.ipynb
+    """Calc log of Jacobian determinant.
+    Helps log-likelihood min of copula marginals, see JPL:
+    + https://github.com/junpenglao/advance-bayesian-modelling-with-pymc/blob/master/Advance_topics/Box-Cox%20transformation.ipynb  # noqa: W505
+    + https://github.com/junpenglao/Planet_Sakaar_Data_Science/blob/e39072eb65535adf743c6f0cd319fdf941cb2798/PyMC3QnA/Box-Cox%20transformation.ipynb  # noqa: W505
     + https://discourse.pymc.io/t/mixture-model-with-boxcox-transformation/988
+    Used in oreum_lab copula experiments
     """
-    grad = pt.reshape(pm.theanof.gradient(pt.sum(f_inv_x), [x]), x.shape)
-    return pt.log(pt.abs_(grad))
+    return pt.log(pt.abs(pt.reshape(grad(pt.sum(f_inv_x), [x]), x.shape)))
 
 
 def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
