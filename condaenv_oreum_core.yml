@@ -21,4 +21,4 @@ dependencies:
 - conda-forge::mkl==2021.4.*  # NOTE 2022 version(s) dont work on MacOS https://stackoverflow.com/a/71640311/1165112
 - conda-forge::mkl-service==2.4.*
 - conda-forge::python==3.10.*
-- conda-forge::pymc>=5.5.0  # force install here to avoid C compiler issues
+- conda-forge::pymc>=5.6.0  # force install here to avoid C compiler issues

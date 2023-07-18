@@ -891,7 +891,7 @@ def plot_bootstrap_lr(
     title_pol_summary: bool = False,
     force_xlim: list = None,
     color: str = None,
-) -> sns.axisgrid.FacetGrid:
+) -> figure.Figure:
     """Plot bootstrapped loss ratio, no grouping"""
 
     sty = _get_kws_styling()
@@ -957,7 +957,7 @@ def plot_bootstrap_lr(
         )
     )
     _ = plt.tight_layout()
-    return gd
+    return gd.fig
 
 
 def plot_bootstrap_lr_grp(
@@ -972,7 +972,7 @@ def plot_bootstrap_lr_grp(
     title_pol_summary: bool = False,
     force_xlim: list = None,
     annot_pest: bool = False,
-) -> gridspec.GridSpec:
+) -> figure.Figure:
     """Plot bootstrapped loss ratio, grouped by grp"""
     # TODO create y order e.g. ct = dfp.groupby(grp).size().sort_values()[::-1]
     sty = _get_kws_styling()
@@ -1052,12 +1052,17 @@ def plot_bootstrap_lr_grp(
     )
     _ = f.suptitle(f'{title}{title_add}{pol_summary}')
     _ = plt.tight_layout()
-    return gs
+    return f
 
 
 def plot_bootstrap_grp(
-    dfboot, df, grp='grp', val='y_eloss', title_add='', force_xlim=None
-):
+    dfboot: pd.DataFrame,
+    df: pd.DataFrame,
+    grp: str = 'grp',
+    val: str = 'y_eloss',
+    title_add: str = '',
+    force_xlim=None,
+) -> figure.Figure:
     """Plot bootstrapped value, grouped by grp"""
     sty = _get_kws_styling()
 
@@ -1123,7 +1128,7 @@ def plot_bootstrap_grp(
     )
     _ = f.suptitle(f'{title}{title_add}')
     _ = plt.tight_layout()
-    return gs
+    return f
 
 
 def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):

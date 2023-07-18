@@ -76,7 +76,9 @@ def facetplot_krushke(
     ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
-    """Create Krushke-style plots using Arviz, univariate RVs, control faceting"""
+    """Create Krushke-style plots using Arviz, univariate RVs, control faceting
+    NOTE can pass kwargs like hdi_prob = 0.5
+    """
     # TODO unpack the compressed rvs from the idata
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)

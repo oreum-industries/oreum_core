@@ -33,7 +33,7 @@ dependencies = [
     "matplotlib-inline<0.1.5",  # 0.1.5+ causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
     "pandas[excel,parquet,plot]>=2.0.1",  # see NOTE
     "patsy>=0.5.3",  # TODO consider using formulae instead
-    "pymc>=5.4.0",  # brings along lots of deps, see NOTE
+    "pymc>=5.6.0",  # brings along lots of deps, see NOTE
     "seaborn>=0.12.2",
 ]
 

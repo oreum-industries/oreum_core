@@ -21,39 +21,12 @@ import pandas as pd
 from IPython.display import display
 from scipy import stats
 
-__all__ = ['display_fw', 'display_ht', 'describe', 'get_fts_by_dtype']
+__all__ = ['describe', 'display_fw', 'display_ht', 'get_fts_by_dtype']
 
 _log = logging.getLogger(__name__)
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
-
-
-def display_fw(df, **kwargs):
-    """Conv fn: contextually display max rows"""
-
-    options = {
-        'display.precision': kwargs.pop('precision', 2),
-        'display.max_colwidth': kwargs.pop('max_colwidth', 30),
-        'display.max_rows': kwargs.pop('max_rows', 50),
-        'display.max_columns': None,
-    }
-
-    if kwargs.pop('latex', False):
-        options['styler.render.repr'] = 'latex'
-        options['styler.latex.environment'] = 'longtable'
-
-    with pd.option_context(*[i for tup in options.items() for i in tup]):
-        display(df)
-
-
-def display_ht(df, **kwargs) -> str:
-    """Convenience fn: Display head and tail n rows via display_fw"""
-
-    nrows = kwargs.pop('nrows', 3) if len(df) >= 3 else len(df)
-    dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
-    display_fw(dfd, **kwargs)
-    return f'shape: {df.shape}'
 
 
 def describe(
@@ -62,6 +35,7 @@ def describe(
     nfeats=30,
     limit=50e6,
     get_mode=False,
+    get_counts=True,
     reset_index=True,
     return_df=False,
     **kwargs,
@@ -100,13 +74,16 @@ def describe(
     dfout.rename(columns={0: 'dtype', 'unique': 'count_unique'}, inplace=True)
     dfout.index.name = 'ft'
 
-    # add null counts for all
-    # dfout['count_notnull'] = df.shape[0] - df.isnull().sum()
-    dfout['count_null'] = df.isnull().sum(axis=0)
-    dfout['count_inf'] = np.isinf(df.select_dtypes(np.number)).sum().reindex(df.columns)
-    dfout['count_zero'] = (
-        (df.select_dtypes(np.number) == 0).sum(axis=0).reindex(df.columns)
-    )
+    # add counts for all
+    if get_counts:
+        dfout['count_notnull'] = df.shape[0] - df.isnull().sum()
+        dfout['count_null'] = df.isnull().sum(axis=0)
+        dfout['count_inf'] = (
+            np.isinf(df.select_dtypes(np.number)).sum().reindex(df.columns)
+        )
+        dfout['count_zero'] = (
+            (df.select_dtypes(np.number) == 0).sum(axis=0).reindex(df.columns)
+        )
 
     # add sum for numeric cols
     dfout['sum'] = np.nan
@@ -164,6 +141,33 @@ def describe(
         display_fw(
             dfout.iloc[: nfeats + len_idx, :].fillna(''), max_rows=nfeats, **kwargs
         )
+
+
+def display_fw(df, **kwargs):
+    """Conv fn: contextually display max rows"""
+
+    options = {
+        'display.precision': kwargs.pop('precision', 2),
+        'display.max_colwidth': kwargs.pop('max_colwidth', 30),
+        'display.max_rows': kwargs.pop('max_rows', 50),
+        'display.max_columns': None,
+    }
+
+    if kwargs.pop('latex', False):
+        options['styler.render.repr'] = 'latex'
+        options['styler.latex.environment'] = 'longtable'
+
+    with pd.option_context(*[i for tup in options.items() for i in tup]):
+        display(df)
+
+
+def display_ht(df, **kwargs) -> str:
+    """Convenience fn: Display head and tail n rows via display_fw"""
+
+    nrows = kwargs.pop('nrows', 3) if len(df) >= 3 else len(df)
+    dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
+    display_fw(dfd, **kwargs)
+    return f'shape: {df.shape}'
 
 
 def get_fts_by_dtype(df, as_dataframe=False):
