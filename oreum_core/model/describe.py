@@ -21,7 +21,9 @@ import numpy as np
 import pandas as pd
 import patsy as pt
 
-__all__ = ['model_desc', 'extract_yobs_yhat', 'describe_dist', 'get_posterior_summary']
+from oreum_core.model import BasePYMCModel
+
+__all__ = ['model_desc', 'extract_yobs_yhat', 'describe_dist', 'get_summary']
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
@@ -75,10 +77,8 @@ def describe_dist(mdl, log=False, inc_summary=False):
     return title, {**dist}
 
 
-def get_posterior_summary(
-    idata: az.data.inference_data.InferenceData, rvs: list
-) -> pd.DataFrame:
+def get_summary(mdl: BasePYMCModel, rvs: list, group='posterior') -> pd.DataFrame:
     """Convenience fn to get arviz summary of idata posteriors"""
 
-    df = az.summary(idata, var_names=rvs)
+    df = az.summary(mdl.idata, var_names=rvs, group=group)
     return df

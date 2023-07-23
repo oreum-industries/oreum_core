@@ -1,7 +1,7 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2023-06-21
+# Last updated as-at 2023-07-23
 # NOTE:
-#  + Creates a virtual env for dev usage
+#  + Creates a virtual env for project usage
 #  + Require running on Intel x86 AMD64 CPU (or Rosetta2 on MacOS)
 #  + Install with mamba via Makefile, must force MKL via libblas (note not "blas")
 #  + Install numpy alongside from defaults channel (the only one compiled against MKL)
@@ -21,4 +21,4 @@ dependencies:
 - conda-forge::mkl==2021.4.*  # NOTE 2022 version(s) dont work on MacOS https://stackoverflow.com/a/71640311/1165112
 - conda-forge::mkl-service==2.4.*
 - conda-forge::python==3.10.*
-- conda-forge::pymc>=5.6.0  # force install here to avoid C compiler issues
+- conda-forge::pymc>=5.6.1  # force install here to avoid C compiler issues

@@ -24,6 +24,8 @@ import seaborn as sns
 import xarray
 from matplotlib import figure, gridspec
 
+from oreum_core.model import BasePYMCModel
+
 __all__ = [
     'plot_trace',
     'facetplot_krushke',
@@ -49,18 +51,15 @@ class IDataGroupName(str, Enum):
     posterior = 'posterior'
 
 
-def plot_trace(
-    idata: az.data.inference_data.InferenceData, rvs: list, **kwargs
-) -> figure.Figure:
-    """Create traceplot for passed idata"""
+def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
+    """Create traceplot for passed mdl"""
     kind = kwargs.pop('kind', 'rank_vlines')
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
-    _ = az.plot_trace(idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
+    _ = az.plot_trace(mdl.idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
     f = plt.gcf()
     _ = f.suptitle(
         ' - '.join(
-            filter(None, ['Traceplot', mdlname, 'posterior', ', '.join(rvs), txtadd])
+            filter(None, ['Traceplot', mdl.name, 'posterior', ', '.join(rvs), txtadd])
         )
     )
     _ = f.tight_layout()
@@ -68,7 +67,7 @@ def plot_trace(
 
 
 def facetplot_krushke(
-    idata: az.data.inference_data.InferenceData,
+    mdl: BasePYMCModel,
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
     m: int = 1,
@@ -80,16 +79,15 @@ def facetplot_krushke(
     NOTE can pass kwargs like hdi_prob = 0.5
     """
     # TODO unpack the compressed rvs from the idata
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(
-        idata, group=group, ax=axs, var_names=rvs, ref_val=ref_vals, **kwargs
+        mdl.idata, group=group, ax=axs, var_names=rvs, ref_val=ref_vals, **kwargs
     )
     s = 's' if len(rvs) > 1 else ''
     _ = f.suptitle(
-        ' - '.join(filter(None, [f'Distribution plot{s}', mdlname, group, txtadd]))
+        ' - '.join(filter(None, [f'Distribution plot{s}', mdl.name, group, txtadd]))
     )
     _ = f.tight_layout()
     return f
@@ -189,7 +187,7 @@ def forestplot_multiple(
 
 
 def pairplot_corr(
-    idata: az.data.inference_data.InferenceData,
+    mdl: BasePYMCModel,
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
     colnames=list[str],
@@ -198,8 +196,8 @@ def pairplot_corr(
 ) -> figure.Figure:
     """Create posterior pair / correlation plots using Arviz, corrrlated RVs,
     Pass-through kwargs to az.plot_pair, e.g. ref_vals
+    Default to posterior, allow for override to prior
     """
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
     kind = kwargs.pop('kind', 'kde')
 
@@ -218,9 +216,9 @@ def pairplot_corr(
         figsize=(2 + 1.8 * len(rvs), 2 + 1.8 * len(rvs)),
     )
     # idata[group][rvs].stack(dims=('chain', 'draw')).values.T,
-    axs = az.plot_pair(idata, **pair_kws)
+    axs = az.plot_pair(mdl.idata, **pair_kws)
     corr = pd.DataFrame(
-        az.sel_utils.xarray_to_ndarray(idata.posterior, var_names=rvs)[1].T
+        az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)[1].T
     ).corr()
     i, j = np.tril_indices(n=len(corr), k=-1)
     for ij in zip(i, j):
@@ -232,7 +230,7 @@ def pairplot_corr(
 
     f = plt.gcf()
     _ = f.suptitle(
-        ' - '.join(filter(None, ['Pairplot', mdlname, group, 'selected RVs', txtadd]))
+        ' - '.join(filter(None, ['Pairplot', mdl.name, group, 'selected RVs', txtadd]))
     )
     _ = f.tight_layout()
     return f
@@ -366,9 +364,9 @@ def plot_ppc_loopit(
     return f
 
 
-def plot_energy(idata: az.data.inference_data.InferenceData, **kwargs) -> figure.Figure:
+def plot_energy(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
     """Simple wrapper around energy plot to provide a simpler interface"""
-    _ = az.plot_energy(idata, figsize=(12, 2))
+    _ = az.plot_energy(mdl.idata, figsize=(12, 2))
     f = plt.gcf()
     _ = f.tight_layout()
     return f

@@ -58,7 +58,7 @@ help:
 	@echo "  pub-test      all-in-one build and publish to testpypi"
 	@echo "  test-dev-env  optional test the local dev env numeric packages"
 	@echo "  test-dl-ins   test dl & install from testpypi"
-	@echo "  uninstall     uninstall local dev env (use from parent dir as `make -C oreum_core uninstall`)"
+	@echo "  uninstall     remove local dev env (use from parent dir as `make -C oreum_core uninstall`)"
 
 mamba:  ## get mamba via mambaforge for MacOS x86_64 (Intel via Rosetta2)
 	test -f $(MAMBARC) || { echo $(MAMBARCMSG); exit 1; }
@@ -101,6 +101,6 @@ test-dl-ins:  # test dl & install from testpypi, set env var or pass in VERSION
 	$(PYTHON) -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'"
 
 
-uninstall:  # uninstall local mamba env (run from base env)
+uninstall: ## remove mamba env (use from parent dir as `make -C oreum_lab/ uninstall`)
 	mamba env remove --name oreum_core -y
 	mamba clean -ay

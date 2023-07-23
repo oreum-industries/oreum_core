@@ -31,7 +31,7 @@ from oreum_core.model.calc import (
 from oreum_core.model.describe import (
     describe_dist,
     extract_yobs_yhat,
-    get_posterior_summary,
+    get_summary,
     model_desc,
 )
 
