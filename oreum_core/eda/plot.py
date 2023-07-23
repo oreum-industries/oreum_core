@@ -349,14 +349,15 @@ def plot_joint_numeric(
     ft1: str,
     hue: str = None,
     kind: str = 'kde',
+    height: int = 6,
     kdefill: bool = True,
     log: bool = False,
     subtitle: str = None,
     colori: int = 0,
     nsamp: int = None,
     linreg: bool = True,
-    kdeleg: bool = False,
-) -> sns.JointGrid:
+    legendpos: str = None,
+) -> figure.Figure:
     """Jointplot of 2 numeric fts with optional: hue shading, linear regression
     Suitable for int or float"""
 
@@ -370,7 +371,6 @@ def plot_joint_numeric(
     if hue is not None:
         ftsd = get_fts_by_dtype(dfp)
         linreg = False
-        kdeleg = True
         if hue in ftsd['int'] + ftsd['float']:  # bin into 5 equal quantiles
             dfp[hue] = pd.qcut(dfp[hue].values, q=5)
             kws['palette'] = 'viridis'
@@ -380,11 +380,11 @@ def plot_joint_numeric(
                 [f'C{i + colori%5}' for i in range(ngrps)]
             )
 
-    gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=6, hue=hue)
+    gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=height, hue=hue)
 
-    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=kdefill, legend=kdeleg)
+    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=kdefill, legend=True)
     scatter_kws = kws | dict(
-        alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd'
+        alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd', s=40
     )
     rug_kws = kws | dict(height=0.1, legend=False)
 
@@ -403,7 +403,12 @@ def plot_joint_numeric(
     else:
         raise ValueError('kwarg `kind` must be in {kde, scatter, kde+scatter, reg}')
 
-    _ = gd.plot_marginals(sns.histplot, kde=True, **kws)
+    if legendpos is not None:
+        _ = sns.move_legend(gd.ax_joint, legendpos)
+
+    _ = gd.plot_marginals(
+        sns.histplot, kde=True, **kws
+    )  # always want hist for marginals
 
     if linreg:
         r = stats.linregress(x=dfp[ft0], y=dfp[ft1])
@@ -428,7 +433,7 @@ def plot_joint_numeric(
         f'Joint dist: `{ft0}` x `{ft1}`, {len(df)//ngrps} obs{t}', y=1.02, fontsize=14
     )
     _ = gd.fig.tight_layout(pad=0.95)
-    return gd
+    return gd.fig
 
 
 def plot_mincovdet(df: pd.DataFrame, mcd, thresh: float = 0.99):
@@ -1249,27 +1254,35 @@ def plot_grp_sum_dist_ct(
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
-    yorder_count: bool = True,
+    yorder: list = None,
     palette: sns.palettes._ColorPalette = None,
-) -> gridspec.GridSpec:
+) -> figure.Figure:
     """Plot simple diagnostics (sum, distribution, count) of numeric value `val`,
     grouped by categorical value `grp`, with group, ordered by count desc
-    Returns a GridSpec
     """
     sty = _get_kws_styling()
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
 
-    grpsort = sorted(dfp[grp].unique())[::-1]  # reverse often best for datetimes
+    dfg = dfp.groupby('corr_kind').size()
 
+    # order by descending date or count
+    if not dfp[grp].dtypes in ['object', 'category']:
+        if not pd.to_datetime(dfp[grp], errors='coerce').isnull().any():
+            idx_rev = dfg.index.values[::-1]
+            dfg = dfg.reindex(idx_rev)
+        else:
+            dfg = dfg.sort_values()[::-1]
+
+    if yorder is not None:
+        dfg = dfg.reindex(yorder)
+
+    names = dfg.index.values
     if not dfp[grp].dtypes in ['object', 'category']:
         dfp[grp] = dfp[grp].map(lambda x: f's{x}')
-        grpsort = [f's{x}' for x in grpsort]
+        names = [f's{x}' for x in names]
 
-    sz = dfp.groupby(grp).size()
-    ct = sz.sort_values()[::-1] if yorder_count else sz.reindex(grpsort)
-
-    f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
+    f = plt.figure(figsize=(16, 2 + (len(dfg) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
@@ -1291,7 +1304,7 @@ def plot_grp_sum_dist_ct(
     _ = sns.pointplot(
         x=val,
         y=grp,
-        order=ct.index.values,
+        order=dfg.index.values,
         data=dfp,
         palette=palette,
         estimator=np.sum,
@@ -1303,7 +1316,7 @@ def plot_grp_sum_dist_ct(
     _ = sns.boxplot(
         x=val,
         y=grp,
-        order=ct.index.values,
+        order=dfg.index.values,
         data=dfp,
         palette=palette,
         sym=sym,
@@ -1313,12 +1326,12 @@ def plot_grp_sum_dist_ct(
         ax=ax1,
     )
 
-    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette=palette, ax=ax2)
+    _ = sns.countplot(y=grp, data=dfp, order=dfg.index.values, palette=palette, ax=ax2)
     _ = [
         ax2.annotate(
-            f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **sty['count_txt_h_kws']
+            f'{c} ({c/dfg.sum():.0%})', xy=(c, i % len(dfg)), **sty['count_txt_h_kws']
         )
-        for i, c in enumerate(ct)
+        for i, c in enumerate(dfg)
     ]
 
     if plot_grid:
@@ -1341,7 +1354,8 @@ def plot_grp_sum_dist_ct(
         )
 
     _ = plt.tight_layout()
-    return gs
+    f = plt.gcf()
+    return f
 
 
 def plot_grp_year_sum_dist_ct(
@@ -1354,7 +1368,7 @@ def plot_grp_year_sum_dist_ct(
     plot_compact: bool = True,
     plot_grid: bool = True,
     yorder_count: bool = True,
-) -> gridspec.GridSpec:
+) -> figure.Figure:
     """Plot a grouped value split by year: sum, distribution and count"""
 
     sty = _get_kws_styling()
@@ -1447,8 +1461,8 @@ def plot_grp_year_sum_dist_ct(
     _ = f.suptitle(f'{title}{title_add}', fontsize=16)
 
     _ = plt.tight_layout()
-
-    return gs
+    f = plt.gcf()
+    return f
 
 
 def plot_heatmap_corr(dfx_corr: pd.DataFrame, title_add: str = '') -> figure.Figure:

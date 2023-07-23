@@ -49,7 +49,7 @@ class BasePYMCModel:
         self.model = None
         self._idata = None
         self.sample_prior_predictive_kws = dict(samples=500)
-        self.sample_posterior_predictive_kws = dict(fast=True, store_ppc=False)
+        self.sample_posterior_predictive_kws = dict(store_ppc=False, ppc_insample=False)
         self.sample_kws = dict(
             init='auto',  # aka jitter+adapt_diag
             tune=2000,  # NOTE: often need to bump this much higher e.g. 5000
@@ -65,7 +65,8 @@ class BasePYMCModel:
         self.version = getattr(self, 'version', 'unversioned_model')
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
-    def _get_posterior(self):
+    @property
+    def posterior(self):
         """Returns posterior from idata from previous run of sample"""
         try:
             self.idata.posterior
@@ -167,25 +168,20 @@ class BasePYMCModel:
     def sample_posterior_predictive(self, **kwargs):
         """Sample posterior predictive
         use self.sample_posterior_predictive_kws or passed kwargs
-        Note defaults aimed toward PPC in production
-            + Use pm.fast_sample_posterior_predictive()
-            + Don't store ppc on model object and just return an updated idata
+        Note by default aimed toward out-of-sample PPC in production
         """
-        fast = kwargs.pop('fast', self.sample_posterior_predictive_kws['fast'])
         store_ppc = kwargs.pop(
             'store_ppc', self.sample_posterior_predictive_kws['store_ppc']
         )
         kws = dict(
-            trace=self._get_posterior(),
+            trace=self.posterior,
             random_seed=kwargs.pop('random_seed', self.rsd),
-            samples=kwargs.pop('samples', None),
+            predictions=not kwargs.pop(
+                'ppc_insample', self.sample_posterior_predictive_kws['ppc_insample']
+            ),
         )
-
         with self.model:
-            if fast:
-                ppc = pm.fast_sample_posterior_predictive(**{**kws, **kwargs})
-            else:
-                ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
+            ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
 
         _log.info(f'Sampled ppc for {self.name} {self.version}')
 
@@ -194,14 +190,15 @@ class BasePYMCModel:
         else:
             return ppc
 
-    def replace_obs(self, new_obs) -> None:
+    def replace_obs(self, obsd: dict = None) -> None:
         """Replace the observations
         Assumes data lives in pm.Data containers in your _build() function
         You must call `build()` afterward
         Optionally afterwards call `extend_build()` for future time-dependent PPC
         """
-        self.obs = new_obs
-        _log.info(f'Replaced obs in {self.name} {self.version}')
+        for k, v in obsd.items():
+            setattr(self, k, v)
+            _log.info(f'Replaced obs {k} in {self.name} {self.version}')
 
     def update_idata(self, idata: az.InferenceData, replace: bool = False) -> None:
         """Create (and update) an Arviz InferenceData object on-model from a
