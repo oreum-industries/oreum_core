@@ -191,7 +191,6 @@ def calc_ppc_coverage(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
     )
 
     cov = []
-    y = y.values
     for k, v in bounds.items():
         for i, cr in enumerate(crs):
             cov.append(

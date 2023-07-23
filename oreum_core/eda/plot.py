@@ -42,7 +42,7 @@ __all__ = [
     'plot_rmse_range_pair',
     'plot_r2_range',
     'plot_r2_range_pair',
-    'plot_ppc_vs_observed',
+    'plot_cdf_ppc_vs_obs',
     'plot_bootstrap_lr',
     'plot_bootstrap_lr_grp',
     'plot_bootstrap_grp',
@@ -838,8 +838,14 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
     _ = f.tight_layout()
 
 
-def plot_ppc_vs_observed(y, yhat, xlim_max_override=None):
-    """Plot (quantile summaries of) yhat_ppc vs y"""
+def plot_cdf_ppc_vs_obs(
+    y: np.ndarray, yhat: np.ndarray, xlim_max_override=None
+) -> figure.Figure:
+    """Plot (quantile summaries of) yhat_ppc vs y
+    NOTE:
+    y shape: (nobs,)
+    yhat shape: (nobs, nsamples)
+    """
     ps = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 97]
     df_yhat_qs = pd.DataFrame(
         np.percentile(yhat, ps, axis=1).T, columns=[f'q{p/100}' for p in ps]
