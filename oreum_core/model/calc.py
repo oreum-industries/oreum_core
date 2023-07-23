@@ -84,9 +84,10 @@ def calc_binary_performance_measures(y, yhat):
     return perf
 
 
-def calc_mse(y, yhat):
+def calc_mse(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
     r""" Convenience: Calculate MSE using all samples
-        shape (nsamples, nobs)
+        y shape: (nobs, )
+        yhat shape: (nsamples, nobs)
 
     Mean-Squared Error of prediction vs observed
     $$\frac{1}{n}\sum_{i=1}^{i=n}(\hat{y}_{i}-y_{i})^{2}$$
@@ -108,7 +109,7 @@ def calc_mse(y, yhat):
         I can only think to calc summary stats and then calc MSE for them
     """
     # collapse samples to mean then calc error
-    se = np.power(yhat.mean(axis=0) - y, 2)  # (nobs)
+    se = np.power(yhat.mean(axis=0) - y, 2)  # (nobs, )
     mse = np.mean(se, axis=0)  # 1
 
     # collapse samples to a range of summary stats then calc error
@@ -121,7 +122,7 @@ def calc_mse(y, yhat):
     return mse, s_mse_pct
 
 
-def calc_rmse(y, yhat):
+def calc_rmse(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
     """Convenience: Calculate RMSE using all samples
     shape (nsamples, nobs)
     """
@@ -131,7 +132,7 @@ def calc_rmse(y, yhat):
     return np.sqrt(mse), s_rmse_pct
 
 
-def calc_r2(y, yhat):
+def calc_r2(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
     """Calculate R2,
     return mean r2 and via summary stats of yhat
     NOTE: shape (nsamples, nobservations)
@@ -155,19 +156,21 @@ def calc_r2(y, yhat):
     return r2_mean, r2_pct
 
 
-def calc_bayesian_r2(y, yhat):
-    """Calculate R2,
-    return mean r2 and via summary stats of yhat
-    NOTE: shape (nsamples, nobservations)
+def calc_bayesian_r2(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
+    """Calculate R2 across all samples
+    NOTE:
+        y shape: (nobs,)
+        yhat shape: (nobs, nsamples)
+        return shape: (nsamples, )
     """
 
     var_yhat = np.var(yhat, axis=0)
-    var_residuals = np.var(y - yhat, axis=0)
+    var_residuals = np.var(y.reshape(-1, 1) - yhat, axis=0)
     r2 = var_yhat / (var_yhat + var_residuals)
-    return r2
+    return pd.DataFrame(r2, columns=['r2'])
 
 
-def calc_ppc_coverage(y, yhat):
+def calc_ppc_coverage(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
     """Calc the proportion of coverage from full yhat ppc
     shapes: y (nobservations), yhat (nsamples, nobservations)
     """

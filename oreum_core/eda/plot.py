@@ -742,7 +742,9 @@ def plot_coverage(df, title_add=''):
     return None
 
 
-def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
+def plot_rmse_range(
+    rmse: float, rmse_pct: pd.Series, lims: tuple = (0, 80), yhat_name: str = ''
+) -> figure.Figure:
     """Convenience to plot RMSE range with mins"""
     dfp = rmse_pct.reset_index()
     dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
@@ -759,6 +761,7 @@ def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
     )
     _ = f.suptitle(f'RMSE ranges {yhat_name}', y=0.95)
     _ = ax.legend()
+    return f
 
 
 def plot_rmse_range_pair(
