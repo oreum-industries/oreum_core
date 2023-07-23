@@ -32,8 +32,6 @@ __all__ = [
     'pairplot_corr',
     'forestplot_single',
     'forestplot_multiple',
-    'plot_dist_fns_over_x',
-    'plot_dist_fns_over_x_manual_only',
     'plot_ppc_loopit',
     'plot_energy',
 ]
@@ -190,7 +188,6 @@ def pairplot_corr(
     mdl: BasePYMCModel,
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
-    colnames=list[str],
     ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
@@ -233,76 +230,6 @@ def pairplot_corr(
         ' - '.join(filter(None, ['Pairplot', mdl.name, group, 'selected RVs', txtadd]))
     )
     _ = f.tight_layout()
-    return f
-
-
-def plot_dist_fns_over_x(
-    dfpdf: pd.DataFrame, dfcdf: pd.DataFrame, dfinvcdf: pd.DataFrame, **kwargs
-) -> figure.Figure:
-    """Convenience to plot results of calc_dist_fns_over_x()"""
-
-    name = kwargs.get('name', 'unknown_dist')
-    islog = kwargs.get('log', False)
-    lg = 'log ' if islog else ''
-    f, axs = plt.subplots(1, 3, figsize=(16, 4), sharex=False, sharey=False)
-    f.suptitle(f'Comparisons manual vs scipy for {lg}{name}', y=1.02)
-    n = len(dfpdf)
-    is_close = {
-        k: np.sum(np.isclose(v['manual'], v['scipy'], equal_nan=True))
-        for k, v in zip(['p', 'c', 'i'], [dfpdf, dfcdf, dfinvcdf])
-    }
-
-    dfm = dfpdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
-    ax0 = sns.lineplot(
-        x='x', y='density', hue='method', style='method', data=dfm, ax=axs[0]
-    )
-    _ = ax0.set_title(f"{lg}PDF: match {is_close['p'] / n :.1%}")
-
-    dfm = dfcdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
-    ax1 = sns.lineplot(
-        x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1]
-    )
-    _ = ax1.set_title(f"{lg}CDF: match {is_close['c'] / n :.1%}")
-    if not islog:
-        ylimmin = ax1.get_ylim()[0]
-        _ = ax1.set(ylim=(min(0, ylimmin), None))
-
-    dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
-    ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])
-    _ = ax2.set_title(f"{lg}InvCDF: match {is_close['i'] / n :.1%}")
-    # f.tight_layout()
-    return f
-
-
-def plot_dist_fns_over_x_manual_only(
-    dfpdf: pd.DataFrame, dfcdf: pd.DataFrame, dfinvcdf: pd.DataFrame, **kwargs
-) -> figure.Figure:
-    """Convenience to plot results of calc_dist_fns_over_x_manual_only()"""
-
-    name = kwargs.get('name', 'unknown_dist')
-    islog = kwargs.get('log', False)
-    lg = 'log ' if islog else ''
-    f, axs = plt.subplots(1, 3, figsize=(16, 4), sharex=False, sharey=False)
-    f.suptitle(f'Display manual calcs for {lg}{name}', y=1.02)
-    # n = len(dfpdf)
-
-    dfm = dfpdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
-    ax0 = sns.lineplot(
-        x='x', y='density', hue='method', style='method', data=dfm, ax=axs[0]
-    )
-    _ = ax0.set_title(f"{lg}PDF")
-
-    dfm = dfcdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
-    ax1 = sns.lineplot(
-        x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1]
-    )
-    _ = ax1.set_title(f"{lg}CDF")
-    if not islog:
-        _ = ax1.set(ylim=(0, None))
-
-    dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
-    ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])
-    _ = ax2.set_title(f"{lg}InvCDF")
     return f
 
 
