@@ -245,11 +245,11 @@ def plot_ppc_loopit(
     """
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
-    if len(tgts) > 1:
-        raise AttributeError(
-            'NOTE: live issue in Arviz, if more than one tgt '
-            + 'it will plot them all its own way'
-        )
+    # if len(tgts) > 1:
+    #     raise AttributeError(
+    #         'NOTE: live issue in Arviz, if more than one tgt '
+    #         + 'it will plot them all its own way'
+    #     )
 
     f = plt.figure(figsize=(12, 6 * len(tgts)))
     gs = gridspec.GridSpec(
@@ -279,8 +279,8 @@ def plot_ppc_loopit(
             **kwargs,
         )
         # using y=tgt_hat below. seems wrong, possibly a bug in arviz
-        _ = az.plot_loo_pit(idata, y=tgt_hat, ax=ax1, **kwargs)
-        _ = az.plot_loo_pit(idata, y=tgt_hat, ecdf=True, ax=ax2, **kwargs)
+        _ = az.plot_loo_pit(idata, y=tgt, y_hat=tgt_hat, ax=ax1, **kwargs)
+        _ = az.plot_loo_pit(idata, y=tgt, y_hat=tgt_hat, ecdf=True, ax=ax2, **kwargs)
 
         _ = ax0.set_title(f'PPC Predicted {tgt_hat} vs Observed {tgt}')
         _ = ax1.set_title(f'Predicted {tgt_hat} LOO-PIT')

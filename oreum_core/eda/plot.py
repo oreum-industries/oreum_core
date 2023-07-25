@@ -110,7 +110,9 @@ def plot_cat_ct(
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
+    f, ax2d = plt.plot_cdf_ppc_vs_obs(
+        vert, 2, squeeze=False, figsize=(12, vert * vsize)
+    )
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
@@ -273,7 +275,7 @@ def plot_float_dist(
     log: bool = False,
     sharex: bool = False,
     sort: bool = True,
-) -> sns.FacetGrid:
+) -> figure.Figure:
     """
     Plot distributions for floats
     Annotate with count of nans, infs (+/-) and zeros
@@ -340,7 +342,7 @@ def plot_float_dist(
     if log:
         _ = gd.set(xscale='log')  # , title=ft, ylabel='log(count)')
     _ = gd.fig.tight_layout(pad=0.8)
-    return gd
+    return gd.fig
 
 
 def plot_joint_numeric(
@@ -511,7 +513,7 @@ def plot_mincovdet(df: pd.DataFrame, mcd, thresh: float = 0.99):
     return None
 
 
-def plot_roc_precrec(df):
+def plot_roc_precrec(df: pd.DataFrame) -> tuple[figure.Figure, float, float]:
     """Plot ROC and PrecRec, also calc and return AUC
     Pass perf df from calc.calc_binary_performance_measures
     """
@@ -548,10 +550,10 @@ def plot_roc_precrec(df):
 
     f.tight_layout()
 
-    return roc_auc, prec_rec_auc
+    return f, roc_auc, prec_rec_auc
 
 
-def plot_f_measure(df):
+def plot_f_measure(df: pd.DataFrame) -> figure.Figure:
     """Plot F-measures (F0.5, F1, F2) at different percentiles"""
 
     f1_at = df['f1'].argmax()
@@ -568,9 +570,10 @@ def plot_f_measure(df):
         + f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct',
         y=1.03,
     )
+    return f
 
 
-def plot_accuracy(df):
+def plot_accuracy(df: pd.DataFrame) -> figure.Figure:
     """Plot accuracy at different percentiles"""
 
     acc_at = df['accuracy'].argmax()
@@ -582,9 +585,10 @@ def plot_accuracy(df):
         + f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct',
         y=1.03,
     )
+    return f
 
 
-def plot_binary_performance(df, n=1):
+def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
     """Plot ROC, PrecRec, F-score, Accuracy
     Pass perf df from calc.calc_binary_performance_measures
     Return summary stats
@@ -698,10 +702,10 @@ def plot_binary_performance(df, n=1):
     )
 
     f.tight_layout()
-    return None
+    return f
 
 
-def plot_coverage(df, title_add=''):
+def plot_coverage(df: pd.DataFrame, title_add: str = '') -> figure.Figure:
     """Convenience plot coverage from mt.calc_ppc_coverage"""
 
     txt_kws = dict(
@@ -739,7 +743,7 @@ def plot_coverage(df, title_add=''):
         title_add = f': {title_add}'
     g.fig.suptitle((f'PPC Coverage vs CR{title_add}'), y=1.05)
 
-    return None
+    return g.fig
 
 
 def plot_rmse_range(

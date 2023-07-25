@@ -49,7 +49,7 @@ class BasePYMCModel:
         self.model = None
         self._idata = None
         self.sample_prior_predictive_kws = dict(samples=500)
-        self.sample_posterior_predictive_kws = dict(store_ppc=False, ppc_insample=False)
+        self.sample_posterior_predictive_kws = dict(store_ppc=True, ppc_insample=False)
         self.sample_kws = dict(
             init='auto',  # aka jitter+adapt_diag
             tune=2000,  # NOTE: often need to bump this much higher e.g. 5000
