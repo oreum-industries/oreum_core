@@ -1,6 +1,6 @@
 # .pre-commit-config.yaml
 default_language_version:
-  python: python3.9
+  python: python3.10
 default_stages: [commit, push]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks  # general checks
@@ -41,7 +41,7 @@ repos:
       - id: isort
         files: ^oreum_core/
   - repo: https://github.com/pycqa/flake8  # flake8 linter
-    rev: 6.0.0
+    rev: 6.1.0
     hooks:
       - id: flake8
         files: ^oreum_core/
