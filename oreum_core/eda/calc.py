@@ -182,7 +182,7 @@ def bootstrap(a: np.ndarray, nboot: int = 1000, summary_fn=np.mean) -> np.ndarra
     sample_idx = rng.integers(0, len(a), size=(len(a), nboot))
 
     # hack allow for passing a series
-    if type(a) == pd.Series:
+    if isinstance(a, pd.Series):
         a = a.values
 
     samples = a[sample_idx]
