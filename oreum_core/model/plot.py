@@ -297,26 +297,3 @@ def plot_energy(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
     f = plt.gcf()
     _ = f.tight_layout()
     return f
-
-
-def facetplot_df_dist(
-    df: pd.DataFrame, rvs: list, m: int = 3, rvs_hack: int = 0, **kwargs
-) -> figure.Figure:
-    """Control facet positioning of Arviz Krushke style plots, data in df
-    Pass-through kwargs to az.plot_posterior, e.g. ref_val
-    """
-    raise DeprecationWarning('No longer needed, will deprecate in future versions')
-    # n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
-    # sharex = kwargs.get('sharex', False)
-    # f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n), sharex=sharex)
-    # ref_val = kwargs.get('ref_val', [None for i in range(len(df))])
-
-    # for i, ft in enumerate(df.columns):
-    #     axarr = az.plot_posterior(
-    #         df[ft].values, ax=axs.flatten()[i], ref_val=ref_val[i]
-    #     )
-    #     axarr.set_title(ft)
-    # title = kwargs.get('title', '')
-    # _ = f.suptitle(f'{title} {rvs}', y=0.96 + n * 0.005)
-    # _ = f.tight_layout()
-    # return f

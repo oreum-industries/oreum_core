@@ -1,13 +1,16 @@
 # Makefile
-# Assume dev on MacOS x64 (Intel) using brew & miniconda, publish via GH Actions
+# NOTE:
+# + Intended for dev install on MacOS x64 (Intel via Rosetta 2)
+# + Will use bash by default, but mamba install assumes Homebrew zsh
+# + On MacOS, the mambaforge.sh installer is too clever and complains
+#   that "$(uname -m)" != "x86_64", but we ignore that: Rosetta2 will run x86_64
 .PHONY: build create-env dev lint help mamba pre-build pub pub-test test-dev-env test-dl-ins uninstall
 .SILENT: build create-env dev lint help mamba pre-build pub pub-test test-dev-env test-dl-ins uninstall
-SHELL := /bin/bash
 MAMBADL = https://github.com/conda-forge/miniforge/releases/latest/download/
 MAMBAV = Mambaforge-MacOSX-x86_64.sh
-MAMBARC = $$HOME/.mambarc
+MAMBARC = $(HOME)/.mambarc
 MAMBARCMSG = Please create file $(MAMBARC), particularly to set `platform: osx-64`
-MAMBADIR = $$HOME/.mamba
+MAMBADIR = $(HOME)/.mamba
 PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
 PYTHON_ENV = $(MAMBADIR)/envs/oreum_core/bin/python
 ifneq ("$(wildcard $(PYTHON_ENV))","")
@@ -21,10 +24,14 @@ build:  ## build package oreum_core (actually more of an "assemble" than a compi
 	make pre_build
 	$(PYTHON) -m flit build
 
-create-env: ## create mamba (conda) environment  CONDA_SUBDIR=osx-64
+
+create-env: ## create mamba (conda) environment
 	export PATH=$(MAMBADIR)/bin:$$PATH; \
 		if which mamba; then echo "mamba ready"; else make mamba; fi
-	mamba env create --file condaenv_oreum_core.yml;
+	export PATH=$(MAMBADIR)/bin:$$PATH; \
+		export CONDA_SUBDIR=osx-64; \
+		mamba update -n base mamba; \
+		mamba env create --file condaenv_oreum_core.yml;
 
 dev:  # create env for local dev on any machine MacOS x64 (Intel)
 	make create-env
@@ -60,10 +67,10 @@ help:
 	@echo "  test-dl-ins   test dl & install from testpypi"
 	@echo "  uninstall     remove local dev env (use from parent dir as `make -C oreum_core uninstall`)"
 
-mamba:  ## get mamba via mambaforge for MacOS x86_64 (Intel via Rosetta2)
+mamba:  ## get mamba via mambaforge for MacOS x86_64 (Intel via Rosetta2) use zsh
 	test -f $(MAMBARC) || { echo $(MAMBARCMSG); exit 1; }
 	wget $(MAMBADL)$(MAMBAV) -O $$HOME/mambaforge.sh
-	bash $$HOME/mambaforge.sh -b -p $(MAMBADIR)
+	zsh $$HOME/mambaforge.sh -b -p $$HOME/.mamba
 	export PATH=$(MAMBADIR)/bin:$$PATH; \
 		conda init zsh;
 	rm $$HOME/mambaforge.sh
@@ -101,6 +108,6 @@ test-dl-ins:  # test dl & install from testpypi, set env var or pass in VERSION
 	$(PYTHON) -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'"
 
 
-uninstall: ## remove mamba env (use from parent dir as `make -C oreum_lab/ uninstall`)
+uninstall: ## remove mamba env (use from parent dir as `make -C oreum_core/ uninstall`)
 	mamba env remove --name oreum_core -y
-	mamba clean -ay
+	mamba clean -afy
