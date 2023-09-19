@@ -33,7 +33,12 @@ from oreum_core.model.describe import (
     get_summary,
     model_desc,
 )
-from oreum_core.model.distributions import lognormal_icdf, mv_dist, normal_icdf
+from oreum_core.model.distributions import (
+    lognormal_icdf,
+    mv_dist,
+    normal_icdf,
+    sanity_check_lognorm,
+)
 from oreum_core.model.model_io import ModelIO
 from oreum_core.model.plot import (
     facetplot_krushke,

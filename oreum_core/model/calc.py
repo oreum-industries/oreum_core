@@ -15,7 +15,7 @@
 # model.calc.py
 """Common Calculations for Model Evaluation"""
 import sys
-from typing import Optional, Sequence, cast
+from typing import Any, Dict, Optional, Sequence, Tuple, cast
 
 import numpy as np
 import pandas as pd
@@ -24,7 +24,7 @@ import pytensor
 import pytensor.tensor as pt
 from arviz import InferenceData, dict_to_dataset
 from fastprogress import progress_bar
-from pymc.backends.arviz import _DefaultTrace, coords_and_dims_for_inferencedata
+from pymc.backends.arviz import _DefaultTrace  # , coords_and_dims_for_inferencedata
 from pymc.model import Model, modelcontext
 from pymc.pytensorf import PointFunc
 from pymc.util import dataset_to_point_list
@@ -214,16 +214,6 @@ def calc_ppc_coverage(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
     return pd.DataFrame(cov, columns=['method', 'cr', 'coverage'])
 
 
-# TODO fix this at source
-# Minor edit to a math fn to prevent annoying deprecation warnings
-# Jon Sedar 2020-03-31
-# Users/jon/anaconda/envs/instechex/lib/python3.6/site-packages/theano/tensor/subtensor.py:2339:
-# FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated;
-# use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index,
-# `arr[np.array(seq)]`, which will result either in an error or a different result.
-#   out[0][inputs[2:]] = inputs[1]
-
-
 def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
     R"""Convert a packed triangular matrix into a two dimensional array.
     Triangular matrices can be stored with better space efficiancy by
@@ -379,6 +369,23 @@ def numpy_invlogit(x, eps=sys.float_info.epsilon):
     return (1.0 - 2.0 * eps) / (1.0 + np.exp(-x)) + eps
 
 
+def _coords_and_dims_for_inferencedata(
+    model: Model,
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Parse PyMC model coords and dims format to one accepted by InferenceData.
+    copied from https://github.com/pymc-devs/pymc/blame/92278278d4a8b78f17ed0f101eb29d0d9982eb45/pymc/backends/arviz.py#L103-L112
+    because it was only merged on 20230919 :D
+    """
+    coords = {
+        cname: np.array(cvals) if isinstance(cvals, tuple) else cvals
+        for cname, cvals in model.coords.items()
+        if cvals is not None
+    }
+    dims = {dname: list(dvals) for dname, dvals in model.named_vars_to_dims.items()}
+
+    return coords, dims
+
+
 def compute_log_likelihood_for_potential(
     idata: InferenceData,
     *,
@@ -388,8 +395,9 @@ def compute_log_likelihood_for_potential(
     sample_dims: Sequence[str] = ("chain", "draw"),
     progressbar=True,
 ):
-    """Hackidy hack
-    Copied and modified from pymc to allow compute of logp for a Potential
+    """Hackidy hack JS @ 20230919
+    Copied and modified from pymc compute_log_likelihood to allow a Potential
+    Differences NOTED with inline comments
     orig: https://github.com/pymc-devs/pymc/blob/92278278d4a8b78f17ed0f101eb29d0d9982eb45/pymc/stats/log_likelihood.py#L29C1-L128C31
     discussion: https://discourse.pymc.io/t/using-a-random-variable-as-observed/7184/10
 
@@ -402,7 +410,7 @@ def compute_log_likelihood_for_potential(
     idata : InferenceData
         InferenceData with posterior group
     var_names : sequence of str, optional
-        List of Observed variable names for which to compute log_likelihood. Defaults to all observed variables
+        List of Potential variable names for which to compute log_likelihood
     extend_inferencedata : bool, default True
         Whether to extend the original InferenceData or return a new one
     model : Model, optional
@@ -420,12 +428,16 @@ def compute_log_likelihood_for_potential(
 
     model = modelcontext(model)
 
+    observed_vars = [model.named_vars[name] for name in var_names]
+
     if var_names is None:
         observed_vars = model.observed_RVs
         var_names = tuple(rv.name for rv in observed_vars)
     else:
         observed_vars = [model.named_vars[name] for name in var_names]
-        if not set(observed_vars).issubset(model.observed_RVs):
+        if not set(observed_vars).issubset(
+            model.observed_RVs + model.potentials
+        ):  # NOTE mod
             raise ValueError(
                 f"var_names must refer to observed_RVs in the model. Got: {var_names}"
             )
@@ -473,7 +485,7 @@ def compute_log_likelihood_for_potential(
             (*[len(coord) for coord in stacked_dims.values()], *array.shape[1:])
         )
 
-    coords, dims = coords_and_dims_for_inferencedata(model)
+    coords, dims = _coords_and_dims_for_inferencedata(model)  # NOTE used local
     loglike_dataset = dict_to_dataset(
         loglike_trace,
         library=pymc,

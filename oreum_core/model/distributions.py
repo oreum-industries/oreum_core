@@ -19,14 +19,27 @@ import numpy as np
 import pymc as pm
 import pytensor.tensor as pt
 from pymc.distributions.dist_math import check_icdf_parameters, check_icdf_value
+from scipy import stats
 
-__all__ = ['normal_icdf', 'lognormal_icdf', 'mv_dist']
+__all__ = ['sanity_check_lognorm', 'normal_icdf', 'lognormal_icdf', 'mv_dist']
 
 # NOTE hack to clip values away from {0, 1} for invcdfs
 # Whilst value = {0, 1} is theoretically allowed, is seems to cause a
 # numeric compuational issue somewhere in pt.erfcinv which throws infs.
 # This screws up the downstream, so clip slightly away from {0, 1}
 CLIP = 1e-15  # NOTE 1e-18 too small
+
+
+def sanity_check_lognorm(mu: float = 0.0, sigma: float = 1.0):
+    """Sanity checker to confirm parameterisation of lognorm dists
+    between scipy and pymc"""
+    n = 1000
+    x = np.linspace(0, 100, n)
+    fd = stats.lognorm(scale=np.exp(mu), s=sigma)
+    y_scipy = fd.pdf(x)
+    rv = pm.LogNormal.dist(mu=mu, sigma=sigma)
+    y_pymc = np.exp(pm.logp(rv, x).eval())
+    assert sum(np.isclose(y_scipy, y_pymc)) == n
 
 
 def normal_icdf(x, mu=0.0, sigma=1.0):
