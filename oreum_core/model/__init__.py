@@ -23,6 +23,7 @@ from oreum_core.model.calc import (
     calc_ppc_coverage,
     calc_r2,
     calc_rmse,
+    compute_log_likelihood_for_potential,
     log_jcd,
     numpy_invlogit,
 )
@@ -32,20 +33,7 @@ from oreum_core.model.describe import (
     get_summary,
     model_desc,
 )
-
-# from oreum_core.model.distributions import (
-#     InverseWeibull,
-#     InverseWeibullNumpy,
-#     Kumaraswamy,
-#     Lognormal,
-#     LognormalNumpy,
-#     Normal,
-#     NormalNumpy,
-#     ZeroInflatedInverseWeibull,
-#     ZeroInflatedLogNormal,
-#     boundzero_numpy,
-#     boundzero_theano,
-# )
+from oreum_core.model.distributions import lognormal_icdf, mv_dist, normal_icdf
 from oreum_core.model.model_io import ModelIO
 from oreum_core.model.plot import (
     facetplot_krushke,

@@ -15,11 +15,19 @@
 # model.calc.py
 """Common Calculations for Model Evaluation"""
 import sys
+from typing import Optional, Sequence, cast
 
 import numpy as np
 import pandas as pd
+import pymc
 import pytensor
 import pytensor.tensor as pt
+from arviz import InferenceData, dict_to_dataset
+from fastprogress import progress_bar
+from pymc.backends.arviz import _DefaultTrace, coords_and_dims_for_inferencedata
+from pymc.model import Model, modelcontext
+from pymc.pytensorf import PointFunc
+from pymc.util import dataset_to_point_list
 from pytensor.gradient import grad
 
 __all__ = [
@@ -34,6 +42,7 @@ __all__ = [
     'log_jcd',
     'calc_2_sample_delta_prop',
     'numpy_invlogit',
+    'compute_log_likelihood_for_potential',
 ]
 
 
@@ -368,3 +377,114 @@ def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
 def numpy_invlogit(x, eps=sys.float_info.epsilon):
     """The inverse of the logit function, 1 / (1 + exp(-x))."""
     return (1.0 - 2.0 * eps) / (1.0 + np.exp(-x)) + eps
+
+
+def compute_log_likelihood_for_potential(
+    idata: InferenceData,
+    *,
+    var_names: Optional[Sequence[str]] = None,
+    extend_inferencedata: bool = True,
+    model: Optional[Model] = None,
+    sample_dims: Sequence[str] = ("chain", "draw"),
+    progressbar=True,
+):
+    """Hackidy hack
+    Copied and modified from pymc to allow compute of logp for a Potential
+    orig: https://github.com/pymc-devs/pymc/blob/92278278d4a8b78f17ed0f101eb29d0d9982eb45/pymc/stats/log_likelihood.py#L29C1-L128C31
+    discussion: https://discourse.pymc.io/t/using-a-random-variable-as-observed/7184/10
+
+    ---
+
+    Compute elemwise log_likelihood of model given InferenceData with posterior group
+
+    Parameters
+    ----------
+    idata : InferenceData
+        InferenceData with posterior group
+    var_names : sequence of str, optional
+        List of Observed variable names for which to compute log_likelihood. Defaults to all observed variables
+    extend_inferencedata : bool, default True
+        Whether to extend the original InferenceData or return a new one
+    model : Model, optional
+    sample_dims : sequence of str, default ("chain", "draw")
+    progressbar : bool, default True
+
+    Returns
+    -------
+    idata : InferenceData
+        InferenceData with log_likelihood group
+
+    """
+
+    posterior = idata["posterior"]
+
+    model = modelcontext(model)
+
+    if var_names is None:
+        observed_vars = model.observed_RVs
+        var_names = tuple(rv.name for rv in observed_vars)
+    else:
+        observed_vars = [model.named_vars[name] for name in var_names]
+        if not set(observed_vars).issubset(model.observed_RVs):
+            raise ValueError(
+                f"var_names must refer to observed_RVs in the model. Got: {var_names}"
+            )
+
+    # We need to temporarily disable transforms, because the InferenceData only keeps the untransformed values
+    # pylint: disable=used-before-assignment
+    try:
+        original_rvs_to_values = model.rvs_to_values
+        original_rvs_to_transforms = model.rvs_to_transforms
+
+        model.rvs_to_values = {
+            rv: rv.clone() if rv not in model.observed_RVs else value
+            for rv, value in model.rvs_to_values.items()
+        }
+        model.rvs_to_transforms = {rv: None for rv in model.basic_RVs}
+
+        elemwise_loglike_fn = model.compile_fn(
+            inputs=model.value_vars,
+            outs=model.logp(vars=observed_vars, sum=False),
+            on_unused_input="ignore",
+        )
+        elemwise_loglike_fn = cast(PointFunc, elemwise_loglike_fn)
+    finally:
+        model.rvs_to_values = original_rvs_to_values
+        model.rvs_to_transforms = original_rvs_to_transforms
+    # pylint: enable=used-before-assignment
+
+    # Ignore Deterministics
+    posterior_values = posterior[[rv.name for rv in model.free_RVs]]
+    posterior_pts, stacked_dims = dataset_to_point_list(posterior_values, sample_dims)
+    n_pts = len(posterior_pts)
+    loglike_dict = _DefaultTrace(n_pts)
+    indices = range(n_pts)
+    if progressbar:
+        indices = progress_bar(indices, total=n_pts, display=progressbar)
+
+    for idx in indices:
+        loglikes_pts = elemwise_loglike_fn(posterior_pts[idx])
+        for rv_name, rv_loglike in zip(var_names, loglikes_pts):
+            loglike_dict.insert(rv_name, rv_loglike, idx)
+
+    loglike_trace = loglike_dict.trace_dict
+    for key, array in loglike_trace.items():
+        loglike_trace[key] = array.reshape(
+            (*[len(coord) for coord in stacked_dims.values()], *array.shape[1:])
+        )
+
+    coords, dims = coords_and_dims_for_inferencedata(model)
+    loglike_dataset = dict_to_dataset(
+        loglike_trace,
+        library=pymc,
+        dims=dims,
+        coords=coords,
+        default_dims=list(sample_dims),
+        skip_event_dims=True,
+    )
+
+    if extend_inferencedata:
+        idata.add_groups(dict(log_likelihood=loglike_dataset))
+        return idata
+    else:
+        return loglike_dataset

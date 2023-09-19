@@ -23,7 +23,7 @@ __all__ = ['BasePYMCModel']
 
 _log = logging.getLogger(__name__)
 _log_pymc = logging.getLogger('pymc')  # force pymc chatty prints to log
-_log_pymc.setLevel(logging.WARNING)
+_log_pymc.setLevel(logging.ERROR)
 # logging.captureWarnings(True) # further force chatty pymc warnings to log (py.warnings)
 
 
@@ -79,6 +79,17 @@ class BasePYMCModel:
         """Returns Arviz InferenceData built from sampling to date"""
         assert self._idata, "Run update_idata() first"
         return self._idata
+
+    def describe_rvs(self) -> dict[list]:
+        """Returns a dict of lists of stringnames of RVs"""
+        return dict(
+            basic=self.model.basic_RVs,
+            unobserved=self.model.unobserved_RVs,
+            observed=self.model.observed_RVs,
+            free=self.model.free_RVs,
+            potentials=self.model.potentials,
+            deterministics=self.model.deterministics,
+        )
 
     def build(self, **kwargs):
         """Build the model"""
@@ -192,7 +203,7 @@ class BasePYMCModel:
 
     def replace_obs(self, obsd: dict = None) -> None:
         """Replace the observations
-        Assumes data lives in pm.Data containers in your _build() function
+        Assumes data lives in pm.MutableData containers in your _build() function
         You must call `build()` afterward
         Optionally afterwards call `extend_build()` for future time-dependent PPC
         """
