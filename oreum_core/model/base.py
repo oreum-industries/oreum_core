@@ -18,6 +18,9 @@ import logging
 
 import arviz as az
 import pymc as pm
+import xarray as xa
+
+from .calc import compute_log_likelihood_for_potential
 
 __all__ = ['BasePYMCModel']
 
@@ -61,12 +64,14 @@ class BasePYMCModel:
             progressbar=True,
         )
         self.rvs_for_posterior_plots = []
+        self.calc_potential_loglike = False
+        self.rvs_potential_loglike = None
         self.name = getattr(self, 'name', 'unnamed_model')
         self.version = getattr(self, 'version', 'unversioned_model')
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
     @property
-    def posterior(self):
+    def posterior(self) -> xa.Dataset:
         """Returns posterior from idata from previous run of sample"""
         try:
             self.idata.posterior
@@ -75,7 +80,7 @@ class BasePYMCModel:
         return self.idata.posterior
 
     @property
-    def idata(self):
+    def idata(self) -> az.InferenceData:
         """Returns Arviz InferenceData built from sampling to date"""
         assert self._idata, "Run update_idata() first"
         return self._idata
@@ -174,6 +179,20 @@ class BasePYMCModel:
                 _ = self.update_idata(posterior)
 
         _log.info(f'Sampled posterior for {self.name} {self.version}')
+
+        # optional calculate loglikelihood for potentials
+        if self.calc_potential_loglike:
+            self.idata.add_groups(
+                dict(
+                    log_likelihood=compute_log_likelihood_for_potential(
+                        idata=self.idata,
+                        model=self.model,
+                        var_names=self.rvs_potential_loglike,
+                        extend_inferencedata=False,
+                    )
+                )
+            )
+
         return None
 
     def sample_posterior_predictive(self, **kwargs):

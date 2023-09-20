@@ -32,7 +32,8 @@ __all__ = [
     'pairplot_corr',
     'forestplot_single',
     'forestplot_multiple',
-    'plot_ppc_loopit',
+    'plot_ppc',
+    'plot_loopit',
     'plot_energy',
 ]
 
@@ -233,60 +234,54 @@ def pairplot_corr(
     return f
 
 
-def plot_ppc_loopit(
-    idata: az.data.inference_data.InferenceData,
-    kind: str = 'kde',
-    tgts: dict = {'y': 'yhat'},
+def plot_ppc(
+    mdl: BasePYMCModel,
+    group: str = 'posterior',
+    insamp: bool = True,
+    ecdf: bool = True,
+    data_pairs: dict = None,
     **kwargs,
 ) -> figure.Figure:
-    """Calc and Plot PPC & LOO-PIT after run `mdl.sample_posterior_predictive()`
+    """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF,
+    does not require log-likelihood.
+    """
+    txtadd = kwargs.pop('txtadd', None)
+    kind = 'cumulative' if ecdf else 'kde'
+    f, axs = plt.subplots(len(data_pairs), 1, figsize=(12, 3 * len(data_pairs)))
+    _ = az.plot_ppc(mdl.idata, group=group, kind=kind, ax=axs, data_pairs=data_pairs)
+    _ = f.suptitle(
+        ' - '.join(
+            filter(
+                None,
+                [
+                    f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive',
+                    mdl.name,
+                    txtadd,
+                ],
+            )
+        )
+    )
+    _ = f.tight_layout()
+    return f
+
+
+def plot_loopit(mdl: BasePYMCModel, data_pairs: dict = None, **kwargs) -> figure.Figure:
+    """Calc and Plot LOO-PIT after run `mdl.sample_posterior_predictive()`
     also see
     https://oriolabrilpla.cat/python/arviz/pymc/2019/07/31/loo-pit-tutorial.html
     """
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
-    # if len(tgts) > 1:
-    #     raise AttributeError(
-    #         'NOTE: live issue in Arviz, if more than one tgt '
-    #         + 'it will plot them all its own way'
-    #     )
-
-    f = plt.figure(figsize=(12, 6 * len(tgts)))
-    gs = gridspec.GridSpec(
-        2 * len(tgts),
-        2,
-        height_ratios=[1.5, 1] * len(tgts),
-        width_ratios=[1, 1],
-        figure=f,
-    )
-    var_names = kwargs.pop('var_names', None)
-
-    # TODO: live issue this selection doesnt work in Arviz,
-    # it just plots every tgt. so this loop is a placeholder that does work
-    # if there's only a single tgt
-    for i, (tgt, tgt_hat) in enumerate(tgts.items()):
-        ax0 = f.add_subplot(gs[0 + 4 * i, :])
-        ax1 = f.add_subplot(gs[2 + 4 * i])
-        ax2 = f.add_subplot(gs[3 + 4 * i], sharex=ax1)
-        _ = az.plot_ppc(
-            idata,
-            kind=kind,
-            flatten=None,
-            ax=ax0,
-            group='posterior',
-            data_pairs={tgt: tgt_hat},
-            var_names=var_names,
-            **kwargs,
+    f, axs = plt.subplots(len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)))
+    for i, (tgt, hat) in enumerate(data_pairs.items()):
+        _ = az.plot_loo_pit(mdl.idata, y=tgt, y_hat=hat, ax=axs[i][0], **kwargs)
+        _ = az.plot_loo_pit(
+            mdl.idata, y=tgt, y_hat=hat, ax=axs[i][1], ecdf=True, **kwargs
         )
-        # using y=tgt_hat below. seems wrong, possibly a bug in arviz
-        _ = az.plot_loo_pit(idata, y=tgt, y_hat=tgt_hat, ax=ax1, **kwargs)
-        _ = az.plot_loo_pit(idata, y=tgt, y_hat=tgt_hat, ecdf=True, ax=ax2, **kwargs)
 
-        _ = ax0.set_title(f'PPC Predicted {tgt_hat} vs Observed {tgt}')
-        _ = ax1.set_title(f'Predicted {tgt_hat} LOO-PIT')
-        _ = ax2.set_title(f'Predicted {tgt_hat} LOO-PIT cumulative')
+        _ = axs[i][0].set_title(f'Predicted {hat} LOO-PIT')
+        _ = axs[i][1].set_title(f'Predicted {hat} LOO-PIT cumulative')
 
-    _ = f.suptitle(' - '.join(filter(None, ['In-sample PPC', mdlname, txtadd])))
+    _ = f.suptitle(' - '.join(filter(None, ['In-sample PPC', mdl.name, txtadd])))
     _ = f.tight_layout()
     return f
 
