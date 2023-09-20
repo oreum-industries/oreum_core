@@ -236,6 +236,7 @@ def pairplot_corr(
 
 def plot_ppc(
     mdl: BasePYMCModel,
+    idata: az.InferenceData = None,
     group: str = 'posterior',
     insamp: bool = True,
     ecdf: bool = True,
@@ -247,41 +248,28 @@ def plot_ppc(
     """
     txtadd = kwargs.pop('txtadd', None)
     kind = 'cumulative' if ecdf else 'kde'
+    _idata = mdl.idata if idata is None else idata
     f, axs = plt.subplots(len(data_pairs), 1, figsize=(12, 3 * len(data_pairs)))
-    _ = az.plot_ppc(mdl.idata, group=group, kind=kind, ax=axs, data_pairs=data_pairs)
-    _ = f.suptitle(
-        ' - '.join(
-            filter(
-                None,
-                [
-                    f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive',
-                    mdl.name,
-                    txtadd,
-                ],
-            )
-        )
-    )
+    _ = az.plot_ppc(_idata, group=group, kind=kind, ax=axs, data_pairs=data_pairs)
+    t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive'
+    _ = f.suptitle(' - '.join(filter(None, [t, mdl.name, txtadd])))
     _ = f.tight_layout()
     return f
 
 
 def plot_loopit(mdl: BasePYMCModel, data_pairs: dict = None, **kwargs) -> figure.Figure:
-    """Calc and Plot LOO-PIT after run `mdl.sample_posterior_predictive()`
-    also see
-    https://oriolabrilpla.cat/python/arviz/pymc/2019/07/31/loo-pit-tutorial.html
-    """
+    """Calc and plot LOO-PIT after run `mdl.sample_posterior_predictive()`"""
     txtadd = kwargs.pop('txtadd', None)
     f, axs = plt.subplots(len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)))
-    for i, (tgt, hat) in enumerate(data_pairs.items()):
-        _ = az.plot_loo_pit(mdl.idata, y=tgt, y_hat=hat, ax=axs[i][0], **kwargs)
-        _ = az.plot_loo_pit(
-            mdl.idata, y=tgt, y_hat=hat, ax=axs[i][1], ecdf=True, **kwargs
-        )
+    for i, (_, hat) in enumerate(data_pairs.items()):
+        kws = dict(y=hat, y_hat=hat)  # NOTE named badly
+        _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][0], **kwargs)
+        _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][1], ecdf=True, **kwargs)
 
         _ = axs[i][0].set_title(f'Predicted {hat} LOO-PIT')
         _ = axs[i][1].set_title(f'Predicted {hat} LOO-PIT cumulative')
 
-    _ = f.suptitle(' - '.join(filter(None, ['In-sample PPC', mdl.name, txtadd])))
+    _ = f.suptitle(' - '.join(filter(None, ['In-sample LOO-PIT', mdl.name, txtadd])))
     _ = f.tight_layout()
     return f
 
