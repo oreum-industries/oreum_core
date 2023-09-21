@@ -28,13 +28,13 @@ from oreum_core.model import BasePYMCModel
 
 __all__ = [
     'plot_trace',
+    'plot_energy',
     'facetplot_krushke',
     'pairplot_corr',
     'forestplot_single',
     'forestplot_multiple',
     'plot_ppc',
     'plot_loopit',
-    'plot_energy',
 ]
 
 sns.set(
@@ -61,6 +61,14 @@ def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
             filter(None, ['Traceplot', mdl.name, 'posterior', ', '.join(rvs), txtadd])
         )
     )
+    _ = f.tight_layout()
+    return f
+
+
+def plot_energy(mdl: BasePYMCModel) -> figure.Figure:
+    """Simple wrapper around energy plot to provide a simpler interface"""
+    _ = az.plot_energy(mdl.idata, figsize=(12, 2))
+    f = plt.gcf()
     _ = f.tight_layout()
     return f
 
@@ -270,13 +278,5 @@ def plot_loopit(mdl: BasePYMCModel, data_pairs: dict = None, **kwargs) -> figure
         _ = axs[i][1].set_title(f'Predicted {hat} LOO-PIT cumulative')
 
     _ = f.suptitle(' - '.join(filter(None, ['In-sample LOO-PIT', mdl.name, txtadd])))
-    _ = f.tight_layout()
-    return f
-
-
-def plot_energy(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
-    """Simple wrapper around energy plot to provide a simpler interface"""
-    _ = az.plot_energy(mdl.idata, figsize=(12, 2))
-    f = plt.gcf()
     _ = f.tight_layout()
     return f

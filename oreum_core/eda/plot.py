@@ -42,7 +42,7 @@ __all__ = [
     'plot_rmse_range_pair',
     'plot_r2_range',
     'plot_r2_range_pair',
-    'plot_cdf_ppc_vs_obs',
+    'plot_estimate',
     'plot_bootstrap_lr',
     'plot_bootstrap_lr_grp',
     'plot_bootstrap_grp',
@@ -52,6 +52,7 @@ __all__ = [
     'plot_heatmap_corr',
     'plot_kj_summaries_for_linear_model',
     'plot_grp_ct',
+    'plot_cdf_ppc_vs_obs',
 ]
 
 
@@ -840,6 +841,64 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
         _ = ax.legend()
         _ = ax.set_title(t[i])
     _ = f.tight_layout()
+
+
+def plot_estimate(
+    df: pd.DataFrame,
+    nobs: int,
+    yhat: str = 'yhat',
+    force_xlim: list = None,
+    color: str = None,
+    kind: str = 'violin',
+    **kwargs,
+) -> figure.Figure:
+    """Plot distribution for estimates, either PPC or bootstrapped, no grouping"""
+    txtadd = kwargs.pop('txtadd', None)
+    sty = _get_kws_styling()
+
+    mn = df[[yhat]].mean().tolist()  # estimated mean
+    hdi = df[yhat].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # estimated qs
+
+    clr = color if color is not None else sns.color_palette()[0]
+    kws = dict(
+        box=dict(
+            kind='box',
+            sym='',
+            orient='h',
+            showmeans=True,
+            whis=(3, 97),
+            meanprops=sty['mn_pt_kws'],
+        ),
+        violin=dict(kind='violin', cut=0),
+    )
+
+    gd = sns.catplot(x=yhat, data=df, **kws[kind], color=clr, height=2, aspect=6)
+    # _ = [gd.ax.plot(v, i % len(mn), **sty['mn_pt_kws']) for i, v in enumerate(mn)]
+    _ = [
+        gd.ax.annotate(f'{v:.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
+        for i, v in enumerate(mn)
+    ]
+    elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
+    gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
+    if force_xlim is not None:
+        _ = gd.ax.set(xlim=force_xlim)
+
+    _ = gd.fig.suptitle(
+        ' - '.join(
+            filter(
+                None,
+                [
+                    f'Summary Distribution of {yhat} Estimate for {nobs} Observations',
+                    txtadd,
+                ],
+            )
+        )
+        + f'\nMean = {mn[0]:.1f}, '
+        + f'HDI_50 = [{hdi[1]:.1f}, {hdi[2]:.1f}], '
+        + f'HDI_94 = [{hdi[0]:.1f}, {hdi[3]:.1f}]'
+    )
+    _ = gd.fig.tight_layout()
+    return gd.fig
 
 
 def plot_bootstrap_lr(

@@ -38,6 +38,7 @@ from oreum_core.eda.plot import (
     plot_cdf_ppc_vs_obs,
     plot_coverage,
     plot_date_ct,
+    plot_estimate,
     plot_f_measure,
     plot_float_dist,
     plot_grp_ct,
