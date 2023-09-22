@@ -843,13 +843,33 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
     _ = f.tight_layout()
 
 
+# import functools
+# import warnings
+
+# from typing import Callable
+
+# def ignore_warnings(category: Warning):
+#     """Specific ignorer, by https://stackoverflow.com/a/76916243/1165112
+#     for tackling https://github.com/matplotlib/matplotlib/issues/26290
+#     """
+#     def ignore_warnings_decorator(func: Callable):
+#         @functools.wraps(func)
+#         def wrapper(*args, **kwargs):
+#             with warnings.catch_warnings():
+#                 warnings.simplefilter("ignore", category=category)
+#                 return func(*args, **kwargs)
+#         return wrapper
+#     return ignore_warnings_decorator
+
+
+# @ignore_warnings(category=UserWarning)
 def plot_estimate(
     df: pd.DataFrame,
     nobs: int,
     yhat: str = 'yhat',
     force_xlim: list = None,
     color: str = None,
-    kind: str = 'violin',
+    kind: str = 'box',
     **kwargs,
 ) -> figure.Figure:
     """Plot distribution for estimates, either PPC or bootstrapped, no grouping"""
@@ -860,7 +880,7 @@ def plot_estimate(
     hdi = df[yhat].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # estimated qs
 
     clr = color if color is not None else sns.color_palette()[0]
-    kws = dict(
+    _kws = dict(
         box=dict(
             kind='box',
             sym='',
@@ -870,18 +890,52 @@ def plot_estimate(
             meanprops=sty['mn_pt_kws'],
         ),
         violin=dict(kind='violin', cut=0),
+        exceedance=dict(kind='ecdf', complementary=True, lw=2, legend=None),
     )
+    kws = _kws.get(kind)
+    if kind == 'exceedance':
+        qs = kwargs.pop('qs', [0.5, 0.95])
+        txtadd = 'Exceedance Curve'
+        gd = sns.displot(x=yhat, data=df, **kws, height=4, aspect=2.5)
+        _ = gd.axes[0][0].set(ylabel=f'P({yhat} > x)')  # , xlabel='dollars')
+        # _ = gd.axes[0][0].xaxis.set_major_formatter('${x:,.1f}')
+        df_qvals = df[[yhat]].quantile(qs)
+        df_qvals.index.name = 'quantile'
+        df_qvals = df_qvals.reset_index()
+        df_qvals['p_gt'] = 1 - df_qvals['quantile'].values
+        for q in qs:
+            _ = gd.axes[0][0].vlines(
+                df_qvals.loc[df_qvals['quantile'] == q, yhat].values,
+                0,
+                1 - q,
+                linestyles='dotted',
+                zorder=-1,
+                colors='#999999',
+            )
+        _ = sns.scatterplot(
+            x=yhat,
+            y='p_gt',
+            style='p_gt',
+            data=df_qvals,
+            markers=['D', 'o'],
+            ax=gd.axes[0][0],
+            s=100,
+        )
+        handles, labels = gd.axes[0][0].get_legend_handles_labels()
+        lbls = [lb.replace('0.050000000000000044', '0.05') for lb in labels]  # HACK
+        gd.axes[0][0].legend(handles, lbls)
 
-    gd = sns.catplot(x=yhat, data=df, **kws[kind], color=clr, height=2, aspect=6)
-    # _ = [gd.ax.plot(v, i % len(mn), **sty['mn_pt_kws']) for i, v in enumerate(mn)]
-    _ = [
-        gd.ax.annotate(f'{v:.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
-        for i, v in enumerate(mn)
-    ]
-    elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
-    gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
-    if force_xlim is not None:
-        _ = gd.ax.set(xlim=force_xlim)
+    else:
+        gd = sns.catplot(x=yhat, data=df, **kws, color=clr, height=2.5, aspect=4)
+        # _ = [gd.ax.plot(v, i % len(mn), **sty['mn_pt_kws']) for i, v in enumerate(mn)]
+        _ = [
+            gd.ax.annotate(f'{v:.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
+            for i, v in enumerate(mn)
+        ]
+        elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
+        gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
+        if force_xlim is not None:
+            _ = gd.ax.set(xlim=force_xlim)
 
     _ = gd.fig.suptitle(
         ' - '.join(
