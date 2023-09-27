@@ -42,16 +42,18 @@ This project uses a scientific Python stack, and enables & supports:
 
 ### Scope
 
-+ This package **is**:
-  + A work in progress (v0.y.z) and liable to breaking changes and inconveniences
-  to the user
-  + Solely designed for ease of use and rapid development by employees of Oreum
-  Industries, and selected clients with guidance
+This package **is**:
 
-+ This package **is not**:
-  + Intended for public usage and will not be supported for public usage
-  + Intended for contributions by anyone not an employee of Oreum Industries, and unsolicitied contributions will not be accepted
++ A work in progress (v0.y.z) and liable to breaking changes and inconvenience
+to the user
++ Solely designed for ease of use and rapid development by employees of
+  Oreum Industries, and selected clients with guidance
 
+This package **is not**:
+
++ Intended for public usage and will not be supported for public usage
++ Intended for contributions by anyone not an employee of Oreum Industries,
+  and unsolicitied contributions will not be accepted
 
 
 ## 2. Instructions to Create Dev Environment

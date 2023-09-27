@@ -24,13 +24,13 @@ import pytensor
 import pytensor.tensor as pt
 from arviz import InferenceData, dict_to_dataset
 from fastprogress import progress_bar
-from pymc.backends.arviz import _DefaultTrace  # , coords_and_dims_for_inferencedata
+from pymc.backends.arviz import _DefaultTrace, coords_and_dims_for_inferencedata
 from pymc.model import Model, modelcontext
 from pymc.pytensorf import PointFunc
 from pymc.util import dataset_to_point_list
-from pytensor.gradient import grad
 
 __all__ = [
+    'log_jcd',
     'calc_f_measure',
     'calc_binary_performance_measures',
     'calc_mse',
@@ -39,7 +39,6 @@ __all__ = [
     'calc_bayesian_r2',
     'calc_ppc_coverage',
     'expand_packed_triangular',
-    'log_jcd',
     'calc_2_sample_delta_prop',
     'numpy_invlogit',
     'compute_log_likelihood_for_potential',
@@ -48,6 +47,24 @@ __all__ = [
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
+
+
+def log_jcd(f_inv_x: pt.TensorVariable, x: pt.TensorVariable) -> pt.TensorVariable:
+    """Calc log of Jacobian determinant.
+    Helps log-likelihood min of copula marginals, see JPL:
+    + https://github.com/junpenglao/Planet_Sakaar_Data_Science/blob/main/WIP/vector_transformation_copulas.ipynb
+    + https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb  # noqa: W505
+    + https://slideslive.com/38907842/session-3-model-parameterization-and-coordinate-system-neals-funnel
+    + https://github.com/junpenglao/Planet_Sakaar_Data_Science/blob/e39072eb65535adf743c6f0cd319fdf941cb2798/PyMC3QnA/Box-Cox%20transformation.ipynb  # noqa: W505
+    + https://discourse.pymc.io/t/mixture-model-with-boxcox-transformation/988
+    + https://pytensor.readthedocs.io/en/latest/library/gradient.html#pytensor.gradient.grad
+    + https://www.pymc.io/projects/docs/en/latest/_modules/pymc/math.html#
+    + https://www.cs.toronto.edu/~rgrosse/courses/csc321_2018/slides/lec10.pdf
+    + https://github.com/pymc-devs/pymc-examples/blob/1428f1b4e0d352a88667776b3ec612db93e032d9/examples/case_studies/copula-estimation.ipynb
+    Used in oreum_lab copula experiments
+    """
+    grad_graph = pytensor.gradient.grad(cost=pt.sum(f_inv_x), wrt=[x])
+    return pt.log(pt.abs(pt.reshape(grad_graph, x.shape)))
 
 
 def calc_f_measure(precision, recall, b=1):
@@ -253,17 +270,6 @@ def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
         out = pt.zeros((n, n), dtype=pytensor.config.floatX)
         idxs = np.triu_indices(n)
         return pt.set_subtensor(out[idxs], packed)
-
-
-def log_jcd(f_inv_x, x):
-    """Calc log of Jacobian determinant.
-    Helps log-likelihood min of copula marginals, see JPL:
-    + https://github.com/junpenglao/advance-bayesian-modelling-with-pymc/blob/master/Advance_topics/Box-Cox%20transformation.ipynb  # noqa: W505
-    + https://github.com/junpenglao/Planet_Sakaar_Data_Science/blob/e39072eb65535adf743c6f0cd319fdf941cb2798/PyMC3QnA/Box-Cox%20transformation.ipynb  # noqa: W505
-    + https://discourse.pymc.io/t/mixture-model-with-boxcox-transformation/988
-    Used in oreum_lab copula experiments
-    """
-    return pt.log(pt.abs(pt.reshape(grad(pt.sum(f_inv_x), [x]), x.shape)))
 
 
 def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
@@ -485,7 +491,7 @@ def compute_log_likelihood_for_potential(
             (*[len(coord) for coord in stacked_dims.values()], *array.shape[1:])
         )
 
-    coords, dims = _coords_and_dims_for_inferencedata(model)  # NOTE used local
+    coords, dims = coords_and_dims_for_inferencedata(model)  # NOTE used local
     loglike_dataset = dict_to_dataset(
         loglike_trace,
         library=pymc,

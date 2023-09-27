@@ -55,11 +55,8 @@ def normal_icdf(x, mu=0.0, sigma=1.0):
     """
 
     x = pt.clip(x, CLIP, 1 - CLIP)
-    return check_icdf_parameters(
-        check_icdf_value(mu - sigma * pt.sqrt(2.0) * pt.erfcinv(2.0 * x), x),
-        sigma > 0.0,
-        msg="sigma > 0",
-    )
+    r = check_icdf_value(mu - sigma * pt.sqrt(2.0) * pt.erfcinv(2.0 * x), x)
+    return check_icdf_parameters(r, sigma > 0.0, msg="sigma > 0")
 
 
 def lognormal_icdf(x, mu=0.0, sigma=1.0):
