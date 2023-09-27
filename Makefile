@@ -1,17 +1,17 @@
 # Makefile
 # NOTE:
 # + Intended for dev install on MacOS x64 (Intel via Rosetta 2)
-# + Will use bash by default, but mamba install assumes Homebrew zsh
-# + On MacOS, the mambaforge.sh installer is too clever and complains
+# + On MacOS, the miniforge.sh installer is too clever and complains
 #   that "$(uname -m)" != "x86_64", but we ignore that: Rosetta2 will run x86_64
-.PHONY: build create-env dev lint help mamba pre-build pub pub-test test-dev-env test-dl-ins uninstall
-.SILENT: build create-env dev lint help mamba pre-build pub pub-test test-dev-env test-dl-ins uninstall
-MAMBADL = https://github.com/conda-forge/miniforge/releases/latest/download/
-MAMBAV = Mambaforge-MacOSX-x86_64.sh
-MAMBARC = $(HOME)/.mambarc
-MAMBARCMSG = Please create file $(MAMBARC), particularly to set `platform: osx-64`
-MAMBADIR = $(HOME)/.mamba
+.PHONY: build create-env dev lint help mamba pre-build pub pub-test test-dev-env test-dl-ins uninstall uninstall-mamba
+.SILENT: build create-env dev lint help mamba pre-build pub pub-test test-dev-env test-dl-ins uninstall uninstall-mamba
+MAMBADL := https://github.com/conda-forge/miniforge/releases/download/23.3.1-1
+MAMBAV := Miniforge3-MacOSX-x86_64.sh
+MAMBARCMSG := Please create file $(MAMBARC), particularly to set `platform: osx-64`
+MAMBARC := $(HOME)/.mambarc
+MAMBADIR := $(HOME)/miniforge
 PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
+# MAMBADIR = $(shell conda info --base)
 PYTHON_ENV = $(MAMBADIR)/envs/oreum_core/bin/python
 ifneq ("$(wildcard $(PYTHON_ENV))","")
     PYTHON = $(PYTHON_ENV)
@@ -67,13 +67,19 @@ help:
 	@echo "  test-dl-ins   test dl & install from testpypi"
 	@echo "  uninstall     remove local dev env (use from parent dir as `make -C oreum_core uninstall`)"
 
-mamba:  ## get mamba via mambaforge for MacOS x86_64 (Intel via Rosetta2) use zsh
+mamba:  ## get mamba via miniforge for MacOS x86_64 (Intel via Rosetta2) use zsh
 	test -f $(MAMBARC) || { echo $(MAMBARCMSG); exit 1; }
-	wget $(MAMBADL)$(MAMBAV) -O $$HOME/mambaforge.sh
-	zsh $$HOME/mambaforge.sh -b -p $$HOME/.mamba
+	wget $(MAMBADL)/$(MAMBAV) -O $(HOME)/miniforge.sh
+	chmod 755 $(HOME)/miniforge.sh
+	zsh $(HOME)/miniforge.sh -b -p $(MAMBADIR)
 	export PATH=$(MAMBADIR)/bin:$$PATH; \
 		conda init zsh;
-	rm $$HOME/mambaforge.sh
+	rm $(HOME)/miniforge.sh
+
+# NOTE as-at 2023-09-27 this craps out with
+#  /Users/jon/miniforge.sh:342: no matches found: /Users/jon/miniforge/pkgs/envs/*/
+# make: *** [mamba] Error 1
+# but does actually do what it should
 
 pre-build:  # setup env for flit build or flit publish
 	rm -rf dist
@@ -111,3 +117,10 @@ test-dl-ins:  # test dl & install from testpypi, set env var or pass in VERSION
 uninstall: ## remove mamba env (use from parent dir as `make -C oreum_core/ uninstall`)
 	mamba env remove --name oreum_core -y
 	mamba clean -afy
+
+uninstall-mamba: ## last ditch per https://github.com/conda-forge/miniforge#uninstallation
+	conda init zsh --reverse
+	rm -rf $(MAMBADIR)
+	rm -rf $(HOME)/.conda
+	rm -f $(HOME)/.condarc
+	source $(HOME)/.zshrc

@@ -84,11 +84,14 @@ Then allow `direnv` on MacOS to automatically run file `.envrc` upon directory o
 Notes:
 
 + We use `conda` virtual envs controlled by `mamba` (quicker than `conda`)
-+ We install packages using `mambaforge` (sourced from the `conda-forge` repo) wherever possible and use `pip` for packages that are handled better by `pip` and/or more up-to-date on [pypi](https://pypi.org)
-+ Packages might not be the very latest because we want stability for `pymc3`
-which is usually in a state of development flux
++ We install packages using `miniforge` (sourced from the `conda-forge` repo)
+  wherever possible and only use `pip` for packages that are handled better by
+  `pip` and/or more up-to-date on [pypi](https://pypi.org)
++ Packages might not be the very latest because we want stability for `pymc`
+  which is usually in a state of development flux
 + See [cheat sheet of conda commands](https://conda.io/docs/_downloads/conda-cheatsheet.pdf)
-+ The `Makefile` creates a dev env and will also download and preinstall `mambaforge` if not yet installed on your system
++ The `Makefile` creates a dev env and will also download and preinstall
+  `miniforge` if not yet installed on your system
 
 
 #### 2.2.1 Create the dev environment

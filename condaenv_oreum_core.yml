@@ -10,12 +10,12 @@
 #  + Force install BLAS with MKL via libblas (note not "blas")
 #  + Force install numpy MKL: only available in defaults (pkgs/main)
 #    see https://github.com/conda-forge/numpy-feedstock/issues/84#issuecomment-385186685
-name: oreum_lab
+name: oreum_core
 channels:
   - conda-forge
   # - defaults
 dependencies:
-- pkgs/main::numpy>=1.24.3  # force numpy MKL see NOTE
+- pkgs/main::numpy==1.24.3  # force numpy MKL see NOTE
 - conda-forge::ipykernel>=6.23.1
 - conda-forge::libblas=*[build=*mkl]  # force BLAS with MKL see NOTE
 - conda-forge::libcblas=*[build=*mkl]  # force BLAS with MKL see NOTE
@@ -23,4 +23,4 @@ dependencies:
 - conda-forge::mkl==2021.4.*  # force MKL version see NOTE
 - conda-forge::mkl-service==2.4.*
 - conda-forge::python==3.10.*
-- conda-forge::pymc==5.6.1
+- conda-forge::pymc>=5.8.2
