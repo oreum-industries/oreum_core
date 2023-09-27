@@ -11,7 +11,6 @@ MAMBARCMSG := Please create file $(MAMBARC), particularly to set `platform: osx-
 MAMBARC := $(HOME)/.mambarc
 MAMBADIR := $(HOME)/miniforge
 PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
-# MAMBADIR = $(shell conda info --base)
 PYTHON_ENV = $(MAMBADIR)/envs/oreum_core/bin/python
 ifneq ("$(wildcard $(PYTHON_ENV))","")
     PYTHON = $(PYTHON_ENV)
@@ -40,7 +39,7 @@ dev:  # create env for local dev on any machine MacOS x64 (Intel)
 		export CONDA_DEFAULT_ENV=oreum_core; \
 		export CONDA_SUBDIR=osx-64; \
 		$(PYTHON_ENV) -m pip index versions oreum_core; \
-		$(PYTHON_ENV) -m pip install -e .[dev]; \
+		$(PYTHON_ENV) -m pip install -e ".[dev]"; \
 		$(PYTHON_ENV) -c "import numpy as np; np.__config__.show()" > dev/install_log/blas_info.txt; \
 		pipdeptree -a > dev/install_log/pipdeptree.txt; \
 		pipdeptree -a -r > dev/install_log/pipdeptree_rev.txt; \

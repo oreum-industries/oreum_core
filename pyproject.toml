@@ -4,11 +4,10 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "oreum_core"
+dynamic = ["version", "description"]
 readme = "README.md"
 license = {file = "LICENSE.md"}
-authors = [
-    { name = "Oreum Industries", email = "info@oreum.io" }
-]
+authors = [{ name = "Oreum Industries", email = "info@oreum.io" },]
 requires-python = "==3.10.*"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -24,7 +23,6 @@ classifiers = [
     "Operating System :: Unix",
     "License :: OSI Approved :: Apache Software License",
 ]
-dynamic = ["version", "description"]
 dependencies = [
     "csv2md>=1.1.2",
     "fastparquet",   # not available in pandas v2.0 optional deps
@@ -34,7 +32,7 @@ dependencies = [
     "matplotlib-inline<0.1.5",  # 0.1.5+ causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
     "pandas[excel,parquet,plot]>=2.0.1",  # see NOTE
     "patsy>=0.5.3",  # TODO consider using formulae instead
-    "pymc>=5.8.1",  # brings along lots of deps
+    "pymc>=5.8.2",  # brings along lots of deps
     "seaborn>=0.12.2",
 ]
 
