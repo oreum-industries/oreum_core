@@ -19,11 +19,20 @@ import re
 import arviz as az
 import numpy as np
 import pandas as pd
-import patsy as pt
+import patsy as pat
 
 from oreum_core.model import BasePYMCModel
 
-__all__ = ['model_desc', 'extract_yobs_yhat', 'describe_dist', 'get_summary']
+# import pytensor.tensor as pt
+# from IPython.display import Markdown, display
+
+
+__all__ = [
+    'model_desc',
+    'extract_yobs_yhat',
+    'describe_dist',
+    'get_summary',
+]  # , 'print_rvs']
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
@@ -36,7 +45,7 @@ def model_desc(fml: str) -> str:
     """
     fmls = fml.split(' ~ ')
     add_intercept = False if re.match(r'1 \+', fml) is None else True
-    r = pt.ModelDesc.from_formula(fml).describe()
+    r = pat.ModelDesc.from_formula(fml).describe()
     if len(fmls) == 2:
         rs = r.split(' ~ ')
         if add_intercept:
@@ -50,7 +59,7 @@ def model_desc(fml: str) -> str:
 
 
 def extract_yobs_yhat(
-    idata: az.data.inference_data.InferenceData, obs: str = 'y', pred: str = 'yhat'
+    idata: az.InferenceData, obs: str = 'y', pred: str = 'yhat'
 ) -> tuple:
     """Convenience: extract y_obs, y_hat from idata
     get yhat in the shape (nsamples, nobs)
@@ -61,7 +70,7 @@ def extract_yobs_yhat(
     return yobs, yhat
 
 
-def describe_dist(mdl, log=False, inc_summary=False):
+def describe_dist(mdl: BasePYMCModel, log: bool = False, inc_summary: bool = False):
     """Convenience: get distribution descriptions from distributions.DistNumpy
     and return for printing or Markdown
     NOTE: consider deprecating
@@ -82,3 +91,14 @@ def get_summary(mdl: BasePYMCModel, rvs: list, group='posterior') -> pd.DataFram
 
     df = az.summary(mdl.idata, var_names=rvs, group=group)
     return df
+
+
+# def print_rvs(rvs: list[pt.TensorVariable]) -> None:
+#     """Display rvs to Notebook using latex, post sub underscores
+#     Hack to replace print(mdl.model) see https://github.com/pymc-devs/pymc/issues/6869
+#     """
+#     rx_name_usc = re.compile(r"(?:text\{[^\_\}]+?)(\_+)(?:[^\_\}]+?)(?:(\_+)(?:[^\_\}]+?))*?(?:\})", re.I)
+#     for rv in rvs:
+#         s = rv.str_repr(formatting='latex', include_params=True)
+#         t = rx_name_usc.sub(r"\\_", s)
+#         display(Markdown(t))

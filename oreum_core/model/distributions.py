@@ -30,7 +30,7 @@ __all__ = ['sanity_check_lognorm', 'normal_icdf', 'lognormal_icdf', 'mv_dist']
 CLIP = 1e-15  # NOTE 1e-18 too small
 
 
-def sanity_check_lognorm(mu: float = 0.0, sigma: float = 1.0):
+def sanity_check_lognorm(mu: float = 0.0, sigma: float = 1.0) -> None:
     """Sanity checker to confirm parameterisation of lognorm dists
     between scipy and pymc"""
     n = 1000
@@ -42,7 +42,9 @@ def sanity_check_lognorm(mu: float = 0.0, sigma: float = 1.0):
     assert sum(np.isclose(y_scipy, y_pymc)) == n
 
 
-def normal_icdf(x, mu=0.0, sigma=1.0):
+def normal_icdf(
+    x: pt.TensorVariable, mu: pt.TensorVariable = 0.0, sigma: pt.TensorVariable = 1.0
+) -> pt.TensorVariable:
     """Normal icdf, default mean-center 1sd aka Inverse CDF aka PPF aka Probit
     NOTE:
     + Modified from pymc.distributions.continuous.Normal.icdf
@@ -52,14 +54,19 @@ def normal_icdf(x, mu=0.0, sigma=1.0):
         Whilst value = {0, 1} is theoretically allowed, it seems to cause a
         numeric computational issue somewhere in pt.erfcinv which throws infs.
         This screws up the downstream, so clip slightly away from edges [0, 1]
+    + Used in oreum_lab..src.model.copula.model_1
+        NOTE: Possibly after pymc > 5.5 will change to use
+        y_cop_u_rv = pm.Normal.dist(mu=0., sigma=1.)
+        pm.icdf(y_cop_u_rv, pt.stack([y_m1u, y_m2u], axis=1)),
     """
-
     x = pt.clip(x, CLIP, 1 - CLIP)
     r = check_icdf_value(mu - sigma * pt.sqrt(2.0) * pt.erfcinv(2.0 * x), x)
     return check_icdf_parameters(r, sigma > 0.0, msg="sigma > 0")
 
 
-def lognormal_icdf(x, mu=0.0, sigma=1.0):
+def lognormal_icdf(
+    x: pt.TensorVariable, mu: pt.TensorVariable = 0.0, sigma: pt.TensorVariable = 1.0
+) -> pt.TensorVariable:
     """LogNormal icdf, defaulted to mean-centered, 1sd
     NOTE:
         + Modified from pymc.distributions.continuous.LogNormal.icdf in v>5.5 not yet released

@@ -34,7 +34,7 @@ __all__ = [
     'forestplot_single',
     'forestplot_multiple',
     'plot_ppc',
-    'plot_loopit',
+    'plot_loo_pit',
 ]
 
 sns.set(
@@ -265,7 +265,9 @@ def plot_ppc(
     return f
 
 
-def plot_loopit(mdl: BasePYMCModel, data_pairs: dict = None, **kwargs) -> figure.Figure:
+def plot_loo_pit(
+    mdl: BasePYMCModel, data_pairs: dict = None, **kwargs
+) -> figure.Figure:
     """Calc and plot LOO-PIT after run `mdl.sample_posterior_predictive()`"""
     txtadd = kwargs.pop('txtadd', None)
     f, axs = plt.subplots(len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)))

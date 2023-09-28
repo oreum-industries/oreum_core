@@ -46,7 +46,7 @@ from oreum_core.model.plot import (
     forestplot_single,
     pairplot_corr,
     plot_energy,
-    plot_loopit,
+    plot_loo_pit,
     plot_ppc,
     plot_trace,
 )
