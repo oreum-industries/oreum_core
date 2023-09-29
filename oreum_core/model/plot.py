@@ -69,6 +69,7 @@ def plot_energy(mdl: BasePYMCModel) -> figure.Figure:
     """Simple wrapper around energy plot to provide a simpler interface"""
     _ = az.plot_energy(mdl.idata, figsize=(12, 2))
     f = plt.gcf()
+    _ = f.suptitle('NUTS Energy Plot')
     _ = f.tight_layout()
     return f
 
@@ -253,13 +254,17 @@ def plot_ppc(
 ) -> figure.Figure:
     """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF,
     does not require log-likelihood.
+    NOTE data_pairs {key (from observed): value (from {group}_predictive)}
     """
     txtadd = kwargs.pop('txtadd', None)
     kind = 'cumulative' if ecdf else 'kde'
+    kindnm = 'ECDF' if ecdf else 'KDE'
     _idata = mdl.idata if idata is None else idata
     f, axs = plt.subplots(len(data_pairs), 1, figsize=(12, 3 * len(data_pairs)))
-    _ = az.plot_ppc(_idata, group=group, kind=kind, ax=axs, data_pairs=data_pairs)
-    t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive'
+    _ = az.plot_ppc(
+        _idata, group=group, kind=kind, ax=axs, data_pairs=data_pairs, **kwargs
+    )
+    t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'
     _ = f.suptitle(' - '.join(filter(None, [t, mdl.name, txtadd])))
     _ = f.tight_layout()
     return f
@@ -271,13 +276,13 @@ def plot_loo_pit(
     """Calc and plot LOO-PIT after run `mdl.sample_posterior_predictive()`"""
     txtadd = kwargs.pop('txtadd', None)
     f, axs = plt.subplots(len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)))
-    for i, (_, hat) in enumerate(data_pairs.items()):
-        kws = dict(y=hat, y_hat=hat)  # NOTE named badly
+    for i, (y, yhat) in enumerate(data_pairs.items()):
+        kws = dict(y=y, y_hat=yhat)  # NOTE named badly
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][0], **kwargs)
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][1], ecdf=True, **kwargs)
 
-        _ = axs[i][0].set_title(f'Predicted {hat} LOO-PIT')
-        _ = axs[i][1].set_title(f'Predicted {hat} LOO-PIT cumulative')
+        _ = axs[i][0].set_title(f'Predicted {yhat} LOO-PIT')
+        _ = axs[i][1].set_title(f'Predicted {yhat} LOO-PIT cumulative')
 
     _ = f.suptitle(' - '.join(filter(None, ['In-sample LOO-PIT', mdl.name, txtadd])))
     _ = f.tight_layout()

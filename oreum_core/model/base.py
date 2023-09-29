@@ -51,6 +51,7 @@ class BasePYMCModel:
         """
         self.model = None
         self._idata = None
+        self.replace_idata = False
         self.sample_prior_predictive_kws = dict(samples=500)
         self.sample_posterior_predictive_kws = dict(store_ppc=True, ppc_insample=False)
         self.sample_kws = dict(
@@ -135,6 +136,7 @@ class BasePYMCModel:
             random_seed=kwargs.pop('random_seed', self.rsd),
             samples=kwargs.pop('samples', self.sample_prior_predictive_kws['samples']),
         )
+        replace = kwargs.pop('replace', self.replace_idata)
 
         with self.model:
             try:
@@ -142,7 +144,7 @@ class BasePYMCModel:
             except UserWarning as e:
                 _log.warning('Warning in mdl.sample_prior_predictive()', exc_info=e)
             finally:
-                _ = self.update_idata(prior)
+                _ = self.update_idata(prior, replace=replace)
             _log.info(f'Sampled prior predictive for {self.name} {self.version}')
         return None
 
@@ -192,6 +194,10 @@ class BasePYMCModel:
                     )
                 )
             )
+            for nm in self.rvs_potential_loglike:
+                nm0 = nm.strip('pot_')
+                self.idata['log_likelihood'][nm0] = self.idata['log_likelihood'][nm]
+                del self.idata['log_likelihood'][nm]
 
         return None
 
