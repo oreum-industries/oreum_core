@@ -252,9 +252,9 @@ def plot_ppc(
     data_pairs: dict = None,
     **kwargs,
 ) -> figure.Figure:
-    """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF,
-    does not require log-likelihood.
-    NOTE data_pairs {key (from observed): value (from {group}_predictive)}
+    """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF, does not
+    require log-likelihood.
+    NOTE: data_pairs {key (in observed): value (in {group}_predictive)}
     """
     txtadd = kwargs.pop('txtadd', None)
     kind = 'cumulative' if ecdf else 'kde'
@@ -273,11 +273,16 @@ def plot_ppc(
 def plot_loo_pit(
     mdl: BasePYMCModel, data_pairs: dict = None, **kwargs
 ) -> figure.Figure:
-    """Calc and plot LOO-PIT after run `mdl.sample_posterior_predictive()`"""
+    """Calc and plot LOO-PIT after run `mdl.sample_posterior_predictive()`
+    ref: https://oriolabrilpla.cat/en/blog/posts/2019/loo-pit-tutorial.html
+    mdl.idata needs: observed_data, posterior_predictive and log_likelihood
+    NOTE: data_pairs {key (in observed AND log_likelihood): value (in posterior_predictive)}
+
+    """
     txtadd = kwargs.pop('txtadd', None)
     f, axs = plt.subplots(len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)))
     for i, (y, yhat) in enumerate(data_pairs.items()):
-        kws = dict(y=y, y_hat=yhat)  # NOTE named badly
+        kws = dict(y=y, y_hat=yhat)
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][0], **kwargs)
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][1], ecdf=True, **kwargs)
 

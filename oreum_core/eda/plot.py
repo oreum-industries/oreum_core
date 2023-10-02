@@ -843,26 +843,6 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
     _ = f.tight_layout()
 
 
-# import functools
-# import warnings
-
-# from typing import Callable
-
-# def ignore_warnings(category: Warning):
-#     """Specific ignorer, by https://stackoverflow.com/a/76916243/1165112
-#     for tackling https://github.com/matplotlib/matplotlib/issues/26290
-#     """
-#     def ignore_warnings_decorator(func: Callable):
-#         @functools.wraps(func)
-#         def wrapper(*args, **kwargs):
-#             with warnings.catch_warnings():
-#                 warnings.simplefilter("ignore", category=category)
-#                 return func(*args, **kwargs)
-#         return wrapper
-#     return ignore_warnings_decorator
-
-
-# @ignore_warnings(category=UserWarning)
 def plot_estimate(
     df: pd.DataFrame,
     nobs: int,
@@ -870,9 +850,11 @@ def plot_estimate(
     force_xlim: list = None,
     color: str = None,
     kind: str = 'box',
+    arroverplot: np.array = None,
     **kwargs,
 ) -> figure.Figure:
-    """Plot distribution for estimates, either PPC or bootstrapped, no grouping"""
+    """Plot distribution for estimates, either PPC or bootstrapped, no grouping
+    Optional overplot bootstrapped dfboot"""
     txtadd = kwargs.pop('txtadd', None)
     sty = _get_kws_styling()
 
@@ -894,8 +876,8 @@ def plot_estimate(
     )
     kws = _kws.get(kind)
     if kind == 'exceedance':
-        qs = kwargs.pop('qs', [0.5, 0.95])
-        txtadd = 'Exceedance Curve'
+        qs = kwargs.pop('qs', [0.5, 0.95, 0.99])
+        txtadd = ' - '.join(filter(None, ['Exceedance Curve', txtadd]))
         gd = sns.displot(x=yhat, data=df, **kws, height=4, aspect=2.5)
         _ = gd.axes[0][0].set(ylabel=f'P({yhat} > x)')  # , xlabel='dollars')
         # _ = gd.axes[0][0].xaxis.set_major_formatter('${x:,.1f}')
@@ -917,17 +899,30 @@ def plot_estimate(
             y='p_gt',
             style='p_gt',
             data=df_qvals,
-            markers=['D', 'o'],
+            markers=['^', 'd', 'o'],
             ax=gd.axes[0][0],
             s=100,
         )
         handles, labels = gd.axes[0][0].get_legend_handles_labels()
-        lbls = [lb.replace('0.050000000000000044', '0.05') for lb in labels]  # HACK
-        gd.axes[0][0].legend(handles, lbls)
+        lbls = [str(round(float(lb), 2)) for lb in labels]  # HACK floating point
+        gd.axes[0][0].legend(handles, lbls, loc='upper right', title='P(yhat) > x')
+        summary = ', '.join(
+            df_qvals[['p_gt', 'yhat']]
+            .apply(lambda r: f'P(yhat) > {r[1]:.1f} = {r[0]:.2f}', axis=1)
+            .tolist()
+        )
 
-    else:
+    elif kind == 'box':
         gd = sns.catplot(x=yhat, data=df, **kws, color=clr, height=2.5, aspect=4)
-        # _ = [gd.ax.plot(v, i % len(mn), **sty['mn_pt_kws']) for i, v in enumerate(mn)]
+        if arroverplot is not None:
+            _ = sns.pointplot(
+                arroverplot,
+                estimator=np.mean,
+                errorbar=('ci', 94),
+                color='C1',
+                linestyles='-',
+                orient='h',
+            )
         _ = [
             gd.ax.annotate(f'{v:.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
             for i, v in enumerate(mn)
@@ -936,21 +931,14 @@ def plot_estimate(
         gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
         if force_xlim is not None:
             _ = gd.ax.set(xlim=force_xlim)
-
-    _ = gd.fig.suptitle(
-        ' - '.join(
-            filter(
-                None,
-                [
-                    f'Summary Distribution of {yhat} Estimate for {nobs} Observations',
-                    txtadd,
-                ],
-            )
+        summary = (
+            f'Mean = {mn[0]:.1f}, '
+            + f'HDI_50 = [{hdi[1]:.1f}, {hdi[2]:.1f}], '
+            + f'HDI_94 = [{hdi[0]:.1f}, {hdi[3]:.1f}]'
         )
-        + f'\nMean = {mn[0]:.1f}, '
-        + f'HDI_50 = [{hdi[1]:.1f}, {hdi[2]:.1f}], '
-        + f'HDI_94 = [{hdi[0]:.1f}, {hdi[3]:.1f}]'
-    )
+
+    t = f'Summary Distribution of {yhat} estimate for {nobs} obs'
+    _ = gd.fig.suptitle(' - '.join(filter(None, [t, txtadd])) + f'\n{summary}')
     _ = gd.fig.tight_layout()
     return gd.fig
 
