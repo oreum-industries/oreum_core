@@ -310,15 +310,18 @@ def plot_compare(
     f, axs = plt.subplots(
         len(y_list),
         1,
-        figsize=(10, 2.5 * len(y_list) + 0.3 * len(idata_dict)),
+        figsize=(12, 2.5 * len(y_list) + 0.3 * len(idata_dict)),
         squeeze=False,
+        sharex=True,
     )
     mdlnms = ' vs '.join(idata_dict.keys())
     for i, y in enumerate(y_list):
         dfcomp = az.compare(
             idata_dict, var_name=y, ic='loo', method='stacking', scale='log'
         )
-        ax = az.plot_compare(dfcomp, ax=axs[i][0], title=False, textsize=10)
+        ax = az.plot_compare(
+            dfcomp, ax=axs[i][0], title=False, textsize=10, legend=False
+        )
         _ = ax.set_title(y)
 
     _ = f.suptitle(
@@ -326,7 +329,7 @@ def plot_compare(
             filter(
                 None,
                 [
-                    'In-sample Model Comparison ELPD (LOO):',
+                    'In-sample Model Comparison (ELPD via LOO):',
                     mdlnms,
                     '\n(higher and tighter is better)',
                     txtadd,
