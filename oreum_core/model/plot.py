@@ -35,6 +35,7 @@ __all__ = [
     'forestplot_multiple',
     'plot_ppc',
     'plot_loo_pit',
+    'plot_compare',
 ]
 
 sns.set(
@@ -275,8 +276,9 @@ def plot_loo_pit(
 ) -> figure.Figure:
     """Calc and plot LOO-PIT after run `mdl.sample_posterior_predictive()`
     ref: https://oriolabrilpla.cat/en/blog/posts/2019/loo-pit-tutorial.html
-    mdl.idata needs: observed_data, posterior_predictive and log_likelihood
-    NOTE: data_pairs {key (in observed AND log_likelihood): value (in posterior_predictive)}
+    NOTE:
+    mdl.idata needs: observed_data AND log_likelihood AND posterior_predictive
+    data_pairs {key (in observed AND log_likelihood): value (in posterior_predictive)}
 
     """
     txtadd = kwargs.pop('txtadd', None)
@@ -291,4 +293,47 @@ def plot_loo_pit(
 
     _ = f.suptitle(' - '.join(filter(None, ['In-sample LOO-PIT', mdl.name, txtadd])))
     _ = f.tight_layout()
+    return f
+
+
+def plot_compare(
+    idata_dict: dict[str, az.InferenceData], y_list: list[str], **kwargs
+) -> figure.Figure:
+    """Calc and plot model comparison in-sample via expected log pointwise
+    predictive density (ELPD) using LOO
+    NOTE:
+    idata needs: observed_data AND log_likelihood
+    y_list should be the key for observed_data AND log_likelihood
+
+    """
+    txtadd = kwargs.pop('txtadd', None)
+    f, axs = plt.subplots(
+        len(y_list),
+        1,
+        figsize=(10, 2.5 * len(y_list) + 0.3 * len(idata_dict)),
+        squeeze=False,
+    )
+    mdlnms = ' vs '.join(idata_dict.keys())
+    for i, y in enumerate(y_list):
+        dfcomp = az.compare(
+            idata_dict, var_name=y, ic='loo', method='stacking', scale='log'
+        )
+        ax = az.plot_compare(dfcomp, ax=axs[i][0], title=False, textsize=10)
+        _ = ax.set_title(y)
+
+    _ = f.suptitle(
+        ' '.join(
+            filter(
+                None,
+                [
+                    'In-sample Model Comparison ELPD (LOO):',
+                    mdlnms,
+                    '\n(higher and tighter is better)',
+                    txtadd,
+                ],
+            )
+        )
+    )
+    _ = f.tight_layout()
+
     return f
