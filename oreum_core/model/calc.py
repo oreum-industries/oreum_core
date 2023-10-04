@@ -50,18 +50,30 @@ rng = np.random.default_rng(seed=RSD)
 
 
 def log_jcd(f_inv_x: pt.TensorVariable, x: pt.TensorVariable) -> pt.TensorVariable:
-    """Calc log of Jacobian determinant.
-    Helps log-likelihood min of copula marginals, see JPL:
+    """Calc log of Jacobian determinant. Add this Jacobian adjsutment to models
+    where the observed is a transformation, to handle the change in volume.
+    Used in oreum_lab copula models
+
+    Detail from Stan docs:
+    + https://mc-stan.org/docs/2_25/reference-manual/change-of-variables-section.html#multivariate-changes-of-variables
+    + https://mc-stan.org/documentation/case-studies/mle-params.html
+    "The absolute derivative of the inverse transform measures how the scale of
+    the transformed variable changes with respect to the underlying variable."
+
+    Example from jungpenglao:
+    + https://github.com/junpenglao/Planet_Sakaar_Data_Science/blob/4366de036cc608c942fdebb930e96f2cc8b83d71/Ports/Jacobian%20Adjustment%20in%20PyMC3.ipynb#L163  # noqa: W505
     + https://github.com/junpenglao/Planet_Sakaar_Data_Science/blob/main/WIP/vector_transformation_copulas.ipynb
+
+    More discussion:
+    + https://www.tamaspapp.eu/post/jacobian-chain/
+    + https://discourse.pymc.io/t/how-do-i-implement-an-upper-limit-log-normal-distribution/1337/4
     + https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb  # noqa: W505
     + https://slideslive.com/38907842/session-3-model-parameterization-and-coordinate-system-neals-funnel
-    + https://github.com/junpenglao/Planet_Sakaar_Data_Science/blob/e39072eb65535adf743c6f0cd319fdf941cb2798/PyMC3QnA/Box-Cox%20transformation.ipynb  # noqa: W505
     + https://discourse.pymc.io/t/mixture-model-with-boxcox-transformation/988
     + https://pytensor.readthedocs.io/en/latest/library/gradient.html#pytensor.gradient.grad
     + https://www.pymc.io/projects/docs/en/latest/_modules/pymc/math.html#
     + https://www.cs.toronto.edu/~rgrosse/courses/csc321_2018/slides/lec10.pdf
-    + https://github.com/pymc-devs/pymc-examples/blob/1428f1b4e0d352a88667776b3ec612db93e032d9/examples/case_studies/copula-estimation.ipynb
-    Used in oreum_lab copula experiments
+    + https://github.com/pymc-devs/pymc-examples/blob/1428f1b4e0d352a88667776b3ec612db93e032d9/examples/case_studies/copula-estimation.ipynb  # noqa: W505
     """
     grad_graph = pytensor.gradient.grad(cost=pt.sum(f_inv_x), wrt=[x])
     return pt.log(pt.abs(pt.reshape(grad_graph, x.shape)))

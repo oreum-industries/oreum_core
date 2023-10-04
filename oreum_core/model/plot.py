@@ -261,7 +261,7 @@ def plot_ppc(
     kind = 'cumulative' if ecdf else 'kde'
     kindnm = 'ECDF' if ecdf else 'KDE'
     _idata = mdl.idata if idata is None else idata
-    f, axs = plt.subplots(len(data_pairs), 1, figsize=(12, 3 * len(data_pairs)))
+    f, axs = plt.subplots(len(data_pairs), 1, figsize=(12, 4 * len(data_pairs)))
     _ = az.plot_ppc(
         _idata, group=group, kind=kind, ax=axs, data_pairs=data_pairs, **kwargs
     )
@@ -297,29 +297,31 @@ def plot_loo_pit(
 
 
 def plot_compare(
-    idata_dict: dict[str, az.InferenceData], y_list: list[str], **kwargs
-) -> figure.Figure:
+    idata_dict: dict[str, az.InferenceData], obs_list: list[str], **kwargs
+) -> tuple[figure.Figure, dict[str, pd.DataFrame]]:
     """Calc and plot model comparison in-sample via expected log pointwise
     predictive density (ELPD) using LOO
     NOTE:
     idata needs: observed_data AND log_likelihood
-    y_list should be the key for observed_data AND log_likelihood
+    obs_list should be the key for observed_data AND log_likelihood
 
     """
     txtadd = kwargs.pop('txtadd', None)
     sharex = kwargs.pop('sharex', False)
     f, axs = plt.subplots(
-        len(y_list),
+        len(obs_list),
         1,
-        figsize=(12, 2.5 * len(y_list) + 0.3 * len(idata_dict)),
+        figsize=(12, 2.5 * len(obs_list) + 0.3 * len(idata_dict)),
         squeeze=False,
         sharex=sharex,
     )
     mdlnms = ' vs '.join(idata_dict.keys())
-    for i, y in enumerate(y_list):
+    dfcompdict = {}
+    for i, y in enumerate(obs_list):
         dfcomp = az.compare(
             idata_dict, var_name=y, ic='loo', method='stacking', scale='log'
         )
+        dfcompdict[y] = dfcomp
         ax = az.plot_compare(
             dfcomp, ax=axs[i][0], title=False, textsize=10, legend=False
         )
@@ -340,4 +342,4 @@ def plot_compare(
     )
     _ = f.tight_layout()
 
-    return f
+    return f, dfcompdict
