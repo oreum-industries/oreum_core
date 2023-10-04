@@ -307,12 +307,13 @@ def plot_compare(
 
     """
     txtadd = kwargs.pop('txtadd', None)
+    sharex = kwargs.pop('sharex', False)
     f, axs = plt.subplots(
         len(y_list),
         1,
         figsize=(12, 2.5 * len(y_list) + 0.3 * len(idata_dict)),
         squeeze=False,
-        sharex=True,
+        sharex=sharex,
     )
     mdlnms = ' vs '.join(idata_dict.keys())
     for i, y in enumerate(y_list):
