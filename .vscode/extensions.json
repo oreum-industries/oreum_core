@@ -4,5 +4,6 @@
         "ms-python.vscode-pylance",
         "github.github-vscode-theme",
         "tal7aouy.theme",
+        "github.vscode-github-actions",
     ]
 }

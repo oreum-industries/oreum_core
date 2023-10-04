@@ -3,8 +3,10 @@
 *.netcdf
 
 # Additional local dirs
-dev/
-docs/private/
+local/*
+dev/install_log/*.txt
+dev/*.md
+dev/*.py
 
 # Addtional files that are sometimes useful docs (only block if in data/ dir)
 data/*.xls*

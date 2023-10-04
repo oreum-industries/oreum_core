@@ -24,15 +24,18 @@ import seaborn as sns
 import xarray
 from matplotlib import figure, gridspec
 
+from oreum_core.model import BasePYMCModel
+
 __all__ = [
     'plot_trace',
+    'plot_energy',
     'facetplot_krushke',
     'pairplot_corr',
     'forestplot_single',
     'forestplot_multiple',
-    'plot_dist_fns_over_x',
-    'plot_dist_fns_over_x_manual_only',
-    'plot_ppc_loopit',
+    'plot_ppc',
+    'plot_loo_pit',
+    'plot_compare',
 ]
 
 sns.set(
@@ -48,26 +51,32 @@ class IDataGroupName(str, Enum):
     posterior = 'posterior'
 
 
-def plot_trace(
-    idata: az.data.inference_data.InferenceData, rvs: list, **kwargs
-) -> figure.Figure:
-    """Create traceplot for passed idata"""
+def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
+    """Create traceplot for passed mdl"""
     kind = kwargs.pop('kind', 'rank_vlines')
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
-    _ = az.plot_trace(idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
+    _ = az.plot_trace(mdl.idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
     f = plt.gcf()
     _ = f.suptitle(
         ' - '.join(
-            filter(None, ['Traceplot', mdlname, 'posterior', ', '.join(rvs), txtadd])
+            filter(None, ['Traceplot', mdl.name, 'posterior', ', '.join(rvs), txtadd])
         )
     )
     _ = f.tight_layout()
     return f
 
 
+def plot_energy(mdl: BasePYMCModel) -> figure.Figure:
+    """Simple wrapper around energy plot to provide a simpler interface"""
+    _ = az.plot_energy(mdl.idata, figsize=(12, 2))
+    f = plt.gcf()
+    _ = f.suptitle('NUTS Energy Plot')
+    _ = f.tight_layout()
+    return f
+
+
 def facetplot_krushke(
-    idata: az.data.inference_data.InferenceData,
+    mdl: BasePYMCModel,
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
     m: int = 1,
@@ -75,18 +84,19 @@ def facetplot_krushke(
     ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
-    """Create Krushke-style plots using Arviz, univariate RVs, control faceting"""
+    """Create Krushke-style plots using Arviz, univariate RVs, control faceting
+    NOTE can pass kwargs like hdi_prob = 0.5
+    """
     # TODO unpack the compressed rvs from the idata
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(
-        idata, group=group, ax=axs, var_names=rvs, ref_val=ref_vals, **kwargs
+        mdl.idata, group=group, ax=axs, var_names=rvs, ref_val=ref_vals, **kwargs
     )
     s = 's' if len(rvs) > 1 else ''
     _ = f.suptitle(
-        ' - '.join(filter(None, [f'Distribution plot{s}', mdlname, group, txtadd]))
+        ' - '.join(filter(None, [f'Distribution plot{s}', mdl.name, group, txtadd]))
     )
     _ = f.tight_layout()
     return f
@@ -186,17 +196,16 @@ def forestplot_multiple(
 
 
 def pairplot_corr(
-    idata: az.data.inference_data.InferenceData,
+    mdl: BasePYMCModel,
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
-    colnames=list[str],
     ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
     """Create posterior pair / correlation plots using Arviz, corrrlated RVs,
     Pass-through kwargs to az.plot_pair, e.g. ref_vals
+    Default to posterior, allow for override to prior
     """
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
     kind = kwargs.pop('kind', 'kde')
 
@@ -214,10 +223,10 @@ def pairplot_corr(
         ),
         figsize=(2 + 1.8 * len(rvs), 2 + 1.8 * len(rvs)),
     )
-
-    axs = az.plot_pair(idata, **pair_kws)
+    # idata[group][rvs].stack(dims=('chain', 'draw')).values.T,
+    axs = az.plot_pair(mdl.idata, **pair_kws)
     corr = pd.DataFrame(
-        idata[group][rvs].stack(dims=('chain', 'draw')).values.T, columns=colnames
+        az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)[1].T
     ).corr()
     i, j = np.tril_indices(n=len(corr), k=-1)
     for ij in zip(i, j):
@@ -228,157 +237,109 @@ def pairplot_corr(
     _ = [a.set_xlabel(a.get_xlabel(), **vh_x) for ax in axs for a in ax]
 
     f = plt.gcf()
-    _ = f.suptitle(' - '.join(filter(None, ['Pairplot', mdlname, group, rvs, txtadd])))
+    _ = f.suptitle(
+        ' - '.join(filter(None, ['Pairplot', mdl.name, group, 'selected RVs', txtadd]))
+    )
     _ = f.tight_layout()
     return f
 
 
-def plot_dist_fns_over_x(
-    dfpdf: pd.DataFrame, dfcdf: pd.DataFrame, dfinvcdf: pd.DataFrame, **kwargs
-) -> figure.Figure:
-    """Convenience to plot results of calc_dist_fns_over_x()"""
-
-    name = kwargs.get('name', 'unknown_dist')
-    islog = kwargs.get('log', False)
-    lg = 'log ' if islog else ''
-    f, axs = plt.subplots(1, 3, figsize=(16, 4), sharex=False, sharey=False)
-    f.suptitle(f'Comparisons manual vs scipy for {lg}{name}', y=1.02)
-    n = len(dfpdf)
-    is_close = {
-        k: np.sum(np.isclose(v['manual'], v['scipy'], equal_nan=True))
-        for k, v in zip(['p', 'c', 'i'], [dfpdf, dfcdf, dfinvcdf])
-    }
-
-    dfm = dfpdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
-    ax0 = sns.lineplot(
-        x='x', y='density', hue='method', style='method', data=dfm, ax=axs[0]
-    )
-    _ = ax0.set_title(f"{lg}PDF: match {is_close['p'] / n :.1%}")
-
-    dfm = dfcdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
-    ax1 = sns.lineplot(
-        x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1]
-    )
-    _ = ax1.set_title(f"{lg}CDF: match {is_close['c'] / n :.1%}")
-    if not islog:
-        ylimmin = ax1.get_ylim()[0]
-        _ = ax1.set(ylim=(min(0, ylimmin), None))
-
-    dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
-    ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])
-    _ = ax2.set_title(f"{lg}InvCDF: match {is_close['i'] / n :.1%}")
-    # f.tight_layout()
-    return f
-
-
-def plot_dist_fns_over_x_manual_only(
-    dfpdf: pd.DataFrame, dfcdf: pd.DataFrame, dfinvcdf: pd.DataFrame, **kwargs
-) -> figure.Figure:
-    """Convenience to plot results of calc_dist_fns_over_x_manual_only()"""
-
-    name = kwargs.get('name', 'unknown_dist')
-    islog = kwargs.get('log', False)
-    lg = 'log ' if islog else ''
-    f, axs = plt.subplots(1, 3, figsize=(16, 4), sharex=False, sharey=False)
-    f.suptitle(f'Display manual calcs for {lg}{name}', y=1.02)
-    # n = len(dfpdf)
-
-    dfm = dfpdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
-    ax0 = sns.lineplot(
-        x='x', y='density', hue='method', style='method', data=dfm, ax=axs[0]
-    )
-    _ = ax0.set_title(f"{lg}PDF")
-
-    dfm = dfcdf.reset_index().melt(id_vars='x', value_name='density', var_name='method')
-    ax1 = sns.lineplot(
-        x='x', y='density', hue='method', style='method', data=dfm, ax=axs[1]
-    )
-    _ = ax1.set_title(f"{lg}CDF")
-    if not islog:
-        _ = ax1.set(ylim=(0, None))
-
-    dfm = dfinvcdf.reset_index().melt(id_vars='u', value_name='x', var_name='method')
-    ax2 = sns.lineplot(x='u', y='x', hue='method', style='method', data=dfm, ax=axs[2])
-    _ = ax2.set_title(f"{lg}InvCDF")
-    return f
-
-
-def plot_ppc_loopit(
-    idata: az.data.inference_data.InferenceData,
-    kind: str = 'kde',
-    tgts: dict = {'y': 'yhat'},
+def plot_ppc(
+    mdl: BasePYMCModel,
+    idata: az.InferenceData = None,
+    group: str = 'posterior',
+    insamp: bool = True,
+    ecdf: bool = True,
+    data_pairs: dict = None,
     **kwargs,
 ) -> figure.Figure:
-    """Calc and Plot PPC & LOO-PIT after run `mdl.sample_posterior_predictive()`
-    also see
-    https://oriolabrilpla.cat/python/arviz/pymc3/2019/07/31/loo-pit-tutorial.html
+    """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF, does not
+    require log-likelihood.
+    NOTE: data_pairs {key (in observed): value (in {group}_predictive)}
     """
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
-    if len(tgts) > 1:
-        raise AttributeError(
-            'NOTE: live issue in Arviz, if more than one tgt '
-            + 'it will plot them all its own way'
-        )
-
-    f = plt.figure(figsize=(12, 6 * len(tgts)))
-    gs = gridspec.GridSpec(
-        2 * len(tgts),
-        2,
-        height_ratios=[1.5, 1] * len(tgts),
-        width_ratios=[1, 1],
-        figure=f,
+    kind = 'cumulative' if ecdf else 'kde'
+    kindnm = 'ECDF' if ecdf else 'KDE'
+    _idata = mdl.idata if idata is None else idata
+    f, axs = plt.subplots(len(data_pairs), 1, figsize=(12, 4 * len(data_pairs)))
+    _ = az.plot_ppc(
+        _idata, group=group, kind=kind, ax=axs, data_pairs=data_pairs, **kwargs
     )
-    var_names = kwargs.pop('var_names', None)
-
-    # TODO: live issue this selection doesnt work in Arviz,
-    # it just plots every tgt. so this loop is a placeholder that does work
-    # if there's only a single tgt
-    for i, (tgt, tgt_hat) in enumerate(tgts.items()):
-        ax0 = f.add_subplot(gs[0 + 4 * i, :])
-        ax1 = f.add_subplot(gs[2 + 4 * i])
-        ax2 = f.add_subplot(gs[3 + 4 * i], sharex=ax1)
-        _ = az.plot_ppc(
-            idata,
-            kind=kind,
-            flatten=None,
-            ax=ax0,
-            group='posterior',
-            data_pairs={tgt: tgt_hat},
-            var_names=var_names,
-            **kwargs,
-        )
-        # using y=tgt_hat below. seems wrong, possibly a bug in arviz
-        _ = az.plot_loo_pit(idata, y=tgt_hat, ax=ax1, **kwargs)
-        _ = az.plot_loo_pit(idata, y=tgt_hat, ecdf=True, ax=ax2, **kwargs)
-
-        _ = ax0.set_title(f'PPC Predicted {tgt_hat} vs Observed {tgt}')
-        _ = ax1.set_title(f'Predicted {tgt_hat} LOO-PIT')
-        _ = ax2.set_title(f'Predicted {tgt_hat} LOO-PIT cumulative')
-
-    _ = f.suptitle(' - '.join(filter(None, ['In-sample PPC', mdlname, txtadd])))
+    t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'
+    _ = f.suptitle(' - '.join(filter(None, [t, mdl.name, txtadd])))
     _ = f.tight_layout()
     return f
 
 
-def facetplot_df_dist(
-    df: pd.DataFrame, rvs: list, m: int = 3, rvs_hack: int = 0, **kwargs
+def plot_loo_pit(
+    mdl: BasePYMCModel, data_pairs: dict = None, **kwargs
 ) -> figure.Figure:
-    """Control facet positioning of Arviz Krushke style plots, data in df
-    Pass-through kwargs to az.plot_posterior, e.g. ref_val
-    """
-    raise DeprecationWarning('No longer needed, will deprecate in future versions')
-    # n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
-    # sharex = kwargs.get('sharex', False)
-    # f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n), sharex=sharex)
-    # ref_val = kwargs.get('ref_val', [None for i in range(len(df))])
+    """Calc and plot LOO-PIT after run `mdl.sample_posterior_predictive()`
+    ref: https://oriolabrilpla.cat/en/blog/posts/2019/loo-pit-tutorial.html
+    NOTE:
+    mdl.idata needs: observed_data AND log_likelihood AND posterior_predictive
+    data_pairs {key (in observed AND log_likelihood): value (in posterior_predictive)}
 
-    # for i, ft in enumerate(df.columns):
-    #     axarr = az.plot_posterior(
-    #         df[ft].values, ax=axs.flatten()[i], ref_val=ref_val[i]
-    #     )
-    #     axarr.set_title(ft)
-    # title = kwargs.get('title', '')
-    # _ = f.suptitle(f'{title} {rvs}', y=0.96 + n * 0.005)
-    # _ = f.tight_layout()
-    # return f
+    """
+    txtadd = kwargs.pop('txtadd', None)
+    f, axs = plt.subplots(len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)))
+    for i, (y, yhat) in enumerate(data_pairs.items()):
+        kws = dict(y=y, y_hat=yhat)
+        _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][0], **kwargs)
+        _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][1], ecdf=True, **kwargs)
+
+        _ = axs[i][0].set_title(f'Predicted {yhat} LOO-PIT')
+        _ = axs[i][1].set_title(f'Predicted {yhat} LOO-PIT cumulative')
+
+    _ = f.suptitle(' - '.join(filter(None, ['In-sample LOO-PIT', mdl.name, txtadd])))
+    _ = f.tight_layout()
+    return f
+
+
+def plot_compare(
+    idata_dict: dict[str, az.InferenceData], obs_list: list[str], **kwargs
+) -> tuple[figure.Figure, dict[str, pd.DataFrame]]:
+    """Calc and plot model comparison in-sample via expected log pointwise
+    predictive density (ELPD) using LOO
+    NOTE:
+    idata needs: observed_data AND log_likelihood
+    obs_list should be the key for observed_data AND log_likelihood
+
+    """
+    txtadd = kwargs.pop('txtadd', None)
+    sharex = kwargs.pop('sharex', False)
+    f, axs = plt.subplots(
+        len(obs_list),
+        1,
+        figsize=(12, 2.5 * len(obs_list) + 0.3 * len(idata_dict)),
+        squeeze=False,
+        sharex=sharex,
+    )
+    mdlnms = ' vs '.join(idata_dict.keys())
+    dfcompdict = {}
+    for i, y in enumerate(obs_list):
+        dfcomp = az.compare(
+            idata_dict, var_name=y, ic='loo', method='stacking', scale='log'
+        )
+        dfcompdict[y] = dfcomp
+        ax = az.plot_compare(
+            dfcomp, ax=axs[i][0], title=False, textsize=10, legend=False
+        )
+        _ = ax.set_title(y)
+
+    _ = f.suptitle(
+        ' '.join(
+            filter(
+                None,
+                [
+                    'In-sample Model Comparison (ELPD via LOO):',
+                    mdlnms,
+                    '\n(higher and tighter is better)',
+                    txtadd,
+                ],
+            )
+        )
+    )
+    _ = f.tight_layout()
+
+    return f, dfcompdict

@@ -42,16 +42,18 @@ This project uses a scientific Python stack, and enables & supports:
 
 ### Scope
 
-+ This package **is**:
-  + A work in progress (v0.y.z) and liable to breaking changes and inconveniences
-  to the user
-  + Solely designed for ease of use and rapid development by employees of Oreum
-  Industries, and selected clients with guidance
+This package **is**:
 
-+ This package **is not**:
-  + Intended for public usage and will not be supported for public usage
-  + Intended for contributions by anyone not an employee of Oreum Industries, and unsolicitied contributions will not be accepted
++ A work in progress (v0.y.z) and liable to breaking changes and inconvenience
+to the user
++ Solely designed for ease of use and rapid development by employees of
+  Oreum Industries, and selected clients with guidance
 
+This package **is not**:
+
++ Intended for public usage and will not be supported for public usage
++ Intended for contributions by anyone not an employee of Oreum Industries,
+  and unsolicitied contributions will not be accepted
 
 
 ## 2. Instructions to Create Dev Environment
@@ -83,21 +85,51 @@ Then allow `direnv` on MacOS to automatically run file `.envrc` upon directory o
 
 Notes:
 
-+ We use `conda` virtual envs provided by `miniconda`
-+ We install packages with compound method handled by `mamba` (quicker than `conda`)
-for the main environment and packages, and `pip` for selected packages that are
-handled better by pip and/or more up to date on pypi
-+ Packages might not be the very latest because we want stability for `pymc3`
-which is usually in a state of development flux
++ We use `conda` virtual envs controlled by `mamba` (quicker than `conda`)
++ We install packages using `miniforge` (sourced from the `conda-forge` repo)
+  wherever possible and only use `pip` for packages that are handled better by
+  `pip` and/or more up-to-date on [pypi](https://pypi.org)
++ Packages might not be the very latest because we want stability for `pymc`
+  which is usually in a state of development flux
 + See [cheat sheet of conda commands](https://conda.io/docs/_downloads/conda-cheatsheet.pdf)
-+ The `Makefile` creates a dev env and will also download and preinstall `Miniconda`
-if not yet installed on your system.
++ The `Makefile` creates a dev env and will also download and preinstall
+  `miniforge` if not yet installed on your system
 
+
+#### 2.2.1 Create the dev environment
+
+From the dir above `oreum_core/` project dir:
 
 ```zsh
-$> make dev
+$> make -C oreum_core/ dev
 ```
 
+This will also create some files to help confirm / diagnose successful installation:
+
++ `dev/install_log/blas_info.txt` for the `BLAS MKL` installation for `numpy`
++ `dev/install_log/pipdeptree[_rev].txt` lists installed package deps (and reversed)
++ `LICENSES_THIRD_PARTY.md` details the license for each package used
+
+
+#### 2.2.2 (Optional best practice) Test successful installation of dev environment
+
+From the dir above `oreum_core/` project dir:
+
+```zsh
+$> make -C oreum_core/ test-dev-env
+```
+
+This will also add files `dev/install_log/[numpy|scipy].txt` which detail
+successful installation (or not) for `numpy`, `scipy`
+
+
+#### 2.2.3 (Useful during env install experimentation): To remove the dev environment
+
+From the dir above `oreum_core/` project dir:
+
+```zsh
+$> make -C oreum_core/ uninstall
+```
 
 ### 2.3 Code Linting & Repo Control
 
@@ -116,8 +148,10 @@ development machines.
 #### 2.3.2 Github Actions
 
 We use [Github Actions](https://docs.github.com/en/actions/using-workflows) aka
-Github Workflows to run a suite of automated tests for commits received at the
-origin (i.e. GitHub)
+Github Workflows to run:
+
+1. A suite of automated tests for commits received at the origin (i.e. GitHub)
+2. Publishing to PyPi upon creating a GH Release
 
 + See `Makefile` for the CLI commands that are issued
 + See `.github/workflows/*` for workflow details

@@ -23,10 +23,12 @@ import seaborn as sns
 from matplotlib import figure, gridspec, lines, ticker
 from scipy import integrate, stats
 
+from . import get_fts_by_dtype
+
 __all__ = [
-    'plot_cat_count',
-    'plot_bool_count',
-    'plot_date_count',
+    'plot_cat_ct',
+    'plot_bool_ct',
+    'plot_date_ct',
     'plot_int_dist',
     'plot_float_dist',
     'plot_joint_numeric',
@@ -40,16 +42,17 @@ __all__ = [
     'plot_rmse_range_pair',
     'plot_r2_range',
     'plot_r2_range_pair',
-    'plot_ppc_vs_observed',
+    'plot_estimate',
     'plot_bootstrap_lr',
     'plot_bootstrap_lr_grp',
     'plot_bootstrap_grp',
     'plot_bootstrap_delta_grp',
-    'plot_grp_sum_dist_count',
-    'plot_grp_year_sum_dist_count',
+    'plot_grp_sum_dist_ct',
+    'plot_grp_year_sum_dist_ct',
     'plot_heatmap_corr',
     'plot_kj_summaries_for_linear_model',
-    'plot_grp_count',
+    'plot_grp_ct',
+    'plot_cdf_ppc_vs_obs',
 ]
 
 
@@ -99,7 +102,7 @@ def _get_kws_styling() -> dict:
     return kws
 
 
-def plot_cat_count(
+def plot_cat_ct(
     df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2
 ) -> figure.Figure:
     """Conv fn: plot group counts for cats and bools"""
@@ -108,7 +111,9 @@ def plot_cat_count(
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
+    f, ax2d = plt.plot_cdf_ppc_vs_obs(
+        vert, 2, squeeze=False, figsize=(12, vert * vsize)
+    )
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
@@ -148,7 +153,7 @@ def plot_cat_count(
     return f
 
 
-def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figure:
+def plot_bool_ct(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figure:
     """Conv fn: plot group counts for bools"""
 
     if len(fts) == 0:
@@ -185,7 +190,7 @@ def plot_bool_count(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.F
     return f
 
 
-def plot_date_count(
+def plot_date_ct(
     df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.8
 ) -> figure.Figure:
     """Plot group sizes for dates by strftime format"""
@@ -271,7 +276,7 @@ def plot_float_dist(
     log: bool = False,
     sharex: bool = False,
     sort: bool = True,
-) -> sns.FacetGrid:
+) -> figure.Figure:
     """
     Plot distributions for floats
     Annotate with count of nans, infs (+/-) and zeros
@@ -324,7 +329,12 @@ def plot_float_dist(
     )
     _ = gd.map(sns.violinplot, 'value', order='variable', cut=0, scale='count')
     _ = gd.map(
-        sns.pointplot, 'value', order='variable', color='C3', estimator=np.mean, ci=94
+        sns.pointplot,
+        'value',
+        order='variable',
+        color='C3',
+        estimator=np.mean,
+        errorbar=('ci', 94),
     )
     # https://stackoverflow.com/q/33486613/1165112
     # scatter_kws=(dict(edgecolor='k', edgewidth=100)))
@@ -332,60 +342,101 @@ def plot_float_dist(
 
     if log:
         _ = gd.set(xscale='log')  # , title=ft, ylabel='log(count)')
-    gd.fig.tight_layout(pad=0.8)
-    return gd
+    _ = gd.fig.tight_layout(pad=0.8)
+    return gd.fig
 
 
 def plot_joint_numeric(
     df: pd.DataFrame,
     ft0: str,
     ft1: str,
+    hue: str = None,
     kind: str = 'kde',
+    height: int = 6,
+    kdefill: bool = True,
     log: bool = False,
     subtitle: str = None,
     colori: int = 0,
     nsamp: int = None,
-) -> sns.JointGrid:
-    """Jointplot of 2 numeric fts. Suitable for int or float"""
-    kde_kws = dict(zorder=0, levels=7, cut=0, fill=True)
-    scatter_kws = dict(alpha=0.6, marker='o', linewidths=0.05, edgecolor='#999999')
+    linreg: bool = True,
+    legendpos: str = None,
+) -> figure.Figure:
+    """Jointplot of 2 numeric fts with optional: hue shading, linear regression
+    Suitable for int or float"""
+
+    dfp = df.copy()
+    ngrps = 1
+    kws = dict(color=f'C{colori%5}')  # color rotation max 5
 
     if nsamp is not None:
-        df = df.sample(nsamp, random_state=RSD).copy()
+        dfp = dfp.sample(nsamp, random_state=RSD).copy()
 
-    gd = sns.JointGrid(x=ft0, y=ft1, data=df, height=6)
+    if hue is not None:
+        ftsd = get_fts_by_dtype(dfp)
+        linreg = False
+        if hue in ftsd['int'] + ftsd['float']:  # bin into 5 equal quantiles
+            dfp[hue] = pd.qcut(dfp[hue].values, q=5)
+            kws['palette'] = 'viridis'
+        else:
+            ngrps = len(dfp[hue].unique())
+            kws['palette'] = sns.color_palette(
+                [f'C{i + colori%5}' for i in range(ngrps)]
+            )
+
+    gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=height, hue=hue)
+
+    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=kdefill, legend=True)
+    scatter_kws = kws | dict(
+        alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd', s=40
+    )
+    rug_kws = kws | dict(height=0.1, legend=False)
 
     if kind == 'kde':
-        _ = gd.plot_joint(sns.kdeplot, **kde_kws, color=f'C{colori%5}')
+        _ = gd.plot_joint(sns.kdeplot, **kde_kws)
     elif kind == 'scatter':
-        _ = gd.plot_joint(sns.regplot, scatter_kws=scatter_kws, color=f'C{colori%5}')
+        _ = gd.plot_joint(sns.scatterplot, **scatter_kws)
+        _ = gd.plot_marginals(sns.rugplot, **rug_kws)
+    elif kind == 'kde+scatter':
+        _ = gd.plot_joint(sns.kdeplot, **kde_kws)
+        _ = gd.plot_joint(sns.scatterplot, **scatter_kws)
+        _ = gd.plot_marginals(sns.rugplot, **rug_kws)
+    elif kind == 'reg':
+        _ = gd.plot_joint(sns.regplot, scatter_kws=scatter_kws, **kws)
+        _ = gd.plot_marginals(sns.rugplot, **rug_kws)
     else:
-        raise ValueError('provide `kind` as kde or scatter')
+        raise ValueError('kwarg `kind` must be in {kde, scatter, kde+scatter, reg}')
 
-    _ = gd.plot_marginals(sns.histplot, kde=True, color=f'C{colori%5}')
-    r = stats.linregress(x=df[ft0], y=df[ft1])
+    if legendpos is not None:
+        _ = sns.move_legend(gd.ax_joint, legendpos)
 
-    _ = gd.ax_joint.text(
-        0.98,
-        0.98,
-        # f"pearsonr = {stats.pearsonr(df[ft0], df[ft1])[0]:.4g}",
-        f"y = {r.slope:.2f}x + {r.intercept:.2f}\npearsonr = {r.rvalue:.2f}",
-        transform=gd.ax_joint.transAxes,
-        ha='right',
-        va='top',
-        fontsize=8,
-    )
+    _ = gd.plot_marginals(
+        sns.histplot, kde=True, **kws
+    )  # always want hist for marginals
+
+    if linreg:
+        r = stats.linregress(x=dfp[ft0], y=dfp[ft1])
+        _ = gd.ax_joint.text(
+            0.98,
+            0.98,
+            f"y = {r.slope:.2f}x + {r.intercept:.2f}\nρ = {r.rvalue:.2f}",
+            transform=gd.ax_joint.transAxes,
+            ha='right',
+            va='top',
+            fontsize=8,
+        )
+
     if log:
         _ = gd.ax_joint.set_xscale('log')
         _ = gd.ax_joint.set_yscale('log')
         _ = gd.ax_marg_x.set_xscale('log')
         _ = gd.ax_marg_y.set_yscale('log')
 
-    t = ('', 0.0) if subtitle is None else (f'\n{subtitle}', 0.04)
-    _ = gd.fig.suptitle(
-        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)} obs{t[0]}', y=1.02 + t[1]
+    t = '' if subtitle is None else f'\n{subtitle}'
+    _ = gd.figure.suptitle(
+        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)//ngrps} obs{t}', y=1.02, fontsize=14
     )
-    return gd
+    _ = gd.fig.tight_layout(pad=0.95)
+    return gd.fig
 
 
 def plot_mincovdet(df: pd.DataFrame, mcd, thresh: float = 0.99):
@@ -463,7 +514,7 @@ def plot_mincovdet(df: pd.DataFrame, mcd, thresh: float = 0.99):
     return None
 
 
-def plot_roc_precrec(df):
+def plot_roc_precrec(df: pd.DataFrame) -> tuple[figure.Figure, float, float]:
     """Plot ROC and PrecRec, also calc and return AUC
     Pass perf df from calc.calc_binary_performance_measures
     """
@@ -500,10 +551,10 @@ def plot_roc_precrec(df):
 
     f.tight_layout()
 
-    return roc_auc, prec_rec_auc
+    return f, roc_auc, prec_rec_auc
 
 
-def plot_f_measure(df):
+def plot_f_measure(df: pd.DataFrame) -> figure.Figure:
     """Plot F-measures (F0.5, F1, F2) at different percentiles"""
 
     f1_at = df['f1'].argmax()
@@ -520,9 +571,10 @@ def plot_f_measure(df):
         + f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct',
         y=1.03,
     )
+    return f
 
 
-def plot_accuracy(df):
+def plot_accuracy(df: pd.DataFrame) -> figure.Figure:
     """Plot accuracy at different percentiles"""
 
     acc_at = df['accuracy'].argmax()
@@ -534,9 +586,10 @@ def plot_accuracy(df):
         + f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct',
         y=1.03,
     )
+    return f
 
 
-def plot_binary_performance(df, n=1):
+def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
     """Plot ROC, PrecRec, F-score, Accuracy
     Pass perf df from calc.calc_binary_performance_measures
     Return summary stats
@@ -650,10 +703,10 @@ def plot_binary_performance(df, n=1):
     )
 
     f.tight_layout()
-    return None
+    return f
 
 
-def plot_coverage(df, title_add=''):
+def plot_coverage(df: pd.DataFrame, title_add: str = '') -> figure.Figure:
     """Convenience plot coverage from mt.calc_ppc_coverage"""
 
     txt_kws = dict(
@@ -691,10 +744,12 @@ def plot_coverage(df, title_add=''):
         title_add = f': {title_add}'
     g.fig.suptitle((f'PPC Coverage vs CR{title_add}'), y=1.05)
 
-    return None
+    return g.fig
 
 
-def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
+def plot_rmse_range(
+    rmse: float, rmse_pct: pd.Series, lims: tuple = (0, 80), yhat_name: str = ''
+) -> figure.Figure:
     """Convenience to plot RMSE range with mins"""
     dfp = rmse_pct.reset_index()
     dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
@@ -711,6 +766,7 @@ def plot_rmse_range(rmse, rmse_pct, lims=(0, 80), yhat_name=''):
     )
     _ = f.suptitle(f'RMSE ranges {yhat_name}', y=0.95)
     _ = ax.legend()
+    return f
 
 
 def plot_rmse_range_pair(
@@ -787,54 +843,104 @@ def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
     _ = f.tight_layout()
 
 
-def plot_ppc_vs_observed(y, yhat, xlim_max_override=None):
-    """Plot (quantile summaries of) yhat_ppc vs y"""
-    ps = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 97]
-    df_yhat_qs = pd.DataFrame(
-        np.percentile(yhat, ps, axis=1).T, columns=[f'q{p/100}' for p in ps]
+def plot_estimate(
+    df: pd.DataFrame,
+    nobs: int,
+    yhat: str = 'yhat',
+    force_xlim: list = None,
+    color: str = None,
+    kind: str = 'box',
+    arroverplot: np.array = None,
+    **kwargs,
+) -> figure.Figure:
+    """Plot distribution for estimates, either PPC or bootstrapped, no grouping
+    Optional overplot bootstrapped dfboot"""
+    txtadd = kwargs.pop('txtadd', None)
+    sty = _get_kws_styling()
+
+    mn = df[[yhat]].mean().tolist()  # estimated mean
+    hdi = df[yhat].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # estimated qs
+
+    clr = color if color is not None else sns.color_palette()[0]
+    _kws = dict(
+        box=dict(
+            kind='box',
+            sym='',
+            orient='h',
+            showmeans=True,
+            whis=(3, 97),
+            meanprops=sty['mn_pt_kws'],
+        ),
+        violin=dict(kind='violin', cut=0),
+        exceedance=dict(kind='ecdf', complementary=True, lw=2, legend=None),
     )
-
-    f, axs = plt.subplots(1, 1, figsize=(14, 5), sharey=True, sharex=True)
-    _ = sns.kdeplot(
-        y, cumulative=True, lw=2, c='g', ax=axs, common_norm=False, common_grid=True
-    )
-
-    if df_yhat_qs.duplicated().sum() == len(df_yhat_qs) - 1:
-        # all dupes: model was intercept only
-        dfm = df_yhat_qs.iloc[:1].melt(var_name='ppc_q')
-        _ = sns.rugplot(
-            x='value',
-            hue='ppc_q',
-            data=dfm,
-            palette='coolwarm',
-            lw=2,
-            ls='-',
-            height=1,
-            ax=axs,
-            zorder=-1,
+    kws = _kws.get(kind)
+    if kind == 'exceedance':
+        qs = kwargs.pop('qs', [0.5, 0.95, 0.99])
+        txtadd = ' - '.join(filter(None, ['Exceedance Curve', txtadd]))
+        gd = sns.displot(x=yhat, data=df, **kws, height=4, aspect=2.5)
+        _ = gd.axes[0][0].set(ylabel=f'P({yhat} > x)')  # , xlabel='dollars')
+        # _ = gd.axes[0][0].xaxis.set_major_formatter('${x:,.1f}')
+        df_qvals = df[[yhat]].quantile(qs)
+        df_qvals.index.name = 'quantile'
+        df_qvals = df_qvals.reset_index()
+        df_qvals['p_gt'] = 1 - df_qvals['quantile'].values
+        for q in qs:
+            _ = gd.axes[0][0].vlines(
+                df_qvals.loc[df_qvals['quantile'] == q, yhat].values,
+                0,
+                1 - q,
+                linestyles='dotted',
+                zorder=-1,
+                colors='#999999',
+            )
+        _ = sns.scatterplot(
+            x=yhat,
+            y='p_gt',
+            style='p_gt',
+            data=df_qvals,
+            markers=['^', 'd', 'o'],
+            ax=gd.axes[0][0],
+            s=100,
         )
-    else:
-        dfm = df_yhat_qs.melt(var_name='ppc_q')
-        _ = sns.kdeplot(
-            x='value',
-            hue='ppc_q',
-            data=dfm,
-            cumulative=True,
-            palette='coolwarm',
-            lw=2,
-            ls='-',
-            ax=axs,
-            zorder=-1,
-            common_norm=False,
-            common_grid=True,
+        handles, labels = gd.axes[0][0].get_legend_handles_labels()
+        lbls = [str(round(float(lb), 2)) for lb in labels]  # HACK floating point
+        gd.axes[0][0].legend(handles, lbls, loc='upper right', title='P(yhat) > x')
+        summary = ', '.join(
+            df_qvals[['p_gt', 'yhat']]
+            .apply(lambda r: f'P(yhat) > {r[1]:.1f} = {r[0]:.2f}', axis=1)
+            .tolist()
         )
 
-    if xlim_max_override is not None:
-        _ = axs.set(xlim=(0, xlim_max_override), ylim=(0, 1))
-    else:
-        _ = axs.set(xlim=(0, np.ceil(y.max())), ylim=(0, 1))
+    elif kind == 'box':
+        gd = sns.catplot(x=yhat, data=df, **kws, color=clr, height=2.5, aspect=4)
+        if arroverplot is not None:
+            _ = sns.pointplot(
+                arroverplot,
+                estimator=np.mean,
+                errorbar=('ci', 94),
+                color='C1',
+                linestyles='-',
+                orient='h',
+            )
+        _ = [
+            gd.ax.annotate(f'{v:.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
+            for i, v in enumerate(mn)
+        ]
+        elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
+        gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
+        if force_xlim is not None:
+            _ = gd.ax.set(xlim=force_xlim)
+        summary = (
+            f'Mean = {mn[0]:.1f}, '
+            + f'HDI_50 = [{hdi[1]:.1f}, {hdi[2]:.1f}], '
+            + f'HDI_94 = [{hdi[0]:.1f}, {hdi[3]:.1f}]'
+        )
 
-    _ = f.suptitle('Cumulative density plot of the posterior predictive vs actual')
+    t = f'Summary Distribution of {yhat} estimate for {nobs} obs'
+    _ = gd.fig.suptitle(' - '.join(filter(None, [t, txtadd])) + f'\n{summary}')
+    _ = gd.fig.tight_layout()
+    return gd.fig
 
 
 def plot_bootstrap_lr(
@@ -848,7 +954,7 @@ def plot_bootstrap_lr(
     title_pol_summary: bool = False,
     force_xlim: list = None,
     color: str = None,
-) -> sns.axisgrid.FacetGrid:
+) -> figure.Figure:
     """Plot bootstrapped loss ratio, no grouping"""
 
     sty = _get_kws_styling()
@@ -914,7 +1020,7 @@ def plot_bootstrap_lr(
         )
     )
     _ = plt.tight_layout()
-    return gd
+    return gd.fig
 
 
 def plot_bootstrap_lr_grp(
@@ -929,7 +1035,7 @@ def plot_bootstrap_lr_grp(
     title_pol_summary: bool = False,
     force_xlim: list = None,
     annot_pest: bool = False,
-) -> gridspec.GridSpec:
+) -> figure.Figure:
     """Plot bootstrapped loss ratio, grouped by grp"""
     # TODO create y order e.g. ct = dfp.groupby(grp).size().sort_values()[::-1]
     sty = _get_kws_styling()
@@ -1009,12 +1115,17 @@ def plot_bootstrap_lr_grp(
     )
     _ = f.suptitle(f'{title}{title_add}{pol_summary}')
     _ = plt.tight_layout()
-    return gs
+    return f
 
 
 def plot_bootstrap_grp(
-    dfboot, df, grp='grp', val='y_eloss', title_add='', force_xlim=None
-):
+    dfboot: pd.DataFrame,
+    df: pd.DataFrame,
+    grp: str = 'grp',
+    val: str = 'y_eloss',
+    title_add: str = '',
+    force_xlim=None,
+) -> figure.Figure:
     """Plot bootstrapped value, grouped by grp"""
     sty = _get_kws_styling()
 
@@ -1080,7 +1191,7 @@ def plot_bootstrap_grp(
     )
     _ = f.suptitle(f'{title}{title_add}')
     _ = plt.tight_layout()
-    return gs
+    return f
 
 
 def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
@@ -1131,7 +1242,69 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
     return gs
 
 
-def plot_grp_sum_dist_count(
+def plot_sum_dist(
+    df: pd.DataFrame,
+    val: str = 'y_eloss',
+    title_add: str = '',
+    plot_outliers: bool = True,
+    palette: sns.palettes._ColorPalette = None,
+) -> gridspec.GridSpec:
+    """Plot simple diagnostics (sum, distribution) of numeric value `val`,
+    Returns a GridSpec
+    """
+    sty = _get_kws_styling()
+    idx = df[val].notnull()
+    dfp = df.loc[idx].copy()
+
+    f = plt.figure(figsize=(12, 2))
+    gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], figure=f)
+    ax0 = f.add_subplot(gs[0])
+    ax1 = f.add_subplot(gs[1])
+
+    ax0.set_title('Distribution of bootstrapped sum')
+    ax1.set_title('Distribution of indiv. values')
+
+    if palette is None:
+        palette = 'viridis'
+
+    _ = sns.pointplot(
+        x=val, data=dfp, palette=palette, estimator=np.sum, errorbar=('ci', 94), ax=ax0
+    )
+
+    sym = 'k' if plot_outliers else ''
+    _ = sns.boxplot(
+        x=val,
+        data=dfp,
+        palette=palette,
+        sym=sym,
+        whis=[3, 97],
+        showmeans=True,
+        meanprops=sty['mn_pt_kws'],
+        ax=ax1,
+    )
+
+    if title_add != '':
+        title_add = f'\n{title_add}'
+    title = f'Diagnostic 1D plots of `{val}`'
+    _ = f.suptitle(f'{title}{title_add}', fontsize=16)
+
+    if sum(idx) > 0:
+        t = (
+            f'Note: {sum(~idx):,.0f} NaNs found in value,'
+            f'\nplotted non-NaN dataset of {sum(idx):,.0f}'
+        )
+        _ = ax1.annotate(
+            t, xy=(0.96, 0.96), xycoords='figure fraction', ha='right', fontsize=8
+        )
+
+    ax0.xaxis.label.set_visible(False)
+    ax1.xaxis.label.set_visible(False)
+
+    _ = plt.tight_layout()
+    return gs
+
+
+def plot_grp_sum_dist_ct(
     df: pd.DataFrame,
     grp: str = 'grp',
     val: str = 'y_eloss',
@@ -1139,28 +1312,35 @@ def plot_grp_sum_dist_count(
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
-    yorder_count: bool = True,
-) -> gridspec.GridSpec:
-    """Plot simple diagnostics (sum, distribution and count)
-    of a numeric value `val`, grouped by a categorical value `grp`, with group
-    ordered by count desc
-
-    Returns a GridSpec
+    yorder: list = None,
+    palette: sns.palettes._ColorPalette = None,
+) -> figure.Figure:
+    """Plot simple diagnostics (sum, distribution, count) of numeric value `val`,
+    grouped by categorical value `grp`, with group, ordered by count desc
     """
     sty = _get_kws_styling()
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
 
-    grpsort = sorted(dfp[grp].unique())[::-1]  # reverse often best for datetimes
+    dfg = dfp.groupby('corr_kind').size()
 
+    # order by descending date or count
+    if not dfp[grp].dtypes in ['object', 'category']:
+        if not pd.to_datetime(dfp[grp], errors='coerce').isnull().any():
+            idx_rev = dfg.index.values[::-1]
+            dfg = dfg.reindex(idx_rev)
+        else:
+            dfg = dfg.sort_values()[::-1]
+
+    if yorder is not None:
+        dfg = dfg.reindex(yorder)
+
+    names = dfg.index.values
     if not dfp[grp].dtypes in ['object', 'category']:
         dfp[grp] = dfp[grp].map(lambda x: f's{x}')
-        grpsort = [f's{x}' for x in grpsort]
+        names = [f's{x}' for x in names]
 
-    sz = dfp.groupby(grp).size()
-    ct = sz.sort_values()[::-1] if yorder_count else sz.reindex(grpsort)
-
-    f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
+    f = plt.figure(figsize=(16, 2 + (len(dfg) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
@@ -1176,14 +1356,17 @@ def plot_grp_sum_dist_count(
     ax1.set_title('Distribution of indiv. values')
     ax2.set_title('Count')
 
+    if palette is None:
+        palette = 'viridis'
+
     _ = sns.pointplot(
         x=val,
         y=grp,
-        order=ct.index.values,
+        order=dfg.index.values,
         data=dfp,
-        palette='viridis',
+        palette=palette,
         estimator=np.sum,
-        ci=94,
+        errorbar=('ci', 94),
         ax=ax0,
     )
 
@@ -1191,9 +1374,9 @@ def plot_grp_sum_dist_count(
     _ = sns.boxplot(
         x=val,
         y=grp,
-        order=ct.index.values,
+        order=dfg.index.values,
         data=dfp,
-        palette='viridis',
+        palette=palette,
         sym=sym,
         whis=[3, 97],
         showmeans=True,
@@ -1201,12 +1384,12 @@ def plot_grp_sum_dist_count(
         ax=ax1,
     )
 
-    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette='viridis', ax=ax2)
+    _ = sns.countplot(y=grp, data=dfp, order=dfg.index.values, palette=palette, ax=ax2)
     _ = [
         ax2.annotate(
-            f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **sty['count_txt_h_kws']
+            f'{c} ({c/dfg.sum():.0%})', xy=(c, i % len(dfg)), **sty['count_txt_h_kws']
         )
-        for i, c in enumerate(ct)
+        for i, c in enumerate(dfg)
     ]
 
     if plot_grid:
@@ -1229,10 +1412,11 @@ def plot_grp_sum_dist_count(
         )
 
     _ = plt.tight_layout()
-    return gs
+    f = plt.gcf()
+    return f
 
 
-def plot_grp_year_sum_dist_count(
+def plot_grp_year_sum_dist_ct(
     df: pd.DataFrame,
     grp: str = 'grp',
     val: str = 'y_eloss',
@@ -1242,7 +1426,7 @@ def plot_grp_year_sum_dist_count(
     plot_compact: bool = True,
     plot_grid: bool = True,
     yorder_count: bool = True,
-) -> gridspec.GridSpec:
+) -> figure.Figure:
     """Plot a grouped value split by year: sum, distribution and count"""
 
     sty = _get_kws_styling()
@@ -1297,7 +1481,7 @@ def plot_grp_year_sum_dist_count(
             ax=ax0d[i],
             palette='viridis',
             estimator=np.sum,
-            ci=94,
+            errorbar=('ci', 94),
             linestyles='-',
         )
 
@@ -1335,8 +1519,8 @@ def plot_grp_year_sum_dist_count(
     _ = f.suptitle(f'{title}{title_add}', fontsize=16)
 
     _ = plt.tight_layout()
-
-    return gs
+    f = plt.gcf()
+    return f
 
 
 def plot_heatmap_corr(dfx_corr: pd.DataFrame, title_add: str = '') -> figure.Figure:
@@ -1402,7 +1586,7 @@ def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add='psi'):
     return gd
 
 
-def plot_grp_count(
+def plot_grp_ct(
     df: pd.DataFrame, grp: str = 'grp', title_add: str = ''
 ) -> figure.Figure:
     """Simple countplot for factors in grp, label with percentages
@@ -1435,3 +1619,59 @@ def plot_grp_count(
     _ = plt.tight_layout()
 
     return f
+
+
+def plot_cdf_ppc_vs_obs(
+    y: np.ndarray, yhat: np.ndarray, xlim_max_override=None
+) -> figure.Figure:
+    """Plot (quantile summaries of) yhat_ppc vs y
+    NOTE:
+    y shape: (nobs,)
+    yhat shape: (nobs, nsamples)
+    """
+    ps = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 97]
+    df_yhat_qs = pd.DataFrame(
+        np.percentile(yhat, ps, axis=1).T, columns=[f'q{p/100}' for p in ps]
+    )
+
+    f, axs = plt.subplots(1, 1, figsize=(14, 5), sharey=True, sharex=True)
+    _ = sns.kdeplot(
+        y, cumulative=True, lw=2, c='g', ax=axs, common_norm=False, common_grid=True
+    )
+
+    if df_yhat_qs.duplicated().sum() == len(df_yhat_qs) - 1:
+        # all dupes: model was intercept only
+        dfm = df_yhat_qs.iloc[:1].melt(var_name='ppc_q')
+        _ = sns.rugplot(
+            x='value',
+            hue='ppc_q',
+            data=dfm,
+            palette='coolwarm',
+            lw=2,
+            ls='-',
+            height=1,
+            ax=axs,
+            zorder=-1,
+        )
+    else:
+        dfm = df_yhat_qs.melt(var_name='ppc_q')
+        _ = sns.kdeplot(
+            x='value',
+            hue='ppc_q',
+            data=dfm,
+            cumulative=True,
+            palette='coolwarm',
+            lw=2,
+            ls='-',
+            ax=axs,
+            zorder=-1,
+            common_norm=False,
+            common_grid=True,
+        )
+
+    if xlim_max_override is not None:
+        _ = axs.set(xlim=(0, xlim_max_override), ylim=(0, 1))
+    else:
+        _ = axs.set(xlim=(0, np.ceil(y.max())), ylim=(0, 1))
+
+    _ = f.suptitle('Cumulative density plot of the posterior predictive vs actual')

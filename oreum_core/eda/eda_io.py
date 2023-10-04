@@ -24,7 +24,7 @@ from matplotlib import figure
 
 from oreum_core.file_io import BaseFileIO
 
-from .describe import custom_describe, get_fts_by_dtype
+from .describe import describe, get_fts_by_dtype
 
 __all__ = ['FigureIO', 'display_image_file', 'output_data_dict']
 
@@ -92,7 +92,7 @@ def output_data_dict(
 
     # get desc overview
     nrows = 3
-    dfd = custom_describe(df, nrows=nrows, return_df=True)
+    dfd = describe(df, nrows=nrows, return_df=True)
     cols = dfd.columns.values
     cols[:nrows] = [f'example_row_{i}' for i in range(nrows)]
     dfd.columns = cols

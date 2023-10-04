@@ -1,6 +1,6 @@
 # .pre-commit-config.yaml
 default_language_version:
-  python: python3.9
+  python: python3.10
 default_stages: [commit, push]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks  # general checks
@@ -31,7 +31,7 @@ repos:
       - id: no-print-statements
         files: ^oreum_core/
   - repo: https://github.com/psf/black  # black formatter
-    rev: 23.1.0
+    rev: 23.9.1
     hooks:
       - id: black
         files: ^oreum_core/
@@ -41,12 +41,12 @@ repos:
       - id: isort
         files: ^oreum_core/
   - repo: https://github.com/pycqa/flake8  # flake8 linter
-    rev: 6.0.0
+    rev: 6.1.0
     hooks:
       - id: flake8
         files: ^oreum_core/
   - repo: https://github.com/pycqa/bandit  # basic security checks for python code
-    rev: 1.7.4
+    rev: 1.7.5
     hooks:
       - id: bandit
         files: ^oreum_core/
@@ -60,7 +60,7 @@ repos:
         args: [--config, pyproject.toml]
         pass_filenames: false  # see https://github.com/econchick/interrogate/issues/60#issuecomment-1180262851
   - repo: https://gitlab.com/iam-cms/pre-commit-hooks  # apply Apache2 header
-    rev: v0.1.1
+    rev: v0.3.0
     hooks:
       - id: apache-license
         files: ^oreum_core/

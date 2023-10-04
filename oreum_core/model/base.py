@@ -17,29 +17,33 @@
 import logging
 
 import arviz as az
-import pymc3 as pm
+import pymc as pm
+import xarray as xa
 
-__all__ = ['BasePYMC3Model']
+from .calc import compute_log_likelihood_for_potential
+
+__all__ = ['BasePYMCModel']
 
 _log = logging.getLogger(__name__)
-_log_pymc = logging.getLogger('pymc3')  # force pymc3 chatty prints to log
-_log_pymc.setLevel(logging.WARNING)
+_log_pymc = logging.getLogger('pymc')  # force pymc chatty prints to log
+_log_pymc.setLevel(logging.ERROR)
+# logging.captureWarnings(True) # further force chatty pymc warnings to log (py.warnings)
 
 
-class BasePYMC3Model:
-    """Base handler / wrapper to build, sample, store traces for a PyMC3 model.
+class BasePYMCModel:
+    """Base handler / wrapper to build, sample, store traces for a pymc model.
     NOTE:
     + This class is to be inherited e.g. `super().__init__(*args, **kwargs)`
     + Children must declare a _build() method and define obs within __init__()
     + To get prior, posterior, and ppc traces, please use the .idata attribute
     """
 
-    RSD = 42
+    rsd = 42
 
     def __init__(self, **kwargs):
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
-        https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc3/sampling.py#L277
+        https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc/sampling.py#L277
         Usage note: override kws directly on downstream instance e.g.
         def __init__(self, **kwargs):
             super().__init__(*args, **kwargs)
@@ -47,11 +51,11 @@ class BasePYMC3Model:
         """
         self.model = None
         self._idata = None
-        self.sample_prior_predictive_kws = dict(draws=500)
-        self.sample_posterior_predictive_kws = dict(fast=True, store_ppc=False)
+        self.replace_idata = False
+        self.sample_prior_predictive_kws = dict(samples=500)
+        self.sample_posterior_predictive_kws = dict(store_ppc=True, ppc_insample=False)
         self.sample_kws = dict(
             init='auto',  # aka jitter+adapt_diag
-            random_seed=self.RSD,
             tune=2000,  # NOTE: often need to bump this much higher e.g. 5000
             draws=500,
             chains=4,
@@ -61,45 +65,14 @@ class BasePYMC3Model:
             progressbar=True,
         )
         self.rvs_for_posterior_plots = []
+        self.calc_potential_loglike = False
+        self.rvs_potential_loglike = None
         self.name = getattr(self, 'name', 'unnamed_model')
         self.version = getattr(self, 'version', 'unversioned_model')
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
-    def _create_idata(self, **kwargs):
-        """Create Arviz InferenceData object
-        NOTE: use ordered exceptions, with assumption that we always use
-            an ordered workflow: prior, trace, ppc
-        """
-        k = dict(model=self.model)
-
-        if (
-            idata_kwargs := kwargs.get('idata_kwargs', self.sample_kws['idata_kwargs'])
-        ) is not None:
-            k.update(**idata_kwargs)
-
-        # update dict with pymc3 outputs
-        if (prior := kwargs.get('prior', None)) is not None:
-            k['prior'] = prior
-
-        if (ppc := kwargs.get('posterior_predictive', None)) is not None:
-            k['posterior_predictive'] = ppc
-            # by logic in sample_postrior_predictive there exists self.idata.posterior
-        elif (posterior := kwargs.get('posterior', None)) is not None:
-            k['trace'] = posterior
-        else:
-            pass
-
-        idata = az.from_pymc3(**k)
-
-        # extend idata with any other older data
-        try:
-            idata.extend(self.idata, join='left')
-        except AssertionError:
-            pass  # idata doesnt exist
-
-        return idata
-
-    def _get_posterior(self):
+    @property
+    def posterior(self) -> xa.Dataset:
         """Returns posterior from idata from previous run of sample"""
         try:
             self.idata.posterior
@@ -108,10 +81,21 @@ class BasePYMC3Model:
         return self.idata.posterior
 
     @property
-    def idata(self):
+    def idata(self) -> az.InferenceData:
         """Returns Arviz InferenceData built from sampling to date"""
         assert self._idata, "Run update_idata() first"
         return self._idata
+
+    def describe_rvs(self) -> dict[list]:
+        """Returns a dict of lists of stringnames of RVs"""
+        return dict(
+            basic=self.model.basic_RVs,
+            unobserved=self.model.unobserved_RVs,
+            observed=self.model.observed_RVs,
+            free=self.model.free_RVs,
+            potentials=self.model.potentials,
+            deterministics=self.model.deterministics,
+        )
 
     def build(self, **kwargs):
         """Build the model"""
@@ -146,32 +130,36 @@ class BasePYMC3Model:
           [MRE Notebook gist](https://gist.github.com/jonsedar/070319334bcf033773cc3e9495c79ea0)
           that illustrates the issue.
         + I have created and tested a fix as described in my
-        [issue ticket](https://github.com/pymc-devs/pymc3/issues/4598)
+          [issue ticket](https://github.com/pymc-devs/pymc/issues/4598)
         """
-        draws = kwargs.pop('draws', self.sample_prior_predictive_kws['draws'])
-        random_seed = kwargs.pop('random_seed', self.sample_kws['random_seed'])
+        kws = dict(
+            random_seed=kwargs.pop('random_seed', self.rsd),
+            samples=kwargs.pop('samples', self.sample_prior_predictive_kws['samples']),
+        )
+        replace = kwargs.pop('replace', self.replace_idata)
 
         with self.model:
-            prior = pm.sample_prior_predictive(
-                samples=draws, random_seed=random_seed, **kwargs
-            )
-        _ = self.update_idata(prior=prior)
-        _log.info(f'Sampled prior predictive for {self.name} {self.version}')
+            try:
+                prior = pm.sample_prior_predictive(**{**kws, **kwargs})
+            except UserWarning as e:
+                _log.warning('Warning in mdl.sample_prior_predictive()', exc_info=e)
+            finally:
+                _ = self.update_idata(prior, replace=replace)
+            _log.info(f'Sampled prior predictive for {self.name} {self.version}')
         return None
 
     def sample(self, **kwargs):
         """Sample posterior: use base class defaults self.sample_kws
         or passed kwargs for pm.sample()
         """
-        kws_sample = dict(
+        kws = dict(
             init=kwargs.pop('init', self.sample_kws['init']),
-            random_seed=kwargs.pop('random_seed', self.sample_kws['random_seed']),
+            random_seed=kwargs.pop('random_seed', self.rsd),
             tune=kwargs.pop('tune', self.sample_kws['tune']),
             draws=kwargs.pop('draws', self.sample_kws['draws']),
             chains=kwargs.pop('chains', self.sample_kws['chains']),
             cores=kwargs.pop('cores', self.sample_kws['cores']),
             progressbar=kwargs.pop('progressbar', self.sample_kws['progressbar']),
-            return_inferencedata=False,
         )
 
         target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
@@ -183,64 +171,78 @@ class BasePYMC3Model:
                 'metropolis': pm.Metropolis(target_accept=target_accept),
                 'advi': pm.ADVI(),
             }
-            kws_sample['step'] = common_stepper_options.get(step, None)
+            kws['step'] = common_stepper_options.get(step, None)
 
             try:
-                posterior = pm.sample(**{**kws_sample, **kwargs})
+                posterior = pm.sample(**{**kws, **kwargs})
             except UserWarning as e:
-                _log.warning('Warning in sample()', exc_info=e)
+                _log.warning('Warning in mdl.sample()', exc_info=e)
             finally:
-                _ = self.update_idata(posterior=posterior)
+                _ = self.update_idata(posterior)
 
         _log.info(f'Sampled posterior for {self.name} {self.version}')
+
+        # optional calculate loglikelihood for potentials
+        if self.calc_potential_loglike:
+            self.idata.add_groups(
+                dict(
+                    log_likelihood=compute_log_likelihood_for_potential(
+                        idata=self.idata,
+                        model=self.model,
+                        var_names=self.rvs_potential_loglike,
+                        extend_inferencedata=False,
+                    )
+                )
+            )
+            for nm in self.rvs_potential_loglike:
+                nm0 = nm.strip('pot_')
+                self.idata['log_likelihood'][nm0] = self.idata['log_likelihood'][nm]
+                del self.idata['log_likelihood'][nm]
+
         return None
 
     def sample_posterior_predictive(self, **kwargs):
         """Sample posterior predictive
         use self.sample_posterior_predictive_kws or passed kwargs
-        Note defaults aimed toward PPC in production
-            + Use pm.fast_sample_posterior_predictive()
-            + Don't store ppc on model object and just return an updated idata
+        Note by default aimed toward out-of-sample PPC in production
         """
-        fast = kwargs.pop('fast', self.sample_posterior_predictive_kws['fast'])
         store_ppc = kwargs.pop(
             'store_ppc', self.sample_posterior_predictive_kws['store_ppc']
         )
         kws = dict(
-            trace=self._get_posterior(),
-            random_seed=kwargs.pop('random_seed', self.sample_kws['random_seed']),
-            samples=kwargs.get('n_samples', None),
+            trace=self.posterior,
+            random_seed=kwargs.pop('random_seed', self.rsd),
+            predictions=not kwargs.pop(
+                'ppc_insample', self.sample_posterior_predictive_kws['ppc_insample']
+            ),
         )
-
         with self.model:
-            if fast:
-                ppc = pm.fast_sample_posterior_predictive(**{**kws, **kwargs})
-            else:
-                ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
+            ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
 
         _log.info(f'Sampled ppc for {self.name} {self.version}')
 
         if store_ppc:
-            _ = self.update_idata(posterior_predictive=ppc)
+            _ = self.update_idata(ppc)
         else:
-            return self._create_idata(posterior_predictive=ppc)
+            return ppc
 
-    def replace_obs(self, new_obs):
+    def replace_obs(self, obsd: dict = None) -> None:
         """Replace the observations
-        Assumes data lives in pm.Data containers in your _build() function
+        Assumes data lives in pm.MutableData containers in your _build() function
         You must call `build()` afterward
         Optionally afterwards call `extend_build()` for future time-dependent PPC
         """
-        self.obs = new_obs
-        _log.info(f'Replaced obs in {self.name} {self.version}')
+        for k, v in obsd.items():
+            setattr(self, k, v)
+            _log.info(f'Replaced obs {k} in {self.name} {self.version}')
 
-    def update_idata(self, idata: az.InferenceData = None, **kwargs):
-        """Create (and updated) an Arviz InferenceData object on-model
-        from current set of self.attributes
-        or from a passed-in presampled idata object
+    def update_idata(self, idata: az.InferenceData, replace: bool = False) -> None:
+        """Create (and update) an Arviz InferenceData object on-model from a
+        passed-in presampled InferenceData object
         """
-        if idata is not None:
+        # TODO improve this logic to use self.idata
+        if self._idata is None:
             self._idata = idata
         else:
-            self._idata = self._create_idata(**kwargs)
-        return None
+            side = 'right' if replace else 'left'
+            self._idata.extend(idata, join=side)

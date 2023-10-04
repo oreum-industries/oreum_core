@@ -37,14 +37,14 @@ _log = logging.getLogger(__name__)
 class DatatypeConverter:
     """Force correct datatypes according to what model expects"""
 
-    def __init__(self, fts, ftslvlcat={}, date_format='%Y-%m-%d'):
+    def __init__(self, ftsd: dict, ftslvlcat: dict = {}, date_format: str = '%Y-%m-%d'):
         """Initialise with fts and fts_dtype_pandas_categorical
         The pandas categorical dtype logically sits on top of a str object
         giving it order which is critical for patsy dmatrix transform
         and thus model structure.
 
         Use with a fts dict of form:
-            fts = dict(
+            ftsd = dict(
                 fid = [],
                 fcat = [],
                 fbool = [],
@@ -54,15 +54,15 @@ class DatatypeConverter:
                 ffloat =[],
                 fverbatim = [],        # maintain in current dtype)
         """
-        self.fts = dict(
-            fid=fts.get('fid', []),
-            fcat=fts.get('fcat', []),
-            fbool=fts.get('fbool', []),
-            fdate=fts.get('fdate', []),
-            fyear=fts.get('fyear', []),
-            fint=fts.get('fint', []),
-            ffloat=fts.get('ffloat', []),
-            fverbatim=fts.get('fverbatim', []),  # keep verbatim
+        self.ftsd = dict(
+            fid=ftsd.get('fid', []),
+            fcat=ftsd.get('fcat', []),
+            fbool=ftsd.get('fbool', []),
+            fdate=ftsd.get('fdate', []),
+            fyear=ftsd.get('fyear', []),
+            fint=ftsd.get('fint', []),
+            ffloat=ftsd.get('ffloat', []),
+            fverbatim=ftsd.get('fverbatim', []),  # keep verbatim
         )
         self.ftslvlcat = ftslvlcat
         self.rx_number_junk = re.compile(r'[#$€£₤¥,;%\s]')
@@ -79,7 +79,8 @@ class DatatypeConverter:
         snl = SnakeyLowercaser()
 
         # subselect desired fts
-        fts_all = [w for k, v in self.fts.items() for w in v]
+        # TODO make this optional
+        fts_all = [w for _, v in self.fts.items() for w in v]
         df = dfraw[fts_all].copy()
 
         for ft in self.fts['fid'] + self.fts['fcat']:
@@ -337,7 +338,7 @@ class Transformer:
         self.design_info = df_ex.design_info
 
         # force patsy transform of an F() to int feature back to int not float
-        fts_force_to_int = []
+        fts_force_to_int = ['intercept']  # also force intercept
         fts_force_to_int = list(self.fts_fact_mapping.keys())
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)

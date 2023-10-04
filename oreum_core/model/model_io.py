@@ -18,10 +18,12 @@ import logging
 from pathlib import Path
 
 import arviz as az
-from pymc3.model_graph import model_to_graphviz
+from pymc.model_graph import model_to_graphviz
 
 from oreum_core.file_io import BaseFileIO
-from oreum_core.model import BasePYMC3Model
+from oreum_core.model import BasePYMCModel
+
+__all__ = ['ModelIO']
 
 _log = logging.getLogger(__name__)
 
@@ -41,8 +43,8 @@ class ModelIO(BaseFileIO):
         _log.info(f'Read idata from {str(path.resolve())}')
         return az.from_netcdf(str(path.resolve()))
 
-    def write_idata(self, mdl: BasePYMC3Model, fqn: str = '') -> Path:
-        """Accept a BasePYMC3Model object mdl, and fqn e.g. `model/mdl.netcdf`
+    def write_idata(self, mdl: BasePYMCModel, fqn: str = '') -> Path:
+        """Accept a BasePYMCModel object mdl, and fqn e.g. `model/mdl.netcdf`
         write to fqn
         """
         path = self.get_path_write(fqn, use_rootdir=False)
@@ -53,23 +55,25 @@ class ModelIO(BaseFileIO):
         return path
 
     def write_graph(
-        self, mdl: BasePYMC3Model, fqn: str = '', format: str = 'png'
+        self, mdl: BasePYMCModel, fqn: str = '', txtadd: str = None, fmt: str = 'png'
     ) -> Path:
-        """Accept a BasePYMC3Model object mdl, get the graphviz representation
+        """Accept a BasePYMCModel object mdl, get the graphviz representation
         Write to file and return the fqn to allow use within eda.display_image_file()
         """
         path = self.get_path_write(fqn)
         if fqn == '':
-            path = path.joinpath(Path(f'{mdl.name}.{format}'))
+            path = path.joinpath(
+                Path(f"{'_'.join(filter(None, [mdl.name, txtadd]))}.{fmt}")
+            )
         gv = model_to_graphviz(mdl.model, formatting='plain')
-        if format == 'png':
+        if fmt == 'png':
             gv.attr(dpi='300')
-        elif format == 'svg':
+        elif fmt == 'svg':
             pass
         else:
             raise ValueError('format must be in {"png", "svg"}')
 
         # gv auto adds the file extension, so pre-remove if present
-        gv.render(filename=str(path.with_suffix('')), format=format, cleanup=True)
+        gv.render(filename=str(path.with_suffix('')), format=fmt, cleanup=True)
         _log.info(f'Written to {str(path.resolve())}')
         return path

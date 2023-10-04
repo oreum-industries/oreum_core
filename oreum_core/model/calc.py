@@ -15,15 +15,23 @@
 # model.calc.py
 """Common Calculations for Model Evaluation"""
 import sys
+from typing import Any, Dict, Optional, Sequence, Tuple, cast
 
 import numpy as np
 import pandas as pd
-import pymc3 as pm
-import theano
-import theano.tensor as tt
+import pymc
+import pytensor
+import pytensor.tensor as pt
+from arviz import InferenceData, dict_to_dataset
+from fastprogress import progress_bar
+from pymc.backends.arviz import _DefaultTrace  # , coords_and_dims_for_inferencedata
+from pymc.model import Model, modelcontext
+from pymc.pytensorf import PointFunc
+from pymc.util import dataset_to_point_list
 
 __all__ = [
-    'calc_f_measure',
+    'log_jcd',
+    'calc_f_beta',
     'calc_binary_performance_measures',
     'calc_mse',
     'calc_rmse',
@@ -31,11 +39,9 @@ __all__ = [
     'calc_bayesian_r2',
     'calc_ppc_coverage',
     'expand_packed_triangular',
-    'calc_dist_fns_over_x',
-    'calc_dist_fns_over_x_manual_only',
-    'log_jcd',
     'calc_2_sample_delta_prop',
     'numpy_invlogit',
+    'compute_log_likelihood_for_potential',
 ]
 
 
@@ -43,12 +49,42 @@ RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
 
-def calc_f_measure(precision, recall, b=1):
-    """Choose b such that recall is b times more important than precision"""
-    return (1 + b**2) * (precision * recall) / ((b**2 * precision) + recall)
+def log_jcd(f_inv_x: pt.TensorVariable, x: pt.TensorVariable) -> pt.TensorVariable:
+    """Calc log of Jacobian determinant. Add this Jacobian adjsutment to models
+    where the observed is a transformation, to handle the change in volume.
+    Used in oreum_lab copula models
+
+    Detail from Stan docs:
+    + https://mc-stan.org/docs/2_25/reference-manual/change-of-variables-section.html#multivariate-changes-of-variables
+    + https://mc-stan.org/documentation/case-studies/mle-params.html
+    "The absolute derivative of the inverse transform measures how the scale of
+    the transformed variable changes with respect to the underlying variable."
+
+    Example from jungpenglao:
+    + https://github.com/junpenglao/Planet_Sakaar_Data_Science/blob/4366de036cc608c942fdebb930e96f2cc8b83d71/Ports/Jacobian%20Adjustment%20in%20PyMC3.ipynb#L163  # noqa: W505
+    + https://github.com/junpenglao/Planet_Sakaar_Data_Science/blob/main/WIP/vector_transformation_copulas.ipynb
+
+    More discussion:
+    + https://www.tamaspapp.eu/post/jacobian-chain/
+    + https://discourse.pymc.io/t/how-do-i-implement-an-upper-limit-log-normal-distribution/1337/4
+    + https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb  # noqa: W505
+    + https://slideslive.com/38907842/session-3-model-parameterization-and-coordinate-system-neals-funnel
+    + https://discourse.pymc.io/t/mixture-model-with-boxcox-transformation/988
+    + https://pytensor.readthedocs.io/en/latest/library/gradient.html#pytensor.gradient.grad
+    + https://www.pymc.io/projects/docs/en/latest/_modules/pymc/math.html#
+    + https://www.cs.toronto.edu/~rgrosse/courses/csc321_2018/slides/lec10.pdf
+    + https://github.com/pymc-devs/pymc-examples/blob/1428f1b4e0d352a88667776b3ec612db93e032d9/examples/case_studies/copula-estimation.ipynb  # noqa: W505
+    """
+    grad_graph = pytensor.gradient.grad(cost=pt.sum(f_inv_x), wrt=[x])
+    return pt.log(pt.abs(pt.reshape(grad_graph, x.shape)))
 
 
-def calc_binary_performance_measures(y, yhat):
+def calc_f_beta(precision: np.array, recall: np.array, beta: float = 1.0) -> np.array:
+    """Set beta such that recall is beta times more important than precision"""
+    return (1 + beta**2) * (precision * recall) / ((beta**2 * precision) + recall)
+
+
+def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFrame:
     """Calculate tpr (recall), fpr, precision, accuracy for binary target,
     using all samples from PPC, use vectorised calcs
     shapes y: (nsamples,), yhat: (nsamples, nobservations)
@@ -75,9 +111,9 @@ def calc_binary_performance_measures(y, yhat):
             'fpr': fpr,
             'recall': recall,
             'precision': precision,
-            'f0.5': calc_f_measure(precision, recall, b=0.5),
-            'f1': calc_f_measure(precision, recall, b=1),
-            'f2': calc_f_measure(precision, recall, b=2),
+            'f0.5': calc_f_beta(precision, recall, beta=0.5),
+            'f1': calc_f_beta(precision, recall, beta=1),
+            'f2': calc_f_beta(precision, recall, beta=2),
         },
         index=np.arange(101),
     )
@@ -86,9 +122,10 @@ def calc_binary_performance_measures(y, yhat):
     return perf
 
 
-def calc_mse(y, yhat):
+def calc_mse(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
     r""" Convenience: Calculate MSE using all samples
-        shape (nsamples, nobs)
+        y shape: (nobs, )
+        yhat shape: (nsamples, nobs)
 
     Mean-Squared Error of prediction vs observed
     $$\frac{1}{n}\sum_{i=1}^{i=n}(\hat{y}_{i}-y_{i})^{2}$$
@@ -110,7 +147,7 @@ def calc_mse(y, yhat):
         I can only think to calc summary stats and then calc MSE for them
     """
     # collapse samples to mean then calc error
-    se = np.power(yhat.mean(axis=0) - y, 2)  # (nobs)
+    se = np.power(yhat.mean(axis=0) - y, 2)  # (nobs, )
     mse = np.mean(se, axis=0)  # 1
 
     # collapse samples to a range of summary stats then calc error
@@ -123,7 +160,7 @@ def calc_mse(y, yhat):
     return mse, s_mse_pct
 
 
-def calc_rmse(y, yhat):
+def calc_rmse(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
     """Convenience: Calculate RMSE using all samples
     shape (nsamples, nobs)
     """
@@ -133,7 +170,7 @@ def calc_rmse(y, yhat):
     return np.sqrt(mse), s_rmse_pct
 
 
-def calc_r2(y, yhat):
+def calc_r2(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
     """Calculate R2,
     return mean r2 and via summary stats of yhat
     NOTE: shape (nsamples, nobservations)
@@ -157,19 +194,21 @@ def calc_r2(y, yhat):
     return r2_mean, r2_pct
 
 
-def calc_bayesian_r2(y, yhat):
-    """Calculate R2,
-    return mean r2 and via summary stats of yhat
-    NOTE: shape (nsamples, nobservations)
+def calc_bayesian_r2(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
+    """Calculate R2 across all samples
+    NOTE:
+        y shape: (nobs,)
+        yhat shape: (nobs, nsamples)
+        return shape: (nsamples, )
     """
 
     var_yhat = np.var(yhat, axis=0)
-    var_residuals = np.var(y - yhat, axis=0)
+    var_residuals = np.var(y.reshape(-1, 1) - yhat, axis=0)
     r2 = var_yhat / (var_yhat + var_residuals)
-    return r2
+    return pd.DataFrame(r2, columns=['r2'])
 
 
-def calc_ppc_coverage(y, yhat):
+def calc_ppc_coverage(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
     """Calc the proportion of coverage from full yhat ppc
     shapes: y (nobservations), yhat (nsamples, nobservations)
     """
@@ -190,7 +229,6 @@ def calc_ppc_coverage(y, yhat):
     )
 
     cov = []
-    y = y.values
     for k, v in bounds.items():
         for i, cr in enumerate(crs):
             cov.append(
@@ -203,16 +241,6 @@ def calc_ppc_coverage(y, yhat):
             )
 
     return pd.DataFrame(cov, columns=['method', 'cr', 'coverage'])
-
-
-# TODO fix this at source
-# Minor edit to a math fn to prevent annoying deprecation warnings
-# Jon Sedar 2020-03-31
-# Users/jon/anaconda/envs/instechex/lib/python3.6/site-packages/theano/tensor/subtensor.py:2339:
-# FutureWarning: Using a non-tuple sequence for multidimensional indexing is deprecated;
-# use `arr[tuple(seq)]` instead of `arr[seq]`. In the future this will be interpreted as an array index,
-# `arr[np.array(seq)]`, which will result either in an error or a different result.
-#   out[0][inputs[2:]] = inputs[1]
 
 
 def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
@@ -247,102 +275,13 @@ def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
         diag_idxs = np.arange(2, n + 2)[::-1].cumsum() - n - 1
         return packed[diag_idxs]
     elif lower:
-        out = tt.zeros((n, n), dtype=theano.config.floatX)
+        out = pt.zeros((n, n), dtype=pytensor.config.floatX)
         idxs = np.tril_indices(n)
-        return tt.set_subtensor(out[idxs], packed)
+        return pt.set_subtensor(out[idxs], packed)
     elif not lower:
-        out = tt.zeros((n, n), dtype=theano.config.floatX)
+        out = pt.zeros((n, n), dtype=pytensor.config.floatX)
         idxs = np.triu_indices(n)
-        return tt.set_subtensor(out[idxs], packed)
-
-
-def calc_dist_fns_over_x(fd_scipy, d_manual, params, **kwargs):
-    """Test my manual model PDF, CDF, InvCDF vs
-    a scipy fixed dist over range x
-    """
-    logdist = kwargs.get('logdist', False)
-    upper = kwargs.get('upper', 1)
-    lower = kwargs.get('lower', 0)
-    nsteps = kwargs.get('nsteps', 200)
-    x = np.linspace(lower, upper, nsteps)
-    u = np.linspace(0, 1, nsteps)
-
-    if logdist:
-        dfpdf = pd.DataFrame(
-            {
-                'manual': d_manual.logpdf(x, **params),
-                'scipy': fd_scipy.logpdf(x),
-                'x': x,
-            }
-        ).set_index('x')
-        dfcdf = pd.DataFrame(
-            {
-                'manual': d_manual.logcdf(x, **params),
-                'scipy': fd_scipy.logcdf(x),
-                'x': x,
-            }
-        ).set_index('x')
-        dfinvcdf = pd.DataFrame(
-            {
-                'manual': d_manual.loginvcdf(u, **params),
-                'scipy': np.log(fd_scipy.ppf(u)),
-                'u': u,
-            }
-        ).set_index('u')
-    else:
-        dfpdf = pd.DataFrame(
-            {'manual': d_manual.pdf(x, **params), 'scipy': fd_scipy.pdf(x), 'x': x}
-        ).set_index('x')
-        dfcdf = pd.DataFrame(
-            {'manual': d_manual.cdf(x, **params), 'scipy': fd_scipy.cdf(x), 'x': x}
-        ).set_index('x')
-        dfinvcdf = pd.DataFrame(
-            {'manual': d_manual.invcdf(u, **params), 'scipy': fd_scipy.ppf(u), 'u': u}
-        ).set_index('u')
-
-    return dfpdf, dfcdf, dfinvcdf
-
-
-def calc_dist_fns_over_x_manual_only(d_manual, params, **kwargs):
-    """Test my manual model PDF, CDF, InvCDF over range x"""
-    logdist = kwargs.get('logdist', False)
-    upper = kwargs.get('upper', 1)
-    lower = kwargs.get('lower', 0)
-    nsteps = kwargs.get('nsteps', 200)
-    x = np.linspace(lower, upper, nsteps)
-    u = np.linspace(0, 1, nsteps)
-
-    if logdist:
-        dfpdf = pd.DataFrame(
-            {'manual': d_manual.logpdf(x, **params), 'x': x}
-        ).set_index('x')
-        dfcdf = pd.DataFrame(
-            {'manual': d_manual.logcdf(x, **params), 'x': x}
-        ).set_index('x')
-        dfinvcdf = pd.DataFrame(
-            {'manual': d_manual.loginvcdf(u, **params), 'u': u}
-        ).set_index('u')
-    else:
-        dfpdf = pd.DataFrame({'manual': d_manual.pdf(x, **params), 'x': x}).set_index(
-            'x'
-        )
-        dfcdf = pd.DataFrame({'manual': d_manual.cdf(x, **params), 'x': x}).set_index(
-            'x'
-        )
-        dfinvcdf = pd.DataFrame(
-            {'manual': d_manual.invcdf(u, **params), 'u': u}
-        ).set_index('u')
-
-    return dfpdf, dfcdf, dfinvcdf
-
-
-def log_jcd(f_inv_x, x):
-    """Calc the log of Jacobian determinant
-    used to aid log-likelihood maximisation of copula marginals
-    see JPL: https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb
-    """
-    grad = tt.reshape(pm.theanof.gradient(tt.sum(f_inv_x), [x]), x.shape)
-    return tt.log(tt.abs_(grad))
+        return pt.set_subtensor(out[idxs], packed)
 
 
 def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
@@ -446,3 +385,136 @@ def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
 def numpy_invlogit(x, eps=sys.float_info.epsilon):
     """The inverse of the logit function, 1 / (1 + exp(-x))."""
     return (1.0 - 2.0 * eps) / (1.0 + np.exp(-x)) + eps
+
+
+def _coords_and_dims_for_inferencedata(
+    model: Model,
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Parse PyMC model coords and dims format to one accepted by InferenceData.
+    copied from https://github.com/pymc-devs/pymc/blame/92278278d4a8b78f17ed0f101eb29d0d9982eb45/pymc/backends/arviz.py#L103-L112
+    present in pymc >= 5.8.1, using it here for pymc < 5.8.1
+    """
+    coords = {
+        cname: np.array(cvals) if isinstance(cvals, tuple) else cvals
+        for cname, cvals in model.coords.items()
+        if cvals is not None
+    }
+    dims = {dname: list(dvals) for dname, dvals in model.named_vars_to_dims.items()}
+
+    return coords, dims
+
+
+def compute_log_likelihood_for_potential(
+    idata: InferenceData,
+    *,
+    var_names: Optional[Sequence[str]] = None,
+    extend_inferencedata: bool = True,
+    model: Optional[Model] = None,
+    sample_dims: Sequence[str] = ("chain", "draw"),
+    progressbar=True,
+):
+    """Hackidy hack JS @ 20230919
+    Copied and modified from pymc compute_log_likelihood to allow a Potential
+    Differences NOTED with inline comments
+    orig: https://github.com/pymc-devs/pymc/blob/92278278d4a8b78f17ed0f101eb29d0d9982eb45/pymc/stats/log_likelihood.py#L29C1-L128C31
+    discussion: https://discourse.pymc.io/t/using-a-random-variable-as-observed/7184/10
+
+    ---
+
+    Compute elemwise log_likelihood of model given InferenceData with posterior group
+
+    Parameters
+    ----------
+    idata : InferenceData
+        InferenceData with posterior group
+    var_names : sequence of str, optional
+        List of Potential variable names for which to compute log_likelihood
+    extend_inferencedata : bool, default True
+        Whether to extend the original InferenceData or return a new one
+    model : Model, optional
+    sample_dims : sequence of str, default ("chain", "draw")
+    progressbar : bool, default True
+
+    Returns
+    -------
+    idata : InferenceData
+        InferenceData with log_likelihood group
+
+    """
+
+    posterior = idata["posterior"]
+
+    model = modelcontext(model)
+
+    observed_vars = [model.named_vars[name] for name in var_names]
+
+    if var_names is None:
+        observed_vars = model.observed_RVs
+        var_names = tuple(rv.name for rv in observed_vars)
+    else:
+        observed_vars = [model.named_vars[name] for name in var_names]
+        if not set(observed_vars).issubset(
+            model.observed_RVs + model.potentials
+        ):  # NOTE
+            raise ValueError(
+                f"var_names must refer to observed_RVs in the model. Got: {var_names}"
+            )
+
+    # We need to temporarily disable transforms, because the InferenceData only keeps the untransformed values
+    # pylint: disable=used-before-assignment
+    try:
+        original_rvs_to_values = model.rvs_to_values
+        original_rvs_to_transforms = model.rvs_to_transforms
+
+        model.rvs_to_values = {
+            rv: rv.clone() if rv not in model.observed_RVs else value
+            for rv, value in model.rvs_to_values.items()
+        }
+        model.rvs_to_transforms = {rv: None for rv in model.basic_RVs}
+
+        elemwise_loglike_fn = model.compile_fn(
+            inputs=model.value_vars,
+            outs=model.logp(vars=observed_vars, sum=False),
+            on_unused_input="ignore",
+        )
+        elemwise_loglike_fn = cast(PointFunc, elemwise_loglike_fn)
+    finally:
+        model.rvs_to_values = original_rvs_to_values
+        model.rvs_to_transforms = original_rvs_to_transforms
+    # pylint: enable=used-before-assignment
+
+    # Ignore Deterministics
+    posterior_values = posterior[[rv.name for rv in model.free_RVs]]
+    posterior_pts, stacked_dims = dataset_to_point_list(posterior_values, sample_dims)
+    n_pts = len(posterior_pts)
+    loglike_dict = _DefaultTrace(n_pts)
+    indices = range(n_pts)
+    if progressbar:
+        indices = progress_bar(indices, total=n_pts, display=progressbar)
+
+    for idx in indices:
+        loglikes_pts = elemwise_loglike_fn(posterior_pts[idx])
+        for rv_name, rv_loglike in zip(var_names, loglikes_pts):
+            loglike_dict.insert(rv_name, rv_loglike, idx)
+
+    loglike_trace = loglike_dict.trace_dict
+    for key, array in loglike_trace.items():
+        loglike_trace[key] = array.reshape(
+            (*[len(coord) for coord in stacked_dims.values()], *array.shape[1:])
+        )
+
+    coords, dims = _coords_and_dims_for_inferencedata(model)
+    loglike_dataset = dict_to_dataset(
+        loglike_trace,
+        library=pymc,
+        dims=dims,
+        coords=coords,
+        default_dims=list(sample_dims),
+        skip_event_dims=True,
+    )
+
+    if extend_inferencedata:
+        idata.add_groups(dict(log_likelihood=loglike_dataset))
+        return idata
+    else:
+        return loglike_dataset

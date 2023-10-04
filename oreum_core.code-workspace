@@ -8,5 +8,6 @@
 		"python.defaultInterpreterPath": "/opt/miniconda/envs/oreum_core/bin/python",
 		// "workbench.colorTheme": "Default Dark+",
 		"workbench.colorTheme": "Theme",
+		"editor.unusualLineTerminators": "off",
 	}
 }
