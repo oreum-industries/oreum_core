@@ -3,8 +3,8 @@
 # + Intended for dev install on MacOS x64 (Intel via Rosetta 2)
 # + On MacOS, the miniforge.sh installer is too clever and complains
 #   that "$(uname -m)" != "x86_64", but we ignore that: Rosetta2 will run x86_64
-.PHONY: build create-env dev lint help mamba pre-build pub pub-test test-dev-env test-dl-ins uninstall uninstall-mamba
-.SILENT: build create-env dev lint help mamba pre-build pub pub-test test-dev-env test-dl-ins uninstall uninstall-mamba
+.PHONY: build create-env dev lint help mamba pre-build pub test-pub test-dev-env test-dl-ins uninstall uninstall-mamba
+.SILENT: build create-env dev lint help mamba pre-build pub test-pub test-dev-env test-dl-ins uninstall uninstall-mamba
 MAMBADL := https://github.com/conda-forge/miniforge/releases/download/23.3.1-1
 MAMBAV := Miniforge3-MacOSX-x86_64.sh
 MAMBARCMSG := Please create file $(MAMBARC), particularly to set `platform: osx-64`
@@ -23,8 +23,7 @@ build:  ## build package oreum_core (actually more of an "assemble" than a compi
 	make pre-build
 	$(PYTHON) -m flit build
 
-
-create-env: ## create mamba (conda) environment
+create-env:  ## create mamba (conda) environment
 	export PATH=$(MAMBADIR)/bin:$$PATH; \
 		if which mamba; then echo "mamba ready"; else make mamba; fi
 	export PATH=$(MAMBADIR)/bin:$$PATH; \
@@ -32,7 +31,7 @@ create-env: ## create mamba (conda) environment
 		mamba update -n base mamba; \
 		mamba env create --file condaenv_oreum_core.yml;
 
-dev:  # create env for local dev on any machine MacOS x64 (Intel)
+dev:  ## create env for local dev on any machine MacOS x64 (Intel)
 	make create-env
 	export PATH=$(MAMBADIR)/envs/oreum_core/bin:$$PATH; \
 		export CONDA_ENV_PATH=$(MAMBADIR)/envs/oreum_core/bin; \
@@ -61,7 +60,7 @@ help:
 	@echo "  dev           create local dev env"
 	@echo "  lint          run code lint & security checks"
 	@echo "  pub           all-in-one build and publish to pypi"
-	@echo "  pub-test      all-in-one build and publish to testpypi"
+	@echo "  test-pub      all-in-one build and publish to testpypi"
 	@echo "  test-dev-env  optional test the local dev env numeric packages"
 	@echo "  test-dl-ins   test dl & install from testpypi"
 	@echo "  uninstall     remove local dev env (use from parent dir as `make -C oreum_core uninstall`)"
@@ -80,23 +79,22 @@ mamba:  ## get mamba via miniforge for MacOS x86_64 (Intel via Rosetta2) use zsh
 # make: *** [mamba] Error 1
 # but does actually do what it should
 
-pre-build:  # setup env for flit build or flit publish
+pre-build:  ## setup env for flit build or flit publish
 	rm -rf dist
 	$(PYTHON) -m pip install flit keyring
 	export SOURCE_DATE_EPOCH=$(shell date +%s)
-
 
 pub:  ## all-in-one build and publish to pypi
 	make pre-build
 	export FLIT_INDEX_URL=https://upload.pypi.org/legacy/; \
 		$(PYTHON) -m flit publish
 
-pub-test:  ## all-in-one build and publish to testpypi
+test-pub:  ## all-in-one build and publish to testpypi
 	make pre-build
 	export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
 		$(PYTHON) -m flit publish
 
-test-dev-env: ## test the dev machine install of critial numeric packages
+test-dev-env:  ## test the dev machine install of critial numeric packages
 	export PATH=$(MAMBADIR)/bin:$$PATH; \
 		export PATH=$(MAMBADIR)/envs/oreum_core/bin:$$PATH; \
 		export CONDA_ENV_PATH=$(MAMBADIR)/envs/oreum_core/bin; \
@@ -106,18 +104,17 @@ test-dev-env: ## test the dev machine install of critial numeric packages
 
 # $(PYTHON_ENV) -c "import pymc as pm; pm.test()" > dev/install_log/pymc.txt; \
 
-test-dl-ins:  # test dl & install from testpypi, set env var or pass in VERSION
+test-dl-ins:  ## test dl & install from testpypi, set env var or pass in VERSION
 	$(PYTHON) -m pip uninstall -y oreum_core
 	$(PYTHON) -m pip index versions --pre -i https://test.pypi.org/simple/ oreum_core
 	$(PYTHON) -m pip install --pre -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple oreum_core==$(VERSION)
 	$(PYTHON) -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'"
 
-
 uninstall: ## remove mamba env (use from parent dir as `make -C oreum_core/ uninstall`)
 	mamba env remove --name oreum_core -y
 	mamba clean -afy
 
-uninstall-mamba: ## last ditch per https://github.com/conda-forge/miniforge#uninstallation
+uninstall-mamba:  ## last ditch per https://github.com/conda-forge/miniforge#uninstallation
 	conda init zsh --reverse
 	rm -rf $(MAMBADIR)
 	rm -rf $(HOME)/.conda
