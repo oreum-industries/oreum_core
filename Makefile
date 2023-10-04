@@ -20,7 +20,7 @@ endif
 VERSION := $(shell echo $(VVERSION) | sed 's/v//')
 
 build:  ## build package oreum_core (actually more of an "assemble" than a compile)
-	make pre_build
+	make pre-build
 	$(PYTHON) -m flit build
 
 
