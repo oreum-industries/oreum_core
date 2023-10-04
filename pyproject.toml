@@ -32,14 +32,14 @@ dependencies = [
     "matplotlib-inline<0.1.5",  # 0.1.5+ causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
     "pandas[excel,parquet,plot]>=2.0.1",  # see NOTE
     "patsy>=0.5.3",  # TODO consider using formulae instead
-    "pymc>=5.8.2",  # brings along lots of deps
-    "seaborn>=0.12.2",
+    "pymc==5.6.1",  # >=5.8.2",  # brings along lots of deps
+    "seaborn==0.12.2",  # 0.13 brings many breaking changes to avoid right now
 ]
 
 # NOTE ON DEPS
 # + pymc: deps bring many packages incl.: arviz (xarray), numpy, pandas, pytensor, scipy, tables
-# + pandas: added minimal optional deps
-# + pandas: importing projects might also consider pandas[performance,postgresql]>=2.0.0
+# + pandas: added minimal optional deps. importing projects might also consider
+#   including pandas[performance,postgresql]>=2.0.0
 
 
 [project.optional-dependencies]

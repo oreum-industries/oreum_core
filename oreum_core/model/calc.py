@@ -24,14 +24,14 @@ import pytensor
 import pytensor.tensor as pt
 from arviz import InferenceData, dict_to_dataset
 from fastprogress import progress_bar
-from pymc.backends.arviz import _DefaultTrace, coords_and_dims_for_inferencedata
+from pymc.backends.arviz import _DefaultTrace  # , coords_and_dims_for_inferencedata
 from pymc.model import Model, modelcontext
 from pymc.pytensorf import PointFunc
 from pymc.util import dataset_to_point_list
 
 __all__ = [
     'log_jcd',
-    'calc_f_measure',
+    'calc_f_beta',
     'calc_binary_performance_measures',
     'calc_mse',
     'calc_rmse',
@@ -67,12 +67,12 @@ def log_jcd(f_inv_x: pt.TensorVariable, x: pt.TensorVariable) -> pt.TensorVariab
     return pt.log(pt.abs(pt.reshape(grad_graph, x.shape)))
 
 
-def calc_f_measure(precision, recall, b=1):
-    """Choose b such that recall is b times more important than precision"""
-    return (1 + b**2) * (precision * recall) / ((b**2 * precision) + recall)
+def calc_f_beta(precision: np.array, recall: np.array, beta: float = 1.0) -> np.array:
+    """Set beta such that recall is beta times more important than precision"""
+    return (1 + beta**2) * (precision * recall) / ((beta**2 * precision) + recall)
 
 
-def calc_binary_performance_measures(y, yhat):
+def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFrame:
     """Calculate tpr (recall), fpr, precision, accuracy for binary target,
     using all samples from PPC, use vectorised calcs
     shapes y: (nsamples,), yhat: (nsamples, nobservations)
@@ -99,9 +99,9 @@ def calc_binary_performance_measures(y, yhat):
             'fpr': fpr,
             'recall': recall,
             'precision': precision,
-            'f0.5': calc_f_measure(precision, recall, b=0.5),
-            'f1': calc_f_measure(precision, recall, b=1),
-            'f2': calc_f_measure(precision, recall, b=2),
+            'f0.5': calc_f_beta(precision, recall, beta=0.5),
+            'f1': calc_f_beta(precision, recall, beta=1),
+            'f2': calc_f_beta(precision, recall, beta=2),
         },
         index=np.arange(101),
     )
@@ -380,7 +380,7 @@ def _coords_and_dims_for_inferencedata(
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Parse PyMC model coords and dims format to one accepted by InferenceData.
     copied from https://github.com/pymc-devs/pymc/blame/92278278d4a8b78f17ed0f101eb29d0d9982eb45/pymc/backends/arviz.py#L103-L112
-    because it was only merged on 20230919 :D
+    present in pymc >= 5.8.1, using it here for pymc < 5.8.1
     """
     coords = {
         cname: np.array(cvals) if isinstance(cvals, tuple) else cvals
@@ -491,7 +491,7 @@ def compute_log_likelihood_for_potential(
             (*[len(coord) for coord in stacked_dims.values()], *array.shape[1:])
         )
 
-    coords, dims = coords_and_dims_for_inferencedata(model)  # NOTE used local
+    coords, dims = _coords_and_dims_for_inferencedata(model)
     loglike_dataset = dict_to_dataset(
         loglike_trace,
         library=pymc,

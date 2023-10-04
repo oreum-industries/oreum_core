@@ -19,6 +19,7 @@ from oreum_core.model.calc import (
     calc_2_sample_delta_prop,
     calc_bayesian_r2,
     calc_binary_performance_measures,
+    calc_f_beta,
     calc_mse,
     calc_ppc_coverage,
     calc_r2,

@@ -16,6 +16,8 @@
 """Common File IO"""
 from pathlib import Path
 
+__all__ = ['BaseFileIO']
+
 
 class BaseFileIO:
     """Base handler to read/write files in a predictable way
