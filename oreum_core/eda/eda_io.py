@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # eda.eda_io.py
-"""Image File Handling"""
+"""EDA File Handling"""
 import logging
 from pathlib import Path
 
@@ -39,10 +39,10 @@ class FigureIO(BaseFileIO):
 
     def write(self, f: figure.Figure, fn: str) -> Path:
         """Accept figure.Figure & fqn e.g. `plots/plot.png`, write to fqn"""
-        path = self.get_path_write(fn)
-        f.savefig(fname=path, format='png', bbox_inches='tight', dpi=300)
-        _log.info(f'Written to {str(path.resolve())}')
-        return path
+        fqp = self.get_path_write(fn)
+        f.savefig(fname=fqp, format='png', bbox_inches='tight', dpi=300)
+        _log.info(f'Written to {str(fqp.resolve())}')
+        return fqp
 
 
 def display_image_file(
@@ -82,7 +82,7 @@ def display_image_file(
 
 
 def output_data_dict(
-    df: pd.DataFrame, dd_notes: dict[str, str], dir_docs: list[str], fn: str = ''
+    df: pd.DataFrame, dd_notes: dict[str, str], fqp: Path, fn: str = ''
 ):
     """Convenience fn: output data dict"""
 
@@ -113,9 +113,11 @@ def output_data_dict(
     dfd = pd.merge(dfd, df_dd_notes, how='left', left_index=True, right_index=True)
 
     # write overview
-    if fn != '':
-        fn = f'_{fn}'
-    writer = pd.ExcelWriter(Path(*dir_docs, f'datadict{fn}.xlsx'), engine='xlsxwriter')
+    fileio = BaseFileIO(rootdir=fqp)
+    fn = f'_{fn}' if fn != '' else fn
+    fqn = fileio.get_path_write(f'datadict{fn}.xlsx')
+
+    writer = pd.ExcelWriter(str(fqn), engine='xlsxwriter')
     dfd.to_excel(writer, sheet_name='overview', index=True)
 
     # write cats to separate sheets for levels (but not indexes since they're unique)
@@ -131,4 +133,6 @@ def output_data_dict(
                 na_rep='NULL',
             )
 
-    writer.save()
+    writer.close()
+    _log.info(f'Written to {str(fqn.resolve())}')
+    return fqn

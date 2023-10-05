@@ -1,33 +1,47 @@
 # Oreum Core Tools `oreum_core`
 
-This is an ever-growing package of core tools for use on client projects by
-Oreum Industries.
-
 [![CI](https://github.com/oreum-industries/oreum_core/workflows/ci/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/ci.yml)
-[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![code style: flake8](https://img.shields.io/badge/code%20style-flake8-331188.svg)](https://flake8.pycqa.org/en/latest/)
-[![code style: isort](https://img.shields.io/badge/code%20style-isort-%231674b1?style=flat)](https://pycqa.github.io/isort/)
-[![code style: interrogate](https://raw.githubusercontent.com/oreum-industries/oreum_core/master/assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
-[![code security: bandit](https://img.shields.io/badge/code%20security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
 [![GitHub Release](https://img.shields.io/github/v/release/oreum-industries/oreum_core?display_name=tag&sort=semver)](https://github.com/oreum-industries/oreum_core/releases)
 [![publish](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml)
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
 <!-- [![Conda Forge](https://img.shields.io/conda/vn/oreum-industries/oreum_core.svg)](https://anaconda.org/oreum-industries/oreum_core) -->
 
+[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![code style: flake8](https://img.shields.io/badge/code%20style-flake8-331188.svg)](https://flake8.pycqa.org/en/latest/)
+[![code style: isort](https://img.shields.io/badge/code%20style-isort-%231674b1?style=flat)](https://pycqa.github.io/isort/)
+[![code style: interrogate](https://raw.githubusercontent.com/oreum-industries/oreum_core/master/assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
+[![code security: bandit](https://img.shields.io/badge/code%20security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
 
 
 ---
 
 ## 1. Description and Scope
 
-This project uses a scientific Python stack, and enables & supports:
+This is an ever-growing package of core tools for use on client projects by
+Oreum Industries.
 
-+ Exploratory data analysis via custom tabulations and plots using `seaborn`
-+ Bayesian inferential modelling in R&D and Production via model helpers and custom distributions in `pymc` and `arviz`
-+ Assorted data transformations, text cleaning, sql scripting and file handling
++ Uses scienfitic Python stack (`numpy`, `scipy`, `matplotlib`, `seaborn`,
+  `pandas`, `scikit-learn`, etc) for EDA, data manipulation, basic ML etc
++ Enables Bayesian modelling workflow in R&D and Production (`pymc`, `pytensor`,
+  `arviz`, etc)
++ Also includes utilities for text cleaning, sql scripting, file handling etc
 
 
-### Technical Overview
+This package **is**:
+
++ A work in progress (v0.y.z) and liable to breaking changes and inconvenience
+  to the user
++ Solely designed for ease of use and rapid development by employees of
+  Oreum Industries, and selected clients with guidance
+
+This package **is not**:
+
++ Intended for public usage and will not be supported for public usage
++ Intended for contributions by anyone not an employee of Oreum Industries,
+  and unsolicitied contributions will not be accepted.
+
+
+### Notes
 
 + Project began on 2021-01-01
 + The `README.md` is MacOS and POSIX oriented
@@ -39,21 +53,6 @@ This project uses a scientific Python stack, and enables & supports:
   + Source code release on [GitHub](https://github.com/oreum-industries/oreum_core/releases)
   + Package release on [PyPi](https://pypi.org/project/oreum_core)
 
-
-### Scope
-
-This package **is**:
-
-+ A work in progress (v0.y.z) and liable to breaking changes and inconvenience
-to the user
-+ Solely designed for ease of use and rapid development by employees of
-  Oreum Industries, and selected clients with guidance
-
-This package **is not**:
-
-+ Intended for public usage and will not be supported for public usage
-+ Intended for contributions by anyone not an employee of Oreum Industries,
-  and unsolicitied contributions will not be accepted
 
 
 ## 2. Instructions to Create Dev Environment

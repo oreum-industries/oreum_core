@@ -38,18 +38,18 @@ class PandasParquetIO(BaseFileIO):
         """Inherit super"""
         super().__init__(*args, **kwargs)
 
-    def read(self, fqn: str) -> pd.DataFrame:
-        """Read arviz.InferenceData object from fqn e.g. `model/mdl.netcdf`"""
-        path = self.get_path_read(fqn)
-        _log.info(f'Read df from {str(path.resolve())}')
-        return pd.read_parquet(str(path))
+    def read(self, fn: str) -> pd.DataFrame:
+        """Read arviz.InferenceData object from fn e.g. `mdl.netcdf`"""
+        fqn = self.get_path_read(fn)
+        _log.info(f'Read df from {str(fqn.resolve())}')
+        return pd.read_parquet(str(fqn))
 
-    def write(self, df: pd.DataFrame, fqn: str) -> Path:
-        """Accept pandas DataFrame and fqn e.g. `data/df.parquet`, write to fqn"""
-        path = self.get_path_write(fqn)
-        df.to_parquet(str(path))
-        _log.info(f'Written to {str(path.resolve())}')
-        return path
+    def write(self, df: pd.DataFrame, fn: str) -> Path:
+        """Accept pandas DataFrame and fn e.g. `df.parquet`, write to fqn"""
+        fqn = self.get_path_write(fn)
+        df.to_parquet(str(fqn))
+        _log.info(f'Written to {str(fqn.resolve())}')
+        return fqn
 
 
 class PandasToCSV(BaseFileIO):
@@ -59,12 +59,12 @@ class PandasToCSV(BaseFileIO):
         """Inherit super"""
         super().__init__(*args, **kwargs)
 
-    def write(self, df: pd.DataFrame, fqn: str) -> str:
-        """Accept pandas DataFrame and fqn e.g. `data/df.parquet`, write to fqn"""
-        path = self.get_path_write(fqn)
-        df.to_csv(str(path), index_label='rowid', quoting=csv.QUOTE_NONNUMERIC)
-        _log.info(f'Written to {str(path.resolve())}')
-        return path
+    def write(self, df: pd.DataFrame, fn: str) -> str:
+        """Accept pandas DataFrame and fn e.g. `df`, write to fn.csv"""
+        fqn = self.get_path_write(f'{fn}.csv')
+        df.to_csv(str(fqn), index_label='rowid', quoting=csv.QUOTE_NONNUMERIC)
+        _log.info(f'Written to {str(fqn.resolve())}')
+        return fqn
 
 
 class SimpleStringIO(BaseFileIO):
@@ -80,36 +80,37 @@ class SimpleStringIO(BaseFileIO):
         assert kind in set(['txt', 'json']), "kind must be in {'txt', 'json'}"
         self.kind = kind
 
-    def read(self, fqn: str) -> str:
-        """Read a file from fqn according to kind of this object"""
-        path = self.get_path_read(fqn)
-        with open(str(path), 'r') as f:
+    def read(self, fn: str) -> str:
+        """Read a file from fn according to kind of this object"""
+        fqn = self.get_path_read(fn)
+        with open(str(fqn), 'r') as f:
             s = f.read().rstrip('\n')
             f.close()
-        _log.info(f'Read text from {str(path.resolve())}')
+        _log.info(f'Read text from {str(fqn.resolve())}')
         if self.kind == 'json':
             s = json.loads(s)
         return s
 
-    def write(self, s: str, fqn: str) -> str:
-        path = self.get_path_write(fqn)
+    def write(self, s: str, fn: str) -> str:
+        fqn = self.get_path_write(fn)
         if self.kind == 'json':
             s = json.dumps(s)
-        with open(str(path), 'w') as f:
+        with open(str(fqn), 'w') as f:
             f.write(f'{s}\n')
             f.close()
-        _log.info(f'Written to {str(path.resolve())}')
-        return path
+        _log.info(f'Written to {str(fqn.resolve())}')
+        return fqn
 
 
-def copy_csv2md(fqn: str) -> str:
+def copy_csv2md(fn: str) -> str:
     """Convenience to copy csv 'path/x.csv' to markdown 'path/x.md'"""
-    path = Path(fqn)
-    if not path.exists():
-        raise FileNotFoundError(f'Required file does not exist {str(path)}')
-    r = subprocess.run(['csv2md', f'{path}'], capture_output=True)
-    with open(f'{path[:-3] + "md"}', 'wb') as f:
+    fileio = BaseFileIO()
+    fqn = fileio.get_path_read(fn)
+    r = subprocess.run(['csv2md', f'{fqn}'], capture_output=True)
+    fn_out = f'{fn[:-3] + "md"}'
+    fqn_out = fileio.get_path_write(fn_out)
+    with open(fqn_out, 'wb') as f:
         f.write(r.stdout)
-    # return f'Created file {path} and {path[:-3]}md'
-    _log.info(f'Written to {str(path)}')
-    return path
+        f.close()
+    _log.info(f'Written to {str(fqn_out.resolve())}')
+    return fqn_out
