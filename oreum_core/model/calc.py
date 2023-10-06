@@ -458,7 +458,7 @@ def compute_log_likelihood_for_potential(
         observed_vars = [model.named_vars[name] for name in var_names]
         if not set(observed_vars).issubset(
             model.observed_RVs + model.potentials
-        ):  # NOTE
+        ):  # NOTE MODIFIED JS
             raise ValueError(
                 f"var_names must refer to observed_RVs in the model. Got: {var_names}"
             )

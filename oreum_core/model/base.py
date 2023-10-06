@@ -195,7 +195,7 @@ class BasePYMCModel:
                 )
             )
             for nm in self.rvs_potential_loglike:
-                nm0 = nm.strip('pot_')
+                nm0 = nm.lstrip('pot_')
                 self.idata['log_likelihood'][nm0] = self.idata['log_likelihood'][nm]
                 del self.idata['log_likelihood'][nm]
 
