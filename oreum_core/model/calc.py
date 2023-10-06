@@ -50,7 +50,7 @@ rng = np.random.default_rng(seed=RSD)
 
 
 def log_jcd(f_inv_x: pt.TensorVariable, x: pt.TensorVariable) -> pt.TensorVariable:
-    """Calc log of Jacobian determinant. Add this Jacobian adjsutment to models
+    """Calc log of Jacobian determinant. Add this Jacobian adjustment to models
     where the observed is a transformation, to handle the change in volume.
     Used in oreum_lab copula models
 
@@ -66,6 +66,8 @@ def log_jcd(f_inv_x: pt.TensorVariable, x: pt.TensorVariable) -> pt.TensorVariab
 
     More discussion:
     + https://www.tamaspapp.eu/post/jacobian-chain/
+    + https://discourse.pymc.io/t/jacobian-adjustment/1711
+    + https://github.com/junpenglao/All-that-likelihood-with-PyMC3/blob/master/Notebooks/Neals_funnel.ipynb
     + https://discourse.pymc.io/t/how-do-i-implement-an-upper-limit-log-normal-distribution/1337/4
     + https://github.com/junpenglao/advance-bayesian-modelling-with-PyMC3/blob/master/Advance_topics/Box-Cox%20transformation.ipynb  # noqa: W505
     + https://slideslive.com/38907842/session-3-model-parameterization-and-coordinate-system-neals-funnel
@@ -74,6 +76,7 @@ def log_jcd(f_inv_x: pt.TensorVariable, x: pt.TensorVariable) -> pt.TensorVariab
     + https://www.pymc.io/projects/docs/en/latest/_modules/pymc/math.html#
     + https://www.cs.toronto.edu/~rgrosse/courses/csc321_2018/slides/lec10.pdf
     + https://github.com/pymc-devs/pymc-examples/blob/1428f1b4e0d352a88667776b3ec612db93e032d9/examples/case_studies/copula-estimation.ipynb  # noqa: W505
+    + https://discourse.pymc.io/t/when-to-adjust-for-jacobian-and-when-to-skip-in-pymc3/2830
     """
     grad_graph = pytensor.gradient.grad(cost=pt.sum(f_inv_x), wrt=[x])
     return pt.log(pt.abs(pt.reshape(grad_graph, x.shape)))
