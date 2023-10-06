@@ -262,10 +262,12 @@ def plot_ppc(
     kind = 'cumulative' if ecdf else 'kde'
     kindnm = 'ECDF' if ecdf else 'KDE'
     _idata = mdl.idata if idata is None else idata
-    ndims = 1
-    for k in data_pairs.keys():
-        ndims *= _idata['observed_data'][k].shape[-1]
-    f, axs = plt.subplots(ndims, 1, figsize=(12, 4 * ndims))
+    n = len(data_pairs)
+    if flatten is not None:
+        n = 1
+        for k in data_pairs.keys():
+            n *= _idata['observed_data'][k].shape[-1]
+    f, axs = plt.subplots(n, 1, figsize=(12, 4 * n))
     _ = az.plot_ppc(
         _idata,
         group=group,
@@ -292,7 +294,9 @@ def plot_loo_pit(
 
     """
     txtadd = kwargs.pop('txtadd', None)
-    f, axs = plt.subplots(len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)))
+    f, axs = plt.subplots(
+        len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)), squeeze=False
+    )
     for i, (y, yhat) in enumerate(data_pairs.items()):
         kws = dict(y=y, y_hat=yhat)
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][0], **kwargs)
