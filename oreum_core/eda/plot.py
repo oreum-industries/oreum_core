@@ -906,9 +906,11 @@ def plot_estimate(
         handles, labels = gd.axes[0][0].get_legend_handles_labels()
         lbls = [str(round(float(lb), 2)) for lb in labels]  # HACK floating point
         gd.axes[0][0].legend(handles, lbls, loc='upper right', title='P(yhat) > x')
-        summary = ', '.join(
+        summary = ',  '.join(
             df_qvals[['p_gt', 'yhat']]
-            .apply(lambda r: f'P(yhat) > {r[1]:.1f} = {r[0]:.2f}', axis=1)
+            .apply(
+                lambda r: f'$P(\hat{{y}})_{{{r[0]:.2f}}} \geq {{{r[1]:.1f}}}$', axis=1
+            )
             .tolist()
         )
 

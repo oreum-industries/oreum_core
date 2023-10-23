@@ -35,36 +35,32 @@ class ModelIO(BaseFileIO):
     """
 
     def __init__(self, *args, **kwargs):
+        """Inherit super"""
         super().__init__(*args, **kwargs)
 
-    def read_idata(self, fqn: str) -> az.InferenceData:
-        """Read arviz.InferenceData object from fqn e.g. `model/mdl.netcdf`"""
-        path = self.get_path_read(fqn, use_rootdir=False)
-        _log.info(f'Read idata from {str(path.resolve())}')
-        return az.from_netcdf(str(path.resolve()))
+    def read_idata(self, fn: str) -> az.InferenceData:
+        """Read arviz.InferenceData object from fn e.g. `mdl.netcdf`"""
+        fqn = self.get_path_read(fn)
+        _log.info(f'Read idata from {str(fqn.resolve())}')
+        return az.from_netcdf(str(fqn.resolve()))
 
-    def write_idata(self, mdl: BasePYMCModel, fqn: str = '') -> Path:
-        """Accept a BasePYMCModel object mdl, and fqn e.g. `model/mdl.netcdf`
-        write to fqn
-        """
-        path = self.get_path_write(fqn, use_rootdir=False)
-        if fqn == '':
-            path = path.joinpath(Path(f'idata_{mdl.name}.netcdf'))
-        mdl.idata.to_netcdf(str(path.resolve()))
-        _log.info(f'Written to {str(path.resolve())}')
-        return path
+    def write_idata(self, mdl: BasePYMCModel, fn: str = '') -> Path:
+        """Accept BasePYMCModel object and fn e.g. `mdl.netcdf`, write to file"""
+        fn = f'idata_{mdl.name}.netcdf' if fn == '' else fn
+        fqn = self.get_path_write(fn)
+        mdl.idata.to_netcdf(str(fqn.resolve()))
+        _log.info(f'Written to {str(fqn.resolve())}')
+        return fqn
 
     def write_graph(
-        self, mdl: BasePYMCModel, fqn: str = '', txtadd: str = None, fmt: str = 'png'
+        self, mdl: BasePYMCModel, fn: str = '', fmt: str = 'png', **kwargs
     ) -> Path:
         """Accept a BasePYMCModel object mdl, get the graphviz representation
         Write to file and return the fqn to allow use within eda.display_image_file()
         """
-        path = self.get_path_write(fqn)
-        if fqn == '':
-            path = path.joinpath(
-                Path(f"{'_'.join(filter(None, [mdl.name, txtadd]))}.{fmt}")
-            )
+        t = kwargs.pop('txtadd', None)
+        fn = f"{'_'.join(filter(None, [mdl.name, t]))}.{fmt}" if fn == '' else fn
+        fqn = self.get_path_write(fn)
         gv = model_to_graphviz(mdl.model, formatting='plain')
         if fmt == 'png':
             gv.attr(dpi='300')
@@ -74,6 +70,6 @@ class ModelIO(BaseFileIO):
             raise ValueError('format must be in {"png", "svg"}')
 
         # gv auto adds the file extension, so pre-remove if present
-        gv.render(filename=str(path.with_suffix('')), format=fmt, cleanup=True)
-        _log.info(f'Written to {str(path.resolve())}')
-        return path
+        gv.render(filename=str(fqn.with_suffix('')), format=fmt, cleanup=True)
+        _log.info(f'Written to {str(fqn.resolve())}')
+        return fqn

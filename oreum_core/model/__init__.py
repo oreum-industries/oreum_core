@@ -25,7 +25,8 @@ from oreum_core.model.calc import (
     calc_r2,
     calc_rmse,
     compute_log_likelihood_for_potential,
-    log_jcd,
+    get_log_jcd_scalar,
+    get_log_jcd_scan,
     numpy_invlogit,
 )
 from oreum_core.model.describe import (

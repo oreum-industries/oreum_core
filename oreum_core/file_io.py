@@ -24,40 +24,37 @@ class BaseFileIO:
     NOTE
     + This class is to be inherited e.g. `super().__init__(*args, **kwargs)`
     + Checks for existence of files for reading and dirs for writing
-    + Allows a rootpath as we often use in R&D Notebooks
+    + Allows a rootdir / rootpath as we often use in R&D Notebooks
     """
 
-    def __init__(self, rootdir: list[str] = None):
+    def __init__(self, rootdir: Path = None):
         """Allow set a root path for convenience in Notebooks
         e.g. rootdir = DIR_MODELS_A = ['data', 'models', 'a']
         If used, then read/write will prepend this root to their input fqns
         """
-        if rootdir is not None:
-            self.rootdir = Path(*rootdir)
-            if not self.rootdir.is_dir():
+        if rootdir is None:
+            self.rootdir = Path().cwd()
+        else:
+            if not rootdir.is_dir():
                 raise FileNotFoundError(
                     f'Required dir does not exist {str(self.rootdir.resolve())}'
                 )
-        else:
-            self.rootdir = None
+            else:
+                self.rootdir = rootdir
 
-    def get_path_read(self, fqn: str, use_rootdir: bool = True) -> Path:
+    def get_path_read(self, fn: str) -> Path:
         """Create and test fqn file existence for read"""
-        path = Path(fqn)
-        if (self.rootdir is not None) & use_rootdir:
-            path = self.rootdir.joinpath(path)
-        if not path.exists():
+        fqn = self.rootdir.joinpath(fn)
+        if not fqn.exists():
             raise FileNotFoundError(
-                f'Required file does not exist {str(path.resolve())}'
+                f'Required file does not exist {str(fqn.resolve())}'
             )
-        return path
+        return fqn
 
-    def get_path_write(self, fqn: str, use_rootdir: bool = True) -> Path:
-        """Create and test dir existence for write"""
-        path = Path(fqn)
-        if (self.rootdir is not None) & use_rootdir:
-            path = self.rootdir.joinpath(path)
-        dr = Path(*path.parts[:-1])
+    def get_path_write(self, fn: str) -> Path:
+        """Create and test dir existence for write, return fqn"""
+        fqn = self.rootdir.joinpath(fn)
+        dr = Path(*fqn.parts[:-1])
         if not dr.is_dir():
             raise FileNotFoundError(f'Required dir does not exist {str(dr.resolve())}')
-        return path
+        return fqn

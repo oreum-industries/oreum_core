@@ -4,7 +4,8 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "oreum_core"
-dynamic = ["version", "description"]
+description = "Core tools for use on projects by Oreum Industries"
+dynamic = ["version"]
 readme = "README.md"
 license = {file = "LICENSE.md"}
 authors = [{ name = "Oreum Industries", email = "info@oreum.io" },]
@@ -32,7 +33,7 @@ dependencies = [
     "matplotlib-inline<0.1.5",  # 0.1.5+ causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
     "pandas[excel,parquet,plot]>=2.0.1",  # see NOTE
     "patsy>=0.5.3",  # TODO consider using formulae instead
-    "pymc==5.6.1",  # >=5.8.2",  # brings along lots of deps
+    "pymc>=5.9.0",  # brings along lots of deps
     "seaborn==0.12.2",  # 0.13 brings many breaking changes to avoid right now
 ]
 
@@ -118,4 +119,3 @@ name = "oreum_core"
 
 [tool.setuptools.dynamic]
 version = {attr = "oreum_core.__version__"}
-description = {attr = "oreum_core.__init__"}

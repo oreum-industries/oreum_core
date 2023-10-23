@@ -251,6 +251,7 @@ def plot_ppc(
     insamp: bool = True,
     ecdf: bool = True,
     data_pairs: dict = None,
+    flatten: list = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF, does not
@@ -261,9 +262,20 @@ def plot_ppc(
     kind = 'cumulative' if ecdf else 'kde'
     kindnm = 'ECDF' if ecdf else 'KDE'
     _idata = mdl.idata if idata is None else idata
-    f, axs = plt.subplots(len(data_pairs), 1, figsize=(12, 4 * len(data_pairs)))
+    n = len(data_pairs)
+    if flatten is not None:
+        n = 1
+        for k in data_pairs.keys():
+            n *= _idata['observed_data'][k].shape[-1]
+    f, axs = plt.subplots(n, 1, figsize=(12, 4 * n))
     _ = az.plot_ppc(
-        _idata, group=group, kind=kind, ax=axs, data_pairs=data_pairs, **kwargs
+        _idata,
+        group=group,
+        kind=kind,
+        ax=axs,
+        data_pairs=data_pairs,
+        flatten=flatten,
+        **kwargs,
     )
     t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'
     _ = f.suptitle(' - '.join(filter(None, [t, mdl.name, txtadd])))
@@ -282,7 +294,9 @@ def plot_loo_pit(
 
     """
     txtadd = kwargs.pop('txtadd', None)
-    f, axs = plt.subplots(len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)))
+    f, axs = plt.subplots(
+        len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)), squeeze=False
+    )
     for i, (y, yhat) in enumerate(data_pairs.items()):
         kws = dict(y=y, y_hat=yhat)
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][0], **kwargs)
