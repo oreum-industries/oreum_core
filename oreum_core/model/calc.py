@@ -114,13 +114,13 @@ def get_log_jcd_scan(
     if upstream_rvs is not None:
         non_seq += upstream_rvs
 
-    def get_grads(i, s, c, w, *args):
-        """Inner function allows for args. Usecase is to pass in upstream_rvs
-        which we dont actually need to use.
+    def _grads(i, s, c, w, *args):
+        """Inner function allows for args that we dont actually need to use.
+        Expected usecase is to allow scan to pass in non_sequences for upstream_rvs
         """
         return tg.grad(cost=c[i, s], wrt=[w])
 
-    kws = dict(fn=get_grads, sequences=idx, n_steps=n, name="get_grads", strict=True)
+    kws = dict(fn=_grads, sequences=idx, n_steps=n, name="_grads", strict=True)
     grads0, _ = pytensor.scan(**kws, non_sequences=[0, *non_seq])
     grads1, _ = pytensor.scan(**kws, non_sequences=[1, *non_seq])
     grads = grads0.sum(axis=0) + grads1.sum(axis=0)
