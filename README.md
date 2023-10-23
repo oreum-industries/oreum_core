@@ -157,7 +157,6 @@ Github Workflows to run:
 
 
 ---
----
 
 Copyright 2023 Oreum OÜ t/a Oreum Industries. All rights reserved.
 See LICENSE.md.

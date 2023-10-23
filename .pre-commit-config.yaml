@@ -4,7 +4,7 @@ default_language_version:
 default_stages: [commit, push]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks  # general checks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-added-large-files
         args: ['--maxkb=1024']
@@ -31,7 +31,7 @@ repos:
       - id: no-print-statements
         files: ^oreum_core/
   - repo: https://github.com/psf/black  # black formatter
-    rev: 23.9.1
+    rev: 23.10.0
     hooks:
       - id: black
         files: ^oreum_core/
@@ -60,7 +60,7 @@ repos:
         args: [--config, pyproject.toml]
         pass_filenames: false  # see https://github.com/econchick/interrogate/issues/60#issuecomment-1180262851
   - repo: https://gitlab.com/iam-cms/pre-commit-hooks  # apply Apache2 header
-    rev: v0.3.0
+    rev: v0.4.0
     hooks:
       - id: apache-license
         files: ^oreum_core/

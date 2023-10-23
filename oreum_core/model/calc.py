@@ -21,16 +21,18 @@ import numpy as np
 import pandas as pd
 import pymc
 import pytensor
+import pytensor.gradient as tg
 import pytensor.tensor as pt
 from arviz import InferenceData, dict_to_dataset
 from fastprogress import progress_bar
-from pymc.backends.arviz import _DefaultTrace  # , coords_and_dims_for_inferencedata
+from pymc.backends.arviz import _DefaultTrace, coords_and_dims_for_inferencedata
 from pymc.model import Model, modelcontext
 from pymc.pytensorf import PointFunc
 from pymc.util import dataset_to_point_list
 
 __all__ = [
-    'log_jcd',
+    'get_log_jcd_scalar',
+    'get_log_jcd_scan',
     'calc_f_beta',
     'calc_binary_performance_measures',
     'calc_mse',
@@ -49,12 +51,18 @@ RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
 
-def log_jcd(f_inv_x: pt.TensorVariable, x: pt.TensorVariable) -> pt.TensorVariable:
-    """Calc log of Jacobian determinant. Add this Jacobian adjustment to models
-    where the observed is a transformation, to handle the change in volume.
-    Used in oreum_lab copula models
+def get_log_jcd_scalar(
+    f_inv_x: pt.TensorVariable, x: pt.TensorVariable
+) -> pt.TensorVariable:
+    """Calc log of determinant of Jacobian where f_inv_x and x are both (n,)
+    dimensional tensors, and `f_inv_x` is a direct, element-wise transformation
+    of `x` without cross-terms (diagonals). Add this Jacobian adjustment to
+    models where observed is a transformation, to handle change in coords / volume.
+    NOTE:
+    + Slight abuse of terminology because for a 1D f_inv_x, we can sum to scalar
+    + Initially developed for a model with 1D f_inv_x
 
-    Detail from Stan docs:
+    Also see detail from Stan docs:
     + https://mc-stan.org/docs/2_25/reference-manual/change-of-variables-section.html#multivariate-changes-of-variables
     + https://mc-stan.org/documentation/case-studies/mle-params.html
     "The absolute derivative of the inverse transform measures how the scale of
@@ -78,8 +86,51 @@ def log_jcd(f_inv_x: pt.TensorVariable, x: pt.TensorVariable) -> pt.TensorVariab
     + https://github.com/pymc-devs/pymc-examples/blob/1428f1b4e0d352a88667776b3ec612db93e032d9/examples/case_studies/copula-estimation.ipynb  # noqa: W505
     + https://discourse.pymc.io/t/when-to-adjust-for-jacobian-and-when-to-skip-in-pymc3/2830
     """
-    grad_graph = pytensor.gradient.grad(cost=pt.sum(f_inv_x), wrt=[x])
-    return pt.log(pt.abs(pt.reshape(grad_graph, x.shape)))
+    return pt.log(pt.abs(tg.grad(cost=pt.sum(f_inv_x), wrt=[x])))
+
+
+def get_log_jcd_scan(
+    f_inv_x: pt.TensorVariable, x: pt.TensorVariable
+) -> pt.TensorVariable:
+    """Calc log of determinant of Jacobian where f_inv_x and x are both (n, k)
+    dimensional tensors, and `f_inv_x` is a direct, element-wise transformation
+    of `x` without cross-terms (diagonals). Add this Jacobian adjustment to
+    models where observed is a transformation, to handle change in coords / volume.
+    NOTE:
+    + Initially developed for a model where k = 2
+    + Use explicit scan
+    + Break into two scan calls to handle each k separately
+    + Based on https://github.com/pymc-devs/pytensor/blob/7bb18f3a3590d47132245b7868b3a4a6587a4667/pytensor/gradient.py#L1984  # noqa W505
+    + Also see https://discourse.pymc.io/t/something-changed-in-pytensor-2-12-3-and-thus-pymc-5-6-1-that-makes-my-pytensor-gradient-grad-call-get-stuck-any-ideas/13100/4  # noqa W505
+    + Also see https://discourse.pymc.io/t/hitting-a-weird-error-to-do-with-rngs-in-scan-in-a-custom-function-inside-a-potential/13151/14  # noqa W505
+    """
+    n = f_inv_x.shape[0]
+    idx = pt.arange(n, dtype="int32")
+
+    def get_grads(i, s, c, w):
+        return tg.grad(cost=c[i, s], wrt=[w])
+
+    grads0, _ = pytensor.scan(
+        get_grads,
+        sequences=idx,
+        non_sequences=[0, f_inv_x, x],
+        n_steps=n,
+        name="get_grads",
+        strict=False,
+    )
+
+    grads1, _ = pytensor.scan(
+        get_grads,
+        sequences=idx,
+        non_sequences=[1, f_inv_x, x],
+        n_steps=n,
+        name="get_grads",
+        strict=False,
+    )
+
+    grads = grads0.sum(axis=0) + grads1.sum(axis=0)
+    log_jcd = pt.sum(pt.log(pt.abs(grads)), axis=1)
+    return log_jcd
 
 
 def calc_f_beta(precision: np.array, recall: np.array, beta: float = 1.0) -> np.array:
@@ -247,7 +298,7 @@ def calc_ppc_coverage(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
 
 
 def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
-    R"""Convert a packed triangular matrix into a two dimensional array.
+    r"""Convert a packed triangular matrix into a two dimensional array.
     Triangular matrices can be stored with better space efficiancy by
     storing the non-zero values in a one-dimensional array. We number
     the elements by row like this (for lower or upper triangular matrices):
@@ -390,23 +441,6 @@ def numpy_invlogit(x, eps=sys.float_info.epsilon):
     return (1.0 - 2.0 * eps) / (1.0 + np.exp(-x)) + eps
 
 
-def _coords_and_dims_for_inferencedata(
-    model: Model,
-) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    """Parse PyMC model coords and dims format to one accepted by InferenceData.
-    copied from https://github.com/pymc-devs/pymc/blame/92278278d4a8b78f17ed0f101eb29d0d9982eb45/pymc/backends/arviz.py#L103-L112
-    present in pymc >= 5.8.1, using it here for pymc < 5.8.1
-    """
-    coords = {
-        cname: np.array(cvals) if isinstance(cvals, tuple) else cvals
-        for cname, cvals in model.coords.items()
-        if cvals is not None
-    }
-    dims = {dname: list(dvals) for dname, dvals in model.named_vars_to_dims.items()}
-
-    return coords, dims
-
-
 def compute_log_likelihood_for_potential(
     idata: InferenceData,
     *,
@@ -506,7 +540,7 @@ def compute_log_likelihood_for_potential(
             (*[len(coord) for coord in stacked_dims.values()], *array.shape[1:])
         )
 
-    coords, dims = _coords_and_dims_for_inferencedata(model)
+    coords, dims = coords_and_dims_for_inferencedata(model)
     loglike_dataset = dict_to_dataset(
         loglike_trace,
         library=pymc,
