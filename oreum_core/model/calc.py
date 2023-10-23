@@ -90,7 +90,9 @@ def get_log_jcd_scalar(
 
 
 def get_log_jcd_scan(
-    f_inv_x: pt.TensorVariable, x: pt.TensorVariable
+    f_inv_x: pt.TensorVariable,
+    x: pt.TensorVariable,
+    upstream_rvs: list[pt.TensorVariable] = None,
 ) -> pt.TensorVariable:
     """Calc log of determinant of Jacobian where f_inv_x and x are both (n, k)
     dimensional tensors, and `f_inv_x` is a direct, element-wise transformation
@@ -98,7 +100,9 @@ def get_log_jcd_scan(
     models where observed is a transformation, to handle change in coords / volume.
     NOTE:
     + Initially developed for a model where k = 2
-    + Use explicit scan
+    + Use explicit scan and strict, make sure to pass in any RVs upstream of
+      f_inv_x in `upstream_rvs`: scan needs to see these in non_sequences,
+      although we dont actually use them inside the inner function get_grads
     + Break into two scan calls to handle each k separately
     + Based on https://github.com/pymc-devs/pytensor/blob/7bb18f3a3590d47132245b7868b3a4a6587a4667/pytensor/gradient.py#L1984  # noqa W505
     + Also see https://discourse.pymc.io/t/something-changed-in-pytensor-2-12-3-and-thus-pymc-5-6-1-that-makes-my-pytensor-gradient-grad-call-get-stuck-any-ideas/13100/4  # noqa W505
@@ -106,13 +110,19 @@ def get_log_jcd_scan(
     """
     n = f_inv_x.shape[0]
     idx = pt.arange(n, dtype="int32")
+    non_seq = [f_inv_x, x]
+    if upstream_rvs is not None:
+        non_seq += upstream_rvs
 
-    def get_grads(i, s, c, w):
+    def get_grads(i, s, c, w, *args):
+        """Inner function allows for args. Usecase is to pass in upstream_rvs
+        which we dont actually need to use.
+        """
         return tg.grad(cost=c[i, s], wrt=[w])
 
-    kws = dict(sequences=idx, n_steps=n, name="get_grads", strict=False)
-    grads0, _ = pytensor.scan(get_grads, non_sequences=[0, f_inv_x, x], **kws)
-    grads1, _ = pytensor.scan(get_grads, non_sequences=[1, f_inv_x, x], **kws)
+    kws = dict(fn=get_grads, sequences=idx, n_steps=n, name="get_grads", strict=True)
+    grads0, _ = pytensor.scan(**kws, non_sequences=[0, *non_seq])
+    grads1, _ = pytensor.scan(**kws, non_sequences=[1, *non_seq])
     grads = grads0.sum(axis=0) + grads1.sum(axis=0)
     log_jcd = pt.sum(pt.log(pt.abs(grads)), axis=1)
     return log_jcd
