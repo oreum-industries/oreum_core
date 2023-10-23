@@ -110,24 +110,9 @@ def get_log_jcd_scan(
     def get_grads(i, s, c, w):
         return tg.grad(cost=c[i, s], wrt=[w])
 
-    grads0, _ = pytensor.scan(
-        get_grads,
-        sequences=idx,
-        non_sequences=[0, f_inv_x, x],
-        n_steps=n,
-        name="get_grads",
-        strict=False,
-    )
-
-    grads1, _ = pytensor.scan(
-        get_grads,
-        sequences=idx,
-        non_sequences=[1, f_inv_x, x],
-        n_steps=n,
-        name="get_grads",
-        strict=False,
-    )
-
+    kws = dict(sequences=idx, n_steps=n, name="get_grads", strict=False)
+    grads0, _ = pytensor.scan(get_grads, non_sequences=[0, f_inv_x, x], **kws)
+    grads1, _ = pytensor.scan(get_grads, non_sequences=[1, f_inv_x, x], **kws)
     grads = grads0.sum(axis=0) + grads1.sum(axis=0)
     log_jcd = pt.sum(pt.log(pt.abs(grads)), axis=1)
     return log_jcd
