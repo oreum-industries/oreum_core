@@ -34,6 +34,7 @@ from oreum_core.model.describe import (
     extract_yobs_yhat,
     get_summary,
     model_desc,
+    print_rvs,
 )
 from oreum_core.model.distributions import (
     lognormal_icdf,

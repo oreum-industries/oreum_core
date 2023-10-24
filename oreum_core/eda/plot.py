@@ -456,7 +456,7 @@ def plot_mincovdet(df: pd.DataFrame, mcd, thresh: float = 0.99):
         + '\n(thresh @ {:.1%}, cutoff @ {:.1f}, identified {} outliers)'.format(
             thresh, cutoff, dfp['mcd_outlier'].sum()
         ),
-        fontsize=16,
+        fontsize=14,
     )
 
     grd = plt.GridSpec(nrows=1, ncols=2, wspace=0.05, width_ratios=[3, 1])
@@ -1258,7 +1258,7 @@ def plot_sum_dist(
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
 
-    f = plt.figure(figsize=(12, 2))
+    f = plt.figure(figsize=(12, 2.5))
     gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1])
@@ -1288,7 +1288,7 @@ def plot_sum_dist(
     if title_add != '':
         title_add = f'\n{title_add}'
     title = f'Diagnostic 1D plots of `{val}`'
-    _ = f.suptitle(f'{title}{title_add}', fontsize=16)
+    _ = f.suptitle(f'{title}{title_add}', fontsize=14)
 
     if sum(idx) > 0:
         t = (
@@ -1301,7 +1301,6 @@ def plot_sum_dist(
 
     ax0.xaxis.label.set_visible(False)
     ax1.xaxis.label.set_visible(False)
-
     _ = plt.tight_layout()
     return gs
 
@@ -1402,7 +1401,7 @@ def plot_grp_sum_dist_ct(
     if title_add != '':
         title_add = f'\n{title_add}'
     title = f'Diagnostic 1D plots of `{val}` grouped by `{grp}`'
-    _ = f.suptitle(f'{title}{title_add}', fontsize=16)
+    _ = f.suptitle(f'{title}{title_add}', fontsize=14)
 
     if sum(idx) > 0:
         t = (
@@ -1518,7 +1517,7 @@ def plot_grp_year_sum_dist_ct(
         title_add = f'\n{title_add}'
 
     title = f'Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}'
-    _ = f.suptitle(f'{title}{title_add}', fontsize=16)
+    _ = f.suptitle(f'{title}{title_add}', fontsize=14)
 
     _ = plt.tight_layout()
     f = plt.gcf()
