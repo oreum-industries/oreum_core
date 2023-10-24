@@ -129,8 +129,7 @@ class BasePYMCModel:
           model with missing values, per my detailed
           [MRE Notebook gist](https://gist.github.com/jonsedar/070319334bcf033773cc3e9495c79ea0)
           that illustrates the issue.
-        + I have created and tested a fix as described in my
-          [issue ticket](https://github.com/pymc-devs/pymc/issues/4598)
+        + See https://github.com/pymc-devs/pymc/issues/4598
         """
         kws = dict(
             random_seed=kwargs.pop('random_seed', self.rsd),

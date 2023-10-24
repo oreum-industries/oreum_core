@@ -26,7 +26,7 @@ __all__ = ['describe', 'display_fw', 'display_ht', 'get_fts_by_dtype']
 _log = logging.getLogger(__name__)
 
 RSD = 42
-rng = np.random.default_rng(seed=RSD)
+RNG = np.random.default_rng(seed=RSD)
 
 
 def describe(
@@ -129,7 +129,7 @@ def describe(
         fts_out.append(['mode', 'mode_count'])
 
     # select summary states and prepend random rows for example cases
-    rndidx = np.random.randint(0, len(df), nobs)
+    rndidx = RNG.integers(low=0, high=len(df), size=nobs)
     dfout = pd.concat(
         (df.iloc[rndidx].T, dfout[fts_out].copy()), axis=1, join='outer', sort=False
     )
