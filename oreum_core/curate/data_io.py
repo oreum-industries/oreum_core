@@ -62,7 +62,10 @@ class PandasToCSV(BaseFileIO):
     def write(self, df: pd.DataFrame, fn: str) -> str:
         """Accept pandas DataFrame and fn e.g. `df`, write to fn.csv"""
         fqn = self.get_path_write(f'{fn}.csv')
-        df.to_csv(str(fqn), index_label='rowid', quoting=csv.QUOTE_NONNUMERIC)
+        kws = dict(quoting=csv.QUOTE_NONNUMERIC)
+        if (len(df.index.names) == 1) & (df.index.names[0] is None):
+            kws.update(index_label='rowid')
+        df.to_csv(str(fqn), **kws)
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn
 
