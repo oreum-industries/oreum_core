@@ -51,7 +51,7 @@ class DatatypeConverter:
                 fdate = [],
                 fyear = [],
                 fint = [],
-                ffloat =[],
+                ffloat = [],
                 fverbatim = [],        # maintain in current dtype)
         """
         self.ftsd = dict(
@@ -80,16 +80,19 @@ class DatatypeConverter:
 
         # subselect desired fts
         # TODO make this optional
-        fts_all = [w for _, v in self.fts.items() for w in v]
+        fts_all = [w for _, v in self.ftsd.items() for w in v]
         df = dfraw[fts_all].copy()
 
-        for ft in self.fts['fid'] + self.fts['fcat']:
+        for ft in self.ftsd['fid'] + self.ftsd['fcat']:
+            # tame string, clean, handle nulls
             idx = df[ft].notnull()
-            df.loc[idx, ft] = (
-                df.loc[idx, ft].astype(str, errors='raise').apply(snl.clean)
-            )
+            vals = df.loc[idx, ft].astype(str, errors='raise').apply(snl.clean)
+            df.drop(ft, axis=1, inplace=True)
+            df.loc[~idx, ft] = 'nan'
+            df.loc[idx, ft] = vals
+            df[ft] = df[ft].astype('string')
 
-        for ft in self.fts['fbool']:
+        for ft in self.ftsd['fbool']:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
             if df.dtypes[ft] == object:
                 df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
@@ -101,7 +104,7 @@ class DatatypeConverter:
                     continue
             df[ft] = df[ft].convert_dtypes(convert_boolean=True)
 
-        for ft in self.fts['fyear']:
+        for ft in self.ftsd['fyear']:
             if df.dtypes[ft] == object:
                 df[ft] = (
                     df[ft]
@@ -116,10 +119,10 @@ class DatatypeConverter:
                 df[ft] = df[ft].astype(int, errors='raise')
             df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y')
 
-        for ft in self.fts['fdate']:
+        for ft in self.ftsd['fdate']:
             df[ft] = pd.to_datetime(df[ft], errors='raise', format=self.date_format)
         try:
-            for ft in self.fts['fint']:
+            for ft in self.ftsd['fint']:
                 if df.dtypes[ft] == object:
                     df[ft] = (
                         df[ft]
@@ -138,7 +141,7 @@ class DatatypeConverter:
             )  # from e
 
         try:
-            for ft in self.fts['ffloat']:
+            for ft in self.ftsd['ffloat']:
                 if df.dtypes[ft] == object:
                     df[ft] = (
                         df[ft]
