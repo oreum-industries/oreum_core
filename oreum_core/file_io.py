@@ -16,6 +16,8 @@
 """Common File IO"""
 from pathlib import Path
 
+from .curate.text_clean import SnakeyLowercaser
+
 __all__ = ['BaseFileIO']
 
 
@@ -26,6 +28,8 @@ class BaseFileIO:
     + Checks for existence of files for reading and dirs for writing
     + Allows a rootdir / rootpath as we often use in R&D Notebooks
     """
+
+    snl = SnakeyLowercaser()
 
     def __init__(self, rootdir: Path = None):
         """Allow set a root path for convenience in Notebooks
@@ -53,6 +57,7 @@ class BaseFileIO:
 
     def get_path_write(self, fn: str) -> Path:
         """Create and test dir existence for write, return fqn"""
+        fn = self.snl.clean(fn)
         fqn = self.rootdir.joinpath(fn)
         dr = Path(*fqn.parts[:-1])
         if not dr.is_dir():
