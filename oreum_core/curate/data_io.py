@@ -40,8 +40,8 @@ class PandasParquetIO(BaseFileIO):
 
     def read(self, fn: str) -> pd.DataFrame:
         """Read parquet file fn from rootdir"""
+        fn = Path(fn).with_suffix('.parquet')
         fqn = self.get_path_read(fn)
-        fqn = fqn.with_suffix('.parquet')
         _log.info(f'Read df from {str(fqn.resolve())}')
         return pd.read_parquet(str(fqn))
 
