@@ -26,7 +26,7 @@ __all__ = ['describe', 'display_fw', 'display_ht', 'get_fts_by_dtype']
 _log = logging.getLogger(__name__)
 
 RSD = 42
-rng = np.random.default_rng(seed=RSD)
+RNG = np.random.default_rng(seed=RSD)
 
 
 def describe(
@@ -52,14 +52,14 @@ def describe(
         note = 'NOTE: nfeats + index shown {} < width {}'.format(
             nfeats + len_idx, df.shape[1]
         )
-
+    nbytes = df.values.nbytes
     _log.info(f'Array shape: {df.shape}')
-    _log.info(f'Array memsize: {df.values.nbytes // 1000:,} kB')
+    _log.info(f'Array memsize: {nbytes // 1000:,} kB')
     _log.info(f'Index levels: {df.index.names}')
     _log.info(f'{note}')
 
     if df.values.nbytes > limit:
-        return 'Array memsize > 50MB limit, avoid performing descriptions'
+        return f'Array memsize {nbytes // 1e6:,.0f} MB > {limit // 1e6:,.0f} limit'
 
     df = df.copy()
     if reset_index:
@@ -93,7 +93,7 @@ def describe(
             dfout.loc[ft, 'sum'] = df[ft].sum()
 
     # add min, max for string cols (note the not very clever overwrite of count)
-    idxs = dfout['dtype'] == 'object'
+    idxs = (dfout['dtype'] == 'object') | (dfout['dtype'] == 'string[python]')
     if np.sum(idxs.values) > 0:
         for ft in dfout.loc[idxs].index.values:
             dfout.loc[ft, 'min'] = df[ft].value_counts().index.min()
@@ -129,7 +129,7 @@ def describe(
         fts_out.append(['mode', 'mode_count'])
 
     # select summary states and prepend random rows for example cases
-    rndidx = np.random.randint(0, len(df), nobs)
+    rndidx = RNG.integers(low=0, high=len(df), size=nobs)
     dfout = pd.concat(
         (df.iloc[rndidx].T, dfout[fts_out].copy()), axis=1, join='outer', sort=False
     )
@@ -138,9 +138,8 @@ def describe(
     if return_df:
         return dfout
     else:
-        display_fw(
-            dfout.iloc[: nfeats + len_idx, :].fillna(''), max_rows=nfeats, **kwargs
-        )
+        display_fw(dfout.iloc[: nfeats + len_idx, :], max_rows=nfeats, **kwargs)
+        return f'Array memsize {nbytes // 1e6:,.0f} MB'
 
 
 def display_fw(df, **kwargs):

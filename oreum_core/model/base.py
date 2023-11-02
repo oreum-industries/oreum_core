@@ -52,8 +52,8 @@ class BasePYMCModel:
         self.model = None
         self._idata = None
         self.replace_idata = False
-        self.sample_prior_predictive_kws = dict(samples=500)
-        self.sample_posterior_predictive_kws = dict(store_ppc=True, ppc_insample=False)
+        self.sample_prior_pred_kws = dict(samples=500, return_inferencedata=True)
+        self.sample_post_pred_kws = dict(store_ppc=True, ppc_insample=False)
         self.sample_kws = dict(
             init='auto',  # aka jitter+adapt_diag
             tune=2000,  # NOTE: often need to bump this much higher e.g. 5000
@@ -61,7 +61,7 @@ class BasePYMCModel:
             chains=4,
             cores=4,
             target_accept=0.8,
-            idata_kwargs=None,
+            idata_kwargs={"log_likelihood": True},  # safe to have as True
             progressbar=True,
         )
         self.rvs_for_posterior_plots = []
@@ -122,29 +122,32 @@ class BasePYMCModel:
 
     def sample_prior_predictive(self, **kwargs):
         """Sample prior predictive:
-            use base class defaults self.sample_prior_predictive_kws
+            use base class defaults self.sample_prior_pred_kws
             or passed kwargs for pm.sample_prior_predictive()
         NOTE:
         + It's not currently possible to run Prior Predictive Checks on a
           model with missing values, per my detailed
           [MRE Notebook gist](https://gist.github.com/jonsedar/070319334bcf033773cc3e9495c79ea0)
           that illustrates the issue.
-        + I have created and tested a fix as described in my
-          [issue ticket](https://github.com/pymc-devs/pymc/issues/4598)
+        + See https://github.com/pymc-devs/pymc/issues/4598
         """
         kws = dict(
             random_seed=kwargs.pop('random_seed', self.rsd),
-            samples=kwargs.pop('samples', self.sample_prior_predictive_kws['samples']),
+            samples=kwargs.pop('samples', self.sample_prior_pred_kws['samples']),
+            return_inferencedata=kwargs.pop(
+                'return_inferencedata',
+                self.sample_prior_pred_kws['return_inferencedata'],
+            ),
         )
         replace = kwargs.pop('replace', self.replace_idata)
 
         with self.model:
             try:
-                prior = pm.sample_prior_predictive(**{**kws, **kwargs})
+                prior_pred = pm.sample_prior_predictive(**{**kws, **kwargs})
             except UserWarning as e:
                 _log.warning('Warning in mdl.sample_prior_predictive()', exc_info=e)
             finally:
-                _ = self.update_idata(prior, replace=replace)
+                _ = self.update_idata(prior_pred, replace=replace)
             _log.info(f'Sampled prior predictive for {self.name} {self.version}')
         return None
 
@@ -160,6 +163,7 @@ class BasePYMCModel:
             chains=kwargs.pop('chains', self.sample_kws['chains']),
             cores=kwargs.pop('cores', self.sample_kws['cores']),
             progressbar=kwargs.pop('progressbar', self.sample_kws['progressbar']),
+            idata_kwargs=kwargs.pop('idata_kwargs', self.sample_kws['idata_kwargs']),
         )
 
         target_accept = kwargs.pop('target_accept', self.sample_kws['target_accept'])
@@ -204,17 +208,15 @@ class BasePYMCModel:
 
     def sample_posterior_predictive(self, **kwargs):
         """Sample posterior predictive
-        use self.sample_posterior_predictive_kws or passed kwargs
+        use self.sample_post_pred_kws or passed kwargs
         Note by default aimed toward out-of-sample PPC in production
         """
-        store_ppc = kwargs.pop(
-            'store_ppc', self.sample_posterior_predictive_kws['store_ppc']
-        )
+        store_ppc = kwargs.pop('store_ppc', self.sample_post_pred_kws['store_ppc'])
         kws = dict(
             trace=self.posterior,
             random_seed=kwargs.pop('random_seed', self.rsd),
             predictions=not kwargs.pop(
-                'ppc_insample', self.sample_posterior_predictive_kws['ppc_insample']
+                'ppc_insample', self.sample_post_pred_kws['ppc_insample']
             ),
         )
         with self.model:

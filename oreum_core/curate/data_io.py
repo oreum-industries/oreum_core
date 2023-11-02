@@ -39,7 +39,8 @@ class PandasParquetIO(BaseFileIO):
         super().__init__(*args, **kwargs)
 
     def read(self, fn: str) -> pd.DataFrame:
-        """Read arviz.InferenceData object from fn e.g. `mdl.netcdf`"""
+        """Read parquet file fn from rootdir"""
+        fn = Path(fn).with_suffix('.parquet')
         fqn = self.get_path_read(fn)
         _log.info(f'Read df from {str(fqn.resolve())}')
         return pd.read_parquet(str(fqn))
@@ -47,6 +48,7 @@ class PandasParquetIO(BaseFileIO):
     def write(self, df: pd.DataFrame, fn: str) -> Path:
         """Accept pandas DataFrame and fn e.g. `df.parquet`, write to fqn"""
         fqn = self.get_path_write(fn)
+        fqn = fqn.with_suffix('.parquet')
         df.to_parquet(str(fqn))
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn
@@ -62,7 +64,10 @@ class PandasToCSV(BaseFileIO):
     def write(self, df: pd.DataFrame, fn: str) -> str:
         """Accept pandas DataFrame and fn e.g. `df`, write to fn.csv"""
         fqn = self.get_path_write(f'{fn}.csv')
-        df.to_csv(str(fqn), index_label='rowid', quoting=csv.QUOTE_NONNUMERIC)
+        kws = dict(quoting=csv.QUOTE_NONNUMERIC)
+        if (len(df.index.names) == 1) & (df.index.names[0] is None):
+            kws.update(index_label='rowid')
+        df.to_csv(str(fqn), **kws)
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn
 

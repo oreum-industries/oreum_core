@@ -93,6 +93,18 @@ def get_summary(mdl: BasePYMCModel, rvs: list, group='posterior') -> pd.DataFram
     return df
 
 
+def print_rvs(mdl: BasePYMCModel) -> list[str]:
+    """Convenience to print RV strings to notebook
+    Use as _ = [display(Markdown(s for s in mt.print_rvs(mdl)))]
+    """
+    return [
+        rv.str_repr(formatting='string', include_params=True)
+        for rv in mdl.model.free_RVs + mdl.model.potentials
+    ]
+
+
+# _ = [print(f'{k}: {v}') for k, v in mdl.describe_rvs().items()]
+
 # def print_rvs(rvs: list[pt.TensorVariable]) -> None:
 #     """Display rvs to Notebook using latex, post sub underscores
 #     Hack to replace print(mdl.model) see https://github.com/pymc-devs/pymc/issues/6869

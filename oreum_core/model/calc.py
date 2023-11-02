@@ -104,6 +104,7 @@ def get_log_jcd_scan(
       f_inv_x in `upstream_rvs`: scan needs to see these in non_sequences,
       although we dont actually use them inside the inner function get_grads
     + Break into two scan calls to handle each k separately
+    + Scales linearly with n, so expect to take a while for n > 200
     + Based on https://github.com/pymc-devs/pytensor/blob/7bb18f3a3590d47132245b7868b3a4a6587a4667/pytensor/gradient.py#L1984  # noqa W505
     + Also see https://discourse.pymc.io/t/something-changed-in-pytensor-2-12-3-and-thus-pymc-5-6-1-that-makes-my-pytensor-gradient-grad-call-get-stuck-any-ideas/13100/4  # noqa W505
     + Also see https://discourse.pymc.io/t/hitting-a-weird-error-to-do-with-rngs-in-scan-in-a-custom-function-inside-a-potential/13151/14  # noqa W505
@@ -115,16 +116,19 @@ def get_log_jcd_scan(
         non_seq += upstream_rvs
 
     def _grads(i, s, c, w, *args):
-        """Inner function allows for args that we dont actually need to use.
-        Expected usecase is to allow scan to pass in non_sequences for upstream_rvs
+        """Inner function allows for extra args that we dont actually use:
+        because scan needs to know about upstream_rvs in non_sequences and also
+        wants to passes them into the inner funciton _grad.
+        See https://github.com/pymc-devs/pytensor/pull/191
+
         """
-        return tg.grad(cost=c[i, s], wrt=[w])
+        return tg.grad(cost=c[i, s], wrt=[w])  # shape (n, n, k)
 
     kws = dict(fn=_grads, sequences=idx, n_steps=n, name="_grads", strict=True)
     grads0, _ = pytensor.scan(**kws, non_sequences=[0, *non_seq])
     grads1, _ = pytensor.scan(**kws, non_sequences=[1, *non_seq])
-    grads = grads0.sum(axis=0) + grads1.sum(axis=0)
-    log_jcd = pt.sum(pt.log(pt.abs(grads)), axis=1)
+    grads = grads0.sum(axis=0) + grads1.sum(axis=0)  # shape (n, k)
+    log_jcd = pt.sum(pt.log(pt.abs(grads)), axis=1)  # shape (n)
     return log_jcd
 
 
