@@ -68,8 +68,8 @@ class DatatypeConverter:
         self.rx_number_junk = re.compile(r'[#$€£₤¥,;%\s]')
         self.date_format = date_format
         inv_bool_dict = {
-            True: ['yes', 'y', 'true', 't', '1', 1],
-            False: ['no', 'n', 'false', 'f', '0', 0],
+            True: ['yes', 'y', 'true', 't', '1', 1, 1.0],
+            False: ['no', 'n', 'false', 'f', '0', 0, 0.0],
         }
         self.bool_dict = {v: k for k, vs in inv_bool_dict.items() for v in vs}
         self.strnans = ['none', 'nan', 'null', 'na', 'n/a', 'missing', 'empty', '']
