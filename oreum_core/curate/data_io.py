@@ -39,14 +39,16 @@ class PandasParquetIO(BaseFileIO):
         super().__init__(*args, **kwargs)
 
     def read(self, fn: str) -> pd.DataFrame:
-        """Read arviz.InferenceData object from fn e.g. `mdl.netcdf`"""
+        """Read parquet file fn from rootdir"""
         fqn = self.get_path_read(fn)
+        fqn = fqn.with_suffix('.parquet')
         _log.info(f'Read df from {str(fqn.resolve())}')
         return pd.read_parquet(str(fqn))
 
     def write(self, df: pd.DataFrame, fn: str) -> Path:
         """Accept pandas DataFrame and fn e.g. `df.parquet`, write to fqn"""
         fqn = self.get_path_write(fn)
+        fqn = fqn.with_suffix('.parquet')
         df.to_parquet(str(fqn))
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn
