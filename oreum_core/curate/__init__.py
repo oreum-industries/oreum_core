@@ -15,8 +15,8 @@
 # curate/
 """Various classes & functions for data curation"""
 from oreum_core.curate.data_io import (
+    PandasCSVIO,
     PandasParquetIO,
-    PandasToCSV,
     SimpleStringIO,
     copy_csv2md,
 )

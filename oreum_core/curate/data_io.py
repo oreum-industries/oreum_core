@@ -24,7 +24,7 @@ import pandas as pd
 
 from oreum_core.file_io import BaseFileIO
 
-__all__ = ['PandasParquetIO', 'PandasToCSV', 'SimpleStringIO', 'copy_csv2md']
+__all__ = ['PandasParquetIO', 'PandasCSVIO', 'SimpleStringIO', 'copy_csv2md']
 
 _log = logging.getLogger(__name__)
 
@@ -38,32 +38,38 @@ class PandasParquetIO(BaseFileIO):
         """Inherit super"""
         super().__init__(*args, **kwargs)
 
-    def read(self, fn: str) -> pd.DataFrame:
-        """Read parquet file fn from rootdir"""
+    def read(self, fn: str, *args, **kwargs) -> pd.DataFrame:
+        """Read parquet fn from rootdir, pass args kwargs to pd.read_parquet"""
         fn = Path(fn).with_suffix('.parquet')
         fqn = self.get_path_read(fn)
-        _log.info(f'Read df from {str(fqn.resolve())}')
-        return pd.read_parquet(str(fqn))
+        _log.info(f'Read parquet from {str(fqn.resolve())}')
+        return pd.read_parquet(str(fqn), *args, **kwargs)
 
     def write(self, df: pd.DataFrame, fn: str) -> Path:
         """Accept pandas DataFrame and fn e.g. `df.parquet`, write to fqn"""
-        fqn = self.get_path_write(fn)
-        fqn = fqn.with_suffix('.parquet')
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.parquet'))
         df.to_parquet(str(fqn))
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn
 
 
-class PandasToCSV(BaseFileIO):
+class PandasCSVIO(BaseFileIO):
     """Very simple helper class to write a Pandas dataframe to CSV file in a consistent way"""
 
     def __init__(self, *args, **kwargs):
         """Inherit super"""
         super().__init__(*args, **kwargs)
 
+    def read(self, fn: str, *args, **kwargs) -> pd.DataFrame:
+        """Read csv fn from rootdir, pass args kwargs to pd.read_csv"""
+        fn = Path(fn).with_suffix('.csv')
+        fqn = self.get_path_read(fn)
+        _log.info(f'Read csv from {str(fqn.resolve())}')
+        return pd.read_csv(str(fqn), *args, **kwargs)
+
     def write(self, df: pd.DataFrame, fn: str) -> str:
         """Accept pandas DataFrame and fn e.g. `df`, write to fn.csv"""
-        fqn = self.get_path_write(f'{fn}.csv')
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.csv'))
         kws = dict(quoting=csv.QUOTE_NONNUMERIC)
         if (len(df.index.names) == 1) & (df.index.names[0] is None):
             kws.update(index_label='rowid')
@@ -97,7 +103,7 @@ class SimpleStringIO(BaseFileIO):
         return s
 
     def write(self, s: str, fn: str) -> str:
-        fqn = self.get_path_write(fn)
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(f'.{self.kind}'))
         if self.kind == 'json':
             s = json.dumps(s)
         with open(str(fqn), 'w') as f:

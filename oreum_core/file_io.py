@@ -56,8 +56,8 @@ class BaseFileIO:
         return fqn
 
     def get_path_write(self, fn: str) -> Path:
-        """Create and test dir existence for write, return fqn"""
-        fn = self.snl.clean(fn)
+        """Create and test dir existence for write, return fqn
+        Ensure the passed fn is snl.cleaned"""
         fqn = self.rootdir.joinpath(fn)
         dr = Path(*fqn.parts[:-1])
         if not dr.is_dir():

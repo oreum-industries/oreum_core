@@ -59,7 +59,7 @@ def describe(
     _log.info(f'{note}')
 
     if df.values.nbytes > limit:
-        return f'Array memsize {nbytes // 1e6:,.0f} MB > {limit // 1e6:,.0f} limit'
+        return f'Array memsize {nbytes // 1e6:,.1f} MB > {limit // 1e6:,.0f} limit'
 
     df = df.copy()
     if reset_index:
@@ -139,7 +139,7 @@ def describe(
         return dfout
     else:
         display_fw(dfout.iloc[: nfeats + len_idx, :], max_rows=nfeats, **kwargs)
-        return f'Array memsize {nbytes // 1e6:,.0f} MB'
+        return f'Array memsize {nbytes // 1e3:,.0f} kB'
 
 
 def display_fw(df, **kwargs):

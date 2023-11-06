@@ -1323,7 +1323,7 @@ def plot_grp_sum_dist_ct(
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
 
-    dfg = dfp.groupby('corr_kind').size()
+    dfg = dfp.groupby(grp).size()
 
     # order by descending date or count
     if not dfp[grp].dtypes in ['object', 'category']:
