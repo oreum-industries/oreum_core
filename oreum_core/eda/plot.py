@@ -1277,7 +1277,7 @@ def plot_sum_dist(
     title_add: str = '',
     plot_outliers: bool = True,
     palette: sns.palettes._ColorPalette = None,
-) -> gridspec.GridSpec:
+) -> figure.Figure:
     """Plot simple diagnostics (sum, distribution) of numeric value `val`,
     Returns a GridSpec
     """
@@ -1285,7 +1285,7 @@ def plot_sum_dist(
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
 
-    f = plt.figure(figsize=(12, 2.5))
+    f = plt.figure(figsize=(12, 2))
     gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1])
@@ -1329,7 +1329,7 @@ def plot_sum_dist(
     ax0.xaxis.label.set_visible(False)
     ax1.xaxis.label.set_visible(False)
     _ = plt.tight_layout()
-    return gs
+    return f
 
 
 def plot_grp_sum_dist_ct(

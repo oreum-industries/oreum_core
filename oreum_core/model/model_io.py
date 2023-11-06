@@ -47,7 +47,7 @@ class ModelIO(BaseFileIO):
     def write_idata(self, mdl: BasePYMCModel, fn: str = '') -> Path:
         """Accept BasePYMCModel object and fn e.g. `mdl.netcdf`, write to file"""
         fn = f'idata_{mdl.name}.netcdf' if fn == '' else fn
-        fqn = self.get_path_write(fn)
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         mdl.idata.to_netcdf(str(fqn.resolve()))
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn
