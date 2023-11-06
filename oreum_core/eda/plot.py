@@ -927,7 +927,7 @@ def plot_estimate(
                 orient='h',
             )
         _ = [
-            gd.ax.annotate(f'{v:.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
+            gd.ax.annotate(f'{v:,.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
             for i, v in enumerate(mn)
         ]
         elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
@@ -935,9 +935,9 @@ def plot_estimate(
         if force_xlim is not None:
             _ = gd.ax.set(xlim=force_xlim)
         summary = (
-            f'Mean = {mn[0]:.1f}, '
-            + f'HDI_50 = [{hdi[1]:.1f}, {hdi[2]:.1f}], '
-            + f'HDI_94 = [{hdi[0]:.1f}, {hdi[3]:.1f}]'
+            f'Mean = {mn[0]:,.1f}, '
+            + f'HDI_50 = [{hdi[1]:,.1f}, {hdi[2]:,.1f}], '
+            + f'HDI_94 = [{hdi[0]:,.1f}, {hdi[3]:,.1f}]'
         )
 
     t = f'Summary Distribution of {yhat} estimate for {nobs} obs'
