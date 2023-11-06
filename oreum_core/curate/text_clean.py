@@ -26,14 +26,14 @@ __all__ = ['SnakeyLowercaser', 'TextCleaner']
 class SnakeyLowercaser:
     """Clean and standardise a string to snakey_lowercase
     Split CamelCasedStrings
-    Convert '-' and '.' to '_' and preserve existing '_',
+    Convert '[-/.]' to '_' and preserve existing '_',
     Useful for the often messy column names present in Excel tables
     """
 
     def __init__(self):
         """Init and setup lots of regexes"""
-        punct_to_remove = re.sub(r'_', '', string.punctuation)
-        self.rx_to_underscore = re.compile(r'[-/]')
+        punct_to_remove = re.sub(r'[_]', '', string.punctuation)
+        self.rx_to_underscore = re.compile(r'[-/.]')
         self.rx_punct = re.compile('[{}]'.format(re.escape(punct_to_remove)))
         self.rx_splitter1 = re.compile(r'([A-Za-z0-9])([A-Z][a-z]+)')
         self.rx_patsy_factor = re.compile(r'^(.*)(\[T\.|\[)(.*)(\])(.*)$')
