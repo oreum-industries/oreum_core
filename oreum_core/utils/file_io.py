@@ -13,12 +13,12 @@
 # limitations under the License.
 
 # utils.file_io.py
-"""Common File IO"""
+"""Common File IO utils"""
 from pathlib import Path
 
 from .snakey_lowercaser import SnakeyLowercaser
 
-__all__ = ['BaseFileIO']
+__all__ = ['BaseFileIO', 'check_fqns_exist']
 
 
 class BaseFileIO:
@@ -62,3 +62,13 @@ class BaseFileIO:
         if not dr.is_dir():
             raise FileNotFoundError(f'Required dir does not exist {str(dr.resolve())}')
         return fqn
+
+
+def check_fqns_exist(fqns: dict[str:Path]) -> bool:
+    """Basic checks files required are present"""
+    for _, path in fqns.items():
+        if not path.resolve().exists():
+            raise FileNotFoundError(
+                f'Required file does not exist {str(path.resolve())}'
+            )
+    return True

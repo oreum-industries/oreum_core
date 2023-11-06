@@ -53,8 +53,8 @@ def describe(
             nfeats + len_idx, df.shape[1]
         )
     nbytes = df.values.nbytes
-    _log.info(f'Array shape: {df.shape}')
-    _log.info(f'Array memsize: {nbytes // 1e6:,.1f} MB')
+    _log.info(f'Shape: {df.shape}')
+    _log.info(f'Memsize: {nbytes // 1e6:,.1f} MB')
     _log.info(f'Index levels: {df.index.names}')
     _log.info(f'{note}')
 
@@ -140,7 +140,7 @@ def describe(
         return dfout
     else:
         display_fw(dfout.iloc[: nfeats + len_idx, :], max_rows=nfeats, **kwargs)
-        return f'Array memsize {nbytes / 1e6:,.1f} MB'
+        return f'Shape: {df.shape}, Memsize {nbytes / 1e6:,.1f} MB'
 
 
 def display_fw(df: pd.DataFrame, **kwargs) -> None:
@@ -167,7 +167,7 @@ def display_ht(df: pd.DataFrame, **kwargs) -> str:
     nrows = kwargs.pop('nrows', 3) if len(df) >= 3 else len(df)
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
     display_fw(dfd, **kwargs)
-    return f'shape: {df.shape}'
+    return f'Shape: {df.shape}'
 
 
 def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:

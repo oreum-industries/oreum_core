@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 import patsy as pt
 
-from .text_clean import SnakeyLowercaser
+from ..utils.snakey_lowercaser import SnakeyLowercaser
 
 __all__ = [
     'DatatypeConverter',
