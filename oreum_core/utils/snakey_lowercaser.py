@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# curate.text_clean.py
+# utils.snakey_lowercaser.py
 """SnakeyLowercaser used everywhere"""
 import re
 import string

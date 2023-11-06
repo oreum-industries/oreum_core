@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# file_io.py
+# utils.file_io.py
 """Common File IO"""
 from pathlib import Path
 
-from .lowercaser import SnakeyLowercaser
+from .snakey_lowercaser import SnakeyLowercaser
 
 __all__ = ['BaseFileIO']
 
