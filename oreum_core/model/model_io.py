@@ -20,8 +20,8 @@ from pathlib import Path
 import arviz as az
 from pymc.model_graph import model_to_graphviz
 
-from oreum_core.file_io import BaseFileIO
-from oreum_core.model import BasePYMCModel
+from ..model import BasePYMCModel
+from ..utils.file_io import BaseFileIO
 
 __all__ = ['ModelIO']
 

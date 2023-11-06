@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from oreum_core.file_io import BaseFileIO
+from ..utils.file_io import BaseFileIO
 
 __all__ = ['PandasParquetIO', 'PandasCSVIO', 'SimpleStringIO', 'copy_csv2md']
 

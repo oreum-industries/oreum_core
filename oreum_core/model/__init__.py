@@ -14,8 +14,8 @@
 
 # model/
 """Various classes & functions for modelling, primarily using pymc"""
-from oreum_core.model.base import BasePYMCModel
-from oreum_core.model.calc import (
+from .base import BasePYMCModel
+from .calc import (
     calc_2_sample_delta_prop,
     calc_bayesian_r2,
     calc_binary_performance_measures,
@@ -29,27 +29,23 @@ from oreum_core.model.calc import (
     get_log_jcd_scan,
     numpy_invlogit,
 )
-from oreum_core.model.describe import (
+from .describe import (
     describe_dist,
     extract_yobs_yhat,
     get_summary,
     model_desc,
     print_rvs,
 )
-from oreum_core.model.distributions import (
-    lognormal_icdf,
-    mv_dist,
-    normal_icdf,
-    sanity_check_lognorm,
-)
-from oreum_core.model.model_io import ModelIO
-from oreum_core.model.plot import (
+from .distributions import lognormal_icdf, mv_dist, normal_icdf, sanity_check_lognorm
+from .model_io import ModelIO
+from .plot import (
     facetplot_krushke,
     forestplot_multiple,
     forestplot_single,
     pairplot_corr,
     plot_compare,
     plot_energy,
+    plot_lkjcc_corr,
     plot_loo_pit,
     plot_ppc,
     plot_trace,

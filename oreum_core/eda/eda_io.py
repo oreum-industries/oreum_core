@@ -22,8 +22,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import figure
 
-from oreum_core.file_io import BaseFileIO
-
+from ..utils.file_io import BaseFileIO
 from .describe import describe, get_fts_by_dtype
 
 __all__ = ['FigureIO', 'display_image_file', 'output_data_dict']
@@ -32,7 +31,7 @@ _log = logging.getLogger(__name__)
 
 
 class FigureIO(BaseFileIO):
-    """Helper class to save matplotlib.figure.Figure objects to image file."""
+    """Helper class to save matplotlib.figure.Figure objects to image file"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

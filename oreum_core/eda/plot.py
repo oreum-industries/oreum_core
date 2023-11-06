@@ -24,7 +24,7 @@ import seaborn as sns
 from matplotlib import figure, gridspec, lines, ticker
 from scipy import integrate, stats
 
-from . import get_fts_by_dtype
+from .describe import get_fts_by_dtype
 
 __all__ = [
     'plot_cat_ct',

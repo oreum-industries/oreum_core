@@ -21,10 +21,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import xarray
+import xarray as xr
 from matplotlib import figure, gridspec
 
-from oreum_core.model import BasePYMCModel
+from ..model import BasePYMCModel
 
 __all__ = [
     'plot_trace',
@@ -36,6 +36,7 @@ __all__ = [
     'plot_ppc',
     'plot_loo_pit',
     'plot_compare',
+    'plot_lkjcc_corr',
 ]
 
 sns.set(
@@ -103,7 +104,7 @@ def facetplot_krushke(
 
 
 def forestplot_single(
-    data: xarray.core.dataarray.DataArray,
+    data: xr.core.dataarray.DataArray,
     group: IDataGroupName = IDataGroupName.posterior.value,
     **kwargs,
 ) -> figure.Figure:
@@ -142,7 +143,7 @@ def forestplot_single(
 
 
 def forestplot_multiple(
-    datasets: dict[str, xarray.core.dataarray.DataArray],
+    datasets: dict[str, xr.core.dataarray.DataArray],
     group: IDataGroupName = IDataGroupName.posterior.value,
     **kwargs,
 ) -> figure.Figure:
@@ -357,3 +358,24 @@ def plot_compare(
     _ = f.tight_layout()
 
     return f, dfcompdict
+
+
+def plot_lkjcc_corr(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
+    """Plot lkjcc_corr model RVs
+    Drop diagonals, assume coord is called lkjcc_corr
+    Also see https://python.arviz.org/en/stable/user_guide/label_guide.html#custom-labellers
+    """
+    coords = {
+        'lkjcc_corr_dim_0': xr.DataArray([0, 1], dims=['asdf']),
+        'lkjcc_corr_dim_1': xr.DataArray([1, 0], dims=['asdf']),
+    }
+
+    return facetplot_krushke(
+        mdl=mdl,
+        txtadd='lkjcc_corr, diagonals only',
+        rvs=mdl.rvs_corr,
+        coords=coords,
+        m=2,
+        rvs_hack=0,
+        **kwargs,
+    )

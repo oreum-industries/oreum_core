@@ -14,7 +14,7 @@
 
 # eda/
 """Various classes & functions for exploratory data analysis"""
-from oreum_core.eda.calc import (
+from .calc import (
     bootstrap,
     bootstrap_lr,
     calc_geometric_cv,
@@ -24,9 +24,9 @@ from oreum_core.eda.calc import (
     month_diff,
     tril_nan,
 )
-from oreum_core.eda.describe import describe, display_fw, display_ht, get_fts_by_dtype
-from oreum_core.eda.eda_io import FigureIO, display_image_file, output_data_dict
-from oreum_core.eda.plot import (
+from .describe import describe, display_fw, display_ht, get_fts_by_dtype
+from .eda_io import FigureIO, display_image_file, output_data_dict
+from .plot import (
     plot_accuracy,
     plot_binary_performance,
     plot_bool_ct,
