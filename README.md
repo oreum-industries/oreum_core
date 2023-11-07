@@ -155,7 +155,6 @@ Github Workflows to run:
 + See `Makefile` for the CLI commands that are issued
 + See `.github/workflows/*` for workflow details
 
-
 ---
 
 Copyright 2023 Oreum OÜ t/a Oreum Industries. All rights reserved.

@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# file_io.py
-"""Common File IO"""
+# utils.file_io.py
+"""Common File IO utils"""
 from pathlib import Path
 
-from .curate.text_clean import SnakeyLowercaser
+from .snakey_lowercaser import SnakeyLowercaser
 
-__all__ = ['BaseFileIO']
+__all__ = ['BaseFileIO', 'check_fqns_exist']
 
 
 class BaseFileIO:
@@ -28,8 +28,6 @@ class BaseFileIO:
     + Checks for existence of files for reading and dirs for writing
     + Allows a rootdir / rootpath as we often use in R&D Notebooks
     """
-
-    snl = SnakeyLowercaser()
 
     def __init__(self, rootdir: Path = None):
         """Allow set a root path for convenience in Notebooks
@@ -45,6 +43,7 @@ class BaseFileIO:
                 )
             else:
                 self.rootdir = rootdir
+        self.snl = SnakeyLowercaser()
 
     def get_path_read(self, fn: str) -> Path:
         """Create and test fqn file existence for read"""
@@ -56,10 +55,20 @@ class BaseFileIO:
         return fqn
 
     def get_path_write(self, fn: str) -> Path:
-        """Create and test dir existence for write, return fqn"""
-        fn = self.snl.clean(fn)
+        """Create and test dir existence for write, return fqn
+        Ensure the passed fn is snl.cleaned"""
         fqn = self.rootdir.joinpath(fn)
         dr = Path(*fqn.parts[:-1])
         if not dr.is_dir():
             raise FileNotFoundError(f'Required dir does not exist {str(dr.resolve())}')
         return fqn
+
+
+def check_fqns_exist(fqns: dict[str:Path]) -> bool:
+    """Basic checks files required are present"""
+    for _, path in fqns.items():
+        if not path.resolve().exists():
+            raise FileNotFoundError(
+                f'Required file does not exist {str(path.resolve())}'
+            )
+    return True

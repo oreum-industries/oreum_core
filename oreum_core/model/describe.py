@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 import patsy as pat
 
-from oreum_core.model import BasePYMCModel
+from ..model import BasePYMCModel
 
 # import pytensor.tensor as pt
 # from IPython.display import Markdown, display

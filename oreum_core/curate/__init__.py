@@ -14,17 +14,12 @@
 
 # curate/
 """Various classes & functions for data curation"""
-from oreum_core.curate.data_io import (
-    PandasParquetIO,
-    PandasToCSV,
-    SimpleStringIO,
-    copy_csv2md,
-)
-from oreum_core.curate.data_transform import (
+from .data_io import PandasCSVIO, PandasParquetIO, SimpleStringIO, copy_csv2md
+from .data_transform import (
     DatasetReshaper,
     DatatypeConverter,
     Standardizer,
     Transformer,
     compress_factor_levels,
 )
-from oreum_core.curate.text_clean import SnakeyLowercaser, TextCleaner
+from .text_clean import TextCleaner

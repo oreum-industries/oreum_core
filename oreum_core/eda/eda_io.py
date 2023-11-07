@@ -22,8 +22,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import figure
 
-from oreum_core.file_io import BaseFileIO
-
+from ..utils.file_io import BaseFileIO
 from .describe import describe, get_fts_by_dtype
 
 __all__ = ['FigureIO', 'display_image_file', 'output_data_dict']
@@ -32,18 +31,19 @@ _log = logging.getLogger(__name__)
 
 
 class FigureIO(BaseFileIO):
-    """Helper class to save matplotlib.figure.Figure objects to image file."""
+    """Helper class to save matplotlib.figure.Figure objects to image file"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def write(self, f: figure.Figure, fn: str) -> Path:
+    def write(self, f: figure.Figure, fn: str, *args, **kwargs) -> Path:
         """Accept figure.Figure & fqn e.g. `plots/plot.png`, write to fqn"""
-        fqp = self.get_path_write(fn)
-        fqp = fqp.with_suffix('.png')
-        f.savefig(fname=fqp, format='png', bbox_inches='tight', dpi=300)
-        _log.info(f'Written to {str(fqp.resolve())}')
-        return fqp
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.png'))
+        f.savefig(
+            fname=fqn, format='png', bbox_inches='tight', dpi=300, *args, **kwargs
+        )
+        _log.info(f'Written to {str(fqn.resolve())}')
+        return fqn
 
 
 def display_image_file(

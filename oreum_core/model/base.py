@@ -56,7 +56,7 @@ class BasePYMCModel:
         self.sample_post_pred_kws = dict(store_ppc=True, ppc_insample=False)
         self.sample_kws = dict(
             init='auto',  # aka jitter+adapt_diag
-            tune=2000,  # NOTE: often need to bump this much higher e.g. 5000
+            tune=2000,  # twice the 1000 of pymc default
             draws=500,
             chains=4,
             cores=4,

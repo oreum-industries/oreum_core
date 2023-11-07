@@ -15,6 +15,7 @@
 # eda.plot.py
 """EDA Plotting"""
 from textwrap import wrap
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,7 +24,7 @@ import seaborn as sns
 from matplotlib import figure, gridspec, lines, ticker
 from scipy import integrate, stats
 
-from . import get_fts_by_dtype
+from .describe import get_fts_by_dtype
 
 __all__ = [
     'plot_cat_ct',
@@ -926,7 +927,7 @@ def plot_estimate(
                 orient='h',
             )
         _ = [
-            gd.ax.annotate(f'{v:.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
+            gd.ax.annotate(f'{v:,.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
             for i, v in enumerate(mn)
         ]
         elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
@@ -934,9 +935,9 @@ def plot_estimate(
         if force_xlim is not None:
             _ = gd.ax.set(xlim=force_xlim)
         summary = (
-            f'Mean = {mn[0]:.1f}, '
-            + f'HDI_50 = [{hdi[1]:.1f}, {hdi[2]:.1f}], '
-            + f'HDI_94 = [{hdi[0]:.1f}, {hdi[3]:.1f}]'
+            f'Mean = {mn[0]:,.1f}, '
+            + f'HDI_50 = [{hdi[1]:,.1f}, {hdi[2]:,.1f}], '
+            + f'HDI_94 = [{hdi[0]:,.1f}, {hdi[3]:,.1f}]'
         )
 
     t = f'Summary Distribution of {yhat} estimate for {nobs} obs'
@@ -1037,28 +1038,52 @@ def plot_bootstrap_lr_grp(
     title_pol_summary: bool = False,
     force_xlim: list = None,
     annot_pest: bool = False,
+    orderby: Literal['ordinal', 'count', 'lr'] = 'ordinal',
 ) -> figure.Figure:
     """Plot bootstrapped loss ratio, grouped by grp"""
-    # TODO create y order e.g. ct = dfp.groupby(grp).size().sort_values()[::-1]
     sty = _get_kws_styling()
+
+    # convert non object type to string
     if dfboot[grp].dtypes != 'object':
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
+        df = df.copy()
+        df[grp] = df[grp].map(lambda x: f's{x}')
 
-    mn = dfboot.groupby(grp, observed=True)['lr'].mean().tolist()
+    ct = df.groupby(grp, observed=True).size()  # .tolist()
+    mn = dfboot.groupby(grp, observed=True)['lr'].mean()  # .tolist()
     pest_mn = (
-        df.groupby(grp, observed=True)
-        .apply(lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum())
-        .values
+        df.groupby(grp, observed=True).apply(
+            lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()
+        )
+        # .values
     )
+
+    # create order items / index
+    if orderby == 'count':
+        order_idx = df.groupby(grp).size().sort_values()[::-1].index
+    elif orderby == 'ordinal':
+        order_idx = mn.index
+    elif orderby == 'lr':
+        order_idx = mn.sort_values()[::-1].index
+    else:
+        return 'choose better'
+
+    # reorder accordingly
+    ct = ct.reindex(order_idx).values
+    mn = mn.reindex(order_idx).values
+    pest_mn = pest_mn.reindex(order_idx).values
 
     f = plt.figure(figsize=(14, 2.5 + (len(mn) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
 
+    # add violinplot
     v_kws = dict(kind='violin', cut=0, scale='count', width=0.6, palette='cubehelix_r')
-    _ = sns.violinplot(x='lr', y=grp, data=dfboot, ax=ax0, **v_kws)
+    _ = sns.violinplot(
+        x='lr', y=grp, data=dfboot, ax=ax0, order=order_idx.values, **v_kws
+    )
 
     _ = [ax0.plot(v, i % len(mn), **sty['mn_pt_kws']) for i, v in enumerate(mn)]
     _ = [
@@ -1084,8 +1109,10 @@ def plot_bootstrap_lr_grp(
     if force_xlim is not None:
         _ = ax0.set(xlim=force_xlim)
 
-    _ = sns.countplot(y=grp, data=df, ax=ax1, palette='cubehelix_r')
-    ct = df.groupby(grp, observed=True).size().tolist()
+    # add countplot
+    _ = sns.countplot(
+        y=grp, data=df, order=order_idx.values, ax=ax1, palette='cubehelix_r'
+    )
     _ = [
         ax1.annotate(f'{v}', xy=(v, i % len(ct)), **sty['count_txt_h_kws'])
         for i, v in enumerate(ct)
@@ -1250,7 +1277,7 @@ def plot_sum_dist(
     title_add: str = '',
     plot_outliers: bool = True,
     palette: sns.palettes._ColorPalette = None,
-) -> gridspec.GridSpec:
+) -> figure.Figure:
     """Plot simple diagnostics (sum, distribution) of numeric value `val`,
     Returns a GridSpec
     """
@@ -1258,7 +1285,7 @@ def plot_sum_dist(
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
 
-    f = plt.figure(figsize=(12, 2.5))
+    f = plt.figure(figsize=(12, 2))
     gs = gridspec.GridSpec(1, 2, width_ratios=[1, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1])
@@ -1302,7 +1329,7 @@ def plot_sum_dist(
     ax0.xaxis.label.set_visible(False)
     ax1.xaxis.label.set_visible(False)
     _ = plt.tight_layout()
-    return gs
+    return f
 
 
 def plot_grp_sum_dist_ct(
@@ -1323,7 +1350,7 @@ def plot_grp_sum_dist_ct(
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
 
-    dfg = dfp.groupby('corr_kind').size()
+    dfg = dfp.groupby(grp).size()
 
     # order by descending date or count
     if not dfp[grp].dtypes in ['object', 'category']:

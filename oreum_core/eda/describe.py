@@ -30,16 +30,16 @@ RNG = np.random.default_rng(seed=RSD)
 
 
 def describe(
-    df,
-    nobs=3,
-    nfeats=30,
-    limit=50e6,
-    get_mode=False,
-    get_counts=True,
-    reset_index=True,
-    return_df=False,
+    df: pd.DataFrame,
+    nobs: int = 3,
+    nfeats: int = 30,
+    limit: int = 50,  # MB
+    get_mode: bool = False,
+    get_counts: bool = True,
+    reset_index: bool = True,
+    return_df: bool = False,
     **kwargs,
-):
+) -> str:
     """Concat transposed topN rows, numerical desc & dtypes
     Beware a dataframe full of bools or categoricals will error
     thanks to pandas.describe() being too clever
@@ -53,13 +53,14 @@ def describe(
             nfeats + len_idx, df.shape[1]
         )
     nbytes = df.values.nbytes
-    _log.info(f'Array shape: {df.shape}')
-    _log.info(f'Array memsize: {nbytes // 1000:,} kB')
+    _log.info(f'Shape: {df.shape}')
+    _log.info(f'Memsize: {nbytes // 1e6:,.1f} MB')
     _log.info(f'Index levels: {df.index.names}')
     _log.info(f'{note}')
 
+    limit *= 1e6
     if df.values.nbytes > limit:
-        return f'Array memsize {nbytes // 1e6:,.0f} MB > {limit // 1e6:,.0f} limit'
+        return f'Array memsize {nbytes // 1e6:,.1f} MB > {limit / 1e6:,.1f} MB limit'
 
     df = df.copy()
     if reset_index:
@@ -139,10 +140,10 @@ def describe(
         return dfout
     else:
         display_fw(dfout.iloc[: nfeats + len_idx, :], max_rows=nfeats, **kwargs)
-        return f'Array memsize {nbytes // 1e6:,.0f} MB'
+        return f'Shape: {df.shape}, Memsize {nbytes / 1e6:,.1f} MB'
 
 
-def display_fw(df, **kwargs):
+def display_fw(df: pd.DataFrame, **kwargs) -> None:
     """Conv fn: contextually display max rows"""
 
     options = {
@@ -160,16 +161,16 @@ def display_fw(df, **kwargs):
         display(df)
 
 
-def display_ht(df, **kwargs) -> str:
+def display_ht(df: pd.DataFrame, **kwargs) -> str:
     """Convenience fn: Display head and tail n rows via display_fw"""
 
     nrows = kwargs.pop('nrows', 3) if len(df) >= 3 else len(df)
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
     display_fw(dfd, **kwargs)
-    return f'shape: {df.shape}'
+    return f'Shape: {df.shape}'
 
 
-def get_fts_by_dtype(df, as_dataframe=False):
+def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:
     """Return a dictionary of lists of feats within df according to dtype"""
     fts = dict(
         categorical=[
