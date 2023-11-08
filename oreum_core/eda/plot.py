@@ -1375,15 +1375,7 @@ def plot_smrystat_grp(
     elif orderby == 'smrystat':
         ct = ct.reindex(smrystat.sort_values()[::-1].index)
     else:
-        pass  # accept the defaul ordering as passed into func
-
-    # # order by descending date or count
-    # if not dfp[grp].dtypes in ['object', 'category', 'string']:
-    #     if not pd.to_datetime(dfp[grp], errors='coerce').isnull().any():
-    #         idx_rev = dfg.index.values[::-1]
-    #         dfg = dfg.reindex(idx_rev)
-    #     else:
-    #         dfg = dfg.sort_values()[::-1]
+        pass  # accept the default ordering as passed into func
 
     names = ct.index.values
     if not dfp[grp].dtypes in ['object', 'category', 'string']:
