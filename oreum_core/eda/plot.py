@@ -48,8 +48,9 @@ __all__ = [
     'plot_bootstrap_lr_grp',
     'plot_bootstrap_grp',
     'plot_bootstrap_delta_grp',
-    'plot_grp_sum_dist_ct',
-    'plot_grp_year_sum_dist_ct',
+    'plot_smrystat',
+    'plot_smrystat_grp',
+    'plot_smrystat_grp_year',
     'plot_heatmap_corr',
     'plot_kj_summaries_for_linear_model',
     'plot_grp_ct',
@@ -1278,16 +1279,15 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
     return gs
 
 
-def plot_sum_dist(
+def plot_smrystat(
     df: pd.DataFrame,
     val: str = 'y_eloss',
+    smry: str = Literal['sum', 'mean'],
     title_add: str = '',
     plot_outliers: bool = True,
     palette: sns.palettes._ColorPalette = None,
 ) -> figure.Figure:
-    """Plot simple diagnostics (sum, distribution) of numeric value `val`,
-    Returns a GridSpec
-    """
+    """Plot diagnostics (smrystat, dist) of numeric value `val`"""
     sty = _get_kws_styling()
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
@@ -1297,14 +1297,20 @@ def plot_sum_dist(
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1])
 
-    ax0.set_title('Distribution of bootstrapped sum')
+    ax0.set_title(f'Distribution of bootstrapped {smry}')
     ax1.set_title('Distribution of indiv. values')
 
     if palette is None:
         palette = 'viridis'
 
+    estimator = np.sum if smry == 'sum' else np.mean
     _ = sns.pointplot(
-        x=val, data=dfp, palette=palette, estimator=np.sum, errorbar=('ci', 94), ax=ax0
+        x=val,
+        data=dfp,
+        palette=palette,
+        estimator=estimator,
+        errorbar=('ci', 94),
+        ax=ax0,
     )
 
     sym = 'k' if plot_outliers else ''
@@ -1339,10 +1345,11 @@ def plot_sum_dist(
     return f
 
 
-def plot_grp_sum_dist_ct(
+def plot_smrystat_grp(
     df: pd.DataFrame,
     grp: str = 'grp',
     val: str = 'y_eloss',
+    smry: str = Literal['sum', 'mean'],
     title_add: str = '',
     plot_outliers: bool = True,
     plot_compact: bool = True,
@@ -1350,17 +1357,16 @@ def plot_grp_sum_dist_ct(
     yorder: list = None,
     palette: sns.palettes._ColorPalette = None,
 ) -> figure.Figure:
-    """Plot simple diagnostics (sum, distribution, count) of numeric value `val`,
+    """Plot diagnostics (smrystat, dist, count) of numeric value `val`
     grouped by categorical value `grp`, with group, ordered by count desc
     """
     sty = _get_kws_styling()
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
-
     dfg = dfp.groupby(grp).size()
 
     # order by descending date or count
-    if not dfp[grp].dtypes in ['object', 'category']:
+    if not dfp[grp].dtypes in ['object', 'category', 'string']:
         if not pd.to_datetime(dfp[grp], errors='coerce').isnull().any():
             idx_rev = dfg.index.values[::-1]
             dfg = dfg.reindex(idx_rev)
@@ -1387,20 +1393,21 @@ def plot_grp_sum_dist_ct(
         plt.setp(ax1.get_yticklabels(), visible=False)
         plt.setp(ax2.get_yticklabels(), visible=False)
 
-    ax0.set_title('Distribution of bootstrapped sum')
+    ax0.set_title(f'Distribution of bootstrapped {smry}')
     ax1.set_title('Distribution of indiv. values')
     ax2.set_title('Count')
 
     if palette is None:
         palette = 'viridis'
 
+    estimator = np.sum if smry == 'sum' else np.mean
     _ = sns.pointplot(
         x=val,
         y=grp,
         order=dfg.index.values,
         data=dfp,
         palette=palette,
-        estimator=np.sum,
+        estimator=estimator,
         errorbar=('ci', 94),
         ax=ax0,
     )
@@ -1451,18 +1458,21 @@ def plot_grp_sum_dist_ct(
     return f
 
 
-def plot_grp_year_sum_dist_ct(
+def plot_smrystat_grp_year(
     df: pd.DataFrame,
     grp: str = 'grp',
     val: str = 'y_eloss',
     year: str = 'uw_year',
+    smry: str = Literal['sum', 'mean'],
     title_add: str = '',
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
     yorder_count: bool = True,
 ) -> figure.Figure:
-    """Plot a grouped value split by year: sum, distribution and count"""
+    """Plot diagnostics (smrystat, dist, count) of numeric value `val`
+    grouped by categorical value `grp`, grouped by `year`
+    """
 
     sty = _get_kws_styling()
     # if not df[grp].dtypes in ['object', 'category']:
@@ -1502,12 +1512,12 @@ def plot_grp_year_sum_dist_ct(
             plt.setp(ax1d[i].get_yticklabels(), visible=False)
             plt.setp(ax2d[i].get_yticklabels(), visible=False)
 
-        ax0d[i].set_title(f'Distribution of bootstrapped sum [{yr:"%Y"}]')
+        ax0d[i].set_title(f'Distribution of bootstrapped {smry} [{yr:"%Y"}]')
         ax1d[i].set_title(f'Distribution of indiv. values [{yr:"%Y"}]')
         ax2d[i].set_title(f'Count [{yr:"%Y"}]')
 
         # ct = dfs.groupby(grp).size().tolist()
-
+        estimator = np.sum if smry == 'sum' else np.mean
         _ = sns.pointplot(
             x=val,
             y=grp,
@@ -1515,7 +1525,7 @@ def plot_grp_year_sum_dist_ct(
             data=dfs,
             ax=ax0d[i],
             palette='viridis',
-            estimator=np.sum,
+            estimator=estimator,
             errorbar=('ci', 94),
             linestyles='-',
         )

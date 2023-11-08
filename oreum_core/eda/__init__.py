@@ -42,8 +42,6 @@ from .plot import (
     plot_f_measure,
     plot_float_dist,
     plot_grp_ct,
-    plot_grp_sum_dist_ct,
-    plot_grp_year_sum_dist_ct,
     plot_heatmap_corr,
     plot_int_dist,
     plot_joint_numeric,
@@ -54,5 +52,7 @@ from .plot import (
     plot_rmse_range,
     plot_rmse_range_pair,
     plot_roc_precrec,
-    plot_sum_dist,
+    plot_smrystat,
+    plot_smrystat_grp,
+    plot_smrystat_grp_year,
 )
