@@ -167,7 +167,7 @@ def display_ht(df: pd.DataFrame, **kwargs) -> str:
     nrows = kwargs.pop('nrows', 3) if len(df) >= 3 else len(df)
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
     display_fw(dfd, **kwargs)
-    return f'Shape: {df.shape}'
+    return f'Shape: {df.shape}, Memsize {df.values.nbytes / 1e6:,.1f} MB'
 
 
 def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:
@@ -176,7 +176,11 @@ def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:
         categorical=[
             k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'cat'
         ],  # category
-        cat=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'obj'],
+        cat=[
+            k
+            for k, v in df.dtypes.to_dict().items()
+            if (v.name[:3] == 'obj') | (v.name[:3] == 'str')
+        ],
         bool=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'boo'],
         datetime=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'dat'],
         int=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'int'],
@@ -186,10 +190,10 @@ def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:
     for _, v in fts.items():
         w += v
 
-    n = len(set(df.columns) - set(w))
-    if n > 0:
+    mismatch = list(set(df.columns) - set(w))
+    if len(mismatch) > 0:
         raise ValueError(
-            f'Failed to match a dtype to {n} fts. Check again.'
+            f'Failed to match a dtype to {mismatch}'
             + f'\nThese fts did match correctly: {fts}'
         )
 

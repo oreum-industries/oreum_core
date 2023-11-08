@@ -112,14 +112,12 @@ def plot_cat_ct(
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.plot_cdf_ppc_vs_obs(
-        vert, 2, squeeze=False, figsize=(12, vert * vsize)
-    )
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
 
-        if df[ft].dtype == np.bool:
+        if df[ft].dtype == bool:
             counts_all = counts_all.sort_index()  # sort so true plots on top
 
         counts = counts_all.iloc[-topn:]
@@ -143,7 +141,7 @@ def plot_cat_ct(
             for i, c in enumerate(counts)
         ]
 
-        if df[ft].dtype != np.bool:
+        if df[ft].dtype != bool:
             ax.legend(loc='lower right')
         else:
             _ = ax.set(ylabel=None)
