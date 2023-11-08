@@ -48,8 +48,9 @@ __all__ = [
     'plot_bootstrap_lr_grp',
     'plot_bootstrap_grp',
     'plot_bootstrap_delta_grp',
-    'plot_grp_sum_dist_ct',
-    'plot_grp_year_sum_dist_ct',
+    'plot_smrystat',
+    'plot_smrystat_grp',
+    'plot_smrystat_grp_year',
     'plot_heatmap_corr',
     'plot_kj_summaries_for_linear_model',
     'plot_grp_ct',
@@ -108,18 +109,18 @@ def plot_cat_ct(
 ) -> figure.Figure:
     """Conv fn: plot group counts for cats and bools"""
 
+    # handle under/over selecting fts
+    fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.plot_cdf_ppc_vs_obs(
-        vert, 2, squeeze=False, figsize=(12, vert * vsize)
-    )
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
 
-        if df[ft].dtype == np.bool:
+        if df[ft].dtype == bool:
             counts_all = counts_all.sort_index()  # sort so true plots on top
 
         counts = counts_all.iloc[-topn:]
@@ -143,7 +144,7 @@ def plot_cat_ct(
             for i, c in enumerate(counts)
         ]
 
-        if df[ft].dtype != np.bool:
+        if df[ft].dtype != bool:
             ax.legend(loc='lower right')
         else:
             _ = ax.set(ylabel=None)
@@ -157,6 +158,8 @@ def plot_cat_ct(
 def plot_bool_ct(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figure:
     """Conv fn: plot group counts for bools"""
 
+    # handle under/over selecting fts
+    fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
 
@@ -196,6 +199,8 @@ def plot_date_ct(
 ) -> figure.Figure:
     """Plot group sizes for dates by strftime format"""
 
+    # handle under/over selecting fts
+    fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
 
@@ -239,7 +244,8 @@ def plot_int_dist(
     plot_zeros: bool = True,
 ) -> figure.Figure:
     """Plot group counts as histogram (optional log)"""
-
+    # handle under/over selecting fts
+    fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
     if bins is None:
@@ -308,6 +314,8 @@ def plot_float_dist(
             fontsize=10,
         )
 
+    # handle under/over selecting fts
+    fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
 
@@ -1050,13 +1058,10 @@ def plot_bootstrap_lr_grp(
         df = df.copy()
         df[grp] = df[grp].map(lambda x: f's{x}')
 
-    ct = df.groupby(grp, observed=True).size()  # .tolist()
-    mn = dfboot.groupby(grp, observed=True)['lr'].mean()  # .tolist()
-    pest_mn = (
-        df.groupby(grp, observed=True).apply(
-            lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()
-        )
-        # .values
+    ct = df.groupby(grp, observed=True).size()
+    mn = dfboot.groupby(grp, observed=True)['lr'].mean()
+    pest_mn = df.groupby(grp, observed=True).apply(
+        lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()
     )
 
     # create order items / index
@@ -1271,16 +1276,15 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=''):
     return gs
 
 
-def plot_sum_dist(
+def plot_smrystat(
     df: pd.DataFrame,
     val: str = 'y_eloss',
+    smry: str = Literal['sum', 'mean'],
     title_add: str = '',
     plot_outliers: bool = True,
     palette: sns.palettes._ColorPalette = None,
 ) -> figure.Figure:
-    """Plot simple diagnostics (sum, distribution) of numeric value `val`,
-    Returns a GridSpec
-    """
+    """Plot diagnostics (smrystat, dist) of numeric value `val`"""
     sty = _get_kws_styling()
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
@@ -1290,14 +1294,20 @@ def plot_sum_dist(
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1])
 
-    ax0.set_title('Distribution of bootstrapped sum')
+    ax0.set_title(f'Distribution of bootstrapped {smry}')
     ax1.set_title('Distribution of indiv. values')
 
     if palette is None:
         palette = 'viridis'
 
+    estimator = np.sum if smry == 'sum' else np.mean
     _ = sns.pointplot(
-        x=val, data=dfp, palette=palette, estimator=np.sum, errorbar=('ci', 94), ax=ax0
+        x=val,
+        data=dfp,
+        palette=palette,
+        estimator=estimator,
+        errorbar=('ci', 94),
+        ax=ax0,
     )
 
     sym = 'k' if plot_outliers else ''
@@ -1332,43 +1342,47 @@ def plot_sum_dist(
     return f
 
 
-def plot_grp_sum_dist_ct(
+def plot_smrystat_grp(
     df: pd.DataFrame,
     grp: str = 'grp',
     val: str = 'y_eloss',
+    smry: str = Literal['sum', 'mean'],
     title_add: str = '',
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
-    yorder: list = None,
     palette: sns.palettes._ColorPalette = None,
+    orderby: Literal['ordinal', 'count', 'smrystat', None] = 'ordinal',
 ) -> figure.Figure:
-    """Plot simple diagnostics (sum, distribution, count) of numeric value `val`,
+    """Plot diagnostics (smrystat, dist, count) of numeric value `val`
     grouped by categorical value `grp`, with group, ordered by count desc
     """
     sty = _get_kws_styling()
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
+    # dfg = dfp.groupby(grp).size()
 
-    dfg = dfp.groupby(grp).size()
+    estimator = np.sum if smry == 'sum' else np.mean
 
-    # order by descending date or count
-    if not dfp[grp].dtypes in ['object', 'category']:
-        if not pd.to_datetime(dfp[grp], errors='coerce').isnull().any():
-            idx_rev = dfg.index.values[::-1]
-            dfg = dfg.reindex(idx_rev)
-        else:
-            dfg = dfg.sort_values()[::-1]
+    ct = dfp.groupby(grp, observed=True).size()
+    smrystat = dfp.groupby(grp, observed=True)[val].apply(estimator)
 
-    if yorder is not None:
-        dfg = dfg.reindex(yorder)
+    # create order items / index
+    if orderby == 'count':
+        ct = ct.sort_values()[::-1]
+    elif orderby == 'ordinal':
+        pass  # ct == ct already
+    elif orderby == 'smrystat':
+        ct = ct.reindex(smrystat.sort_values()[::-1].index)
+    else:
+        pass  # accept the default ordering as passed into func
 
-    names = dfg.index.values
-    if not dfp[grp].dtypes in ['object', 'category']:
+    names = ct.index.values
+    if not dfp[grp].dtypes in ['object', 'category', 'string']:
         dfp[grp] = dfp[grp].map(lambda x: f's{x}')
         names = [f's{x}' for x in names]
 
-    f = plt.figure(figsize=(16, 2 + (len(dfg) * 0.25)))  # , constrained_layout=True)
+    f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
@@ -1380,7 +1394,7 @@ def plot_grp_sum_dist_ct(
         plt.setp(ax1.get_yticklabels(), visible=False)
         plt.setp(ax2.get_yticklabels(), visible=False)
 
-    ax0.set_title('Distribution of bootstrapped sum')
+    ax0.set_title(f'Distribution of bootstrapped {smry}')
     ax1.set_title('Distribution of indiv. values')
     ax2.set_title('Count')
 
@@ -1390,10 +1404,10 @@ def plot_grp_sum_dist_ct(
     _ = sns.pointplot(
         x=val,
         y=grp,
-        order=dfg.index.values,
+        order=ct.index.values,
         data=dfp,
         palette=palette,
-        estimator=np.sum,
+        estimator=estimator,
         errorbar=('ci', 94),
         ax=ax0,
     )
@@ -1402,7 +1416,7 @@ def plot_grp_sum_dist_ct(
     _ = sns.boxplot(
         x=val,
         y=grp,
-        order=dfg.index.values,
+        order=ct.index.values,
         data=dfp,
         palette=palette,
         sym=sym,
@@ -1412,12 +1426,12 @@ def plot_grp_sum_dist_ct(
         ax=ax1,
     )
 
-    _ = sns.countplot(y=grp, data=dfp, order=dfg.index.values, palette=palette, ax=ax2)
+    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette=palette, ax=ax2)
     _ = [
         ax2.annotate(
-            f'{c} ({c/dfg.sum():.0%})', xy=(c, i % len(dfg)), **sty['count_txt_h_kws']
+            f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **sty['count_txt_h_kws']
         )
-        for i, c in enumerate(dfg)
+        for i, c in enumerate(ct)
     ]
 
     if plot_grid:
@@ -1439,23 +1453,26 @@ def plot_grp_sum_dist_ct(
             t, xy=(0.96, 0.96), xycoords='figure fraction', ha='right', fontsize=8
         )
 
-    _ = plt.tight_layout()
     f = plt.gcf()
+    _ = f.tight_layout()
     return f
 
 
-def plot_grp_year_sum_dist_ct(
+def plot_smrystat_grp_year(
     df: pd.DataFrame,
     grp: str = 'grp',
     val: str = 'y_eloss',
     year: str = 'uw_year',
+    smry: str = Literal['sum', 'mean'],
     title_add: str = '',
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
     yorder_count: bool = True,
 ) -> figure.Figure:
-    """Plot a grouped value split by year: sum, distribution and count"""
+    """Plot diagnostics (smrystat, dist, count) of numeric value `val`
+    grouped by categorical value `grp`, grouped by `year`
+    """
 
     sty = _get_kws_styling()
     # if not df[grp].dtypes in ['object', 'category']:
@@ -1473,7 +1490,7 @@ def plot_grp_year_sum_dist_ct(
         dfs = df.loc[df[year] == yr].copy()
         grpsort = sorted(dfs[grp].unique())[::-1]
 
-        if not dfs[grp].dtypes in ['object', 'category']:
+        if not dfs[grp].dtypes in ['object', 'category', 'string']:
             dfs[grp] = dfs[grp].map(lambda x: f's{x}')
             grpsort = [f's{x}' for x in grpsort]
 
@@ -1495,12 +1512,12 @@ def plot_grp_year_sum_dist_ct(
             plt.setp(ax1d[i].get_yticklabels(), visible=False)
             plt.setp(ax2d[i].get_yticklabels(), visible=False)
 
-        ax0d[i].set_title(f'Distribution of bootstrapped sum [{yr:"%Y"}]')
+        ax0d[i].set_title(f'Distribution of bootstrapped {smry} [{yr:"%Y"}]')
         ax1d[i].set_title(f'Distribution of indiv. values [{yr:"%Y"}]')
         ax2d[i].set_title(f'Count [{yr:"%Y"}]')
 
         # ct = dfs.groupby(grp).size().tolist()
-
+        estimator = np.sum if smry == 'sum' else np.mean
         _ = sns.pointplot(
             x=val,
             y=grp,
@@ -1508,7 +1525,7 @@ def plot_grp_year_sum_dist_ct(
             data=dfs,
             ax=ax0d[i],
             palette='viridis',
-            estimator=np.sum,
+            estimator=estimator,
             errorbar=('ci', 94),
             linestyles='-',
         )
