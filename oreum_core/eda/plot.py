@@ -108,6 +108,8 @@ def plot_cat_ct(
 ) -> figure.Figure:
     """Conv fn: plot group counts for cats and bools"""
 
+    # handle under/over selecting fts
+    fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
 
@@ -155,6 +157,8 @@ def plot_cat_ct(
 def plot_bool_ct(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figure:
     """Conv fn: plot group counts for bools"""
 
+    # handle under/over selecting fts
+    fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
 
@@ -194,6 +198,8 @@ def plot_date_ct(
 ) -> figure.Figure:
     """Plot group sizes for dates by strftime format"""
 
+    # handle under/over selecting fts
+    fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
 
@@ -237,7 +243,8 @@ def plot_int_dist(
     plot_zeros: bool = True,
 ) -> figure.Figure:
     """Plot group counts as histogram (optional log)"""
-
+    # handle under/over selecting fts
+    fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
     if bins is None:
@@ -306,6 +313,8 @@ def plot_float_dist(
             fontsize=10,
         )
 
+    # handle under/over selecting fts
+    fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
 
