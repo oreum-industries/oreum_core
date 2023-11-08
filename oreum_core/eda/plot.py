@@ -1058,13 +1058,10 @@ def plot_bootstrap_lr_grp(
         df = df.copy()
         df[grp] = df[grp].map(lambda x: f's{x}')
 
-    ct = df.groupby(grp, observed=True).size()  # .tolist()
-    mn = dfboot.groupby(grp, observed=True)['lr'].mean()  # .tolist()
-    pest_mn = (
-        df.groupby(grp, observed=True).apply(
-            lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()
-        )
-        # .values
+    ct = df.groupby(grp, observed=True).size()
+    mn = dfboot.groupby(grp, observed=True)['lr'].mean()
+    pest_mn = df.groupby(grp, observed=True).apply(
+        lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()
     )
 
     # create order items / index
@@ -1354,8 +1351,8 @@ def plot_smrystat_grp(
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
-    yorder: list = None,
     palette: sns.palettes._ColorPalette = None,
+    orderby: Literal['ordinal', 'count', 'smrystat', None] = 'ordinal',
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
     grouped by categorical value `grp`, with group, ordered by count desc
@@ -1363,25 +1360,37 @@ def plot_smrystat_grp(
     sty = _get_kws_styling()
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
-    dfg = dfp.groupby(grp).size()
+    # dfg = dfp.groupby(grp).size()
 
-    # order by descending date or count
-    if not dfp[grp].dtypes in ['object', 'category', 'string']:
-        if not pd.to_datetime(dfp[grp], errors='coerce').isnull().any():
-            idx_rev = dfg.index.values[::-1]
-            dfg = dfg.reindex(idx_rev)
-        else:
-            dfg = dfg.sort_values()[::-1]
+    estimator = np.sum if smry == 'sum' else np.mean
 
-    if yorder is not None:
-        dfg = dfg.reindex(yorder)
+    ct = dfp.groupby(grp, observed=True).size()
+    smrystat = dfp.groupby(grp, observed=True)[val].apply(estimator)
 
-    names = dfg.index.values
+    # create order items / index
+    if orderby == 'count':
+        ct = ct.sort_values()[::-1]
+    elif orderby == 'ordinal':
+        pass  # ct == ct already
+    elif orderby == 'smrystat':
+        ct = ct.reindex(smrystat.sort_values()[::-1].index)
+    else:
+        pass  # accept the defaul ordering as passed into func
+
+    # # order by descending date or count
+    # if not dfp[grp].dtypes in ['object', 'category', 'string']:
+    #     if not pd.to_datetime(dfp[grp], errors='coerce').isnull().any():
+    #         idx_rev = dfg.index.values[::-1]
+    #         dfg = dfg.reindex(idx_rev)
+    #     else:
+    #         dfg = dfg.sort_values()[::-1]
+
+    names = ct.index.values
     if not dfp[grp].dtypes in ['object', 'category', 'string']:
         dfp[grp] = dfp[grp].map(lambda x: f's{x}')
         names = [f's{x}' for x in names]
 
-    f = plt.figure(figsize=(16, 2 + (len(dfg) * 0.25)))  # , constrained_layout=True)
+    f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
@@ -1400,11 +1409,10 @@ def plot_smrystat_grp(
     if palette is None:
         palette = 'viridis'
 
-    estimator = np.sum if smry == 'sum' else np.mean
     _ = sns.pointplot(
         x=val,
         y=grp,
-        order=dfg.index.values,
+        order=ct.index.values,
         data=dfp,
         palette=palette,
         estimator=estimator,
@@ -1416,7 +1424,7 @@ def plot_smrystat_grp(
     _ = sns.boxplot(
         x=val,
         y=grp,
-        order=dfg.index.values,
+        order=ct.index.values,
         data=dfp,
         palette=palette,
         sym=sym,
@@ -1426,12 +1434,12 @@ def plot_smrystat_grp(
         ax=ax1,
     )
 
-    _ = sns.countplot(y=grp, data=dfp, order=dfg.index.values, palette=palette, ax=ax2)
+    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette=palette, ax=ax2)
     _ = [
         ax2.annotate(
-            f'{c} ({c/dfg.sum():.0%})', xy=(c, i % len(dfg)), **sty['count_txt_h_kws']
+            f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **sty['count_txt_h_kws']
         )
-        for i, c in enumerate(dfg)
+        for i, c in enumerate(ct)
     ]
 
     if plot_grid:
@@ -1453,8 +1461,8 @@ def plot_smrystat_grp(
             t, xy=(0.96, 0.96), xycoords='figure fraction', ha='right', fontsize=8
         )
 
-    _ = plt.tight_layout()
     f = plt.gcf()
+    _ = f.tight_layout()
     return f
 
 
