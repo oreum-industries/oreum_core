@@ -1377,7 +1377,7 @@ def plot_smrystat_grp(
         dfg = dfg.reindex(yorder)
 
     names = dfg.index.values
-    if not dfp[grp].dtypes in ['object', 'category']:
+    if not dfp[grp].dtypes in ['object', 'category', 'string']:
         dfp[grp] = dfp[grp].map(lambda x: f's{x}')
         names = [f's{x}' for x in names]
 
@@ -1490,7 +1490,7 @@ def plot_smrystat_grp_year(
         dfs = df.loc[df[year] == yr].copy()
         grpsort = sorted(dfs[grp].unique())[::-1]
 
-        if not dfs[grp].dtypes in ['object', 'category']:
+        if not dfs[grp].dtypes in ['object', 'category', 'string']:
             dfs[grp] = dfs[grp].map(lambda x: f's{x}')
             grpsort = [f's{x}' for x in grpsort]
 
