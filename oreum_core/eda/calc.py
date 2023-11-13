@@ -21,8 +21,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import umap.umap_ as umap
 from matplotlib import figure
-from scipy import sparse, stats
+from scipy import stats
 from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import StandardScaler
 
@@ -41,6 +42,7 @@ __all__ = [
     'month_diff',
     'tril_nan',
     'calc_svd',
+    'calc_umap',
 ]
 
 
@@ -286,7 +288,7 @@ def calc_svd(df: pd.DataFrame, k: int = 10) -> tuple[pd.DataFrame, TruncatedSVD]
     idx_nulls = df.isnull().sum(axis=1) > 0
     if sum(idx_nulls) > 0:
         df = df.loc[~idx_nulls].copy()
-        _log.info(f'Ignoring {sum(idx_nulls)} rows containing a null')
+        _log.info(f'Excluding {sum(idx_nulls)} rows containing a null, prior to SVD')
 
     # standardize
     scaler = StandardScaler().fit(df)
@@ -303,6 +305,23 @@ def calc_svd(df: pd.DataFrame, k: int = 10) -> tuple[pd.DataFrame, TruncatedSVD]
     n_tiny = sum(svd_fit.singular_values_ < 1e-12)
     assert n_tiny == 0, f'{n_tiny} Singular Values are < 1e-12'
 
-    dfx = svd.fit_transform(dfs)
+    dfx = svd_fit.transform(dfs)
 
     return dfx, svd_fit
+
+
+def calc_umap(df: pd.DataFrame) -> tuple[pd.DataFrame]:
+    """Calc UMAP (and preprocess to remove nulls and zscore), return
+    transformed df and fitted UMAP object"""
+
+    # protect UMAP from nulls
+    idx_nulls = df.isnull().sum(axis=1) > 0
+    if sum(idx_nulls) > 0:
+        df = df.loc[~idx_nulls].copy()
+        _log.info(f'Excluding {sum(idx_nulls)} rows containing a null, prior to UMAP')
+
+    umapper = umap.UMAP(n_neighbors=5, verbose=True)
+    umap_fit = umapper.fit(df)
+    dfx = umap_fit.transform(df)
+
+    return dfx, umap_fit

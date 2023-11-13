@@ -20,6 +20,7 @@ from .calc import (
     calc_geometric_cv,
     calc_location_in_ecdf,
     calc_svd,
+    calc_umap,
     fit_and_plot_fn,
     get_gini,
     month_diff,
