@@ -14,6 +14,7 @@
 
 # eda.plot.py
 """EDA Plotting"""
+import logging
 from textwrap import wrap
 from typing import Literal
 
@@ -24,6 +25,7 @@ import seaborn as sns
 from matplotlib import figure, gridspec, lines, ticker
 from scipy import integrate, stats
 
+from .calc import calc_svd
 from .describe import get_fts_by_dtype
 
 __all__ = [
@@ -55,9 +57,11 @@ __all__ = [
     'plot_kj_summaries_for_linear_model',
     'plot_grp_ct',
     'plot_cdf_ppc_vs_obs',
+    'plot_explained_variance',
 ]
 
 
+_log = logging.getLogger(__name__)
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
@@ -1720,3 +1724,48 @@ def plot_cdf_ppc_vs_obs(
         _ = axs.set(xlim=(0, np.ceil(y.max())), ylim=(0, 1))
 
     _ = f.suptitle('Cumulative density plot of the posterior predictive vs actual')
+
+    return f
+
+
+def plot_explained_variance(
+    df: pd.DataFrame, k: int = 10, topn: int = 3
+) -> figure.Figure:
+    """Calculate Truncated SVD and plot explained variance curve, with optional
+    vline for the topn components Related to eda.calc.get_svd"""
+
+    _, svd_fit = calc_svd(df, k)
+    evr = pd.Series(
+        svd_fit.explained_variance_ratio_.cumsum(), name='explained_variance_csum'
+    )
+    evr.index = np.arange(1, len(evr) + 1)
+    evr.index.name = 'component'
+
+    f, axs = plt.subplots(1, 1, figsize=(12, 5))
+    _ = sns.pointplot(
+        x='component', y='explained_variance_csum', data=evr.reset_index(), ax=axs
+    )
+    _ = axs.vlines(topn - 1, 0, 1, 'orange', '-.')
+    _ = axs.annotate(
+        '{:.1%}'.format(evr[topn]),
+        xy=(topn - 1, evr[topn]),
+        xycoords='data',
+        xytext=(-10, 10),
+        textcoords='offset points',
+        color='orange',
+        ha='right',
+        fontsize=12,
+    )
+
+    _ = axs.set_ylim(0, 1.001)
+    _ = f.suptitle(
+        f'Explained variance @ top {topn} components ~ {evr[topn]:.1%}', fontsize=14
+    )
+    _ = f.tight_layout()
+    return f
+
+
+#     ax = pd.Series(.plot(kind='line', figsize=(14,5))
+
+
+#     return f

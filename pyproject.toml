@@ -35,6 +35,8 @@ dependencies = [
     "patsy>=0.5.3",  # TODO consider using formulae instead
     "pymc>=5.9.0",  # brings along lots of deps
     "seaborn==0.12.2",  # 0.13 brings many breaking changes to avoid right now
+    "scikit-learn",
+    "umap",
 ]
 
 # NOTE ON DEPS
