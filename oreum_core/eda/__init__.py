@@ -28,7 +28,7 @@ from .calc import (
 )
 from .describe import describe, display_fw, display_ht, get_fts_by_dtype
 from .eda_io import FigureIO, display_image_file, output_data_dict
-from .plot import (
+from .plot import (  # plot_umap,
     plot_accuracy,
     plot_binary_performance,
     plot_bool_ct,

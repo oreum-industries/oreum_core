@@ -21,11 +21,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import umap.umap_ as umap
 from matplotlib import figure
 from scipy import stats
 from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import StandardScaler
+from umap.umap_ import UMAP
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
@@ -310,8 +310,8 @@ def calc_svd(df: pd.DataFrame, k: int = 10) -> tuple[pd.DataFrame, TruncatedSVD]
     return dfx, svd_fit
 
 
-def calc_umap(df: pd.DataFrame) -> tuple[pd.DataFrame]:
-    """Calc UMAP (and preprocess to remove nulls and zscore), return
+def calc_umap(df: pd.DataFrame) -> tuple[pd.DataFrame, UMAP]:
+    """Calc 2D UMAP (and preprocess to remove nulls and zscore), return
     transformed df and fitted UMAP object"""
 
     # protect UMAP from nulls
@@ -320,8 +320,8 @@ def calc_umap(df: pd.DataFrame) -> tuple[pd.DataFrame]:
         df = df.loc[~idx_nulls].copy()
         _log.info(f'Excluding {sum(idx_nulls)} rows containing a null, prior to UMAP')
 
-    umapper = umap.UMAP(n_neighbors=5, verbose=True)
+    umapper = UMAP(n_neighbors=5)
     umap_fit = umapper.fit(df)
-    dfx = umap_fit.transform(df)
+    dfx = pd.DataFrame(umap_fit.transform(df), columns=['c0', 'c1'], index=df.index)
 
     return dfx, umap_fit

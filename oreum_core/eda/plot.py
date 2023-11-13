@@ -388,7 +388,7 @@ def plot_joint_numeric(
         ftsd = get_fts_by_dtype(dfp)
         linreg = False
         if hue in ftsd['int'] + ftsd['float']:  # bin into 5 equal quantiles
-            dfp[hue] = pd.qcut(dfp[hue].values, q=5)
+            dfp[hue] = pd.qcut(dfp[hue].values, q=7)
             kws['palette'] = 'viridis'
         else:
             ngrps = len(dfp[hue].unique())
@@ -400,7 +400,7 @@ def plot_joint_numeric(
 
     kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=kdefill, legend=True)
     scatter_kws = kws | dict(
-        alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd', s=40
+        alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd', s=50
     )
     rug_kws = kws | dict(height=0.1, legend=False)
 
@@ -1763,9 +1763,3 @@ def plot_explained_variance(
     )
     _ = f.tight_layout()
     return f
-
-
-#     ax = pd.Series(.plot(kind='line', figsize=(14,5))
-
-
-#     return f
