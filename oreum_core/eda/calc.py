@@ -14,6 +14,7 @@
 
 # eda.calc.py
 """Calculations to help EDA"""
+import logging
 import warnings
 
 import matplotlib.pyplot as plt
@@ -22,9 +23,14 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import figure
 from scipy import stats
+from sklearn.decomposition import TruncatedSVD
+from sklearn.preprocessing import StandardScaler
+from umap.umap_ import UMAP
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
+
+_log = logging.getLogger(__name__)
 
 __all__ = [
     'fit_and_plot_fn',
@@ -35,6 +41,8 @@ __all__ = [
     'calc_location_in_ecdf',
     'month_diff',
     'tril_nan',
+    'calc_svd',
+    'calc_umap',
 ]
 
 
@@ -270,3 +278,50 @@ def tril_nan(m: np.ndarray, k: int = 0) -> np.ndarray:
 
     # return np.where(mask, m, np.ones(1, m.dtype) * np.nan)
     return np.where(mask, m, np.nan)
+
+
+def calc_svd(df: pd.DataFrame, k: int = 10) -> tuple[pd.DataFrame, TruncatedSVD]:
+    """Calc SVD for k components (and preprocess to remove nulls and zscore),
+    report degeneracy, return transformed df and fitted TruncatedSVD object"""
+
+    # protect SVD from nulls
+    idx_nulls = df.isnull().sum(axis=1) > 0
+    if sum(idx_nulls) > 0:
+        df = df.loc[~idx_nulls].copy()
+        _log.info(f'Excluding {sum(idx_nulls)} rows containing a null, prior to SVD')
+
+    # standardize
+    scaler = StandardScaler().fit(df)
+    dfs = pd.DataFrame(scaler.transform(df), index=df.index, columns=df.columns)
+
+    # use scikit learn's TruncatedSVD with randomized
+    k = min(k, dfs.shape[1] - 1)
+    svd = TruncatedSVD(n_components=k, random_state=RSD)
+    svd_fit = svd.fit(dfs)
+
+    # Are any eigenvalues NaN or really small?
+    n_null = sum(np.isnan(svd_fit.singular_values_))
+    assert n_null == 0, f'{n_null} Singular Values are NaN'
+    n_tiny = sum(svd_fit.singular_values_ < 1e-12)
+    assert n_tiny == 0, f'{n_tiny} Singular Values are < 1e-12'
+
+    dfx = svd_fit.transform(dfs)
+
+    return dfx, svd_fit
+
+
+def calc_umap(df: pd.DataFrame) -> tuple[pd.DataFrame, UMAP]:
+    """Calc 2D UMAP (and preprocess to remove nulls and zscore), return
+    transformed df and fitted UMAP object"""
+
+    # protect UMAP from nulls
+    idx_nulls = df.isnull().sum(axis=1) > 0
+    if sum(idx_nulls) > 0:
+        df = df.loc[~idx_nulls].copy()
+        _log.info(f'Excluding {sum(idx_nulls)} rows containing a null, prior to UMAP')
+
+    umapper = UMAP(n_neighbors=5)
+    umap_fit = umapper.fit(df)
+    dfx = pd.DataFrame(umap_fit.transform(df), columns=['c0', 'c1'], index=df.index)
+
+    return dfx, umap_fit

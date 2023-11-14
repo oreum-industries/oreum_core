@@ -38,15 +38,12 @@ class DatatypeConverter:
     """Force correct datatypes according to what model expects"""
 
     def __init__(self, ftsd: dict, ftslvlcat: dict = {}, date_format: str = '%Y-%m-%d'):
-        """Initialise with fts and fts_dtype_pandas_categorical
-        The pandas categorical dtype logically sits on top of a str object
-        giving it order which is critical for patsy dmatrix transform
-        and thus model structure.
+        """Initialise with fts and optionally specify factors with specific levels
 
         Use with a fts dict of form:
             ftsd = dict(
-                fid = [],
                 fcat = [],
+                fstr = [],
                 fbool = [],
                 fdate = [],
                 fyear = [],
@@ -55,8 +52,8 @@ class DatatypeConverter:
                 fverbatim = [],        # maintain in current dtype)
         """
         self.ftsd = dict(
-            fid=ftsd.get('fid', []),
             fcat=ftsd.get('fcat', []),
+            fstr=ftsd.get('fstr', []),
             fbool=ftsd.get('fbool', []),
             fdate=ftsd.get('fdate', []),
             fyear=ftsd.get('fyear', []),
@@ -83,14 +80,17 @@ class DatatypeConverter:
         fts_all = [w for _, v in self.ftsd.items() for w in v]
         df = dfraw[fts_all].copy()
 
-        for ft in self.ftsd['fid'] + self.ftsd['fcat']:
+        for ft in self.ftsd['fcat'] + self.ftsd['fstr']:
             # tame string, clean, handle nulls
             idx = df[ft].notnull()
             vals = df.loc[idx, ft].astype(str, errors='raise').apply(snl.clean)
             df.drop(ft, axis=1, inplace=True)
             df.loc[~idx, ft] = 'nan'
             df.loc[idx, ft] = vals
-            df[ft] = df[ft].astype('string')
+            if ft in self.ftsd['fcat']:
+                df[ft] = pd.Categorical(df[ft].values, ordered=True)
+            else:
+                df[ft] = df[ft].astype('string')
 
         for ft in self.ftsd['fbool']:
             # tame string, strip, lower, use self.bool_dict, use pd.NA

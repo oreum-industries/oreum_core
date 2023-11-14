@@ -19,6 +19,8 @@ from .calc import (
     bootstrap_lr,
     calc_geometric_cv,
     calc_location_in_ecdf,
+    calc_svd,
+    calc_umap,
     fit_and_plot_fn,
     get_gini,
     month_diff,
@@ -26,7 +28,7 @@ from .calc import (
 )
 from .describe import describe, display_fw, display_ht, get_fts_by_dtype
 from .eda_io import FigureIO, display_image_file, output_data_dict
-from .plot import (
+from .plot import (  # plot_umap,
     plot_accuracy,
     plot_binary_performance,
     plot_bool_ct,
@@ -39,6 +41,7 @@ from .plot import (
     plot_coverage,
     plot_date_ct,
     plot_estimate,
+    plot_explained_variance,
     plot_f_measure,
     plot_float_dist,
     plot_grp_ct,

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# model.model_io.py
+# model_pymc.pymc_io.py
 """Handling of Model Posterior Samples"""
 import logging
 from pathlib import Path
@@ -20,15 +20,15 @@ from pathlib import Path
 import arviz as az
 from pymc.model_graph import model_to_graphviz
 
-from ..model import BasePYMCModel
 from ..utils.file_io import BaseFileIO
+from . import BasePYMCModel
 
-__all__ = ['ModelIO']
+__all__ = ['PYMCIO']
 
 _log = logging.getLogger(__name__)
 
 
-class ModelIO(BaseFileIO):
+class PYMCIO(BaseFileIO):
     """Helper class to read/write NetCDF files for Arviz inference data.
     Can also write model graphs to file
     Note similar behaviour to curate.data_io.SimpleStringIO
@@ -40,9 +40,10 @@ class ModelIO(BaseFileIO):
 
     def read_idata(self, fn: str) -> az.InferenceData:
         """Read arviz.InferenceData object from fn e.g. `mdl.netcdf`"""
-        fqn = self.get_path_read(fn)
-        _log.info(f'Read idata from {str(fqn.resolve())}')
-        return az.from_netcdf(str(fqn.resolve()))
+        fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
+        idata = az.from_netcdf(str(fqn.resolve()))
+        _log.info(f'Read model idata from {str(fqn.resolve())}')
+        return idata
 
     def write_idata(self, mdl: BasePYMCModel, fn: str = '') -> Path:
         """Accept BasePYMCModel object and fn e.g. `mdl.netcdf`, write to file"""

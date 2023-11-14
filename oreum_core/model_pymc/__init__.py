@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# model/
-"""Various classes & functions for modelling, primarily using pymc"""
+# model_pymc/
+"""Various classes & functions for modelling, using PyMC"""
 from .base import BasePYMCModel
 from .calc import (
     calc_2_sample_delta_prop,
@@ -37,7 +37,6 @@ from .describe import (
     print_rvs,
 )
 from .distributions import lognormal_icdf, mv_dist, normal_icdf, sanity_check_lognorm
-from .model_io import ModelIO
 from .plot import (
     facetplot_krushke,
     forestplot_multiple,
@@ -50,3 +49,4 @@ from .plot import (
     plot_ppc,
     plot_trace,
 )
+from .pymc_io import PYMCIO

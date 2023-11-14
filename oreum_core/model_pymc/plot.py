@@ -24,7 +24,7 @@ import seaborn as sns
 import xarray as xr
 from matplotlib import figure, gridspec
 
-from ..model import BasePYMCModel
+from ..model_pymc import BasePYMCModel
 
 __all__ = [
     'plot_trace',
