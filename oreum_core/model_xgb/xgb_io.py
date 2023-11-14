@@ -35,13 +35,15 @@ class XGBIO(BaseFileIO):
         """Inherit super"""
         super().__init__(*args, **kwargs)
 
-    def read_data(self, fn: str) -> Booster:
+    def read(self, fn: str) -> Booster:
         """Read XGB.core.Booster object from fn e.g. `bst.json`"""
-        fqn = self.get_path_read(fn)
-        _log.info(f'Read model data from {str(fqn.resolve())}')
-        return None  # az.from_netcdf(str(fqn.resolve()))
+        fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix('.json'))
+        bst = Booster()
+        bst.load_model(fname=str(fqn.resolve()))
+        _log.info(f'Read Booster model data from {str(fqn.resolve())}')
+        return bst
 
-    def write_data(self, bst: Booster, fn: str = '') -> Path:
+    def write(self, bst: Booster, fn: str = '') -> Path:
         """Accept XGB.core.Booster object and fn e.g. `bst.json`, write to file"""
         fn = 'bst.json' if fn == '' else fn
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.json'))

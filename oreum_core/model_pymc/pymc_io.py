@@ -40,9 +40,10 @@ class PYMCIO(BaseFileIO):
 
     def read_idata(self, fn: str) -> az.InferenceData:
         """Read arviz.InferenceData object from fn e.g. `mdl.netcdf`"""
-        fqn = self.get_path_read(fn)
+        fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
+        idata = az.from_netcdf(str(fqn.resolve()))
         _log.info(f'Read model idata from {str(fqn.resolve())}')
-        return az.from_netcdf(str(fqn.resolve()))
+        return idata
 
     def write_idata(self, mdl: BasePYMCModel, fn: str = '') -> Path:
         """Accept BasePYMCModel object and fn e.g. `mdl.netcdf`, write to file"""

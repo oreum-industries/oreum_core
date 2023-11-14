@@ -57,11 +57,10 @@ pymc = [
     "pymc>=5.9.0",  # brings along lots of deps
 ]
 xgb = [
-    "category_encoders",
+    "category_encoders>=2.6.3",
     "shap>=0.43.0",
     "xgboost>=2.0.2",
 ]
-
 # NOTE ON DEPS
 # + pymc: deps bring many packages incl.: arviz (xarray), numpy, pandas, pytensor, scipy, tables
 # + pandas: added minimal optional deps. importing projects might also consider
