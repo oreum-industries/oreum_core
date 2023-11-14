@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 import patsy as pat
 
-from ..model import BasePYMCModel
+from ..model_pymc import BasePYMCModel
 
 # import pytensor.tensor as pt
 # from IPython.display import Markdown, display

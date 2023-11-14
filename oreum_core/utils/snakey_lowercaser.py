@@ -39,6 +39,7 @@ class SnakeyLowercaser:
         self.rx_multi_underscore = re.compile(r'[_]{2,}')
 
     def clean(self, s: str) -> str:
+        """Clean strings essential"""
         s0 = self.rx_to_underscore.sub('_', str(s))
         s1 = self.rx_punct.sub('', s0)
         s2 = self.rx_splitter1.sub(r'\1_\2 ', s1)
@@ -47,6 +48,7 @@ class SnakeyLowercaser:
         return s4
 
     def clean_patsy(self, s: str) -> str:
+        """Clean strings for patsy features"""
         s0 = str(s).replace('-', '_')
         if len(f := self.rx_patsy_factor.findall(s0)) > 0:
             s0 = f[0][0] + '_t_' + f[0][2] + f[0][4]

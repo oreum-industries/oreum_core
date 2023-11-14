@@ -37,7 +37,7 @@ dev:  ## create env for local dev on any machine MacOS x64 (Intel)
 		export CONDA_ENV_PATH=$(MAMBADIR)/envs/oreum_core/bin; \
 		export CONDA_DEFAULT_ENV=oreum_core; \
 		export CONDA_SUBDIR=osx-64; \
-		$(PYTHON_ENV) -m pip install -e ".[dev,bayes]"; \
+		$(PYTHON_ENV) -m pip install -e ".[all]"; \
 		$(PYTHON_ENV) -c "import numpy as np; np.__config__.show()" > dev/install_log/blas_info.txt; \
 		pipdeptree -a > dev/install_log/pipdeptree.txt; \
 		pipdeptree -a -r > dev/install_log/pipdeptree_rev.txt; \

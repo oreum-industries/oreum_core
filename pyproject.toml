@@ -38,6 +38,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+all = ["oreum_core[dev,pymc,xgb]"]
 dev = [
     "bandit",
     "black",
@@ -51,9 +52,14 @@ dev = [
     "pre-commit",
     "pytest",
 ]
-bayes = [
+pymc = [
     "graphviz<=0.18",   # NOTE capped https://stackoverflow.com/a/69997168/4473230
     "pymc>=5.9.0",  # brings along lots of deps
+]
+xgb = [
+    "category_encoders",
+    "shap>=0.43.0",
+    "xgboost>=2.0.2",
 ]
 
 # NOTE ON DEPS
