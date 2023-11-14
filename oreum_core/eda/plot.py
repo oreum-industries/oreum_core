@@ -402,6 +402,7 @@ def plot_joint_numeric(
     scatter_kws = kws | dict(
         alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd', s=50
     )
+    reg_kws = kws | dict(scatter_kws=scatter_kws, robust=True)
     rug_kws = kws | dict(height=0.1, legend=False)
 
     if kind == 'kde':
@@ -414,7 +415,7 @@ def plot_joint_numeric(
         _ = gd.plot_joint(sns.scatterplot, **scatter_kws)
         _ = gd.plot_marginals(sns.rugplot, **rug_kws)
     elif kind == 'reg':
-        _ = gd.plot_joint(sns.regplot, scatter_kws=scatter_kws, **kws)
+        _ = gd.plot_joint(sns.regplot, **reg_kws)
         _ = gd.plot_marginals(sns.rugplot, **rug_kws)
     else:
         raise ValueError('kwarg `kind` must be in {kde, scatter, kde+scatter, reg}')
