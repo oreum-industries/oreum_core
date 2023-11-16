@@ -50,3 +50,9 @@ class XGBIO(BaseFileIO):
         bst.save_model(str(fqn.resolve()))
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn
+
+    def get_sqlite_uri_for_optuna_study(self, fn: str = '') -> str:
+        """Get URI of local SQLite DB to pass to optuna.create_study(storage=)"""
+        fn = 'optuna_study.sqlite' if fn == '' else fn
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.sqlite'))
+        return f'sqlite:////{str(fqn.resolve())}'
