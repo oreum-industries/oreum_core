@@ -61,7 +61,6 @@ xgb = [
     "graphviz<=0.18",  # NOTE capped https://stackoverflow.com/a/69997168/4473230
     "optuna>=3.4.0",  # brings many deps see DEPS NOTE
     "nbformat",
-    "plotly>=5.18.0",
     "shap>=0.43.0",
     "xgboost>=2.0.2",
 ]
@@ -71,7 +70,7 @@ xgb = [
 #     including pandas[performance,postgresql]>=2.0.0
 # + pymc: brings packages incl.: arviz (xarray), numpy, pandas, pytensor, scipy, tables
 # + optuna:  brings numpy==1.26.2 which may clash with 1.4.2 as required by MKL see conda.yml
-#     also brings sqlalchemy
+#     also brings sqlalchemy, optionally manually add plotly
 
 [project.urls]
 "Homepage" = "https://oreum.io"
