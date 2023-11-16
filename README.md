@@ -1,9 +1,11 @@
 # Oreum Core Tools `oreum_core`
 
-[![CI](https://github.com/oreum-industries/oreum_core/workflows/ci/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org)
+[![License](https://img.shields.io/badge/license-Apache2.0-blue.svg)](https://github.com/optuna/optuna)
 [![GitHub Release](https://img.shields.io/github/v/release/oreum-industries/oreum_core?display_name=tag&sort=semver)](https://github.com/oreum-industries/oreum_core/releases)
-[![publish](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml)
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
+[![CI](https://github.com/oreum-industries/oreum_core/workflows/ci/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/ci.yml)
+[![publish](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml)
 <!-- [![Conda Forge](https://img.shields.io/conda/vn/oreum-industries/oreum_core.svg)](https://anaconda.org/oreum-industries/oreum_core) -->
 
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -20,11 +22,17 @@
 This is an ever-growing package of core tools for use on client projects by
 Oreum Industries.
 
-+ Uses scienfitic Python stack (`numpy`, `scipy`, `matplotlib`, `seaborn`,
-  `pandas`, `scikit-learn`, etc) for EDA, data manipulation, basic ML etc
-+ Enables Bayesian modelling workflow in R&D and Production (`pymc`, `pytensor`,
-  `arviz`, etc)
-+ Also includes utilities for text cleaning, sql scripting, file handling etc
++ Provides an essential workflow for data curation, EDA, basic ML using the core
+  scientific Python stack incl. `numpy`, `scipy`, `matplotlib`, `seaborn`,
+  `pandas`, `scikit-learn`, `umap-learn`
++ Optionally provides an advanced Bayesian modelling workflow in R&D and
+  Production using a leading probabilistic programming stack incl. `pymc`,
+  `pytensor`, `arviz`
+  (do `pip install oreum_core[pymc]`)
++ Optionally enables a generalist black-box ML workflow in R&D using a leading
+  Gradient Boosted Trees stack incl. `xgboost`, `optuna`, `shap`
+  (do `pip install oreum_core[xgb]`)
++ Also includes seevral utilities for text cleaning, sql scripting, file handling
 
 
 This package **is**:
