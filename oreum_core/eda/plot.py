@@ -367,12 +367,13 @@ def plot_joint_numeric(
     kind: str = 'kde',
     height: int = 6,
     kdefill: bool = True,
-    log: bool = False,
+    log: Literal['x', 'y', 'both'] = None,
     subtitle: str = None,
     colori: int = 0,
     nsamp: int = None,
     linreg: bool = True,
     legendpos: str = None,
+    palette_type: Literal['q', 'g'] = 'g',
 ) -> figure.Figure:
     """Jointplot of 2 numeric fts with optional: hue shading, linear regression
     Suitable for int or float"""
@@ -387,14 +388,19 @@ def plot_joint_numeric(
     if hue is not None:
         ftsd = get_fts_by_dtype(dfp)
         linreg = False
-        if hue in ftsd['int'] + ftsd['float']:  # bin into 5 equal quantiles
+        if hue in ftsd['int'] + ftsd['float']:  # bin into 7 equal quantiles
             dfp[hue] = pd.qcut(dfp[hue].values, q=7)
             kws['palette'] = 'viridis'
         else:
             ngrps = len(dfp[hue].unique())
-            kws['palette'] = sns.color_palette(
-                [f'C{i + colori%5}' for i in range(ngrps)]
-            )
+            if palette_type == 'g':
+                kws['palette'] = sns.color_palette(
+                    [f'C{i + colori%7}' for i in range(ngrps)]
+                )
+            else:  # palette_type == 'q':
+                # kws['palette'] = sns.color_palette(palette='vlag_r', n_colors=ngrps)
+                kws['palette'] = sns.color_palette(palette='RdYlBu_r', n_colors=ngrps)
+                # kws['palette'] = sns.diverging_palette(220, 20, center='dark', n=ngrps)
 
     gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=height, hue=hue)
 
@@ -439,10 +445,12 @@ def plot_joint_numeric(
             fontsize=8,
         )
 
-    if log:
+    if log in ['x', 'both']:
         _ = gd.ax_joint.set_xscale('log')
-        _ = gd.ax_joint.set_yscale('log')
         _ = gd.ax_marg_x.set_xscale('log')
+
+    if log in ['y', 'both']:
+        _ = gd.ax_joint.set_yscale('log')
         _ = gd.ax_marg_y.set_yscale('log')
 
     t = '' if subtitle is None else f'\n{subtitle}'
