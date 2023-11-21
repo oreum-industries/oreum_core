@@ -374,33 +374,39 @@ def plot_joint_numeric(
     linreg: bool = True,
     legendpos: str = None,
     palette_type: Literal['q', 'g'] = 'g',
+    palette: str = None,
 ) -> figure.Figure:
     """Jointplot of 2 numeric fts with optional: hue shading, linear regression
     Suitable for int or float"""
 
     dfp = df.copy()
     ngrps = 1
-    kws = dict(color=f'C{colori%5}')  # color rotation max 5
+    kws = dict(color=f'C{colori%7}')  # color rotation max 7
 
     if nsamp is not None:
         dfp = dfp.sample(nsamp, random_state=RSD).copy()
 
     if hue is not None:
-        ftsd = get_fts_by_dtype(dfp)
-        linreg = False
-        if hue in ftsd['int'] + ftsd['float']:  # bin into 7 equal quantiles
-            dfp[hue] = pd.qcut(dfp[hue].values, q=7)
-            kws['palette'] = 'viridis'
-        else:
-            ngrps = len(dfp[hue].unique())
-            if palette_type == 'g':
-                kws['palette'] = sns.color_palette(
-                    [f'C{i + colori%7}' for i in range(ngrps)]
-                )
-            else:  # palette_type == 'q':
-                # kws['palette'] = sns.color_palette(palette='vlag_r', n_colors=ngrps)
-                kws['palette'] = sns.color_palette(palette='RdYlBu_r', n_colors=ngrps)
-                # kws['palette'] = sns.diverging_palette(220, 20, center='dark', n=ngrps)
+        ngrps = len(dfp[hue].unique())
+        if palette is None:
+            ftsd = get_fts_by_dtype(dfp)
+            linreg = False
+            if hue in ftsd['int'] + ftsd['float']:  # bin into 7 equal quantiles
+                dfp[hue] = pd.qcut(dfp[hue].values, q=7)
+                kws['palette'] = 'viridis'
+            else:
+                if palette_type == 'g':
+                    kws['palette'] = sns.color_palette(
+                        [f'C{i + colori%7}' for i in range(ngrps)]
+                    )
+                else:  # palette_type == 'q':
+                    kws['palette'] = sns.color_palette(
+                        palette='RdYlBu_r', n_colors=ngrps
+                    )
+        elif isinstance(palette, str):
+            kws['palette'] = sns.color_palette(palette=palette, n_colors=ngrps)
+        else:  # pass a palette directly
+            kws['palette'] = palette
 
     gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=height, hue=hue)
 
