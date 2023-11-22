@@ -381,6 +381,7 @@ def plot_joint_numeric(
 
     dfp = df.copy()
     ngrps = 1
+    nobs = len(df) // ngrps
     kws = dict(color=f'C{colori%7}')  # color rotation max 7
 
     if nsamp is not None:
@@ -388,12 +389,14 @@ def plot_joint_numeric(
 
     if hue is not None:
         ngrps = len(dfp[hue].unique())
+        nobs = len(df)
         if palette is None:
             ftsd = get_fts_by_dtype(dfp)
             linreg = False
-            if hue in ftsd['int'] + ftsd['float']:  # bin into 7 equal quantiles
-                dfp[hue] = pd.qcut(dfp[hue].values, q=7)
+            if hue in ftsd['int'] + ftsd['float']:  # bin into n equal quantiles
+                dfp[hue] = pd.qcut(dfp[hue].values, q=7, duplicates='drop')
                 kws['palette'] = 'viridis'
+                nobs = len(df)
             else:
                 if palette_type == 'g':
                     kws['palette'] = sns.color_palette(
@@ -461,7 +464,7 @@ def plot_joint_numeric(
 
     t = '' if subtitle is None else f'\n{subtitle}'
     _ = gd.figure.suptitle(
-        f'Joint dist: `{ft0}` x `{ft1}`, {len(df)//ngrps} obs{t}', y=1.02, fontsize=14
+        f'Joint dist: `{ft0}` x `{ft1}`, {nobs} obs{t}', y=1.02, fontsize=14
     )
     _ = gd.fig.tight_layout(pad=0.95)
     return gd.fig

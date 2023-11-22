@@ -68,7 +68,9 @@ class PandasCSVIO(BaseFileIO):
         return pd.read_csv(str(fqn), *args, **kwargs)
 
     def write(self, df: pd.DataFrame, fn: str, *args, **kwargs) -> str:
-        """Accept pandas DataFrame and fn e.g. `df`, write to fn.csv"""
+        """Accept pandas DataFrame and fn e.g. `df`, write to fn.csv
+        Consider using kwarg: float_format='%.3f'
+        """
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.csv'))
         kws = kwargs.copy()
         kws.update(quoting=csv.QUOTE_NONNUMERIC)
