@@ -381,6 +381,7 @@ def plot_joint_numeric(
 
     dfp = df.copy()
     ngrps = 1
+    nobs = len(df) // ngrps
     kws = dict(color=f'C{colori%7}')  # color rotation max 7
 
     if nsamp is not None:
@@ -388,7 +389,7 @@ def plot_joint_numeric(
 
     if hue is not None:
         ngrps = len(dfp[hue].unique())
-        nobs = len(df) // ngrps
+        nobs = len(df)
         if palette is None:
             ftsd = get_fts_by_dtype(dfp)
             linreg = False
