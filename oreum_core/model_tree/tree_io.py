@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # model_xgb.xgb_io.py
-"""Handling of Model Posterior Samples"""
+"""Handling of Fitted Model Parameters"""
 import logging
 from pathlib import Path
 

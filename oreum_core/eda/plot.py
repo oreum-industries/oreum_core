@@ -360,7 +360,7 @@ def plot_float_dist(
 
 
 def plot_joint_numeric(
-    df: pd.DataFrame,
+    data: pd.DataFrame,
     ft0: str,
     ft1: str,
     hue: str = None,
@@ -375,28 +375,30 @@ def plot_joint_numeric(
     legendpos: str = None,
     palette_type: Literal['q', 'g'] = 'g',
     palette: str = None,
+    eq: int = 7,  # equal quantiles. Set higher in the case of extreme values
 ) -> figure.Figure:
     """Jointplot of 2 numeric fts with optional: hue shading, linear regression
     Suitable for int or float"""
 
-    dfp = df.copy()
+    dfp = data.copy()
     ngrps = 1
-    nobs = len(df)
     kws = dict(color=f'C{colori%7}')  # color rotation max 7
 
     if nsamp is not None:
         dfp = dfp.sample(nsamp, random_state=RSD).copy()
 
+    nobs = len(dfp)
+
     if hue is not None:
         ngrps = len(dfp[hue].unique())
-        nobs = len(df) // ngrps
+        nobs = len(dfp) // ngrps
         if palette is None:
             ftsd = get_fts_by_dtype(dfp)
             linreg = False
             if hue in ftsd['int'] + ftsd['float']:  # bin into n equal quantiles
-                dfp[hue] = pd.qcut(dfp[hue].values, q=7, duplicates='drop')
+                dfp[hue] = pd.qcut(dfp[hue].values, q=eq, duplicates='drop')
                 kws['palette'] = 'viridis'
-                nobs = len(df)
+                nobs = len(dfp)
             else:
                 if palette_type == 'g':
                     kws['palette'] = sns.color_palette(
@@ -438,9 +440,7 @@ def plot_joint_numeric(
     if legendpos is not None:
         _ = sns.move_legend(gd.ax_joint, legendpos)
 
-    _ = gd.plot_marginals(
-        sns.histplot, kde=True, **kws
-    )  # always want hist for marginals
+    _ = gd.plot_marginals(sns.histplot, kde=True, **kws)
 
     if linreg:
         r = stats.linregress(x=dfp[ft0], y=dfp[ft1])
