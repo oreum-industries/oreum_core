@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# model_xgb/
-"""Various classes & functions for modelling, using XGBoost"""
-from .xgb_io import XGBIO
+# model_tree/
+"""Various cls & fns for modelling, using Gradient Boosted Decision Trees"""
+from .tree_io import XGBIO
