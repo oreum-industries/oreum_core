@@ -38,7 +38,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-all = ["oreum_core[dev,pymc,xgb]"]
+all = ["oreum_core[dev,pymc,tree]"]
 dev = [
     "bandit",
     "black",
