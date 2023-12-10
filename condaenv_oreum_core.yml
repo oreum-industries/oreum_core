@@ -18,11 +18,11 @@ channels:
   # - defaults
 dependencies:
 - conda-forge::ipykernel>=6.23.1
-- conda-forge::numpy>=1.26.2  # see NOTES
+- conda-forge::numpy>=1.25.2   #>=1.26.2  # see NOTES
 - conda-forge::libblas=*[build=*accelerate]  # see NOTES
 - conda-forge::libcblas=*[build=*accelerate]  # see NOTES
 - conda-forge::liblapack=*[build=*accelerate]  # see NOTES
 - conda-forge::python==3.10.*
-- conda-forge::pymc>=5.10.0
+- conda-forge::pymc==5.9.*  # >=5.10.1
 - conda-forge::scipy-tests  # see NOTES
 - conda-forge::pooch  # see NOTES
