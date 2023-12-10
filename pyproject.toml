@@ -29,11 +29,12 @@ dependencies = [
     "fastparquet",  # not available in pandas v2.0 optional deps
     "ftfy>=5.4.1",  # NOTE MacOS has 6.1.1
     "matplotlib>=3.7.3",
-    # "matplotlib-inline<0.1.5",  # 0.1.5+ causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
+    "matplotlib-inline<0.1.5",  # 0.1.5+ causes massive plots in vscode https://github.com/ipython/ipython/issues/10383
     "pandas[excel,parquet,plot]>=2.0.1",  # brings many deps see DEPS NOTE
     "patsy>=0.5.3",  # TODO consider using formulae instead
-    "seaborn==0.12.2",  # 0.13 brings many breaking changes to avoid right now
     "scikit-learn",
+    "seaborn==0.12.2",  # 0.13 brings many breaking changes to avoid right now
+    "statsmodels>=0.14.0",
     "umap-learn",
 ]
 

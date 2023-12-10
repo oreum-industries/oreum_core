@@ -25,15 +25,7 @@ build:  ## build package oreum_core (actually more of an "assemble" than a compi
 	make pre-build
 	$(PYTHON) -m flit build
 
-install-env:  ## create mamba (conda) environment
-	export PATH=$(MAMBADIR)/bin:$$PATH; \
-		if which mamba; then echo "mamba ready"; else make install-mamba; fi
-	export PATH=$(MAMBADIR)/bin:$$PATH; \
-		export CONDA_SUBDIR=osx-arm64; \
-		mamba update -n base mamba; \
-		mamba env create --file condaenv_oreum_core.yml -y;
-
-dev:  ## create env for local dev on any machine MacOS x64 (Intel)
+dev:  ## create env for local dev
 	make install-env
 	export PATH=$(MAMBADIR)/envs/oreum_core/bin:$$PATH; \
 		export CONDA_ENV_PATH=$(MAMBADIR)/envs/oreum_core/bin; \
@@ -46,6 +38,23 @@ dev:  ## create env for local dev on any machine MacOS x64 (Intel)
 		pip-licenses -saud -f markdown --output-file LICENSES_THIRD_PARTY.md; \
 		pre-commit install; \
 		pre-commit autoupdate;
+
+install-env:  ## create mamba (conda) environment
+	export PATH=$(MAMBADIR)/bin:$$PATH; \
+		if which mamba; then echo "mamba ready"; else make install-mamba; fi
+	export PATH=$(MAMBADIR)/bin:$$PATH; \
+		export CONDA_SUBDIR=osx-arm64; \
+		mamba update -n base mamba; \
+		mamba env create --file condaenv_oreum_core.yml -y;
+
+install-mamba:  ## get mamba via miniforge, explicitly use bash
+	test -f $(MAMBARC) || { echo $(MAMBARCMSG); exit 1; }
+	wget $(MAMBADL)/$(MAMBAV) -O $(HOME)/miniforge.sh
+	chmod 755 $(HOME)/miniforge.sh
+	bash $(HOME)/miniforge.sh -b -p $(MAMBADIR)
+	export PATH=$(MAMBADIR)/bin:$$PATH; \
+		conda init zsh;
+	rm $(HOME)/miniforge.sh
 
 lint:  ## run code lint & security checks
 	$(PYTHON) -m pip install black flake8 interrogate isort bandit
@@ -66,21 +75,6 @@ help:
 	@echo "  test-dl-ins   test dl & install from testpypi"
 	@echo "  uninstall-env remove env (use from parent dir \make -C oreum_core ...)"
 
-
-install-mamba:  ## get mamba via miniforge, explicitly use bash
-	test -f $(MAMBARC) || { echo $(MAMBARCMSG); exit 1; }
-	wget $(MAMBADL)/$(MAMBAV) -O $(HOME)/miniforge.sh
-	chmod 755 $(HOME)/miniforge.sh
-	bash $(HOME)/miniforge.sh -b -p $(MAMBADIR)
-	export PATH=$(MAMBADIR)/bin:$$PATH; \
-		conda init zsh;
-	rm $(HOME)/miniforge.sh
-
-
-# NOTE as-at 2023-09-27 this craps out with
-#  /Users/jon/miniforge.sh:342: no matches found: /Users/jon/miniforge/pkgs/envs/*/
-# make: *** [mamba] Error 1
-# but does actually do what it should
 
 pre-build:  ## setup env for flit build or flit publish
 	rm -rf dist
