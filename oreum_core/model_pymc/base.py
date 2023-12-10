@@ -181,28 +181,33 @@ class BasePYMCModel:
                 posterior = pm.sample(**{**kws, **kwargs})
             except UserWarning as e:
                 _log.warning('Warning in mdl.sample()', exc_info=e)
-            finally:
+            except Exception as e:
+                _log.error('Uncaught exception in mdl.sample()', exc_info=e)
+                raise e
+            else:
                 _ = self.update_idata(posterior)
 
-        _log.info(f'Sampled posterior for {self.name} {self.version}')
+                _log.info(f'Sampled posterior for {self.name} {self.version}')
 
-        # optional calculate loglikelihood for potentials
-        if self.calc_potential_loglike:
-            self.idata.add_groups(
-                dict(
-                    log_likelihood=compute_log_likelihood_for_potential(
-                        idata=self.idata,
-                        model=self.model,
-                        var_names=self.rvs_potential_loglike,
-                        extend_inferencedata=False,
+                # optional calculate loglikelihood for potentials
+                if self.calc_potential_loglike:
+                    self.idata.add_groups(
+                        dict(
+                            log_likelihood=compute_log_likelihood_for_potential(
+                                idata=self.idata,
+                                model=self.model,
+                                var_names=self.rvs_potential_loglike,
+                                extend_inferencedata=False,
+                            )
+                        )
                     )
-                )
-            )
-            # rename to have exact same name as observedRVs
-            for nm in self.rvs_potential_loglike:
-                nm0 = nm.lstrip('pot_')
-                self.idata['log_likelihood'][nm0] = self.idata['log_likelihood'][nm]
-                del self.idata['log_likelihood'][nm]
+                    # rename to have exact same name as observedRVs
+                    for nm in self.rvs_potential_loglike:
+                        nm0 = nm.lstrip('pot_')
+                        self.idata['log_likelihood'][nm0] = self.idata[
+                            'log_likelihood'
+                        ][nm]
+                        del self.idata['log_likelihood'][nm]
 
         return None
 

@@ -36,7 +36,7 @@ repos:
       - id: black
         files: ^oreum_core/
   - repo: https://github.com/PyCQA/isort  # isort sort imports
-    rev: 5.12.0
+    rev: 5.13.0
     hooks:
       - id: isort
         files: ^oreum_core/
@@ -46,7 +46,7 @@ repos:
       - id: flake8
         files: ^oreum_core/
   - repo: https://github.com/pycqa/bandit  # basic security checks for python code
-    rev: 1.7.5
+    rev: 1.7.6
     hooks:
       - id: bandit
         files: ^oreum_core/
