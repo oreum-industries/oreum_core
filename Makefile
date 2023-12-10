@@ -3,10 +3,10 @@
 # + Intended for install on MacOS Apple Silicon arm64 using Accelerate
 #   (NOT Intel x86 using MKL via Rosetta 2)
 # + Uses sh by default: to confirm shell create a recipe with $(info $(SHELL))
-.PHONY: build install-env dev lint help install-mamba pre-build pub test-pub\
+.PHONY: build dev help install-env install-mamba lint pre-build pub test-pub\
 	    test-dev-env test-dl-ins uninstall-env uninstall-mamba
-.SILENT: build install-env dev lint help install-mamba pre-build pub test-pub\
-        test-dev-env test-dl-ins uninstall-env uninstall-mamba
+.SILENT: build dev help install-env install-mamba lint pre-build pub test-pub\
+	    test-dev-env test-dl-ins uninstall-env uninstall-mamba
 MAMBADL := https://github.com/conda-forge/miniforge/releases/download/23.3.1-1
 MAMBAV := Miniforge3-MacOSX-arm64.sh
 MAMBARCMSG := Please create file $(MAMBARC), importantly set `platform: osx-arm64`
