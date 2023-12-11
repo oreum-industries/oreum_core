@@ -22,5 +22,5 @@ dependencies:
 - conda-forge::liblapack=*[build=*mkl]  # force BLAS with MKL see NOTE
 - conda-forge::mkl==2021.4.*  # force MKL version see NOTE
 - conda-forge::mkl-service==2.4.*
-- conda-forge::python==3.10.*
+- conda-forge::python==3.11.*
 - conda-forge::pymc>=5.9.0
