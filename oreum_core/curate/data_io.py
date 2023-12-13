@@ -24,14 +24,20 @@ import pandas as pd
 
 from ..utils.file_io import BaseFileIO
 
-__all__ = ['PandasParquetIO', 'PandasCSVIO', 'SimpleStringIO', 'copy_csv2md']
+__all__ = [
+    'PandasParquetIO',
+    'PandasCSVIO',
+    'PandasExcelIO',
+    'SimpleStringIO',
+    'copy_csv2md',
+]
 
 _log = logging.getLogger(__name__)
 
 
 class PandasParquetIO(BaseFileIO):
-    """Helper class to convert pandas to parquet and save to fqn and vice-versa.
-    Not strictly needed, but adds a layer of path checking
+    """Simple helper class to read/write pandas to parquet, including path and
+    extension checking.
     """
 
     def __init__(self, *args, **kwargs):
@@ -54,7 +60,9 @@ class PandasParquetIO(BaseFileIO):
 
 
 class PandasCSVIO(BaseFileIO):
-    """Very simple helper class to write a Pandas dataframe to CSV file in a consistent way"""
+    """Simple helper class to read/write pandas to csv with consistency,
+    including path and extension checking.
+    """
 
     def __init__(self, *args, **kwargs):
         """Inherit super"""
@@ -79,6 +87,58 @@ class PandasCSVIO(BaseFileIO):
         df.to_csv(str(fqn), *args, **kws)
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn
+
+
+class PandasExcelIO(BaseFileIO):
+    """Helper class to read/write pandas to excel xlsx, using xlsxwriter.
+    Includes path and extension checking.
+    Write a single sheet (fire & forget), or write multiple sheets using a
+    returned writer object: see eda.eda_io.output_data_dict for an example
+    """
+
+    def __init__(self, *args, **kwargs):
+        """Inherit super"""
+        super().__init__(*args, **kwargs)
+
+    def read(self, fn: str, *args, **kwargs) -> pd.DataFrame:
+        """Read excel fn from rootdir, pass args kwargs to pd.read_excel"""
+        fn = Path(fn).with_suffix('.xslx')
+        fqn = self.get_path_read(fn)
+        _log.info(f'Read from {str(fqn.resolve())}')
+        return pd.read_excel(str(fqn), *args, **kwargs)
+
+    def write(self, df: pd.DataFrame, fn: str, *args, **kwargs) -> Path:
+        """Accept pandas DataFrame and fn e.g. `df.xlsx`, write to fqn."""
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.xlsx'))
+        writer = pd.ExcelWriter(str(fqn), engine='xlsxwriter')
+        df.to_excel(writer, *args, **kwargs)
+        writer.close()
+        _log.info(f'Written to {str(fqn.resolve())}')
+        return fqn
+
+    def writer_open(self, fn: str, *args, **kwargs) -> None:
+        """Starts a writer workflow to allow advanced users to write multiple sheets"""
+        self.fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.xlsx'))
+        self.writer = pd.ExcelWriter(str(self.fqn), engine='xlsxwriter')
+        _log.info(f'Opened writer workflow for {str(self.fqn.resolve())}')
+
+    def writer_write(self, df: pd.DataFrame, *args, **kwargs) -> None:
+        """Write pandas DataFrame to existing writer object"""
+        if hasattr(self, 'writer'):
+            df.to_excel(self.writer, *args, **kwargs)
+            _log.info(
+                f'Written as part of writer workflow to {str(self.fqn.resolve())}'
+            )
+
+    def writer_close(self) -> Path:
+        """Close existing writer object"""
+        if hasattr(self, 'writer'):
+            self.writer.close()
+            _log.info(f'Closed writer workflow {str(self.fqn.resolve())}')
+            fqn = self.fqn
+            del self.fqn
+            del self.writer
+            return fqn
 
 
 class SimpleStringIO(BaseFileIO):
