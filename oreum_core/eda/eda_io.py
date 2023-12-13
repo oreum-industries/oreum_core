@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import figure
 
+from ..curate.data_io import PandasExcelIO
 from ..utils.file_io import BaseFileIO
 from .describe import describe, get_fts_by_dtype
 
@@ -84,8 +85,8 @@ def display_image_file(
 
 def output_data_dict(
     df: pd.DataFrame, dd_notes: dict[str, str], fqp: Path, fn: str = ''
-):
-    """Convenience fn: output data dict"""
+) -> None:
+    """Helper fn to output a data dict with automatic eda.describe"""
 
     # flag if is index
     idx_names = list(df.index.names)
@@ -114,26 +115,24 @@ def output_data_dict(
     dfd = pd.merge(dfd, df_dd_notes, how='left', left_index=True, right_index=True)
 
     # write overview
-    fileio = BaseFileIO(rootdir=fqp)
+    excelio = PandasExcelIO(rootdir=fqp)
     fn = f'_{fn}' if fn != '' else fn
-    fqn = fileio.get_path_write(f'datadict{fn}.xlsx')
-
-    writer = pd.ExcelWriter(str(fqn), engine='xlsxwriter')
-    dfd.to_excel(writer, sheet_name='overview', index=True)
+    fn = f'datadict{fn}'
+    excelio.writer_open(fn)
+    excelio.writer_write(dfd, sheet_name='overview', index=True)
 
     # write cats to separate sheets for levels (but not indexes since they're unique)
     for ft in dfd.loc[dfd['dtype'].isin(['categorical', 'cat'])].index.values:
         if ft not in df.index.names:
-            dfg = (df[ft].value_counts(dropna=False) / len(df)).to_frame('prop')
+            dfg = df[ft].value_counts(dropna=False).to_frame('count')
+            dfg['prop'] = dfg['count'] / len(df)
             dfg.index.name = 'value'
-            dfg.reset_index().to_excel(
-                writer,
-                sheet_name=f'{ft[:28]}...' if len(ft) >= 31 else ft,
-                index=False,
+            excelio.writer_write(
+                dfg,
+                sheet_name=f'cat_{ft[:24]}...' if len(ft) >= 27 else f'cat_{ft}',
+                index=True,
                 float_format='%.3f',
                 na_rep='NULL',
             )
 
-    writer.close()
-    _log.info(f'Written to {str(fqn.resolve())}')
-    return fqn
+    excelio.writer_close()
