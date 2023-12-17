@@ -1,7 +1,7 @@
 # Oreum Core Tools `oreum_core`
 
 [![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org)
-[![License](https://img.shields.io/badge/license-Apache2.0-blue.svg)](https://github.com/optuna/optuna)
+[![License](https://img.shields.io/badge/license-Apache2.0-blue.svg)](https://choosealicense.com/licenses/apache-2.0/)
 [![GitHub Release](https://img.shields.io/github/v/release/oreum-industries/oreum_core?display_name=tag&sort=semver)](https://github.com/oreum-industries/oreum_core/releases)
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
 [![CI](https://github.com/oreum-industries/oreum_core/workflows/ci/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/ci.yml)
