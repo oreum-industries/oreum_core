@@ -135,7 +135,7 @@ successful installation (or not) for `numpy`, `scipy`
 From the dir above `oreum_core/` project dir:
 
 ```zsh
-$> make -C oreum_core/ uninstall
+$> make -C oreum_core/ uninstall-env
 ```
 
 ### 2.3 Code Linting & Repo Control
@@ -170,6 +170,3 @@ See LICENSE.md.
 
 Oreum OÜ t/a Oreum Industries, Sepapaja 6, Tallinn, 15551, Estonia,
 reg.16122291, [oreum.io](https://oreum.io)
-
----
-Oreum OÜ &copy; 2023
