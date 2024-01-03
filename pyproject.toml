@@ -75,8 +75,7 @@ tree = [
 #     also brings sqlalchemy, optionally manually add plotly
 
 [project.urls]
-"Homepage" = "https://oreum.io"
-"Source Code" = "https://github.com/oreum-industries/oreum_core"
+"Homepage" = "https://github.com/oreum-industries/oreum_core"
 
 # [bdist_wheel]
 # universal=1

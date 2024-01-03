@@ -70,22 +70,22 @@ For local development on MacOS
 ### 2.0 Pre-requisite installs via `homebrew`
 
 1. Install Homebrew, see instuctions at [https://brew.sh](https://brew.sh)
-2. Install `direnv`, `git`, `git-lfs`, `graphviz`
+2. Install `direnv`, `git`, `git-lfs`, `graphviz`, `zsh`
 
 ```zsh
 $> brew update && upgrade
-$> brew install direnv git git-lfs graphviz
+$> brew install direnv git git-lfs graphviz zsh
 ```
 
 ### 2.1 Git clone the repo
 
-Assumes `git`, `git-lfs` and `direnv` installed as above
+Assumes `direnv`, `git`, `git-lfs` and `zsh` installed as above
 
 ```zsh
 $> git clone https://github.com/oreum-industries/oreum_core
 $> cd oreum_core
 ```
-Then allow `direnv` on MacOS to automatically run file `.envrc` upon directory open
+Then allow `direnv` on MacOS to autorun file `.envrc` upon directory open
 
 
 ### 2.2 Create virtual environment and install dev packages
@@ -165,8 +165,11 @@ Github Workflows to run:
 
 ---
 
-Copyright 2023 Oreum OÜ t/a Oreum Industries. All rights reserved.
+Copyright 2024 Oreum OÜ t/a Oreum Industries. All rights reserved.
 See LICENSE.md.
 
 Oreum OÜ t/a Oreum Industries, Sepapaja 6, Tallinn, 15551, Estonia,
 reg.16122291, [oreum.io](https://oreum.io)
+
+---
+Oreum OÜ &copy; 2024

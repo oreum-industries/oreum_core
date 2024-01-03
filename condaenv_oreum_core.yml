@@ -9,7 +9,7 @@
 #    we're explcit about BLAS/LAPACK from acccelerate, then also numpy.
 #    also see https://numpy.org/install/ and https://github.com/numpy/numpy/pull/24053
 #  + libblas, libcblas, liblapack, not strictly needed here but we want to be
-#    explcit about forcing BLAS to use Accelerate
+#    explicit about forcing BLAS to use Accelerate
 #  + pooch and scipy-tests required because conda-forge scipy (brought in by pymc)
 #    doesnt contain tests
 name: oreum_core

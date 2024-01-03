@@ -1,4 +1,4 @@
-# Copyright 2023 Oreum Industries
+# Copyright 2024 Oreum Industries
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -415,7 +415,9 @@ def plot_joint_numeric(
 
     gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=height, hue=hue)
 
-    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=kdefill, legend=True)
+    kde_kws = kws | dict(
+        zorder=0, levels=7, cut=0, fill=kdefill, legend=True, warn_singular=False
+    )
     scatter_kws = kws | dict(
         alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd', s=50
     )

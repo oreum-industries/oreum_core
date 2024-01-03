@@ -1,4 +1,4 @@
-# Copyright 2023 Oreum Industries
+# Copyright 2024 Oreum Industries
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -257,7 +257,7 @@ def plot_ppc(
 ) -> figure.Figure:
     """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF, does not
     require log-likelihood.
-    NOTE: data_pairs {key (in observed): value (in {group}_predictive)}
+    NOTE: data_pairs {key (in observed_data): value (in {group}_predictive)}
     """
     txtadd = kwargs.pop('txtadd', None)
     kind = 'cumulative' if ecdf else 'kde'

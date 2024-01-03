@@ -1,4 +1,4 @@
-# Copyright 2023 Oreum Industries
+# Copyright 2024 Oreum Industries
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# model_xgb.xgb_io.py
+# model_tree.tree_io.py
 """Handling of Fitted Model Parameters"""
 import logging
 from pathlib import Path
