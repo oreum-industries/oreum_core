@@ -373,7 +373,7 @@ def plot_lkjcc_corr(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
     return facetplot_krushke(
         mdl=mdl,
         txtadd='lkjcc_corr, diagonals only',
-        rvs=mdl.rvs_corr,
+        rvs=['lkjcc_corr'],
         coords=coords,
         m=2,
         rvs_hack=0,
