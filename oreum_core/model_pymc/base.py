@@ -18,6 +18,7 @@ import logging
 
 import arviz as az
 import pymc as pm
+import regex as re
 import xarray as xa
 
 from .calc import compute_log_likelihood_for_potential
@@ -203,7 +204,8 @@ class BasePYMCModel:
                     )
                     # rename to have exact same name as observedRVs
                     for nm in self.rvs_potential_loglike:
-                        nm0 = nm.lstrip('pot_')
+                        rx_pot = re.compile(r'^pot_')
+                        nm0 = rx_pot.sub('', nm)
                         self.idata['log_likelihood'][nm0] = self.idata[
                             'log_likelihood'
                         ][nm]
