@@ -229,7 +229,7 @@ class BasePYMCModel:
         with self.model:
             ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
 
-        _log.info(f'Sampled ppc for {self.name} {self.version}')
+        _log.info(f'Sampled posterior predictive for {self.name} {self.version}')
 
         if store_ppc:
             _ = self.update_idata(ppc)
