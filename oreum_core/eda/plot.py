@@ -1360,7 +1360,7 @@ def plot_smrystat(
             f'\nplotted non-NaN dataset of {sum(idx):,.0f}'
         )
         _ = ax1.annotate(
-            t, xy=(0.96, 0.96), xycoords='figure fraction', ha='right', fontsize=8
+            t, xy=(0.94, 0.94), xycoords='figure fraction', ha='right', fontsize=8
         )
 
     ax0.xaxis.label.set_visible(False)
