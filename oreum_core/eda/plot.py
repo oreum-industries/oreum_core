@@ -21,6 +21,7 @@ from typing import Literal
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import regex as re
 import seaborn as sns
 from matplotlib import figure, gridspec, lines, ticker
 from scipy import integrate, stats
@@ -893,7 +894,7 @@ def plot_estimate(
 
     mn = df[[yhat]].mean().tolist()  # estimated mean
     hdi = df[yhat].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # estimated qs
-
+    j = -int(np.floor(np.log10(mn[0])))
     clr = color if color is not None else sns.color_palette()[0]
     _kws = dict(
         box=dict(
@@ -909,7 +910,7 @@ def plot_estimate(
     )
     kws = _kws.get(kind)
     if kind == 'exceedance':
-        qs = kwargs.pop('qs', [0.5, 0.95, 0.99])
+        qs = kwargs.pop('qs', [0.5, 0.9, 0.95, 0.99])
         txtadd = ' - '.join(filter(None, ['Exceedance Curve', txtadd]))
         gd = sns.displot(x=yhat, data=df, **kws, height=4, aspect=2.5)
         _ = gd.axes[0][0].set(ylabel=f'P({yhat} > x)')  # , xlabel='dollars')
@@ -932,17 +933,19 @@ def plot_estimate(
             y='p_gt',
             style='p_gt',
             data=df_qvals,
-            markers=['^', 'd', 'o'],
+            markers=['*', 'd', '^', 'o'],
             ax=gd.axes[0][0],
             s=100,
         )
         handles, labels = gd.axes[0][0].get_legend_handles_labels()
         lbls = [str(round(float(lb), 2)) for lb in labels]  # HACK floating point
-        gd.axes[0][0].legend(handles, lbls, loc='upper right', title='P(yhat) > x')
+        gd.axes[0][0].legend(handles, lbls, loc='upper right', title=f'P({yhat}) > x')
+        v = re.sub('hat$', '', yhat)
         summary = ',  '.join(
-            df_qvals[['p_gt', 'yhat']]
+            df_qvals[['p_gt', yhat]]
             .apply(
-                lambda r: f'$P(\hat{{y}})_{{{r[0]:.2f}}} \geq {{{r[1]:.1f}}}$', axis=1
+                lambda r: f'$P(\hat{{{v}}})_{{{r[0]:.2f}}} \geq {{{r[1]:.{j}f}}}$',
+                axis=1,
             )
             .tolist()
         )
@@ -959,7 +962,7 @@ def plot_estimate(
                 orient='h',
             )
         _ = [
-            gd.ax.annotate(f'{v:,.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
+            gd.ax.annotate(f'{v:,.{j}f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
             for i, v in enumerate(mn)
         ]
         elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
@@ -967,9 +970,9 @@ def plot_estimate(
         if force_xlim is not None:
             _ = gd.ax.set(xlim=force_xlim)
         summary = (
-            f'Mean = {mn[0]:,.1f}, '
-            + f'HDI_50 = [{hdi[1]:,.1f}, {hdi[2]:,.1f}], '
-            + f'HDI_94 = [{hdi[0]:,.1f}, {hdi[3]:,.1f}]'
+            f'Mean = {mn[0]:,.{j}f}, '
+            + f'HDI_50 = [{hdi[1]:,.{j}f}, {hdi[2]:,.{j}f}], '
+            + f'HDI_94 = [{hdi[0]:,.{j}f}, {hdi[3]:,.{j}f}]'
         )
 
     t = f'Summary Distribution of {yhat} estimate for {nobs} obs'
