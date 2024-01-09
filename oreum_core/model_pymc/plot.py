@@ -253,6 +253,7 @@ def plot_ppc(
     ecdf: bool = True,
     data_pairs: dict = None,
     flatten: list = None,
+    observed_rug: bool = True,
     **kwargs,
 ) -> figure.Figure:
     """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF, does not
@@ -276,6 +277,7 @@ def plot_ppc(
         ax=axs,
         data_pairs=data_pairs,
         flatten=flatten,
+        observed_rug=observed_rug,
         **kwargs,
     )
     t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'

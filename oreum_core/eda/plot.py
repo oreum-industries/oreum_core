@@ -749,7 +749,7 @@ def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
     return f
 
 
-def plot_coverage(df: pd.DataFrame, title_add: str = '') -> figure.Figure:
+def plot_coverage(df: pd.DataFrame, **kwargs) -> figure.Figure:
     """Convenience plot coverage from mt.calc_ppc_coverage"""
 
     txt_kws = dict(
@@ -771,7 +771,7 @@ def plot_coverage(df: pd.DataFrame, title_add: str = '') -> figure.Figure:
         height=4,
         scatter_kws={'s': 70},
     )
-
+    txtadd = kwargs.get('txtadd', None)
     for i, method in enumerate(df['method'].unique()):
         idx = df['method'] == method
         y = df.loc[idx, 'coverage'].values
@@ -783,9 +783,8 @@ def plot_coverage(df: pd.DataFrame, title_add: str = '') -> figure.Figure:
         g.axes[0][i].fill_between(x, y, x, color='#bbbbbb', alpha=0.8, zorder=-1)
         g.axes[0][i].annotate(f'AUC={auc:.3f}', xy=(0, 1), **txt_kws)
 
-    if title_add != '':
-        title_add = f': {title_add}'
-    g.fig.suptitle((f'PPC Coverage vs CR{title_add}'), y=1.05)
+    t = 'PPC Coverage vs CR'
+    _ = g.fig.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.05, fontsize=14)
 
     return g.fig
 
