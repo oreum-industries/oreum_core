@@ -134,7 +134,9 @@ def get_log_jcd_scan(
 
 def calc_f_beta(precision: np.array, recall: np.array, beta: float = 1.0) -> np.array:
     """Set beta such that recall is beta times more important than precision"""
-    return (1 + beta**2) * (precision * recall) / ((beta**2 * precision) + recall)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        fb = (1 + beta**2) * (precision * recall) / ((beta**2 * precision) + recall)
+    return np.nan_to_num(fb, nan=0, posinf=0, neginf=0)
 
 
 def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFrame:
@@ -142,7 +144,7 @@ def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFram
     using all samples from PPC, use vectorised calcs
     shapes y: (nsamples,), yhat: (nsamples, nobservations)
     """
-    yhat_pct = np.percentile(yhat, np.arange(0, 101, 1), axis=0).T
+    yhat_pct = np.percentile(yhat, np.arange(0, 101, 1), axis=0, method='higher').T
     y_mx = np.tile(y.reshape(-1, 1), 101)
 
     # calc tp, fp, tn, fn vectorized
@@ -152,10 +154,11 @@ def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFram
     fn = np.nansum(np.where(yhat_pct == 0, y_mx, np.nan), axis=0)
 
     # calc tpr (recall), fpr, precision etc
-    accuracy = (tp + tn) / (tp + tn + fp + fn)
-    tpr = recall = tp / (tp + fn)
-    fpr = fp / (tn + fp)
-    precision = np.nan_to_num(tp / (tp + fp), nan=1)  # beware of divide by zero
+    with np.errstate(divide='ignore', invalid='ignore'):
+        accuracy = (tp + tn) / (tp + tn + fp + fn)
+        tpr = recall = tp / (tp + fn)
+        fpr = fp / (tn + fp)
+        precision = np.nan_to_num(tp / (tp + fp), nan=1)  # beware of divide by zero
 
     perf = pd.DataFrame(
         {
