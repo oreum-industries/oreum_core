@@ -28,7 +28,7 @@ from .calc import (
 )
 from .describe import describe, display_fw, display_ht, get_fts_by_dtype
 from .eda_io import FigureIO, display_image_file, output_data_dict
-from .plot import (  # plot_umap,
+from .plot import (  # plot_umap,; plot_r2_range,; plot_r2_range_pair,
     plot_accuracy,
     plot_binary_performance,
     plot_bool_ct,
@@ -50,8 +50,6 @@ from .plot import (  # plot_umap,
     plot_joint_numeric,
     plot_kj_summaries_for_linear_model,
     plot_mincovdet,
-    plot_r2_range,
-    plot_r2_range_pair,
     plot_rmse_range,
     plot_rmse_range_pair,
     plot_roc_precrec,

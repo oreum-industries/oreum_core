@@ -44,8 +44,8 @@ __all__ = [
     'plot_coverage',
     'plot_rmse_range',
     'plot_rmse_range_pair',
-    'plot_r2_range',
-    'plot_r2_range_pair',
+    # 'plot_r2_range',
+    # 'plot_r2_range_pair',
     'plot_estimate',
     'plot_bootstrap_lr',
     'plot_bootstrap_lr_grp',
@@ -247,6 +247,7 @@ def plot_int_dist(
     vsize: float = 1.4,
     bins: int = None,
     plot_zeros: bool = True,
+    **kwargs,
 ) -> figure.Figure:
     """Plot group counts as histogram (optional log)"""
     # handle under/over selecting fts
@@ -278,7 +279,10 @@ def plot_int_dist(
             _ = ax.set(yscale='log', title=ft, ylabel='log(count)')
         _ = ax.set(title=ft, ylabel='count', xlabel=None)  # 'value'
         _ = ax.legend(loc='upper right')
-    f.tight_layout(pad=0.8)
+    # f.tight_layout(pad=0.8)
+    t = 'Empirical distribution'
+    txtadd = kwargs.pop('txtadd', 'ints')
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.2, fontsize=14)
     return f
 
 
@@ -288,6 +292,7 @@ def plot_float_dist(
     log: bool = False,
     sharex: bool = False,
     sort: bool = True,
+    **kwargs,
 ) -> figure.Figure:
     """
     Plot distributions for floats
@@ -319,6 +324,7 @@ def plot_float_dist(
             fontsize=10,
         )
 
+    txtadd = kwargs.pop('txtadd', None)
     # handle under/over selecting fts
     fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
@@ -356,7 +362,10 @@ def plot_float_dist(
 
     if log:
         _ = gd.set(xscale='log')  # , title=ft, ylabel='log(count)')
-    _ = gd.fig.tight_layout(pad=0.8)
+
+    t = 'Empirical distribution'
+    _ = gd.fig.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.2, fontsize=14)
+    # _ = gd.fig.tight_layout(pad=0.8)
     return gd.fig
 
 
@@ -635,7 +644,7 @@ def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
     _ = f.suptitle(
         (
             'Evaluations of Binary Classifier made by sweeping across '
-            + f'PPC quantiles\n(requires large n, here n={n})'
+            + f'PPC percentiles\n(requires large n, here n={n})'
         ),
         y=1.0,
     )
@@ -759,7 +768,7 @@ def plot_coverage(df: pd.DataFrame, title_add: str = '') -> figure.Figure:
         hue='method',
         data=df,
         fit_reg=False,
-        height=5,
+        height=4,
         scatter_kws={'s': 70},
     )
 
@@ -835,46 +844,46 @@ def plot_rmse_range_pair(
     _ = f.tight_layout()
 
 
-def plot_r2_range(r2, r2_pct, lims=(0, 80), yhat_name=''):
-    """Convenience to plot R2 range with max"""
-    dfp = r2_pct.reset_index()
-    dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
-    max_r2 = r2_pct.max()
-    max_r2_pct = r2_pct.index[r2_pct.argmax()]
+# def plot_r2_range(r2, r2_pct, lims=(0, 80), yhat_name=''):
+#     """Convenience to plot R2 range with max"""
+#     dfp = r2_pct.reset_index()
+#     dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
+#     max_r2 = r2_pct.max()
+#     max_r2_pct = r2_pct.index[r2_pct.argmax()]
 
-    f, axs = plt.subplots(1, 1, figsize=(10, 4))
-    ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs)
-    _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
-    _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.2f}')
-    _ = ax.axhline(
-        max_r2, c='g', ls='--', label=f'max @ pct {max_r2_pct} @ {max_r2:,.2f}'
-    )
-    _ = f.suptitle(f'$R^{2}$ ranges {yhat_name}', y=0.95)
-    _ = ax.legend()
+#     f, axs = plt.subplots(1, 1, figsize=(10, 4))
+#     ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs)
+#     _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
+#     _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.2f}')
+#     _ = ax.axhline(
+#         max_r2, c='g', ls='--', label=f'max @ pct {max_r2_pct} @ {max_r2:,.2f}'
+#     )
+#     _ = f.suptitle(f'$R^{2}$ ranges {yhat_name}', y=0.95)
+#     _ = ax.legend()
 
 
-def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
-    """Convenience to plot two r2 pct results (t)raining vs (h)oldout"""
+# def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
+#     """Convenience to plot two r2 pct results (t)raining vs (h)oldout"""
 
-    f, axs = plt.subplots(1, 2, figsize=(14, 4))
-    t = ['train', 'holdout']
-    _ = f.suptitle('$R^{2}$ ranges', y=0.97)
+#     f, axs = plt.subplots(1, 2, figsize=(14, 4))
+#     t = ['train', 'holdout']
+#     _ = f.suptitle('$R^{2}$ ranges', y=0.97)
 
-    for i, (r2, r2_pct) in enumerate(zip([r2_t, r2_h], [r2_pct_t, r2_pct_h])):
-        dfp = r2_pct.reset_index()
-        dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
-        max_r2 = r2_pct.max()
-        max_r2_pct = r2_pct.index[r2_pct.argmax()]
+#     for i, (r2, r2_pct) in enumerate(zip([r2_t, r2_h], [r2_pct_t, r2_pct_h])):
+#         dfp = r2_pct.reset_index()
+#         dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
+#         max_r2 = r2_pct.max()
+#         max_r2_pct = r2_pct.index[r2_pct.argmax()]
 
-        ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs[i])
-        _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
-        _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.0f}')
-        _ = ax.axhline(
-            max_r2, c='g', ls='--', label=f'min @ pct {max_r2_pct} @ {max_r2:,.0f}'
-        )
-        _ = ax.legend()
-        _ = ax.set_title(t[i])
-    _ = f.tight_layout()
+#         ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs[i])
+#         _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
+#         _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.0f}')
+#         _ = ax.axhline(
+#             max_r2, c='g', ls='--', label=f'min @ pct {max_r2_pct} @ {max_r2:,.0f}'
+#         )
+#         _ = ax.legend()
+#         _ = ax.set_title(t[i])
+#     _ = f.tight_layout()
 
 
 def plot_estimate(
