@@ -915,7 +915,7 @@ def plot_estimate(
     kws = _kws.get(kind)
 
     mn = df[[yhat]].mean().tolist()  # estimated mean
-    j = -int(np.floor(np.log10(mn[0])))
+    j = -int(np.floor(np.log10(mn[0]))) + 1
 
     if kind == 'exceedance':
         qs = kwargs.pop('qs', [0.5, 0.9, 0.95, 0.99])
@@ -967,7 +967,7 @@ def plot_estimate(
         elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
         if arroverplot is not None:
             mn_arroverplot = arroverplot.mean()  # estimated mean
-            j_arroverplot = -int(np.floor(np.log10(mn_arroverplot)))
+            j_arroverplot = -int(np.floor(np.log10(mn_arroverplot))) + 1
             ax = sns.pointplot(
                 arroverplot,
                 estimator=np.mean,
