@@ -343,7 +343,7 @@ def plot_float_dist(
         hue='variable',
         data=dfm,
         palette=sns.color_palette(),
-        height=1.5,
+        height=1.6,
         aspect=8,
         sharex=sharex,
     )
@@ -899,10 +899,6 @@ def plot_estimate(
     Optional overplot bootstrapped dfboot"""
     txtadd = kwargs.pop('txtadd', None)
     sty = _get_kws_styling()
-
-    mn = df[[yhat]].mean().tolist()  # estimated mean
-    hdi = df[yhat].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # estimated qs
-    j = -int(np.floor(np.log10(mn[0])))
     clr = color if color is not None else sns.color_palette()[0]
     _kws = dict(
         box=dict(
@@ -917,6 +913,10 @@ def plot_estimate(
         exceedance=dict(kind='ecdf', complementary=True, lw=2, legend=None),
     )
     kws = _kws.get(kind)
+
+    mn = df[[yhat]].mean().tolist()  # estimated mean
+    j = -int(np.floor(np.log10(mn[0])))
+
     if kind == 'exceedance':
         qs = kwargs.pop('qs', [0.5, 0.9, 0.95, 0.99])
         txtadd = ' - '.join(filter(None, ['Exceedance Curve', txtadd]))
@@ -960,8 +960,15 @@ def plot_estimate(
 
     elif kind == 'box':
         gd = sns.catplot(x=yhat, data=df, **kws, color=clr, height=2.5, aspect=4)
+        _ = [
+            gd.ax.annotate(f'{v:,.{j}f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
+            for i, v in enumerate(mn)
+        ]
+        elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
         if arroverplot is not None:
-            _ = sns.pointplot(
+            mn_arroverplot = arroverplot.mean()  # estimated mean
+            j_arroverplot = -int(np.floor(np.log10(mn_arroverplot)))
+            ax = sns.pointplot(
                 arroverplot,
                 estimator=np.mean,
                 errorbar=('ci', 94),
@@ -969,18 +976,32 @@ def plot_estimate(
                 linestyles='-',
                 orient='h',
             )
-        _ = [
-            gd.ax.annotate(f'{v:,.{j}f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
-            for i, v in enumerate(mn)
-        ]
-        elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
+            mn_txt_kws = sty['mn_txt_kws']
+            mn_txt_kws['backgroundcolor'] = 'C1'
+            _ = ax.annotate(
+                f'{mn_arroverplot:,.{j_arroverplot}f}',
+                xy=(mn_arroverplot, 0),
+                **mn_txt_kws,
+            )
+            mn_pt_kws = sty['mn_pt_kws']
+            mn_pt_kws.update(
+                markerfacecolor='C1', markeredgecolor='C1', marker='o', markersize=8
+            )
+            elems.append(lines.Line2D([0], [0], label='mean overplot', **mn_pt_kws))
+
         gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
+
         if force_xlim is not None:
             _ = gd.ax.set(xlim=force_xlim)
+
+        hdi = (
+            df[yhat].quantile(q=[0.03, 0.1, 0.25, 0.75, 0.9, 0.97]).values
+        )  # estimated qs
         summary = (
             f'Mean = {mn[0]:,.{j}f}, '
-            + f'HDI_50 = [{hdi[1]:,.{j}f}, {hdi[2]:,.{j}f}], '
-            + f'HDI_94 = [{hdi[0]:,.{j}f}, {hdi[3]:,.{j}f}]'
+            + f'$HDI_{{50}}$ = [{hdi[2]:,.{j}f}, {hdi[3]:,.{j}f}], '
+            + f'$HDI_{{80}}$ = [{hdi[1]:,.{j}f}, {hdi[4]:,.{j}f}], '
+            + f'$HDI_{{94}}$ = [{hdi[0]:,.{j}f}, {hdi[5]:,.{j}f}]'
         )
 
     t = f'Summary Distribution of {yhat} estimate for {nobs} obs'
