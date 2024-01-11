@@ -1105,10 +1105,26 @@ def plot_bootstrap_lr_grp(
     orderby: Literal['ordinal', 'count', 'lr'] = 'ordinal',
 ) -> figure.Figure:
     """Plot bootstrapped loss ratio, grouped by grp"""
+
+    dfboot = dfboot.copy()
+    df = df.copy()
     sty = _get_kws_styling()
 
+    # hacky way to deal with year as int or datetime
+    pmin = df[ftname_year].min()
+    pmax = df[ftname_year].max()
+    if np.issubdtype(df[ftname_year].dtype, np.datetime64):
+        pmin = pmin.year
+        pmax = pmax.year
+
+    # hacky way to convert year as datetime to int
+    # if np.issubdtype(df[grp].dtype, np.datetime64): error for categoricals
+    if dfboot[grp].dtype == '<M8[ns]':
+        dfboot[grp] = dfboot[grp].dt.year.astype(int)
+        df[grp] = df[grp].dt.year.astype(int)
+
     # convert non object type to string
-    if dfboot[grp].dtypes != 'object':
+    if not dfboot[grp].dtype in ['object', 'category']:
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
         df = df.copy()
@@ -1181,13 +1197,6 @@ def plot_bootstrap_lr_grp(
 
     if title_add != '':
         title_add = f'\n{title_add}'
-
-    # hacky way to deal with year as int or datetime
-    pmin = df[ftname_year].min()
-    pmax = df[ftname_year].max()
-    if np.issubdtype(df[ftname_year].dtype, np.datetime64):
-        pmin = pmin.year
-        pmax = pmax.year
 
     pol_summary = ''
     if title_pol_summary:

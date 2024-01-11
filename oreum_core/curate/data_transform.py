@@ -185,7 +185,7 @@ class DatasetReshaper:
         *Not* a big groupby (equiv to cartesian join) for factor values
         and concats numerics. Instead, this concats unique vals in cols
         which yields a far more compact dfcmb. Note that the columns will
-        be ragged so need to fill NULLS with (any) value from that column
+        be ragged so this will fill NULLS with (any) value from that column
 
         The shape and datatypes matter.
 
@@ -326,7 +326,7 @@ class Transformer:
                 map_int_to_fact = dict(enumerate(df[ft_f[1]].cat.categories))
                 map_fact_to_int = {v: k for k, v in map_int_to_fact.items()}
                 self.fts_fact_mapping[ft_f[1]] = map_fact_to_int
-                df[ft_f[1]] = df[ft_f[1]].map(map_fact_to_int).astype(np.int)
+                df[ft_f[1]] = df[ft_f[1]].map(map_fact_to_int).astype(int)
 
                 # replace F() in fml so patsy can work as normal w/ our new int type
                 fml = fml.replace(ft_f[0], ft_f[1])
@@ -344,7 +344,7 @@ class Transformer:
         fts_force_to_int = ['intercept']  # also force intercept
         fts_force_to_int = list(self.fts_fact_mapping.keys())
         if len(fts_force_to_int) > 0:
-            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
+            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(int)
 
         return df_ex
 
@@ -365,7 +365,7 @@ class Transformer:
         try:
             df = df.copy()
             for ft, map_fact_to_int in self.fts_fact_mapping.items():
-                df[ft] = df[ft].map(map_fact_to_int).astype(np.int64)
+                df[ft] = df[ft].map(map_fact_to_int).astype(int)
         except AttributeError:
             # self.fts_fact_mapping was never created for this instance
             # simply because no F() in fml
@@ -389,7 +389,7 @@ class Transformer:
         fts_force_to_int = []
         fts_force_to_int = list(self.fts_fact_mapping.keys())
         if len(fts_force_to_int) > 0:
-            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
+            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(int)
 
         return df_ex
 
