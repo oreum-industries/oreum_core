@@ -793,17 +793,24 @@ def plot_rmse_range(
 ) -> figure.Figure:
     """Convenience to plot RMSE range from model_pymc.calc.calc_rmse"""
     # dfp = rmse_q.reset_index()
-    dfp = rmse_q.loc[(rmse_q >= qlims[0]) & (rmse_q <= qlims[1])].copy()
+    dfp = rmse_q.loc[qlims[0] : qlims[1]].to_frame()
     min_rmse = rmse_q.min()
     min_rmse_q = rmse_q.idxmin()
-    return dfp
+
     f, axs = plt.subplots(1, 1, figsize=(10, 4))
     ax = sns.lineplot(x='q', y='rmse', data=dfp, lw=2, ax=axs)
     #     _ = ax.set_yscale('log')
-    _ = ax.axhline(rmse, c='r', ls='-.', label=f'mean @ {rmse:,.2f}')
-    _ = ax.axhline(rmse_q[0.5], c='b', ls='--', label=f'median @ {rmse_q[0.5]:,.2f}')
-    _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ q{min_rmse_q:,.2f}')
-    _ = f.suptitle(f'RMSE ranges {yhat_name}', y=0.95)
+    _ = ax.axhline(rmse, c='r', ls='-.', label=f'rmse @ mean {rmse:,.3f}')
+    _ = ax.axhline(
+        rmse_q[0.5], c='b', ls='--', label=f'rmse @ median (q0.50) {rmse_q[0.5]:,.3f}'
+    )
+    _ = ax.axhline(
+        min_rmse,
+        c='g',
+        ls='--',
+        label=f'rmse @ min (q{min_rmse_q:,.2f}) {min_rmse:,.3f}',
+    )
+    _ = f.suptitle(f'RMSE range {yhat_name}', y=0.95)
     _ = ax.legend()
     return f
 
