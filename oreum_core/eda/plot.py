@@ -632,27 +632,28 @@ def plot_accuracy(df: pd.DataFrame) -> figure.Figure:
     return f
 
 
-def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
-    """Plot ROC, PrecRec, F-score, Accuracy
-    Pass perf df from calc.calc_binary_performance_measures
+def plot_binary_performance(dfperf: pd.DataFrame, nobs: int = 1) -> figure.Figure:
+    """Plot ROC, PrecRec, F-score, Accuracy sweeping across PPC quantiles
+    Created for perf df from model_pymc.calc.calc_binary_performance_measures
     Return summary stats
     """
-    roc_auc = integrate.trapezoid(y=df['tpr'], x=df['fpr'])
-    prec_rec_auc = integrate.trapezoid(y=df['precision'], x=df['recall'])
-
     f, axs = plt.subplots(1, 4, figsize=(18, 5), sharex=False, sharey=False)
     _ = f.suptitle(
         (
-            'Evaluations of Binary Classifier made by sweeping across '
-            + f'PPC percentiles\n(requires large n, here n={n})'
+            'Evaluations of Binary Predictions made by sweeping across PPC '
+            + f'quantiles\n(more reliable when nobs > 100, here nobs={nobs})'
         ),
         y=1.0,
     )
 
-    minpos = np.argmin(np.sqrt(df['fpr'] ** 2 + (1 - df['tpr']) ** 2))
+    # ROC -------------
+    roc_auc = integrate.trapezoid(y=dfperf['tpr'], x=dfperf['fpr'])
+    r_at = np.argmin(np.sqrt(dfperf['fpr'] ** 2 + (1 - dfperf['tpr']) ** 2))
+    r_at = np.round(r_at / 100, 2)
+
     _ = axs[0].plot(
-        df['fpr'],
-        df['tpr'],
+        dfperf['fpr'],
+        dfperf['tpr'],
         lw=2,
         marker='d',
         alpha=0.8,
@@ -660,22 +661,24 @@ def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
     )
     _ = axs[0].plot((0, 1), (0, 1), '--', c='#cccccc', label='line of equiv')
     _ = axs[0].plot(
-        df.loc[minpos, 'fpr'],
-        df.loc[minpos, 'tpr'],
+        dfperf.loc[r_at, 'fpr'],
+        dfperf.loc[r_at, 'tpr'],
         lw=2,
         marker='D',
         color='w',
         markeredgewidth=1,
         markeredgecolor='b',
         markersize=9,
-        label=f"Optimum ROC @ {minpos} pct",
+        label=f"Optimum ROC @ q{r_at}",
     )
     _ = axs[0].legend(loc='lower right')
     _ = axs[0].set(title='ROC curve', xlabel='FPR', ylabel='TPR', ylim=(0, 1))
 
+    # Precision-Recall -------------
+    prec_rec_auc = integrate.trapezoid(y=dfperf['precision'], x=dfperf['recall'])
     _ = axs[1].plot(
-        df['recall'],
-        df['precision'],
+        dfperf['recall'],
+        dfperf['precision'],
         lw=2,
         marker='o',
         alpha=0.8,
@@ -687,49 +690,45 @@ def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
         title='Precision Recall curve', ylim=(0, 1), xlabel='Recall', ylabel='Precision'
     )
 
-    f1_at = df['f1'].argmax()
-    dfm = df.reset_index()[['pct', 'f0.5', 'f1', 'f2']].melt(
-        id_vars='pct', var_name='f-measure', value_name='f-score'
+    # F-measure -------------
+    f1_at = np.round(dfperf['f1'].argmax() / 100, 2)
+    dfm = dfperf.reset_index()[['q', 'f0.5', 'f1', 'f2']].melt(
+        id_vars='q', var_name='f-measure', value_name='f-score'
     )
 
     _ = sns.lineplot(
-        x='pct',
-        y='f-score',
-        hue='f-measure',
-        data=dfm,
-        palette='Greens',
-        lw=2,
-        ax=axs[2],
+        x='q', y='f-score', hue='f-measure', data=dfm, palette='Greens', lw=2, ax=axs[2]
     )
     _ = axs[2].plot(
         f1_at,
-        df.loc[f1_at, 'f1'],
+        dfperf.loc[f1_at, 'f1'],
         lw=2,
         marker='D',
         color='w',
         markeredgewidth=1,
         markeredgecolor='b',
         markersize=9,
-        label=f"Optimum F1 @ {f1_at} pct",
+        label=f"Optimum F1 @ q{f1_at}",
     )
     _ = axs[2].legend(loc='upper left')
     _ = axs[2].set(
-        title='F-scores across the PPC pcts'
-        + f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct',
-        xlabel='pct',
+        title='F-measures across the PPC qs'
+        + f'\nBest F1 = {dfperf.loc[f1_at, "f1"]:.3f} @ q{f1_at}',
+        xlabel='q',
         ylabel='F-Score',
         ylim=(0, 1),
     )
 
-    acc_at = df['accuracy'].argmax()
-    _ = sns.lineplot(x='pct', y='accuracy', color='C1', data=df, lw=2, ax=axs[3])
+    # Accuracy -------------
+    acc_at = np.round(dfperf['accuracy'].argmax() / 100, 2)
+    _ = sns.lineplot(x='q', y='accuracy', color='C1', data=dfperf, lw=2, ax=axs[3])
     _ = axs[3].text(
         x=0.04,
         y=0.04,
         s=(
             'Class imbalance:'
-            + f'\n0: {df["accuracy"].values[0]:.1%}'
-            + f'\n1: {df["accuracy"].values[-1]:.1%}'
+            + f'\n0: {dfperf["accuracy"].values[0]:.1%}'
+            + f'\n1: {dfperf["accuracy"].values[-1]:.1%}'
         ),
         transform=axs[3].transAxes,
         ha='left',
@@ -739,13 +738,13 @@ def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
     )
     _ = axs[3].set(
         title='Accuracy across the PPC pcts'
-        + f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct',
-        xlabel='pct',
+        + f'\nBest = {dfperf.loc[acc_at, "accuracy"]:.1%} @ q{acc_at}',
+        xlabel='q',
         ylabel='Accuracy',
         ylim=(0, 1),
     )
 
-    f.tight_layout()
+    _ = f.tight_layout()
     return f
 
 

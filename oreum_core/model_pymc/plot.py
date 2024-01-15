@@ -278,6 +278,7 @@ def plot_ppc(
         data_pairs=data_pairs,
         flatten=flatten,
         observed_rug=observed_rug,
+        random_seed=42,
         **kwargs,
     )
     t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'

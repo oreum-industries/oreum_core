@@ -299,6 +299,7 @@ class Transformer:
         self.rx_get_f = re.compile(r'(F\(([a-z0-9_:]+?)\))')
         self.fts_fact_mapping = {}
         self.original_fml = None
+        self.snl = SnakeyLowercaser()
 
     def fit_transform(
         self, fml: str, df: pd.DataFrame, propagate_nans: bool = False
@@ -413,15 +414,17 @@ class Standardizer:
     TODO: introduce minmax scaling as an option
     """
 
-    def __init__(self, design_info: pt.design_info.DesignInfo, fts_exclude: list = []):
+    def __init__(self, tfmr: Transformer, fts_exclude: list = []):
         """Optionally exclude from standardization a list of named fts that
         are numeric and would otherwise get standardardized"""
 
-        self.design_info = design_info
+        self.design_info = tfmr.design_info
+        self.fts_exclude = fts_exclude + list(tfmr.fts_fact_mapping.keys())
+
         col_num_excl = [0] + [
             i
             for i, n in enumerate(self.design_info.column_names)
-            if (n in fts_exclude) or re.search(r'\[T\.', n)
+            if (n in self.fts_exclude) or re.search(r'\[T\.', n)
         ]
 
         # col_mask is True where we want to exclude the col from standardization

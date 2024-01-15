@@ -141,17 +141,18 @@ def calc_f_beta(precision: np.array, recall: np.array, beta: float = 1.0) -> np.
 
 def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFrame:
     """Calculate tpr (recall), fpr, precision, accuracy for binary target,
-    using all samples from PPC, use vectorised calcs
+    using quantiles of all samples from PPC, use vectorised calcs
     shapes y: (nsamples,), yhat: (nsamples, nobservations)
     """
-    yhat_pct = np.percentile(yhat, np.arange(0, 101, 1), axis=0, method='higher').T
+    qs = np.round(np.arange(0, 1.01, 0.01), 2)
+    yhat_q = np.quantile(yhat, qs, axis=0, method='linear').T
     y_mx = np.tile(y.reshape(-1, 1), 101)
 
     # calc tp, fp, tn, fn vectorized
-    tp = np.nansum(np.where(yhat_pct == 1, y_mx, np.nan), axis=0)
-    fp = np.nansum(np.where(yhat_pct == 1, 1 - y_mx, np.nan), axis=0)
-    tn = np.nansum(np.where(yhat_pct == 0, 1 - y_mx, np.nan), axis=0)
-    fn = np.nansum(np.where(yhat_pct == 0, y_mx, np.nan), axis=0)
+    tp = np.nansum(np.where(yhat_q == 1, y_mx, np.nan), axis=0)
+    fp = np.nansum(np.where(yhat_q == 1, 1 - y_mx, np.nan), axis=0)
+    tn = np.nansum(np.where(yhat_q == 0, 1 - y_mx, np.nan), axis=0)
+    fn = np.nansum(np.where(yhat_q == 0, y_mx, np.nan), axis=0)
 
     # calc tpr (recall), fpr, precision etc
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -171,11 +172,11 @@ def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFram
             'f1': calc_f_beta(precision, recall, beta=1),
             'f2': calc_f_beta(precision, recall, beta=2),
         },
-        index=np.arange(101),
+        index=qs,
     )
-    perf.index.set_names('pct', inplace=True)
+    perf.index.set_names('q', inplace=True)
 
-    return perf
+    return perf.round(6)
 
 
 def calc_mse(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
