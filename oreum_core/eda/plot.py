@@ -789,22 +789,20 @@ def plot_coverage(df: pd.DataFrame, **kwargs) -> figure.Figure:
 
 
 def plot_rmse_range(
-    rmse: float, rmse_pct: pd.Series, lims: tuple = (0, 80), yhat_name: str = ''
+    rmse: float, rmse_q: pd.Series, qlims: tuple = (0.1, 0.9), yhat_name: str = ''
 ) -> figure.Figure:
-    """Convenience to plot RMSE range with mins"""
-    dfp = rmse_pct.reset_index()
-    dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
-    min_rmse = rmse_pct.min()
-    min_rmse_pct = rmse_pct.index[rmse_pct.argmin()]
-
+    """Convenience to plot RMSE range from model_pymc.calc.calc_rmse"""
+    # dfp = rmse_q.reset_index()
+    dfp = rmse_q.loc[(rmse_q >= qlims[0]) & (rmse_q <= qlims[1])].copy()
+    min_rmse = rmse_q.min()
+    min_rmse_q = rmse_q.idxmin()
+    return dfp
     f, axs = plt.subplots(1, 1, figsize=(10, 4))
-    ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs)
+    ax = sns.lineplot(x='q', y='rmse', data=dfp, lw=2, ax=axs)
     #     _ = ax.set_yscale('log')
     _ = ax.axhline(rmse, c='r', ls='-.', label=f'mean @ {rmse:,.2f}')
-    _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.2f}')
-    _ = ax.axhline(
-        min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.2f}'
-    )
+    _ = ax.axhline(rmse_q[0.5], c='b', ls='--', label=f'median @ {rmse_q[0.5]:,.2f}')
+    _ = ax.axhline(min_rmse, c='g', ls='--', label=f'min @ q{min_rmse_q:,.2f}')
     _ = f.suptitle(f'RMSE ranges {yhat_name}', y=0.95)
     _ = ax.legend()
     return f

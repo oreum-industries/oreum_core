@@ -180,7 +180,7 @@ def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFram
 
 
 def calc_mse(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
-    r""" Convenience: Calculate MSE using all samples
+    r""" Convenience: Calculate MSE using quantiles of all samples from PPC
         y shape: (nobs, )
         yhat shape: (nsamples, nobs)
 
@@ -208,23 +208,23 @@ def calc_mse(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
     mse = np.mean(se, axis=0)  # 1
 
     # collapse samples to a range of summary stats then calc error
-    smry = np.arange(0, 101, 2)
-    se_pct = np.power(np.percentile(yhat, smry, axis=0) - y, 2)  # (len(smry), nobs)
-    mse_pct = np.mean(se_pct, axis=1)  # len(smry)
+    qs = np.round(np.arange(0, 1.01, 0.01), 2)
+    se_q = np.power(np.quantile(yhat, qs, axis=0) - y, 2)  # (len(smry), nobs)
+    mse_q = np.mean(se_q, axis=1)  # len(smry)
 
-    s_mse_pct = pd.Series(mse_pct, index=smry, name='mse')
-    s_mse_pct.index.rename('pct', inplace=True)
-    return mse, s_mse_pct
+    s_mse_q = pd.Series(mse_q, index=qs, name='mse')
+    s_mse_q.index.rename('q', inplace=True)
+    return mse, s_mse_q
 
 
 def calc_rmse(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
-    """Convenience: Calculate RMSE using all samples
+    """Convenience: Calculate RMSE using quantiles of all samples from PPC
     shape (nsamples, nobs)
     """
-    mse, s_mse_pct = calc_mse(y, yhat)
-    s_rmse_pct = s_mse_pct.map(np.sqrt)
-    s_rmse_pct._set_name('rmse', inplace=True)
-    return np.sqrt(mse), s_rmse_pct
+    mse, s_mse_q = calc_mse(y, yhat)
+    s_rmse_q = s_mse_q.map(np.sqrt)
+    s_rmse_q._set_name('rmse', inplace=True)
+    return np.sqrt(mse), s_rmse_q
 
 
 def calc_r2(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
