@@ -1,4 +1,4 @@
-# Copyright 2023 Oreum Industries
+# Copyright 2024 Oreum Industries
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ from typing import Literal
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import regex as re
 import seaborn as sns
 from matplotlib import figure, gridspec, lines, ticker
 from scipy import integrate, stats
@@ -43,8 +44,8 @@ __all__ = [
     'plot_coverage',
     'plot_rmse_range',
     'plot_rmse_range_pair',
-    'plot_r2_range',
-    'plot_r2_range_pair',
+    # 'plot_r2_range',
+    # 'plot_r2_range_pair',
     'plot_estimate',
     'plot_bootstrap_lr',
     'plot_bootstrap_lr_grp',
@@ -246,6 +247,7 @@ def plot_int_dist(
     vsize: float = 1.4,
     bins: int = None,
     plot_zeros: bool = True,
+    **kwargs,
 ) -> figure.Figure:
     """Plot group counts as histogram (optional log)"""
     # handle under/over selecting fts
@@ -277,7 +279,10 @@ def plot_int_dist(
             _ = ax.set(yscale='log', title=ft, ylabel='log(count)')
         _ = ax.set(title=ft, ylabel='count', xlabel=None)  # 'value'
         _ = ax.legend(loc='upper right')
-    f.tight_layout(pad=0.8)
+    # f.tight_layout(pad=0.8)
+    t = 'Empirical distribution'
+    txtadd = kwargs.pop('txtadd', 'ints')
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.2, fontsize=14)
     return f
 
 
@@ -287,6 +292,7 @@ def plot_float_dist(
     log: bool = False,
     sharex: bool = False,
     sort: bool = True,
+    **kwargs,
 ) -> figure.Figure:
     """
     Plot distributions for floats
@@ -318,6 +324,7 @@ def plot_float_dist(
             fontsize=10,
         )
 
+    txtadd = kwargs.pop('txtadd', None)
     # handle under/over selecting fts
     fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
@@ -336,7 +343,7 @@ def plot_float_dist(
         hue='variable',
         data=dfm,
         palette=sns.color_palette(),
-        height=1.5,
+        height=1.6,
         aspect=8,
         sharex=sharex,
     )
@@ -355,7 +362,10 @@ def plot_float_dist(
 
     if log:
         _ = gd.set(xscale='log')  # , title=ft, ylabel='log(count)')
-    _ = gd.fig.tight_layout(pad=0.8)
+
+    t = 'Empirical distribution'
+    _ = gd.fig.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.2, fontsize=14)
+    # _ = gd.fig.tight_layout(pad=0.8)
     return gd.fig
 
 
@@ -415,7 +425,9 @@ def plot_joint_numeric(
 
     gd = sns.JointGrid(x=ft0, y=ft1, data=dfp, height=height, hue=hue)
 
-    kde_kws = kws | dict(zorder=0, levels=7, cut=0, fill=kdefill, legend=True)
+    kde_kws = kws | dict(
+        zorder=0, levels=7, cut=0, fill=kdefill, legend=True, warn_singular=False
+    )
     scatter_kws = kws | dict(
         alpha=0.6, marker='o', linewidths=0.05, edgecolor='#dddddd', s=50
     )
@@ -620,27 +632,28 @@ def plot_accuracy(df: pd.DataFrame) -> figure.Figure:
     return f
 
 
-def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
-    """Plot ROC, PrecRec, F-score, Accuracy
-    Pass perf df from calc.calc_binary_performance_measures
+def plot_binary_performance(dfperf: pd.DataFrame, nobs: int = 1) -> figure.Figure:
+    """Plot ROC, PrecRec, F-score, Accuracy sweeping across PPC quantiles
+    Created for perf df from model_pymc.calc.calc_binary_performance_measures
     Return summary stats
     """
-    roc_auc = integrate.trapezoid(y=df['tpr'], x=df['fpr'])
-    prec_rec_auc = integrate.trapezoid(y=df['precision'], x=df['recall'])
-
     f, axs = plt.subplots(1, 4, figsize=(18, 5), sharex=False, sharey=False)
     _ = f.suptitle(
         (
-            'Evaluations of Binary Classifier made by sweeping across '
-            + f'PPC quantiles\n(requires large n, here n={n})'
+            'Evaluations of Binary Predictions made by sweeping across PPC '
+            + f'quantiles\n(more reliable when nobs > 100, here nobs={nobs})'
         ),
         y=1.0,
     )
 
-    minpos = np.argmin(np.sqrt(df['fpr'] ** 2 + (1 - df['tpr']) ** 2))
+    # ROC -------------
+    roc_auc = integrate.trapezoid(y=dfperf['tpr'], x=dfperf['fpr'])
+    r_at = np.argmin(np.sqrt(dfperf['fpr'] ** 2 + (1 - dfperf['tpr']) ** 2))
+    r_at = np.round(r_at / 100, 2)
+
     _ = axs[0].plot(
-        df['fpr'],
-        df['tpr'],
+        dfperf['fpr'],
+        dfperf['tpr'],
         lw=2,
         marker='d',
         alpha=0.8,
@@ -648,22 +661,24 @@ def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
     )
     _ = axs[0].plot((0, 1), (0, 1), '--', c='#cccccc', label='line of equiv')
     _ = axs[0].plot(
-        df.loc[minpos, 'fpr'],
-        df.loc[minpos, 'tpr'],
+        dfperf.loc[r_at, 'fpr'],
+        dfperf.loc[r_at, 'tpr'],
         lw=2,
         marker='D',
         color='w',
         markeredgewidth=1,
         markeredgecolor='b',
         markersize=9,
-        label=f"Optimum ROC @ {minpos} pct",
+        label=f"Optimum ROC @ q{r_at}",
     )
     _ = axs[0].legend(loc='lower right')
     _ = axs[0].set(title='ROC curve', xlabel='FPR', ylabel='TPR', ylim=(0, 1))
 
+    # Precision-Recall -------------
+    prec_rec_auc = integrate.trapezoid(y=dfperf['precision'], x=dfperf['recall'])
     _ = axs[1].plot(
-        df['recall'],
-        df['precision'],
+        dfperf['recall'],
+        dfperf['precision'],
         lw=2,
         marker='o',
         alpha=0.8,
@@ -675,49 +690,45 @@ def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
         title='Precision Recall curve', ylim=(0, 1), xlabel='Recall', ylabel='Precision'
     )
 
-    f1_at = df['f1'].argmax()
-    dfm = df.reset_index()[['pct', 'f0.5', 'f1', 'f2']].melt(
-        id_vars='pct', var_name='f-measure', value_name='f-score'
+    # F-measure -------------
+    f1_at = np.round(dfperf['f1'].argmax() / 100, 2)
+    dfm = dfperf.reset_index()[['q', 'f0.5', 'f1', 'f2']].melt(
+        id_vars='q', var_name='f-measure', value_name='f-score'
     )
 
     _ = sns.lineplot(
-        x='pct',
-        y='f-score',
-        hue='f-measure',
-        data=dfm,
-        palette='Greens',
-        lw=2,
-        ax=axs[2],
+        x='q', y='f-score', hue='f-measure', data=dfm, palette='Greens', lw=2, ax=axs[2]
     )
     _ = axs[2].plot(
         f1_at,
-        df.loc[f1_at, 'f1'],
+        dfperf.loc[f1_at, 'f1'],
         lw=2,
         marker='D',
         color='w',
         markeredgewidth=1,
         markeredgecolor='b',
         markersize=9,
-        label=f"Optimum F1 @ {f1_at} pct",
+        label=f"Optimum F1 @ q{f1_at}",
     )
     _ = axs[2].legend(loc='upper left')
     _ = axs[2].set(
-        title='F-scores across the PPC pcts'
-        + f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct',
-        xlabel='pct',
+        title='F-measures across the PPC qs'
+        + f'\nBest F1 = {dfperf.loc[f1_at, "f1"]:.3f} @ q{f1_at}',
+        xlabel='q',
         ylabel='F-Score',
         ylim=(0, 1),
     )
 
-    acc_at = df['accuracy'].argmax()
-    _ = sns.lineplot(x='pct', y='accuracy', color='C1', data=df, lw=2, ax=axs[3])
+    # Accuracy -------------
+    acc_at = np.round(dfperf['accuracy'].argmax() / 100, 2)
+    _ = sns.lineplot(x='q', y='accuracy', color='C1', data=dfperf, lw=2, ax=axs[3])
     _ = axs[3].text(
         x=0.04,
         y=0.04,
         s=(
             'Class imbalance:'
-            + f'\n0: {df["accuracy"].values[0]:.1%}'
-            + f'\n1: {df["accuracy"].values[-1]:.1%}'
+            + f'\n0: {dfperf["accuracy"].values[0]:.1%}'
+            + f'\n1: {dfperf["accuracy"].values[-1]:.1%}'
         ),
         transform=axs[3].transAxes,
         ha='left',
@@ -727,17 +738,17 @@ def plot_binary_performance(df: pd.DataFrame, n: int = 1) -> figure.Figure:
     )
     _ = axs[3].set(
         title='Accuracy across the PPC pcts'
-        + f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct',
-        xlabel='pct',
+        + f'\nBest = {dfperf.loc[acc_at, "accuracy"]:.1%} @ q{acc_at}',
+        xlabel='q',
         ylabel='Accuracy',
         ylim=(0, 1),
     )
 
-    f.tight_layout()
+    _ = f.tight_layout()
     return f
 
 
-def plot_coverage(df: pd.DataFrame, title_add: str = '') -> figure.Figure:
+def plot_coverage(df: pd.DataFrame, **kwargs) -> figure.Figure:
     """Convenience plot coverage from mt.calc_ppc_coverage"""
 
     txt_kws = dict(
@@ -756,10 +767,10 @@ def plot_coverage(df: pd.DataFrame, title_add: str = '') -> figure.Figure:
         hue='method',
         data=df,
         fit_reg=False,
-        height=5,
+        height=4,
         scatter_kws={'s': 70},
     )
-
+    txtadd = kwargs.get('txtadd', None)
     for i, method in enumerate(df['method'].unique()):
         idx = df['method'] == method
         y = df.loc[idx, 'coverage'].values
@@ -771,31 +782,35 @@ def plot_coverage(df: pd.DataFrame, title_add: str = '') -> figure.Figure:
         g.axes[0][i].fill_between(x, y, x, color='#bbbbbb', alpha=0.8, zorder=-1)
         g.axes[0][i].annotate(f'AUC={auc:.3f}', xy=(0, 1), **txt_kws)
 
-    if title_add != '':
-        title_add = f': {title_add}'
-    g.fig.suptitle((f'PPC Coverage vs CR{title_add}'), y=1.05)
+    t = 'PPC Coverage vs CR'
+    _ = g.fig.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.05, fontsize=14)
 
     return g.fig
 
 
 def plot_rmse_range(
-    rmse: float, rmse_pct: pd.Series, lims: tuple = (0, 80), yhat_name: str = ''
+    rmse: float, rmse_q: pd.Series, qlims: tuple = (0.1, 0.9), yhat_name: str = ''
 ) -> figure.Figure:
-    """Convenience to plot RMSE range with mins"""
-    dfp = rmse_pct.reset_index()
-    dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
-    min_rmse = rmse_pct.min()
-    min_rmse_pct = rmse_pct.index[rmse_pct.argmin()]
+    """Convenience to plot RMSE range from model_pymc.calc.calc_rmse"""
+    # dfp = rmse_q.reset_index()
+    dfp = rmse_q.loc[qlims[0] : qlims[1]].to_frame()
+    min_rmse = rmse_q.min()
+    min_rmse_q = rmse_q.idxmin()
 
     f, axs = plt.subplots(1, 1, figsize=(10, 4))
-    ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs)
+    ax = sns.lineplot(x='q', y='rmse', data=dfp, lw=2, ax=axs)
     #     _ = ax.set_yscale('log')
-    _ = ax.axhline(rmse, c='r', ls='-.', label=f'mean @ {rmse:,.2f}')
-    _ = ax.axhline(rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.2f}')
+    _ = ax.axhline(rmse, c='r', ls='-.', label=f'rmse @ mean {rmse:,.3f}')
     _ = ax.axhline(
-        min_rmse, c='g', ls='--', label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.2f}'
+        rmse_q[0.5], c='b', ls='--', label=f'rmse @ median (q0.50) {rmse_q[0.5]:,.3f}'
     )
-    _ = f.suptitle(f'RMSE ranges {yhat_name}', y=0.95)
+    _ = ax.axhline(
+        min_rmse,
+        c='g',
+        ls='--',
+        label=f'rmse @ min (q{min_rmse_q:,.2f}) {min_rmse:,.3f}',
+    )
+    _ = f.suptitle(f'RMSE range {yhat_name}', y=0.95)
     _ = ax.legend()
     return f
 
@@ -832,46 +847,46 @@ def plot_rmse_range_pair(
     _ = f.tight_layout()
 
 
-def plot_r2_range(r2, r2_pct, lims=(0, 80), yhat_name=''):
-    """Convenience to plot R2 range with max"""
-    dfp = r2_pct.reset_index()
-    dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
-    max_r2 = r2_pct.max()
-    max_r2_pct = r2_pct.index[r2_pct.argmax()]
+# def plot_r2_range(r2, r2_pct, lims=(0, 80), yhat_name=''):
+#     """Convenience to plot R2 range with max"""
+#     dfp = r2_pct.reset_index()
+#     dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
+#     max_r2 = r2_pct.max()
+#     max_r2_pct = r2_pct.index[r2_pct.argmax()]
 
-    f, axs = plt.subplots(1, 1, figsize=(10, 4))
-    ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs)
-    _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
-    _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.2f}')
-    _ = ax.axhline(
-        max_r2, c='g', ls='--', label=f'max @ pct {max_r2_pct} @ {max_r2:,.2f}'
-    )
-    _ = f.suptitle(f'$R^{2}$ ranges {yhat_name}', y=0.95)
-    _ = ax.legend()
+#     f, axs = plt.subplots(1, 1, figsize=(10, 4))
+#     ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs)
+#     _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
+#     _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.2f}')
+#     _ = ax.axhline(
+#         max_r2, c='g', ls='--', label=f'max @ pct {max_r2_pct} @ {max_r2:,.2f}'
+#     )
+#     _ = f.suptitle(f'$R^{2}$ ranges {yhat_name}', y=0.95)
+#     _ = ax.legend()
 
 
-def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
-    """Convenience to plot two r2 pct results (t)raining vs (h)oldout"""
+# def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
+#     """Convenience to plot two r2 pct results (t)raining vs (h)oldout"""
 
-    f, axs = plt.subplots(1, 2, figsize=(14, 4))
-    t = ['train', 'holdout']
-    _ = f.suptitle('$R^{2}$ ranges', y=0.97)
+#     f, axs = plt.subplots(1, 2, figsize=(14, 4))
+#     t = ['train', 'holdout']
+#     _ = f.suptitle('$R^{2}$ ranges', y=0.97)
 
-    for i, (r2, r2_pct) in enumerate(zip([r2_t, r2_h], [r2_pct_t, r2_pct_h])):
-        dfp = r2_pct.reset_index()
-        dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
-        max_r2 = r2_pct.max()
-        max_r2_pct = r2_pct.index[r2_pct.argmax()]
+#     for i, (r2, r2_pct) in enumerate(zip([r2_t, r2_h], [r2_pct_t, r2_pct_h])):
+#         dfp = r2_pct.reset_index()
+#         dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
+#         max_r2 = r2_pct.max()
+#         max_r2_pct = r2_pct.index[r2_pct.argmax()]
 
-        ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs[i])
-        _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
-        _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.0f}')
-        _ = ax.axhline(
-            max_r2, c='g', ls='--', label=f'min @ pct {max_r2_pct} @ {max_r2:,.0f}'
-        )
-        _ = ax.legend()
-        _ = ax.set_title(t[i])
-    _ = f.tight_layout()
+#         ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs[i])
+#         _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
+#         _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.0f}')
+#         _ = ax.axhline(
+#             max_r2, c='g', ls='--', label=f'min @ pct {max_r2_pct} @ {max_r2:,.0f}'
+#         )
+#         _ = ax.legend()
+#         _ = ax.set_title(t[i])
+#     _ = f.tight_layout()
 
 
 def plot_estimate(
@@ -888,10 +903,6 @@ def plot_estimate(
     Optional overplot bootstrapped dfboot"""
     txtadd = kwargs.pop('txtadd', None)
     sty = _get_kws_styling()
-
-    mn = df[[yhat]].mean().tolist()  # estimated mean
-    hdi = df[yhat].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # estimated qs
-
     clr = color if color is not None else sns.color_palette()[0]
     _kws = dict(
         box=dict(
@@ -906,8 +917,12 @@ def plot_estimate(
         exceedance=dict(kind='ecdf', complementary=True, lw=2, legend=None),
     )
     kws = _kws.get(kind)
+
+    mn = df[[yhat]].mean().tolist()  # estimated mean
+    j = -int(np.floor(np.log10(mn[0]))) + 1
+
     if kind == 'exceedance':
-        qs = kwargs.pop('qs', [0.5, 0.95, 0.99])
+        qs = kwargs.pop('qs', [0.5, 0.9, 0.95, 0.99])
         txtadd = ' - '.join(filter(None, ['Exceedance Curve', txtadd]))
         gd = sns.displot(x=yhat, data=df, **kws, height=4, aspect=2.5)
         _ = gd.axes[0][0].set(ylabel=f'P({yhat} > x)')  # , xlabel='dollars')
@@ -930,25 +945,34 @@ def plot_estimate(
             y='p_gt',
             style='p_gt',
             data=df_qvals,
-            markers=['^', 'd', 'o'],
+            markers=['*', 'd', '^', 'o'],
             ax=gd.axes[0][0],
             s=100,
         )
         handles, labels = gd.axes[0][0].get_legend_handles_labels()
         lbls = [str(round(float(lb), 2)) for lb in labels]  # HACK floating point
-        gd.axes[0][0].legend(handles, lbls, loc='upper right', title='P(yhat) > x')
+        gd.axes[0][0].legend(handles, lbls, loc='upper right', title=f'P({yhat}) > x')
+        v = re.sub('hat$', '', yhat)
         summary = ',  '.join(
-            df_qvals[['p_gt', 'yhat']]
+            df_qvals[['p_gt', yhat]]
             .apply(
-                lambda r: f'$P(\hat{{y}})_{{{r[0]:.2f}}} \geq {{{r[1]:.1f}}}$', axis=1
+                lambda r: f'$P(\hat{{{v}}})_{{{r[0]:.2f}}} \geq {{{r[1]:.{j}f}}}$',
+                axis=1,
             )
             .tolist()
         )
 
     elif kind == 'box':
         gd = sns.catplot(x=yhat, data=df, **kws, color=clr, height=2.5, aspect=4)
+        _ = [
+            gd.ax.annotate(f'{v:,.{j}f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
+            for i, v in enumerate(mn)
+        ]
+        elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
         if arroverplot is not None:
-            _ = sns.pointplot(
+            mn_arroverplot = arroverplot.mean()  # estimated mean
+            j_arroverplot = -int(np.floor(np.log10(mn_arroverplot))) + 1
+            ax = sns.pointplot(
                 arroverplot,
                 estimator=np.mean,
                 errorbar=('ci', 94),
@@ -956,18 +980,32 @@ def plot_estimate(
                 linestyles='-',
                 orient='h',
             )
-        _ = [
-            gd.ax.annotate(f'{v:,.1f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
-            for i, v in enumerate(mn)
-        ]
-        elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
+            mn_txt_kws = sty['mn_txt_kws']
+            mn_txt_kws['backgroundcolor'] = 'C1'
+            _ = ax.annotate(
+                f'{mn_arroverplot:,.{j_arroverplot}f}',
+                xy=(mn_arroverplot, 0),
+                **mn_txt_kws,
+            )
+            mn_pt_kws = sty['mn_pt_kws']
+            mn_pt_kws.update(
+                markerfacecolor='C1', markeredgecolor='C1', marker='o', markersize=8
+            )
+            elems.append(lines.Line2D([0], [0], label='mean overplot', **mn_pt_kws))
+
         gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
+
         if force_xlim is not None:
             _ = gd.ax.set(xlim=force_xlim)
+
+        hdi = (
+            df[yhat].quantile(q=[0.03, 0.1, 0.25, 0.75, 0.9, 0.97]).values
+        )  # estimated qs
         summary = (
-            f'Mean = {mn[0]:,.1f}, '
-            + f'HDI_50 = [{hdi[1]:,.1f}, {hdi[2]:,.1f}], '
-            + f'HDI_94 = [{hdi[0]:,.1f}, {hdi[3]:,.1f}]'
+            f'Mean = {mn[0]:,.{j}f}, '
+            + f'$HDI_{{50}}$ = [{hdi[2]:,.{j}f}, {hdi[3]:,.{j}f}], '
+            + f'$HDI_{{80}}$ = [{hdi[1]:,.{j}f}, {hdi[4]:,.{j}f}], '
+            + f'$HDI_{{94}}$ = [{hdi[0]:,.{j}f}, {hdi[5]:,.{j}f}]'
         )
 
     t = f'Summary Distribution of {yhat} estimate for {nobs} obs'
@@ -1071,10 +1109,26 @@ def plot_bootstrap_lr_grp(
     orderby: Literal['ordinal', 'count', 'lr'] = 'ordinal',
 ) -> figure.Figure:
     """Plot bootstrapped loss ratio, grouped by grp"""
+
+    dfboot = dfboot.copy()
+    df = df.copy()
     sty = _get_kws_styling()
 
+    # hacky way to deal with year as int or datetime
+    pmin = df[ftname_year].min()
+    pmax = df[ftname_year].max()
+    if np.issubdtype(df[ftname_year].dtype, np.datetime64):
+        pmin = pmin.year
+        pmax = pmax.year
+
+    # hacky way to convert year as datetime to int
+    # if np.issubdtype(df[grp].dtype, np.datetime64): error for categoricals
+    if dfboot[grp].dtype == '<M8[ns]':
+        dfboot[grp] = dfboot[grp].dt.year.astype(int)
+        df[grp] = df[grp].dt.year.astype(int)
+
     # convert non object type to string
-    if dfboot[grp].dtypes != 'object':
+    if not dfboot[grp].dtype in ['object', 'category']:
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f's{x}')
         df = df.copy()
@@ -1147,13 +1201,6 @@ def plot_bootstrap_lr_grp(
 
     if title_add != '':
         title_add = f'\n{title_add}'
-
-    # hacky way to deal with year as int or datetime
-    pmin = df[ftname_year].min()
-    pmax = df[ftname_year].max()
-    if np.issubdtype(df[ftname_year].dtype, np.datetime64):
-        pmin = pmin.year
-        pmax = pmax.year
 
     pol_summary = ''
     if title_pol_summary:
@@ -1355,7 +1402,7 @@ def plot_smrystat(
             f'\nplotted non-NaN dataset of {sum(idx):,.0f}'
         )
         _ = ax1.annotate(
-            t, xy=(0.96, 0.96), xycoords='figure fraction', ha='right', fontsize=8
+            t, xy=(0.94, 0.94), xycoords='figure fraction', ha='right', fontsize=8
         )
 
     ax0.xaxis.label.set_visible(False)

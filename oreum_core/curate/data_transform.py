@@ -1,4 +1,4 @@
-# Copyright 2023 Oreum Industries
+# Copyright 2024 Oreum Industries
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -185,7 +185,7 @@ class DatasetReshaper:
         *Not* a big groupby (equiv to cartesian join) for factor values
         and concats numerics. Instead, this concats unique vals in cols
         which yields a far more compact dfcmb. Note that the columns will
-        be ragged so need to fill NULLS with (any) value from that column
+        be ragged so this will fill NULLS with (any) value from that column
 
         The shape and datatypes matter.
 
@@ -299,6 +299,7 @@ class Transformer:
         self.rx_get_f = re.compile(r'(F\(([a-z0-9_:]+?)\))')
         self.fts_fact_mapping = {}
         self.original_fml = None
+        self.snl = SnakeyLowercaser()
 
     def fit_transform(
         self, fml: str, df: pd.DataFrame, propagate_nans: bool = False
@@ -326,7 +327,7 @@ class Transformer:
                 map_int_to_fact = dict(enumerate(df[ft_f[1]].cat.categories))
                 map_fact_to_int = {v: k for k, v in map_int_to_fact.items()}
                 self.fts_fact_mapping[ft_f[1]] = map_fact_to_int
-                df[ft_f[1]] = df[ft_f[1]].map(map_fact_to_int).astype(np.int)
+                df[ft_f[1]] = df[ft_f[1]].map(map_fact_to_int).astype(int)
 
                 # replace F() in fml so patsy can work as normal w/ our new int type
                 fml = fml.replace(ft_f[0], ft_f[1])
@@ -344,7 +345,7 @@ class Transformer:
         fts_force_to_int = ['intercept']  # also force intercept
         fts_force_to_int = list(self.fts_fact_mapping.keys())
         if len(fts_force_to_int) > 0:
-            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
+            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(int)
 
         return df_ex
 
@@ -365,7 +366,7 @@ class Transformer:
         try:
             df = df.copy()
             for ft, map_fact_to_int in self.fts_fact_mapping.items():
-                df[ft] = df[ft].map(map_fact_to_int).astype(np.int64)
+                df[ft] = df[ft].map(map_fact_to_int).astype(int)
         except AttributeError:
             # self.fts_fact_mapping was never created for this instance
             # simply because no F() in fml
@@ -389,7 +390,7 @@ class Transformer:
         fts_force_to_int = []
         fts_force_to_int = list(self.fts_fact_mapping.keys())
         if len(fts_force_to_int) > 0:
-            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(np.int64)
+            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(int)
 
         return df_ex
 
@@ -413,15 +414,17 @@ class Standardizer:
     TODO: introduce minmax scaling as an option
     """
 
-    def __init__(self, design_info: pt.design_info.DesignInfo, fts_exclude: list = []):
+    def __init__(self, tfmr: Transformer, fts_exclude: list = []):
         """Optionally exclude from standardization a list of named fts that
         are numeric and would otherwise get standardardized"""
 
-        self.design_info = design_info
+        self.design_info = tfmr.design_info
+        self.fts_exclude = fts_exclude + list(tfmr.fts_fact_mapping.keys())
+
         col_num_excl = [0] + [
             i
             for i, n in enumerate(self.design_info.column_names)
-            if (n in fts_exclude) or re.search(r'\[T\.', n)
+            if (n in self.fts_exclude) or re.search(r'\[T\.', n)
         ]
 
         # col_mask is True where we want to exclude the col from standardization

@@ -1,4 +1,4 @@
-# Copyright 2023 Oreum Industries
+# Copyright 2024 Oreum Industries
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ def sanity_check_lognorm(mu: float = 0.0, sigma: float = 1.0) -> None:
 def normal_icdf(
     x: pt.TensorVariable, mu: pt.TensorVariable = 0.0, sigma: pt.TensorVariable = 1.0
 ) -> pt.TensorVariable:
-    """Normal icdf, default mean-center 1sd aka Inverse CDF aka PPF aka Probit
+    """Normal iCDF aka InverseCDF aka PPF aka Probit. Default mean-center 1sd
     NOTE:
     + Modified from pymc.distributions.continuous.Normal.icdf
     + Slow implementation of erfcinv not in C
@@ -69,7 +69,7 @@ def lognormal_icdf(
 ) -> pt.TensorVariable:
     """LogNormal icdf, defaulted to mean-centered, 1sd
     NOTE:
-        + Modified from pymc.distributions.continuous.LogNormal.icdf in v>5.5 not yet released
+    + Modified from pymc.distributions.continuous.LogNormal.icdf in pymc > v5.5
     """
     return pt.exp(normal_icdf(x=x, mu=mu, sigma=sigma))
 

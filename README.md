@@ -1,7 +1,7 @@
 # Oreum Core Tools `oreum_core`
 
 [![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org)
-[![License](https://img.shields.io/badge/license-Apache2.0-blue.svg)](https://github.com/optuna/optuna)
+[![License](https://img.shields.io/badge/license-Apache2.0-blue.svg)](https://choosealicense.com/licenses/apache-2.0/)
 [![GitHub Release](https://img.shields.io/github/v/release/oreum-industries/oreum_core?display_name=tag&sort=semver)](https://github.com/oreum-industries/oreum_core/releases)
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
 [![CI](https://github.com/oreum-industries/oreum_core/workflows/ci/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/ci.yml)
@@ -70,22 +70,22 @@ For local development on MacOS
 ### 2.0 Pre-requisite installs via `homebrew`
 
 1. Install Homebrew, see instuctions at [https://brew.sh](https://brew.sh)
-2. Install `direnv`, `git`, `git-lfs`, `graphviz`
+2. Install `direnv`, `git`, `git-lfs`, `graphviz`, `zsh`
 
 ```zsh
 $> brew update && upgrade
-$> brew install direnv git git-lfs graphviz
+$> brew install direnv git git-lfs graphviz zsh
 ```
 
 ### 2.1 Git clone the repo
 
-Assumes `git`, `git-lfs` and `direnv` installed as above
+Assumes `direnv`, `git`, `git-lfs` and `zsh` installed as above
 
 ```zsh
 $> git clone https://github.com/oreum-industries/oreum_core
 $> cd oreum_core
 ```
-Then allow `direnv` on MacOS to automatically run file `.envrc` upon directory open
+Then allow `direnv` on MacOS to autorun file `.envrc` upon directory open
 
 
 ### 2.2 Create virtual environment and install dev packages
@@ -135,7 +135,7 @@ successful installation (or not) for `numpy`, `scipy`
 From the dir above `oreum_core/` project dir:
 
 ```zsh
-$> make -C oreum_core/ uninstall
+$> make -C oreum_core/ uninstall-env
 ```
 
 ### 2.3 Code Linting & Repo Control
@@ -165,11 +165,11 @@ Github Workflows to run:
 
 ---
 
-Copyright 2023 Oreum OÜ t/a Oreum Industries. All rights reserved.
+Copyright 2024 Oreum OÜ t/a Oreum Industries. All rights reserved.
 See LICENSE.md.
 
 Oreum OÜ t/a Oreum Industries, Sepapaja 6, Tallinn, 15551, Estonia,
 reg.16122291, [oreum.io](https://oreum.io)
 
 ---
-Oreum OÜ &copy; 2023
+Oreum OÜ &copy; 2024

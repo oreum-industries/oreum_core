@@ -75,8 +75,7 @@ tree = [
 #     also brings sqlalchemy, optionally manually add plotly
 
 [project.urls]
-"Homepage" = "https://oreum.io"
-"Source Code" = "https://github.com/oreum-industries/oreum_core"
+"Homepage" = "https://github.com/oreum-industries/oreum_core"
 
 # [bdist_wheel]
 # universal=1
@@ -91,7 +90,7 @@ skips = [
 
 [tool.black]
 line-length = 88
-target-version = ["py39"]
+target-version = ["py311"]
 skip-string-normalization = true
 skip-magic-trailing-comma = true
 include = '\.py$'
@@ -105,7 +104,7 @@ verbose = true
 profile = 'black'
 multi_line_output = 3
 skip_gitignore = true
-py_version = 39
+py_version = 311
 
 [tool.interrogate]
 ignore-init-method = false

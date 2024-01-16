@@ -1,4 +1,4 @@
-# Copyright 2023 Oreum Industries
+# Copyright 2024 Oreum Industries
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import logging
 
 import arviz as az
 import pymc as pm
+import regex as re
 import xarray as xa
 
 from .calc import compute_log_likelihood_for_potential
@@ -203,7 +204,8 @@ class BasePYMCModel:
                     )
                     # rename to have exact same name as observedRVs
                     for nm in self.rvs_potential_loglike:
-                        nm0 = nm.lstrip('pot_')
+                        rx_pot = re.compile(r'^pot_')
+                        nm0 = rx_pot.sub('', nm)
                         self.idata['log_likelihood'][nm0] = self.idata[
                             'log_likelihood'
                         ][nm]
@@ -227,7 +229,7 @@ class BasePYMCModel:
         with self.model:
             ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
 
-        _log.info(f'Sampled ppc for {self.name} {self.version}')
+        _log.info(f'Sampled posterior predictive for {self.name} {self.version}')
 
         if store_ppc:
             _ = self.update_idata(ppc)
