@@ -112,7 +112,7 @@ def forestplot_single(
     mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
     clr_offset = kwargs.pop('clr_offset', 0)
-    dp = kwargs.pop('dp', 1)
+    dp = kwargs.pop('dp', 2)
     plot_med = kwargs.pop('plot_med', True)
     plot_combined = kwargs.pop('plot_combined', False)
     kws = dict(
@@ -123,9 +123,9 @@ def forestplot_single(
 
     qs = np.quantile(data, q=[0.03, 0.25, 0.5, 0.75, 0.97])
     desc = (
-        f'med {qs[2]:.{dp}f}, HDI50 ['
+        f'\nOverall: Median {qs[2]:.{dp}f}, $HDI_{{50}}$ = ['
         + ', '.join([f'{qs[v]:.{dp}f}' for v in [1, 3]])
-        + '], HDI94 ['
+        + '], $HDI_{94}$ = ['
         + ', '.join([f'{qs[v]:.{dp}f}' for v in [0, 4]])
         + ']'
     )
@@ -136,7 +136,7 @@ def forestplot_single(
     if plot_med:
         _ = ax0.axvline(qs[2], color='#ADD8E6', ls='--', lw=3, zorder=-1)
     _ = f.suptitle(
-        ' - '.join(filter(None, ['Forestplot levels', mdlname, group, txtadd, desc]))
+        ' - '.join(filter(None, ['Forestplot levels', mdlname, group, txtadd])) + desc
     )
     _ = f.tight_layout()
     return f
