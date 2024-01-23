@@ -324,7 +324,6 @@ def plot_float_dist(
             fontsize=10,
         )
 
-    txtadd = kwargs.pop('txtadd', None)
     # handle under/over selecting fts
     fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
@@ -363,6 +362,7 @@ def plot_float_dist(
     if log:
         _ = gd.set(xscale='log')  # , title=ft, ylabel='log(count)')
 
+    txtadd = kwargs.pop('txtadd', None)
     t = 'Empirical distribution'
     _ = gd.fig.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.2, fontsize=14)
     # _ = gd.fig.tight_layout(pad=0.8)
@@ -1020,10 +1020,11 @@ def plot_bootstrap_lr(
     clm: str = 'claim',
     clm_ct: str = 'claim_ct',
     ftname_year: str = 'incept_year',
-    title_add: str = '',
-    title_pol_summary: bool = False,
+    pol_summary: bool = True,
+    lr_summary: bool = True,
     force_xlim: list = None,
     color: str = None,
+    **kwargs,
 ) -> figure.Figure:
     """Plot bootstrapped loss ratio, no grouping"""
 
@@ -1060,9 +1061,6 @@ def plot_bootstrap_lr(
         _ = gd.ax.set(xlim=force_xlim)
     gd.ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
 
-    if title_add != '':
-        title_add = f'\n{title_add}'
-
     # hacky way to deal with year as int or datetime
     pmin = df[ftname_year].min()
     pmax = df[ftname_year].max()
@@ -1070,26 +1068,27 @@ def plot_bootstrap_lr(
         pmin = pmin.year
         pmax = pmax.year
 
-    pol_summary = ''
-    if title_pol_summary:
-        pol_summary = (
-            f"\nInception {str(pmin)} - {str(pmax)} inclusive, "
+    summary = ''
+    if pol_summary:
+        summary += (
+            f"Inception {str(pmin)} - {str(pmax)} inclusive, "
             + f'{len(df):,.0f} policies with '
             + f"\\${df[prm].sum()/1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():,.0f} claims totalling "
             + f"\\${df[clm].sum()/1e6:.1f}M"
         )
-    title = 'Distribution of Population Loss Ratio - Bootstrapped Estimate'
-    _ = gd.fig.suptitle(
-        (
-            f'{title}{title_add}'
-            + pol_summary
-            + f'\nPopulation LR: mean = {mn[0]:.1%}, '
-            + f'HDI_50 = [{hdi[1]:.1%}, {hdi[2]:.1%}], '
-            + f'HDI_94 = [{hdi[0]:.1%}, {hdi[3]:.1%}]'
+    if lr_summary:
+        summary += (
+            f'\nPopulation LR: mean = {mn[0]:.1%}, '
+            + f'$HDI_{{50}}$ = [{hdi[1]:.1%}, {hdi[2]:.1%}], '
+            + f'$HDI_{{94}}$ = [{hdi[0]:.1%}, {hdi[3]:.1%}]'
         )
-    )
-    _ = plt.tight_layout()
+
+    txtadd = kwargs.pop('txtadd', None)
+    t = 'Bootstrapped Distribution of Population Loss Ratio'
+    t = ' - '.join(filter(None, [t, txtadd]))
+    _ = gd.fig.suptitle('\n'.join(filter(None, [t, summary])), y=1, fontsize=14)
+    _ = gd.fig.tight_layout()
     return gd.fig
 
 
