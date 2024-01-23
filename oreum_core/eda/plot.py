@@ -1032,8 +1032,8 @@ def plot_bootstrap_lr(
     mn = dfboot[['lr']].mean().tolist()  # boot mean
     hdi = dfboot['lr'].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # boot qs
     pest_mn = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]  # point est mean
-
     clr = color if color is not None else sns.color_palette()[0]
+
     gd = sns.catplot(
         x='lr', data=dfboot, kind='violin', cut=0, color=clr, height=3, aspect=4
     )
@@ -1050,13 +1050,11 @@ def plot_bootstrap_lr(
         gd.ax.annotate(f'{v:.1%}', xy=(v, i % len(pest_mn)), **sty['pest_mn_txt_kws'])
         for i, v in enumerate(pest_mn)
     ]
-
     elems = [
         lines.Line2D([0], [0], label='population LR (bootstrap)', **sty['mn_pt_kws']),
         lines.Line2D([0], [0], label='sample LR', **sty['pest_mn_pt_kws']),
     ]
     gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
-    # title='Mean LRs', title_fontsize=6
     if force_xlim is not None:
         _ = gd.ax.set(xlim=force_xlim)
     gd.ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
@@ -1083,7 +1081,6 @@ def plot_bootstrap_lr(
             + f'$HDI_{{50}}$ = [{hdi[1]:.1%}, {hdi[2]:.1%}], '
             + f'$HDI_{{94}}$ = [{hdi[0]:.1%}, {hdi[3]:.1%}]'
         )
-
     txtadd = kwargs.pop('txtadd', None)
     t = 'Bootstrapped Distribution of Population Loss Ratio'
     t = ' - '.join(filter(None, [t, txtadd]))
@@ -1100,11 +1097,11 @@ def plot_bootstrap_lr_grp(
     clm: str = 'claim',
     clm_ct: str = 'claim_ct',
     ftname_year: str = 'incept_year',
-    title_add: str = '',
-    title_pol_summary: bool = False,
+    pol_summary: bool = True,
     force_xlim: list = None,
     annot_pest: bool = False,
     orderby: Literal['ordinal', 'count', 'lr'] = 'ordinal',
+    **kwargs,
 ) -> figure.Figure:
     """Plot bootstrapped loss ratio, grouped by grp"""
 
@@ -1197,25 +1194,21 @@ def plot_bootstrap_lr_grp(
         for i, v in enumerate(ct)
     ]
 
-    if title_add != '':
-        title_add = f'\n{title_add}'
-
-    pol_summary = ''
-    if title_pol_summary:
-        pol_summary = (
-            f"\nInception {str(pmin)} - {str(pmax)} inclusive, "
+    summary = ''
+    if pol_summary:
+        summary += (
+            f"Inception {str(pmin)} - {str(pmax)} inclusive, "
             + f'{len(df):,.0f} policies with '
             + f"\\${df[prm].sum()/1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():,.0f} claims totalling "
             + f"\\${df[clm].sum()/1e6:.1f}M"
         )
 
-    title = (
-        'Distributions of Population Loss Ratio - Bootstrapped Estimates'
-        + f' - grouped by {grp}'
-    )
-    _ = f.suptitle(f'{title}{title_add}{pol_summary}')
-    _ = plt.tight_layout()
+    txtadd = kwargs.pop('txtadd', None)
+    t = f'Bootstrapped Distributions of Population Loss Ratio, grouped by {grp}'
+    t = ' - '.join(filter(None, [t, txtadd]))
+    _ = f.suptitle('\n'.join(filter(None, [t, summary])), y=1, fontsize=14)
+    _ = f.tight_layout()
     return f
 
 
