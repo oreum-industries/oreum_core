@@ -378,7 +378,6 @@ def plot_joint_numeric(
     height: int = 6,
     kdefill: bool = True,
     log: Literal['x', 'y', 'both'] = None,
-    subtitle: str = None,
     colori: int = 0,
     nsamp: int = None,
     linreg: bool = True,
@@ -386,6 +385,7 @@ def plot_joint_numeric(
     palette_type: Literal['q', 'g'] = 'g',
     palette: str = None,
     eq: int = 7,  # equal quantiles. Set higher in the case of extreme values
+    **kwargs,
 ) -> figure.Figure:
     """Jointplot of 2 numeric fts with optional: hue shading, linear regression
     Suitable for int or float"""
@@ -474,10 +474,9 @@ def plot_joint_numeric(
         _ = gd.ax_joint.set_yscale('log')
         _ = gd.ax_marg_y.set_yscale('log')
 
-    t = '' if subtitle is None else f'\n{subtitle}'
-    _ = gd.figure.suptitle(
-        f'Joint dist: `{ft0}` x `{ft1}`, {nobs} obs{t}', y=1.02, fontsize=14
-    )
+    t = f'Joint & marginal dists: `{ft0}` vs `{ft1}`, {nobs} obs'
+    txtadd = kwargs.pop('txtadd', None)
+    _ = gd.fig.suptitle('\n'.join(filter(None, [t, txtadd])), y=1, fontsize=14)
     _ = gd.fig.tight_layout(pad=0.95)
     return gd.fig
 
@@ -1592,7 +1591,7 @@ def plot_smrystat_grp_year(
     return f
 
 
-def plot_heatmap_corr(dfx_corr: pd.DataFrame, title_add: str = '') -> figure.Figure:
+def plot_heatmap_corr(dfx_corr: pd.DataFrame, **kwargs) -> figure.Figure:
     """Convenience plot correlation as heatmap"""
     f, axs = plt.subplots(
         1, 1, figsize=(6 + 0.25 * len(dfx_corr), 4 + 0.25 * len(dfx_corr))
@@ -1611,8 +1610,9 @@ def plot_heatmap_corr(dfx_corr: pd.DataFrame, title_add: str = '') -> figure.Fig
         center=0,
     )
     _ = axs.set_xticklabels(axs.get_xticklabels(), rotation=40, ha='right')
-    title_add_wrapped = '\n'.join(wrap(title_add, 80))
-    _ = f.suptitle(f'Feature correlations: {title_add_wrapped}', fontsize=12)
+    txtadd = kwargs.pop('txtadd', None)
+    t = 'Feature correlations'
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
     _ = f.tight_layout()
     return f
 
