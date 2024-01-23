@@ -1414,27 +1414,32 @@ def plot_smrystat(
 def plot_smrystat_grp(
     df: pd.DataFrame,
     grp: str = 'grp',
+    grpkind: str = None,
     val: str = 'y_eloss',
     smry: Literal['sum', 'mean'] = 'sum',
-    title_add: str = '',
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
-    palette: sns.palettes._ColorPalette = None,
+    pal: sns.palettes._ColorPalette = None,
     orderby: Literal['ordinal', 'count', 'smrystat', None] = 'ordinal',
+    **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
     grouped by categorical value `grp`, with group, ordered by count desc
     """
     sty = _get_kws_styling()
+    est = np.sum if smry == 'sum' else np.mean
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
-    # dfg = dfp.groupby(grp).size()
 
-    estimator = np.sum if smry == 'sum' else np.mean
+    if grpkind == 'year':
+        dfp[grp] = dfp[grp].dt.year
+
+    if not dfp[grp].dtypes in ['object', 'category', 'string']:
+        dfp[grp] = dfp[grp].map(lambda x: f's{x}')
 
     ct = dfp.groupby(grp, observed=True).size()
-    smrystat = dfp.groupby(grp, observed=True)[val].apply(estimator)
+    smrystat = dfp.groupby(grp, observed=True)[val].apply(est)
 
     # create order items / index
     if orderby == 'count':
@@ -1445,11 +1450,6 @@ def plot_smrystat_grp(
         ct = ct.reindex(smrystat.sort_values()[::-1].index)
     else:
         pass  # accept the default ordering as passed into func
-
-    names = ct.index.values
-    if not dfp[grp].dtypes in ['object', 'category', 'string']:
-        dfp[grp] = dfp[grp].map(lambda x: f's{x}')
-        names = [f's{x}' for x in names]
 
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
@@ -1467,35 +1467,17 @@ def plot_smrystat_grp(
     ax1.set_title('Distribution of indiv. values')
     ax2.set_title('Count')
 
-    if palette is None:
-        palette = 'viridis'
+    if pal is None:
+        pal = 'viridis'
 
-    _ = sns.pointplot(
-        x=val,
-        y=grp,
-        order=ct.index.values,
-        data=dfp,
-        palette=palette,
-        estimator=estimator,
-        errorbar=('ci', 94),
-        ax=ax0,
-    )
-
+    kws = dict(y=grp, order=ct.index.values, data=dfp, palette=pal)
+    kws_point = {**kws, **dict(estimator=est, errorbar=('ci', 94))}
     sym = 'k' if plot_outliers else ''
-    _ = sns.boxplot(
-        x=val,
-        y=grp,
-        order=ct.index.values,
-        data=dfp,
-        palette=palette,
-        sym=sym,
-        whis=[3, 97],
-        showmeans=True,
-        meanprops=sty['mn_pt_kws'],
-        ax=ax1,
-    )
+    kws_box = {**kws, **dict(sym=sym, whis=[3, 97], meanprops=sty['mn_pt_kws'])}
 
-    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette=palette, ax=ax2)
+    _ = sns.pointplot(**kws_point, x=val, ax=ax0)
+    _ = sns.boxplot(**kws_box, x=val, showmeans=True, ax=ax1)
+    _ = sns.countplot(**kws, ax=ax2)
     _ = [
         ax2.annotate(
             f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **sty['count_txt_h_kws']
@@ -1508,10 +1490,9 @@ def plot_smrystat_grp(
         ax1.yaxis.grid(True)
         ax2.yaxis.grid(True)
 
-    if title_add != '':
-        title_add = f'\n{title_add}'
-    title = f'Diagnostic 1D plots of `{val}` grouped by `{grp}`'
-    _ = f.suptitle(f'{title}{title_add}', fontsize=14)
+    t = f'Diagnostic 1D plots of `{val}` grouped by `{grp}`'
+    txtadd = kwargs.pop('txtadd', None)
+    _ = f.suptitle('\n'.join(filter(None, [t, txtadd])), y=1, fontsize=14)
 
     if sum(idx) > 0:
         t = (
@@ -1533,21 +1514,18 @@ def plot_smrystat_grp_year(
     val: str = 'y_eloss',
     year: str = 'uw_year',
     smry: Literal['sum', 'mean'] = 'sum',
-    title_add: str = '',
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
     yorder_count: bool = True,
+    pal: sns.palettes._ColorPalette = None,
+    **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
     grouped by categorical value `grp`, grouped by `year`
     """
 
     sty = _get_kws_styling()
-    # if not df[grp].dtypes in ['object', 'category']:
-    #     df = df.copy()
-    #     df[grp] = df[grp].map(lambda x: f's{x}')
-
     lvls = df.groupby(grp).size().index.tolist()
     yrs = df.groupby(year).size().index.tolist()
 
@@ -1585,37 +1563,17 @@ def plot_smrystat_grp_year(
         ax1d[i].set_title(f'Distribution of indiv. values [{yr:"%Y"}]')
         ax2d[i].set_title(f'Count [{yr:"%Y"}]')
 
-        # ct = dfs.groupby(grp).size().tolist()
-        estimator = np.sum if smry == 'sum' else np.mean
-        _ = sns.pointplot(
-            x=val,
-            y=grp,
-            order=ct.index.values,
-            data=dfs,
-            ax=ax0d[i],
-            palette='viridis',
-            estimator=estimator,
-            errorbar=('ci', 94),
-            linestyles='-',
-        )
-
+        if pal is None:
+            pal = 'viridis'
+        est = np.sum if smry == 'sum' else np.mean
+        kws = dict(y=grp, data=dfs, order=ct.index.values, palette=pal)
+        kws_point = {**kws, **dict(estimator=est, errorbar=('ci', 94))}
         sym = 'k' if plot_outliers else ''
-        _ = sns.boxplot(
-            x=val,
-            y=grp,
-            order=ct.index.values,
-            data=dfs,
-            palette='viridis',
-            sym=sym,
-            whis=[3, 97],
-            showmeans=True,
-            meanprops=sty['mn_pt_kws'],
-            ax=ax1d[i],
-        )
+        kws_box = {**kws, **dict(sym=sym, whis=[3, 97], meanprops=sty['mn_pt_kws'])}
 
-        _ = sns.countplot(
-            y=grp, data=dfs, ax=ax2d[i], order=ct.index.values, palette='viridis'
-        )
+        _ = sns.pointplot(**kws_point, x=val, linestyles='-', ax=ax0d[i])
+        _ = sns.boxplot(**kws_box, x=val, showmeans=True, ax=ax1d[i])
+        _ = sns.countplot(**kws, ax=ax2d[i])
         _ = [
             ax2d[i].annotate(f'{v}', xy=(v, j % len(ct)), **sty['count_txt_h_kws'])
             for j, v in enumerate(ct)
@@ -1626,12 +1584,9 @@ def plot_smrystat_grp_year(
             ax1d[i].yaxis.grid(True)
             ax2d[i].yaxis.grid(True)
 
-    if title_add != '':
-        title_add = f'\n{title_add}'
-
-    title = f'Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}'
-    _ = f.suptitle(f'{title}{title_add}', fontsize=14)
-
+    t = f'Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}'
+    txtadd = kwargs.pop('txtadd', None)
+    _ = f.suptitle('\n'.join(filter(None, [t, txtadd])), y=1, fontsize=14)
     _ = plt.tight_layout()
     f = plt.gcf()
     return f
