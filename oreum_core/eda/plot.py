@@ -110,9 +110,9 @@ def _get_kws_styling() -> dict:
 
 
 def plot_cat_ct(
-    df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2
+    df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2, **kwargs
 ) -> figure.Figure:
-    """Conv fn: plot group counts for cats and bools"""
+    """Conv fn: plot group counts for cats"""
 
     # handle under/over selecting fts
     fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
@@ -120,7 +120,7 @@ def plot_cat_ct(
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, 0.5 + vert * vsize))
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
@@ -156,11 +156,16 @@ def plot_cat_ct(
 
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
 
-    f.tight_layout()
+    t = 'Empirical distribution'
+    txtadd = kwargs.pop('txtadd', 'cats')
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = f.tight_layout(pad=0.9)
     return f
 
 
-def plot_bool_ct(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figure:
+def plot_bool_ct(
+    df: pd.DataFrame, fts: list, vsize: float = 1.5, **kwargs
+) -> figure.Figure:
     """Conv fn: plot group counts for bools"""
 
     # handle under/over selecting fts
@@ -169,7 +174,7 @@ def plot_bool_ct(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figu
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, 0.5 + vert * vsize))
 
     for i, ft in enumerate(fts):
         counts = df.groupby(ft, dropna=False).size().sort_values(ascending=True)
@@ -195,12 +200,15 @@ def plot_bool_ct(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figu
         _ = ax.set(ylabel=None)
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
 
-    f.tight_layout()
+    t = 'Empirical distribution'
+    txtadd = kwargs.pop('txtadd', 'bools')
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    f.tight_layout(pad=0.9)
     return f
 
 
 def plot_date_ct(
-    df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.8
+    df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.5, **kwargs
 ) -> figure.Figure:
     """Plot group sizes for dates by strftime format"""
 
@@ -210,7 +218,7 @@ def plot_date_ct(
         return None
 
     vert = int(np.ceil(len(fts)))
-    f, ax1d = plt.subplots(vert, 1, figsize=(12, vert * vsize), squeeze=True)
+    f, ax1d = plt.subplots(vert, 1, figsize=(12, 0.5 + vert * vsize), squeeze=True)
 
     if vert > 1:
         for i, ft in enumerate(fts):
@@ -235,8 +243,10 @@ def plot_date_ct(
             .plot(kind='bar', title=ft, label='{} NaNs'.format(pd.isnull(df[ft]).sum()))
         )
         ax.legend(loc='upper right')
-
-    f.tight_layout()
+    t = 'Empirical distribution'
+    txtadd = kwargs.pop('txtadd', 'dates')
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = f.tight_layout(pad=0.9)
     return f
 
 
@@ -244,7 +254,7 @@ def plot_int_dist(
     df: pd.DataFrame,
     fts: list,
     log: bool = False,
-    vsize: float = 1.4,
+    vsize: float = 1.5,
     bins: int = None,
     plot_zeros: bool = True,
     **kwargs,
@@ -258,7 +268,7 @@ def plot_int_dist(
         bins = 'auto'
 
     vert = int(np.ceil(len(fts)))
-    f, ax1d = plt.subplots(len(fts), 1, figsize=(12, vert * vsize), squeeze=False)
+    f, ax1d = plt.subplots(len(fts), 1, figsize=(12, 0.5 + vert * vsize), squeeze=False)
     for i, ft in enumerate(fts):
         n_nans = pd.isnull(df[ft]).sum()
         mean = df[ft].mean()
@@ -279,10 +289,10 @@ def plot_int_dist(
             _ = ax.set(yscale='log', title=ft, ylabel='log(count)')
         _ = ax.set(title=ft, ylabel='count', xlabel=None)  # 'value'
         _ = ax.legend(loc='upper right')
-    # f.tight_layout(pad=0.8)
     t = 'Empirical distribution'
     txtadd = kwargs.pop('txtadd', 'ints')
-    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.2, fontsize=14)
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = f.tight_layout(pad=0.9)
     return f
 
 
@@ -362,10 +372,10 @@ def plot_float_dist(
     if log:
         _ = gd.set(xscale='log')  # , title=ft, ylabel='log(count)')
 
-    txtadd = kwargs.pop('txtadd', None)
+    txtadd = kwargs.pop('txtadd', 'floats')
     t = 'Empirical distribution'
-    _ = gd.fig.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.2, fontsize=14)
-    # _ = gd.fig.tight_layout(pad=0.8)
+    _ = gd.fig.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = gd.fig.tight_layout(pad=0.9)
     return gd.fig
 
 
