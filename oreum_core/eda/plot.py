@@ -110,9 +110,9 @@ def _get_kws_styling() -> dict:
 
 
 def plot_cat_ct(
-    df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2
+    df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2, **kwargs
 ) -> figure.Figure:
-    """Conv fn: plot group counts for cats and bools"""
+    """Conv fn: plot group counts for cats"""
 
     # handle under/over selecting fts
     fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
@@ -120,7 +120,7 @@ def plot_cat_ct(
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, 0.5 + vert * vsize))
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
@@ -156,11 +156,16 @@ def plot_cat_ct(
 
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
 
-    f.tight_layout()
+    t = 'Empirical distribution'
+    txtadd = kwargs.pop('txtadd', 'cats')
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = f.tight_layout(pad=0.9)
     return f
 
 
-def plot_bool_ct(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figure:
+def plot_bool_ct(
+    df: pd.DataFrame, fts: list, vsize: float = 1.5, **kwargs
+) -> figure.Figure:
     """Conv fn: plot group counts for bools"""
 
     # handle under/over selecting fts
@@ -169,7 +174,7 @@ def plot_bool_ct(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figu
         return None
 
     vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, vert * vsize))
+    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, 0.5 + vert * vsize))
 
     for i, ft in enumerate(fts):
         counts = df.groupby(ft, dropna=False).size().sort_values(ascending=True)
@@ -195,12 +200,15 @@ def plot_bool_ct(df: pd.DataFrame, fts: list, vsize: float = 1.6) -> figure.Figu
         _ = ax.set(ylabel=None)
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
 
-    f.tight_layout()
+    t = 'Empirical distribution'
+    txtadd = kwargs.pop('txtadd', 'bools')
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    f.tight_layout(pad=0.9)
     return f
 
 
 def plot_date_ct(
-    df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.8
+    df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.5, **kwargs
 ) -> figure.Figure:
     """Plot group sizes for dates by strftime format"""
 
@@ -210,7 +218,7 @@ def plot_date_ct(
         return None
 
     vert = int(np.ceil(len(fts)))
-    f, ax1d = plt.subplots(vert, 1, figsize=(12, vert * vsize), squeeze=True)
+    f, ax1d = plt.subplots(vert, 1, figsize=(12, 0.5 + vert * vsize), squeeze=True)
 
     if vert > 1:
         for i, ft in enumerate(fts):
@@ -235,8 +243,10 @@ def plot_date_ct(
             .plot(kind='bar', title=ft, label='{} NaNs'.format(pd.isnull(df[ft]).sum()))
         )
         ax.legend(loc='upper right')
-
-    f.tight_layout()
+    t = 'Empirical distribution'
+    txtadd = kwargs.pop('txtadd', 'dates')
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = f.tight_layout(pad=0.9)
     return f
 
 
@@ -244,7 +254,7 @@ def plot_int_dist(
     df: pd.DataFrame,
     fts: list,
     log: bool = False,
-    vsize: float = 1.4,
+    vsize: float = 1.5,
     bins: int = None,
     plot_zeros: bool = True,
     **kwargs,
@@ -258,7 +268,7 @@ def plot_int_dist(
         bins = 'auto'
 
     vert = int(np.ceil(len(fts)))
-    f, ax1d = plt.subplots(len(fts), 1, figsize=(12, vert * vsize), squeeze=False)
+    f, ax1d = plt.subplots(len(fts), 1, figsize=(12, 0.5 + vert * vsize), squeeze=False)
     for i, ft in enumerate(fts):
         n_nans = pd.isnull(df[ft]).sum()
         mean = df[ft].mean()
@@ -279,10 +289,10 @@ def plot_int_dist(
             _ = ax.set(yscale='log', title=ft, ylabel='log(count)')
         _ = ax.set(title=ft, ylabel='count', xlabel=None)  # 'value'
         _ = ax.legend(loc='upper right')
-    # f.tight_layout(pad=0.8)
     t = 'Empirical distribution'
     txtadd = kwargs.pop('txtadd', 'ints')
-    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.2, fontsize=14)
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = f.tight_layout(pad=0.9)
     return f
 
 
@@ -324,7 +334,6 @@ def plot_float_dist(
             fontsize=10,
         )
 
-    txtadd = kwargs.pop('txtadd', None)
     # handle under/over selecting fts
     fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
@@ -363,9 +372,10 @@ def plot_float_dist(
     if log:
         _ = gd.set(xscale='log')  # , title=ft, ylabel='log(count)')
 
+    txtadd = kwargs.pop('txtadd', 'floats')
     t = 'Empirical distribution'
-    _ = gd.fig.suptitle(' - '.join(filter(None, [t, txtadd])), y=1.2, fontsize=14)
-    # _ = gd.fig.tight_layout(pad=0.8)
+    _ = gd.fig.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = gd.fig.tight_layout(pad=0.9)
     return gd.fig
 
 
@@ -378,7 +388,6 @@ def plot_joint_numeric(
     height: int = 6,
     kdefill: bool = True,
     log: Literal['x', 'y', 'both'] = None,
-    subtitle: str = None,
     colori: int = 0,
     nsamp: int = None,
     linreg: bool = True,
@@ -386,6 +395,7 @@ def plot_joint_numeric(
     palette_type: Literal['q', 'g'] = 'g',
     palette: str = None,
     eq: int = 7,  # equal quantiles. Set higher in the case of extreme values
+    **kwargs,
 ) -> figure.Figure:
     """Jointplot of 2 numeric fts with optional: hue shading, linear regression
     Suitable for int or float"""
@@ -474,10 +484,9 @@ def plot_joint_numeric(
         _ = gd.ax_joint.set_yscale('log')
         _ = gd.ax_marg_y.set_yscale('log')
 
-    t = '' if subtitle is None else f'\n{subtitle}'
-    _ = gd.figure.suptitle(
-        f'Joint dist: `{ft0}` x `{ft1}`, {nobs} obs{t}', y=1.02, fontsize=14
-    )
+    t = f'Joint & marginal dists: `{ft0}` vs `{ft1}`, {nobs} obs'
+    txtadd = kwargs.pop('txtadd', None)
+    _ = gd.fig.suptitle('\n'.join(filter(None, [t, txtadd])), y=1, fontsize=14)
     _ = gd.fig.tight_layout(pad=0.95)
     return gd.fig
 
@@ -1021,10 +1030,11 @@ def plot_bootstrap_lr(
     clm: str = 'claim',
     clm_ct: str = 'claim_ct',
     ftname_year: str = 'incept_year',
-    title_add: str = '',
-    title_pol_summary: bool = False,
+    pol_summary: bool = True,
+    lr_summary: bool = True,
     force_xlim: list = None,
     color: str = None,
+    **kwargs,
 ) -> figure.Figure:
     """Plot bootstrapped loss ratio, no grouping"""
 
@@ -1032,8 +1042,8 @@ def plot_bootstrap_lr(
     mn = dfboot[['lr']].mean().tolist()  # boot mean
     hdi = dfboot['lr'].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # boot qs
     pest_mn = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]  # point est mean
-
     clr = color if color is not None else sns.color_palette()[0]
+
     gd = sns.catplot(
         x='lr', data=dfboot, kind='violin', cut=0, color=clr, height=3, aspect=4
     )
@@ -1050,19 +1060,14 @@ def plot_bootstrap_lr(
         gd.ax.annotate(f'{v:.1%}', xy=(v, i % len(pest_mn)), **sty['pest_mn_txt_kws'])
         for i, v in enumerate(pest_mn)
     ]
-
     elems = [
         lines.Line2D([0], [0], label='population LR (bootstrap)', **sty['mn_pt_kws']),
         lines.Line2D([0], [0], label='sample LR', **sty['pest_mn_pt_kws']),
     ]
     gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
-    # title='Mean LRs', title_fontsize=6
     if force_xlim is not None:
         _ = gd.ax.set(xlim=force_xlim)
     gd.ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
-
-    if title_add != '':
-        title_add = f'\n{title_add}'
 
     # hacky way to deal with year as int or datetime
     pmin = df[ftname_year].min()
@@ -1071,26 +1076,26 @@ def plot_bootstrap_lr(
         pmin = pmin.year
         pmax = pmax.year
 
-    pol_summary = ''
-    if title_pol_summary:
-        pol_summary = (
-            f"\nInception {str(pmin)} - {str(pmax)} inclusive, "
+    summary = ''
+    if pol_summary:
+        summary += (
+            f"Inception {str(pmin)} - {str(pmax)} inclusive, "
             + f'{len(df):,.0f} policies with '
             + f"\\${df[prm].sum()/1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():,.0f} claims totalling "
             + f"\\${df[clm].sum()/1e6:.1f}M"
         )
-    title = 'Distribution of Population Loss Ratio - Bootstrapped Estimate'
-    _ = gd.fig.suptitle(
-        (
-            f'{title}{title_add}'
-            + pol_summary
-            + f'\nPopulation LR: mean = {mn[0]:.1%}, '
-            + f'HDI_50 = [{hdi[1]:.1%}, {hdi[2]:.1%}], '
-            + f'HDI_94 = [{hdi[0]:.1%}, {hdi[3]:.1%}]'
+    if lr_summary:
+        summary += (
+            f'\nPopulation LR: mean = {mn[0]:.1%}, '
+            + f'$HDI_{{50}}$ = [{hdi[1]:.1%}, {hdi[2]:.1%}], '
+            + f'$HDI_{{94}}$ = [{hdi[0]:.1%}, {hdi[3]:.1%}]'
         )
-    )
-    _ = plt.tight_layout()
+    txtadd = kwargs.pop('txtadd', None)
+    t = 'Bootstrapped Distribution of Population Loss Ratio'
+    t = ' - '.join(filter(None, [t, txtadd]))
+    _ = gd.fig.suptitle('\n'.join(filter(None, [t, summary])), y=1, fontsize=14)
+    _ = gd.fig.tight_layout()
     return gd.fig
 
 
@@ -1102,11 +1107,11 @@ def plot_bootstrap_lr_grp(
     clm: str = 'claim',
     clm_ct: str = 'claim_ct',
     ftname_year: str = 'incept_year',
-    title_add: str = '',
-    title_pol_summary: bool = False,
+    pol_summary: bool = True,
     force_xlim: list = None,
     annot_pest: bool = False,
     orderby: Literal['ordinal', 'count', 'lr'] = 'ordinal',
+    **kwargs,
 ) -> figure.Figure:
     """Plot bootstrapped loss ratio, grouped by grp"""
 
@@ -1199,25 +1204,21 @@ def plot_bootstrap_lr_grp(
         for i, v in enumerate(ct)
     ]
 
-    if title_add != '':
-        title_add = f'\n{title_add}'
-
-    pol_summary = ''
-    if title_pol_summary:
-        pol_summary = (
-            f"\nInception {str(pmin)} - {str(pmax)} inclusive, "
+    summary = ''
+    if pol_summary:
+        summary += (
+            f"Inception {str(pmin)} - {str(pmax)} inclusive, "
             + f'{len(df):,.0f} policies with '
             + f"\\${df[prm].sum()/1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():,.0f} claims totalling "
             + f"\\${df[clm].sum()/1e6:.1f}M"
         )
 
-    title = (
-        'Distributions of Population Loss Ratio - Bootstrapped Estimates'
-        + f' - grouped by {grp}'
-    )
-    _ = f.suptitle(f'{title}{title_add}{pol_summary}')
-    _ = plt.tight_layout()
+    txtadd = kwargs.pop('txtadd', None)
+    t = f'Bootstrapped Distributions of Population Loss Ratio, grouped by {grp}'
+    t = ' - '.join(filter(None, [t, txtadd]))
+    _ = f.suptitle('\n'.join(filter(None, [t, summary])), y=1, fontsize=14)
+    _ = f.tight_layout()
     return f
 
 
@@ -1414,27 +1415,32 @@ def plot_smrystat(
 def plot_smrystat_grp(
     df: pd.DataFrame,
     grp: str = 'grp',
+    grpkind: str = None,
     val: str = 'y_eloss',
     smry: Literal['sum', 'mean'] = 'sum',
-    title_add: str = '',
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
-    palette: sns.palettes._ColorPalette = None,
+    pal: sns.palettes._ColorPalette = None,
     orderby: Literal['ordinal', 'count', 'smrystat', None] = 'ordinal',
+    **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
     grouped by categorical value `grp`, with group, ordered by count desc
     """
     sty = _get_kws_styling()
+    est = np.sum if smry == 'sum' else np.mean
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
-    # dfg = dfp.groupby(grp).size()
 
-    estimator = np.sum if smry == 'sum' else np.mean
+    if grpkind == 'year':
+        dfp[grp] = dfp[grp].dt.year
+
+    if not dfp[grp].dtypes in ['object', 'category', 'string']:
+        dfp[grp] = dfp[grp].map(lambda x: f's{x}')
 
     ct = dfp.groupby(grp, observed=True).size()
-    smrystat = dfp.groupby(grp, observed=True)[val].apply(estimator)
+    smrystat = dfp.groupby(grp, observed=True)[val].apply(est)
 
     # create order items / index
     if orderby == 'count':
@@ -1445,11 +1451,6 @@ def plot_smrystat_grp(
         ct = ct.reindex(smrystat.sort_values()[::-1].index)
     else:
         pass  # accept the default ordering as passed into func
-
-    names = ct.index.values
-    if not dfp[grp].dtypes in ['object', 'category', 'string']:
-        dfp[grp] = dfp[grp].map(lambda x: f's{x}')
-        names = [f's{x}' for x in names]
 
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
@@ -1467,35 +1468,17 @@ def plot_smrystat_grp(
     ax1.set_title('Distribution of indiv. values')
     ax2.set_title('Count')
 
-    if palette is None:
-        palette = 'viridis'
+    if pal is None:
+        pal = 'viridis'
 
-    _ = sns.pointplot(
-        x=val,
-        y=grp,
-        order=ct.index.values,
-        data=dfp,
-        palette=palette,
-        estimator=estimator,
-        errorbar=('ci', 94),
-        ax=ax0,
-    )
-
+    kws = dict(y=grp, order=ct.index.values, data=dfp, palette=pal)
+    kws_point = {**kws, **dict(estimator=est, errorbar=('ci', 94))}
     sym = 'k' if plot_outliers else ''
-    _ = sns.boxplot(
-        x=val,
-        y=grp,
-        order=ct.index.values,
-        data=dfp,
-        palette=palette,
-        sym=sym,
-        whis=[3, 97],
-        showmeans=True,
-        meanprops=sty['mn_pt_kws'],
-        ax=ax1,
-    )
+    kws_box = {**kws, **dict(sym=sym, whis=[3, 97], meanprops=sty['mn_pt_kws'])}
 
-    _ = sns.countplot(y=grp, data=dfp, order=ct.index.values, palette=palette, ax=ax2)
+    _ = sns.pointplot(**kws_point, x=val, ax=ax0)
+    _ = sns.boxplot(**kws_box, x=val, showmeans=True, ax=ax1)
+    _ = sns.countplot(**kws, ax=ax2)
     _ = [
         ax2.annotate(
             f'{c} ({c/ct.sum():.0%})', xy=(c, i % len(ct)), **sty['count_txt_h_kws']
@@ -1508,10 +1491,9 @@ def plot_smrystat_grp(
         ax1.yaxis.grid(True)
         ax2.yaxis.grid(True)
 
-    if title_add != '':
-        title_add = f'\n{title_add}'
-    title = f'Diagnostic 1D plots of `{val}` grouped by `{grp}`'
-    _ = f.suptitle(f'{title}{title_add}', fontsize=14)
+    t = f'Diagnostic 1D plots of `{val}` grouped by `{grp}`'
+    txtadd = kwargs.pop('txtadd', None)
+    _ = f.suptitle('\n'.join(filter(None, [t, txtadd])), y=1, fontsize=14)
 
     if sum(idx) > 0:
         t = (
@@ -1533,21 +1515,18 @@ def plot_smrystat_grp_year(
     val: str = 'y_eloss',
     year: str = 'uw_year',
     smry: Literal['sum', 'mean'] = 'sum',
-    title_add: str = '',
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
     yorder_count: bool = True,
+    pal: sns.palettes._ColorPalette = None,
+    **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
     grouped by categorical value `grp`, grouped by `year`
     """
 
     sty = _get_kws_styling()
-    # if not df[grp].dtypes in ['object', 'category']:
-    #     df = df.copy()
-    #     df[grp] = df[grp].map(lambda x: f's{x}')
-
     lvls = df.groupby(grp).size().index.tolist()
     yrs = df.groupby(year).size().index.tolist()
 
@@ -1585,37 +1564,17 @@ def plot_smrystat_grp_year(
         ax1d[i].set_title(f'Distribution of indiv. values [{yr:"%Y"}]')
         ax2d[i].set_title(f'Count [{yr:"%Y"}]')
 
-        # ct = dfs.groupby(grp).size().tolist()
-        estimator = np.sum if smry == 'sum' else np.mean
-        _ = sns.pointplot(
-            x=val,
-            y=grp,
-            order=ct.index.values,
-            data=dfs,
-            ax=ax0d[i],
-            palette='viridis',
-            estimator=estimator,
-            errorbar=('ci', 94),
-            linestyles='-',
-        )
-
+        if pal is None:
+            pal = 'viridis'
+        est = np.sum if smry == 'sum' else np.mean
+        kws = dict(y=grp, data=dfs, order=ct.index.values, palette=pal)
+        kws_point = {**kws, **dict(estimator=est, errorbar=('ci', 94))}
         sym = 'k' if plot_outliers else ''
-        _ = sns.boxplot(
-            x=val,
-            y=grp,
-            order=ct.index.values,
-            data=dfs,
-            palette='viridis',
-            sym=sym,
-            whis=[3, 97],
-            showmeans=True,
-            meanprops=sty['mn_pt_kws'],
-            ax=ax1d[i],
-        )
+        kws_box = {**kws, **dict(sym=sym, whis=[3, 97], meanprops=sty['mn_pt_kws'])}
 
-        _ = sns.countplot(
-            y=grp, data=dfs, ax=ax2d[i], order=ct.index.values, palette='viridis'
-        )
+        _ = sns.pointplot(**kws_point, x=val, linestyles='-', ax=ax0d[i])
+        _ = sns.boxplot(**kws_box, x=val, showmeans=True, ax=ax1d[i])
+        _ = sns.countplot(**kws, ax=ax2d[i])
         _ = [
             ax2d[i].annotate(f'{v}', xy=(v, j % len(ct)), **sty['count_txt_h_kws'])
             for j, v in enumerate(ct)
@@ -1626,18 +1585,15 @@ def plot_smrystat_grp_year(
             ax1d[i].yaxis.grid(True)
             ax2d[i].yaxis.grid(True)
 
-    if title_add != '':
-        title_add = f'\n{title_add}'
-
-    title = f'Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}'
-    _ = f.suptitle(f'{title}{title_add}', fontsize=14)
-
+    t = f'Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}'
+    txtadd = kwargs.pop('txtadd', None)
+    _ = f.suptitle('\n'.join(filter(None, [t, txtadd])), y=1, fontsize=14)
     _ = plt.tight_layout()
     f = plt.gcf()
     return f
 
 
-def plot_heatmap_corr(dfx_corr: pd.DataFrame, title_add: str = '') -> figure.Figure:
+def plot_heatmap_corr(dfx_corr: pd.DataFrame, **kwargs) -> figure.Figure:
     """Convenience plot correlation as heatmap"""
     f, axs = plt.subplots(
         1, 1, figsize=(6 + 0.25 * len(dfx_corr), 4 + 0.25 * len(dfx_corr))
@@ -1656,8 +1612,9 @@ def plot_heatmap_corr(dfx_corr: pd.DataFrame, title_add: str = '') -> figure.Fig
         center=0,
     )
     _ = axs.set_xticklabels(axs.get_xticklabels(), rotation=40, ha='right')
-    title_add_wrapped = '\n'.join(wrap(title_add, 80))
-    _ = f.suptitle(f'Feature correlations: {title_add_wrapped}', fontsize=12)
+    txtadd = kwargs.pop('txtadd', None)
+    t = 'Feature correlations'
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])), y=1, fontsize=14)
     _ = f.tight_layout()
     return f
 
