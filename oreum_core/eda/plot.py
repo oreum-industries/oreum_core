@@ -208,7 +208,7 @@ def plot_bool_ct(
 
 
 def plot_date_ct(
-    df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.5, **kwargs
+    df: pd.DataFrame, fts: list, fmt: str = '%Y-%m', vsize: float = 1.6, **kwargs
 ) -> figure.Figure:
     """Plot group sizes for dates by strftime format"""
 
@@ -928,8 +928,7 @@ def plot_estimate(
     kws = _kws.get(kind)
 
     mn = df[[yhat]].mean().tolist()  # estimated mean
-    j = -int(np.floor(np.log10(mn[0]))) + 1
-
+    j = -int(np.floor(np.log10(mn[0]))) + 2
     if kind == 'exceedance':
         qs = kwargs.pop('qs', [0.5, 0.9, 0.95, 0.99])
         txtadd = ' - '.join(filter(None, ['Exceedance Curve', txtadd]))
@@ -980,7 +979,7 @@ def plot_estimate(
         elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
         if arroverplot is not None:
             mn_arroverplot = arroverplot.mean()  # estimated mean
-            j_arroverplot = -int(np.floor(np.log10(mn_arroverplot))) + 1
+            j_arroverplot = -int(np.floor(np.log10(mn_arroverplot))) + 2
             ax = sns.pointplot(
                 arroverplot,
                 estimator=np.mean,
@@ -1350,9 +1349,9 @@ def plot_smrystat(
     df: pd.DataFrame,
     val: str = 'y_eloss',
     smry: Literal['sum', 'mean'] = 'sum',
-    title_add: str = '',
     plot_outliers: bool = True,
     palette: sns.palettes._ColorPalette = None,
+    **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist) of numeric value `val`"""
     sty = _get_kws_styling()
@@ -1392,10 +1391,9 @@ def plot_smrystat(
         ax=ax1,
     )
 
-    if title_add != '':
-        title_add = f'\n{title_add}'
-    title = f'Diagnostic 1D plots of `{val}`'
-    _ = f.suptitle(f'{title}{title_add}', fontsize=14)
+    txtadd = kwargs.pop('txtadd', None)
+    t = f'Diagnostic 1D plots of `{val}`'
+    _ = f.suptitle('\n'.join(filter(None, [t, txtadd])), y=1, fontsize=14)
 
     if sum(idx) > 0:
         t = (

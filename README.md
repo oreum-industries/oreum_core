@@ -54,7 +54,7 @@ This package **is not**:
 + Project began on 2021-01-01
 + The `README.md` is MacOS and POSIX oriented
 + See `LICENCE.md` for licensing and copyright details
-+ See `CONTRIBUTORS.md` for list of contributors
++ See `pyproject.toml` for various pacakge details
 + This uses a logger named `'oreum_core'`, feel free to incorporate or ignore
 + Hosting:
   + Source code repo on [GitHub](https://github.com/oreum-industries/oreum_core)
