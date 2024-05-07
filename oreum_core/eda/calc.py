@@ -179,19 +179,24 @@ def get_gini(r: np.ndarray, n: np.ndarray) -> np.ndarray:
     return 1 - sum(r.sort_values().cumsum() * (2 / n))
 
 
-def bootstrap(a: np.ndarray, nboot: int = 1000, summary_fn=np.mean) -> np.ndarray:
+def bootstrap(
+    a: np.ndarray, nboot: int = 1000, summary_fn=np.mean, idx_only=False
+) -> np.ndarray:
     """Calc vectorised bootstrap sample of array of observations
     By default return the mean value of the observations per sample
-    I.e if len(a)=20 and nboot=100, this returns 100 bootstrap resampled
+    i.e if len(a)=20 and nboot=100, this returns 100 bootstrap resampled
     mean estimates of those 20 observations
+    Vectorised sampling via numpy broadcasting random indexes to a 2D shape
     """
-    # vectorise via numpy broadcasting random indexs to a 2D shape
     rng = np.random.default_rng(seed=RSD)
     sample_idx = rng.integers(0, len(a), size=(len(a), nboot))
 
     # hack allow for passing a series
     if isinstance(a, pd.Series):
         a = a.values
+
+    if idx_only:
+        return sample_idx
 
     samples = a[sample_idx]
     if summary_fn is not None:
@@ -206,11 +211,16 @@ def bootstrap_lr(
     """Calc vectorised bootstrap loss ratios for df
     Pass a dataframe or group. fts named `'premium', 'claim'`
     Accept nans in clm
+    Use the same index for prem and claims
     """
+    idx = bootstrap(df[prm], nboot, idx_only=True)
+    s_prm = df[prm].values[idx]
+    s_clm = df[clm].values[idx]
+
     dfboot = pd.DataFrame(
         {
-            'premium_sum': bootstrap(df[prm], nboot, np.sum),
-            'claim_sum': bootstrap(np.nan_to_num(df[clm], 0), nboot, np.sum),
+            'premium_sum': np.apply_along_axis(np.sum, 0, s_prm),
+            'claim_sum': np.apply_along_axis(np.sum, 0, np.nan_to_num(s_clm, 0)),
         }
     )
 
