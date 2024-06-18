@@ -45,6 +45,7 @@ class DatatypeConverter:
                 fcat = [],
                 fstr = [],
                 fbool = [],
+                fbool_nan_to_false = [],
                 fdate = [],
                 fyear = [],
                 fint = [],
@@ -55,6 +56,7 @@ class DatatypeConverter:
             fcat=ftsd.get('fcat', []),
             fstr=ftsd.get('fstr', []),
             fbool=ftsd.get('fbool', []),
+            fbool_nan_to_false=ftsd.get('fbool_nan_to_false', []),
             fdate=ftsd.get('fdate', []),
             fyear=ftsd.get('fyear', []),
             fint=ftsd.get('fint', []),
@@ -92,16 +94,20 @@ class DatatypeConverter:
             else:
                 df[ft] = df[ft].astype('string')
 
-        for ft in self.ftsd['fbool']:
+        for ft in self.ftsd['fbool'] + self.ftsd['fbool_nan_to_false']:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
             if df.dtypes[ft] == object:
                 df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
                 df.loc[df[ft].isin(self.strnans), ft] = np.nan
                 df[ft] = df[ft].apply(lambda x: self.bool_dict.get(x, x))
 
-                if set(df[ft].unique()) != set([True, False, np.nan]):
-                    # avoid converting anything not yet properly mapped
+                if ft in self.ftsd['fbool_nan_to_false']:
+                    df.loc[df[ft].isnull(), ft] = False
+
+                if set(df[ft].unique()) != set([True, False]):
+                    # if ft not yet properly mapped, skip without converting
                     continue
+
             df[ft] = df[ft].convert_dtypes(convert_boolean=True)
 
         for ft in self.ftsd['fyear']:

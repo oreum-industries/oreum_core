@@ -180,23 +180,23 @@ def get_gini(r: np.ndarray, n: np.ndarray) -> np.ndarray:
 
 
 def bootstrap(
-    a: np.ndarray, nboot: int = 1000, summary_fn=np.mean, idx_only=False
+    a: np.ndarray | pd.Series, nboot: int = 1000, summary_fn=np.mean, idx_only=False
 ) -> np.ndarray:
-    """Calc vectorised bootstrap sample of array of observations
+    """Calc vectorised bootstrap sample of ndarray of observations
     By default return the mean value of the observations per sample
-    i.e if len(a)=20 and nboot=100, this returns 100 bootstrap resampled
+    i.e. if len(a)=20 and nboot=100, this returns 100 bootstrap resampled
     mean estimates of those 20 observations
     Vectorised sampling via numpy broadcasting random indexes to a 2D shape
     """
     rng = np.random.default_rng(seed=RSD)
     sample_idx = rng.integers(0, len(a), size=(len(a), nboot))
 
-    # hack allow for passing a series
-    if isinstance(a, pd.Series):
-        a = a.values
-
     if idx_only:
         return sample_idx
+
+    # hack allow for passing a series, need a ndarray to broadcast 2D properly
+    if isinstance(a, pd.Series):
+        a = a.values
 
     samples = a[sample_idx]
     if summary_fn is not None:
@@ -209,8 +209,7 @@ def bootstrap_lr(
     df: pd.DataFrame, prm: str = 'premium', clm: str = 'claim', nboot: int = 1000
 ) -> pd.DataFrame:
     """Calc vectorised bootstrap loss ratios for df
-    Pass a dataframe or group. fts named `'premium', 'claim'`
-    Accept nans in clm
+    Pass dataframe or group, accept nans in clm
     Use the same index for prem and claims
     """
     idx = bootstrap(df[prm], nboot, idx_only=True)
