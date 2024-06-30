@@ -38,15 +38,16 @@ class PYMCIO(BaseFileIO):
         """Inherit super"""
         super().__init__(*args, **kwargs)
 
-    def read_idata(self, fn: str) -> az.InferenceData:
-        """Read arviz.InferenceData object from fn e.g. `mdl.netcdf`"""
+    def read_idata(self, mdl: BasePYMCModel, fn: str = '') -> az.InferenceData:
+        """Read arviz.InferenceData object from fn e.g. `idata_mdlname`"""
+        fn = f'idata_{mdl.name}' if fn == '' else fn
         fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         idata = az.from_netcdf(str(fqn.resolve()))
         _log.info(f'Read model idata from {str(fqn.resolve())}')
         return idata
 
     def write_idata(self, mdl: BasePYMCModel, fn: str = '') -> Path:
-        """Accept BasePYMCModel object and fn e.g. `mdl.netcdf`, write to file"""
+        """Accept BasePYMCModel object and fn e.g. `idata_mdlname`, write to file"""
         fn = f'idata_{mdl.name}' if fn == '' else fn
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         mdl.idata.to_netcdf(str(fqn.resolve()))
