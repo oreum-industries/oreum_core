@@ -19,7 +19,7 @@ import logging
 import arviz as az
 import pymc as pm
 import regex as re
-import xarray as xa
+import xarray as xr
 
 from .calc import compute_log_likelihood_for_potential
 
@@ -73,7 +73,7 @@ class BasePYMCModel:
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
     @property
-    def posterior(self) -> xa.Dataset:
+    def posterior(self) -> xr.Dataset:
         """Returns posterior from idata from previous run of sample"""
         try:
             self.idata.posterior
@@ -213,7 +213,7 @@ class BasePYMCModel:
 
         return None
 
-    def sample_posterior_predictive(self, **kwargs):
+    def sample_posterior_predictive(self, **kwargs) -> az.InferenceData | None:
         """Sample posterior predictive
         use self.sample_post_pred_kws or passed kwargs
         Note by default aimed toward out-of-sample PPC in production

@@ -641,19 +641,14 @@ def plot_accuracy(df: pd.DataFrame) -> figure.Figure:
     return f
 
 
-def plot_binary_performance(dfperf: pd.DataFrame, nobs: int = 1) -> figure.Figure:
-    """Plot ROC, PrecRec, F-score, Accuracy sweeping across PPC quantiles
+def plot_binary_performance(
+    dfperf: pd.DataFrame, nobs: int = 1, **kwargs
+) -> figure.Figure:
+    """Plot ROC, PrecRec, F-score, Accuracy sweeping across PPC sample quantiles
     Created for perf df from model_pymc.calc.calc_binary_performance_measures
     Return summary stats
     """
     f, axs = plt.subplots(1, 4, figsize=(18, 5), sharex=False, sharey=False)
-    _ = f.suptitle(
-        (
-            'Evaluations of Binary Predictions made by sweeping across PPC '
-            + f'quantiles\n(more reliable when nobs > 100, here nobs={nobs})'
-        ),
-        y=1.0,
-    )
 
     # ROC -------------
     roc_auc = integrate.trapezoid(y=dfperf['tpr'], x=dfperf['fpr'])
@@ -753,6 +748,12 @@ def plot_binary_performance(dfperf: pd.DataFrame, nobs: int = 1) -> figure.Figur
         ylim=(0, 1),
     )
 
+    t = (
+        'Evaluations of Binary Predictions made by sweeping across PPC '
+        + f'sample quantiles (more reliable if nobs>100: here nobs={nobs})'
+    )
+    txtadd = kwargs.get('txtadd', None)
+    _ = f.suptitle('\n'.join(filter(None, [t, txtadd])), y=1.0)
     _ = f.tight_layout()
     return f
 
@@ -854,48 +855,6 @@ def plot_rmse_range_pair(
         _ = ax.legend()
         _ = ax.set_title(t[i])
     _ = f.tight_layout()
-
-
-# def plot_r2_range(r2, r2_pct, lims=(0, 80), yhat_name=''):
-#     """Convenience to plot R2 range with max"""
-#     dfp = r2_pct.reset_index()
-#     dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
-#     max_r2 = r2_pct.max()
-#     max_r2_pct = r2_pct.index[r2_pct.argmax()]
-
-#     f, axs = plt.subplots(1, 1, figsize=(10, 4))
-#     ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs)
-#     _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
-#     _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.2f}')
-#     _ = ax.axhline(
-#         max_r2, c='g', ls='--', label=f'max @ pct {max_r2_pct} @ {max_r2:,.2f}'
-#     )
-#     _ = f.suptitle(f'$R^{2}$ ranges {yhat_name}', y=0.95)
-#     _ = ax.legend()
-
-
-# def plot_r2_range_pair(r2_t, r2_pct_t, r2_h, r2_pct_h, lims=(0, 80)):
-#     """Convenience to plot two r2 pct results (t)raining vs (h)oldout"""
-
-#     f, axs = plt.subplots(1, 2, figsize=(14, 4))
-#     t = ['train', 'holdout']
-#     _ = f.suptitle('$R^{2}$ ranges', y=0.97)
-
-#     for i, (r2, r2_pct) in enumerate(zip([r2_t, r2_h], [r2_pct_t, r2_pct_h])):
-#         dfp = r2_pct.reset_index()
-#         dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
-#         max_r2 = r2_pct.max()
-#         max_r2_pct = r2_pct.index[r2_pct.argmax()]
-
-#         ax = sns.lineplot(x='pct', y='r2', data=dfp, lw=2, ax=axs[i])
-#         _ = ax.axhline(r2, c='r', ls='--', label=f'mean @ {r2:,.2f}')
-#         _ = ax.axhline(r2_pct[50], c='b', ls='--', label=f'median @ {r2_pct[50]:,.0f}')
-#         _ = ax.axhline(
-#             max_r2, c='g', ls='--', label=f'min @ pct {max_r2_pct} @ {max_r2:,.0f}'
-#         )
-#         _ = ax.legend()
-#         _ = ax.set_title(t[i])
-#     _ = f.tight_layout()
 
 
 def plot_estimate(
