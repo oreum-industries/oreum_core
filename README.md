@@ -32,7 +32,7 @@ Oreum Industries.
 + Optionally enables a generalist black-box ML workflow in R&D using a leading
   Gradient Boosted Trees stack incl. `catboost`, `xgboost`, `optuna`, `shap`
   (do `pip install oreum_core[tree]`)
-+ Also includes seevral utilities for text cleaning, sql scripting, file handling
++ Also includes several utilities for text cleaning, sql scripting, file handling
 
 
 This package **is**:

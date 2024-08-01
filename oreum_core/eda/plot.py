@@ -864,7 +864,7 @@ def plot_estimate(
     force_xlim: list = None,
     color: str = None,
     kind: str = 'box',
-    arroverplot: np.array = None,
+    arr_overplot: np.array = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot distribution for estimates, either PPC or bootstrapped, no grouping
@@ -887,7 +887,7 @@ def plot_estimate(
     kws = _kws.get(kind)
 
     mn = df[[yhat]].mean().tolist()  # estimated mean
-    j = -int(np.floor(np.log10(mn[0]))) + 2
+    j = -int(np.ceil(np.log10(mn[0]))) + 2
     if kind == 'exceedance':
         qs = kwargs.pop('qs', [0.5, 0.9, 0.95, 0.99])
         txtadd = ' - '.join(filter(None, ['Exceedance Curve', txtadd]))
@@ -936,11 +936,11 @@ def plot_estimate(
             for i, v in enumerate(mn)
         ]
         elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
-        if arroverplot is not None:
-            mn_arroverplot = arroverplot.mean()  # estimated mean
-            j_arroverplot = -int(np.floor(np.log10(mn_arroverplot))) + 2
+        if arr_overplot is not None:
+            mn_arr_overplot = arr_overplot.mean()  # estimated mean
+            j_arr_overplot = -int(np.ceil(np.log10(mn_arr_overplot))) + 2
             ax = sns.pointplot(
-                arroverplot,
+                arr_overplot,
                 estimator=np.mean,
                 errorbar=('ci', 94),
                 color='C1',
@@ -950,24 +950,23 @@ def plot_estimate(
             mn_txt_kws = sty['mn_txt_kws']
             mn_txt_kws['backgroundcolor'] = 'C1'
             _ = ax.annotate(
-                f'{mn_arroverplot:,.{j_arroverplot}f}',
-                xy=(mn_arroverplot, 0),
+                f'{mn_arr_overplot:,.{j_arr_overplot}f}',
+                xy=(mn_arr_overplot, 0),
                 **mn_txt_kws,
             )
             mn_pt_kws = sty['mn_pt_kws']
             mn_pt_kws.update(
                 markerfacecolor='C1', markeredgecolor='C1', marker='o', markersize=8
             )
-            elems.append(lines.Line2D([0], [0], label='mean overplot', **mn_pt_kws))
+            nm = kwargs.get('arr_overplot_nm', 'overplot')
+            elems.append(lines.Line2D([0], [0], label=f'mean {nm}', **mn_pt_kws))
 
         gd.ax.legend(handles=elems, loc='upper right', fontsize=8)
 
         if force_xlim is not None:
             _ = gd.ax.set(xlim=force_xlim)
 
-        hdi = (
-            df[yhat].quantile(q=[0.03, 0.1, 0.25, 0.75, 0.9, 0.97]).values
-        )  # estimated qs
+        hdi = df[yhat].quantile(q=[0.03, 0.1, 0.25, 0.75, 0.9, 0.97]).values
         summary = (
             f'Mean = {mn[0]:,.{j}f}, '
             + f'$HDI_{{50}}$ = [{hdi[2]:,.{j}f}, {hdi[3]:,.{j}f}], '

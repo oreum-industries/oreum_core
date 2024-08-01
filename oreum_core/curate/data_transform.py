@@ -185,7 +185,7 @@ class DatasetReshaper:
     def __init__(self):
         pass
 
-    def create_dfcmb(self, df: pd.DataFrame, fts: dict) -> pd.DataFrame:
+    def create_dfcmb(self, df: pd.DataFrame, ftsd: dict) -> pd.DataFrame:
         """Create a combination dataset `dfcmb` from inputted `df`.
 
         *Not* a big groupby (equiv to cartesian join) for factor values
@@ -213,7 +213,7 @@ class DatasetReshaper:
             (aka categoricals aka strings), or ints or floats. No dates.
         """
         dfcmb = pd.DataFrame(index=[0])
-        fts_factor = fts.get('fcat', []) + fts.get('fbool', [])
+        fts_factor = ftsd.get('fcat', []) + ftsd.get('fbool', [])
         for ft in fts_factor:
             colnames_pre = list(dfcmb.columns.values)
             s = pd.Series(np.unique(df[ft]), name=ft)
@@ -227,10 +227,10 @@ class DatasetReshaper:
             # TODO: force order for categorical
             # df['fpc_aais_ctgry'] = pd.Categorical(df['fpc_aais_ctgry'].values, categories=vals, ordered=True)
 
-        for ft in fts.get('fint'):
+        for ft in ftsd.get('fint'):
             dfcmb[ft] = 1
 
-        for ft in fts.get('ffloat'):
+        for ft in ftsd.get('ffloat'):
             dfcmb[ft] = 1.0
 
         _log.info(
