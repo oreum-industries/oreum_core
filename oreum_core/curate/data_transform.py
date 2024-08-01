@@ -180,7 +180,20 @@ class DatatypeConverter:
 
 
 class DatasetReshaper:
-    """Convenience functions to reshape whole datasets"""
+    """Convenience functions to reshape whole datasets
+
+    Use with a ftsd dict of form:
+    ftsd = dict(
+        fcat = [],
+        fstr = [],
+        fbool = [],
+        fbool_nan_to_false = [],
+        fdate = [],
+        fyear = [],
+        fint = [],
+        ffloat = [],
+        fverbatim = [],        # maintain in current dtype)
+    """
 
     def __init__(self):
         pass
@@ -227,10 +240,10 @@ class DatasetReshaper:
             # TODO: force order for categorical
             # df['fpc_aais_ctgry'] = pd.Categorical(df['fpc_aais_ctgry'].values, categories=vals, ordered=True)
 
-        for ft in ftsd.get('fint'):
+        for ft in ftsd.get('fint', []):
             dfcmb[ft] = 1
 
-        for ft in ftsd.get('ffloat'):
+        for ft in ftsd.get('ffloat', []):
             dfcmb[ft] = 1.0
 
         _log.info(
@@ -244,7 +257,7 @@ class DatasetReshaper:
 
         return dfcmb
 
-    def _create_dfcmb_big(self, df: pd.DataFrame, fts: dict) -> pd.DataFrame:
+    def _create_dfcmb_big(self, df: pd.DataFrame, ftsd: dict) -> pd.DataFrame:
         """Create a combination dataset `dfcmb` from inputted `df`.
         Just a big groupby (equiv to cartesian join) for factor values
         and concats numerics. The shape and datatypes matter.
@@ -267,14 +280,14 @@ class DatasetReshaper:
             (aka categoricals aka strings), or ints or floats. No dates.
         """
         dfcmb = pd.DataFrame(index=[0])
-        fts_factor = fts.get('fcat', []) + fts.get('fbool', [])
+        fts_factor = ftsd.get('fcat', []) + ftsd.get('fbool', [])
         if len(fts_factor) > 0:
             dfcmb = df.groupby(fts_factor).size().reset_index().iloc[:, :-1]
 
-        for ft in fts.get('fint'):
+        for ft in ftsd.get('fint', []):
             dfcmb[ft] = 1
 
-        for ft in fts.get('ffloat'):
+        for ft in ftsd.get('ffloat', []):
             dfcmb[ft] = 1.0
 
         _log.info(
