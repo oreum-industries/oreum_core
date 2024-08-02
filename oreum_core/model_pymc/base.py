@@ -62,7 +62,10 @@ class BasePYMCModel:
             chains=4,
             cores=4,
             target_accept=0.8,
-            idata_kwargs={"log_likelihood": True},  # safe to have as True
+            idata_kwargs={
+                "log_likelihood": True,  # usually useful
+                ## TODO only in 5.16 "log_prior": True,  # possibly useful?
+            },
             progressbar=True,
         )
         self.rvs_for_posterior_plots = []
@@ -190,7 +193,7 @@ class BasePYMCModel:
 
                 _log.info(f'Sampled posterior for {self.name} {self.version}')
 
-                # optional calculate loglikelihood for potentials
+                # optional manually calculate log_likelihood for potentials
                 if self.calc_potential_loglike:
                     self.idata.add_groups(
                         dict(

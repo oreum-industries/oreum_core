@@ -887,7 +887,8 @@ def plot_estimate(
     kws = _kws.get(kind)
 
     mn = df[[yhat]].mean().tolist()  # estimated mean
-    j = -int(np.ceil(np.log10(mn[0]))) + 2
+    j = max(-int(np.ceil(np.log10(mn[0]))) + 2, 0)
+
     if kind == 'exceedance':
         qs = kwargs.pop('qs', [0.5, 0.9, 0.95, 0.99])
         txtadd = ' - '.join(filter(None, ['Exceedance Curve', txtadd]))
@@ -932,7 +933,7 @@ def plot_estimate(
     elif kind == 'box':
         gd = sns.catplot(x=yhat, data=df, **kws, color=clr, height=2.5, aspect=4)
         _ = [
-            gd.ax.annotate(f'{v:,.{j}f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
+            gd.ax.annotate(f'{v:,.{1}f}', xy=(v, i % len(mn)), **sty['mn_txt_kws'])
             for i, v in enumerate(mn)
         ]
         elems = [lines.Line2D([0], [0], label=f'mean {yhat}', **sty['mn_pt_kws'])]
