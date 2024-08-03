@@ -20,6 +20,7 @@ import arviz as az
 import pymc as pm
 import regex as re
 import xarray as xr
+from pymc.testing import assert_no_rvs
 
 from .calc import compute_log_likelihood_for_potential
 
@@ -90,8 +91,8 @@ class BasePYMCModel:
         assert self._idata, "Run update_idata() first"
         return self._idata
 
-    def describe_rvs(self) -> dict[list]:
-        """Returns a dict of lists of stringnames of RVs"""
+    def get_rvs(self) -> dict[list]:
+        """Returns a dict of lists of RVs"""
         return dict(
             basic=self.model.basic_RVs,
             unobserved=self.model.unobserved_RVs,
@@ -259,3 +260,11 @@ class BasePYMCModel:
         else:
             side = 'right' if replace else 'left'
             self._idata.extend(idata, join=side)
+
+    def debug(self):
+        """Convenience to run debug on logp and random, and
+        assert no MeasurableVariable nodes in the graph"""
+        if self.model is not None:
+            assert_no_rvs(self.model.logp())
+            _ = self.model.debug(fn='logp', verbose=True)
+            _ = self.model.debug(fn='random', verbose=True)
