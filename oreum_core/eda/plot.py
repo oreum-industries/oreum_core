@@ -15,7 +15,6 @@
 # eda.plot.py
 """EDA Plotting"""
 import logging
-from textwrap import wrap
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -65,6 +64,13 @@ __all__ = [
 _log = logging.getLogger(__name__)
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
+
+sns.set_theme(
+    style='darkgrid',
+    palette='muted',
+    context='notebook',
+    rc={'figure.dpi': 72, 'savefig.dpi': 144, 'figure.figsize': (12, 4)},
+)
 
 
 def _get_kws_styling() -> dict:

@@ -39,11 +39,11 @@ __all__ = [
     'plot_lkjcc_corr',
 ]
 
-sns.set(
+sns.set_theme(
     style='darkgrid',
     palette='muted',
     context='notebook',
-    rc={'savefig.dpi': 300, 'figure.figsize': (12, 6)},
+    rc={'figure.dpi': 72, 'savefig.dpi': 144, 'figure.figsize': (12, 4)},
 )
 
 
