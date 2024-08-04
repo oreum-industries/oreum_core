@@ -79,7 +79,7 @@ def display_image_file(
         labelbottom=False,
     )
     if title is not None:
-        _ = f.suptitle(f'{title}', y=1.0)
+        _ = f.suptitle(f'{title}', fontsize=12, y=1.0)
     _ = f.tight_layout()
     return f
 
