@@ -19,7 +19,8 @@ import logging
 import arviz as az
 import pymc as pm
 import regex as re
-import xarray as xa
+import xarray as xr
+from pymc.testing import assert_no_rvs
 
 from .calc import compute_log_likelihood_for_potential
 
@@ -62,7 +63,10 @@ class BasePYMCModel:
             chains=4,
             cores=4,
             target_accept=0.8,
-            idata_kwargs={"log_likelihood": True},  # safe to have as True
+            idata_kwargs={
+                "log_likelihood": True,  # usually useful
+                ## TODO only in 5.16 "log_prior": True,  # possibly useful?
+            },
             progressbar=True,
         )
         self.rvs_for_posterior_plots = []
@@ -73,7 +77,7 @@ class BasePYMCModel:
         self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
 
     @property
-    def posterior(self) -> xa.Dataset:
+    def posterior(self) -> xr.Dataset:
         """Returns posterior from idata from previous run of sample"""
         try:
             self.idata.posterior
@@ -87,8 +91,8 @@ class BasePYMCModel:
         assert self._idata, "Run update_idata() first"
         return self._idata
 
-    def describe_rvs(self) -> dict[list]:
-        """Returns a dict of lists of stringnames of RVs"""
+    def get_rvs(self) -> dict[list]:
+        """Returns a dict of lists of RVs"""
         return dict(
             basic=self.model.basic_RVs,
             unobserved=self.model.unobserved_RVs,
@@ -190,7 +194,7 @@ class BasePYMCModel:
 
                 _log.info(f'Sampled posterior for {self.name} {self.version}')
 
-                # optional calculate loglikelihood for potentials
+                # optional manually calculate log_likelihood for potentials
                 if self.calc_potential_loglike:
                     self.idata.add_groups(
                         dict(
@@ -213,7 +217,7 @@ class BasePYMCModel:
 
         return None
 
-    def sample_posterior_predictive(self, **kwargs):
+    def sample_posterior_predictive(self, **kwargs) -> az.InferenceData | None:
         """Sample posterior predictive
         use self.sample_post_pred_kws or passed kwargs
         Note by default aimed toward out-of-sample PPC in production
@@ -256,3 +260,11 @@ class BasePYMCModel:
         else:
             side = 'right' if replace else 'left'
             self._idata.extend(idata, join=side)
+
+    def debug(self):
+        """Convenience to run debug on logp and random, and
+        assert no MeasurableVariable nodes in the graph"""
+        if self.model is not None:
+            assert_no_rvs(self.model.logp())
+            _ = self.model.debug(fn='logp', verbose=True)
+            _ = self.model.debug(fn='random', verbose=True)

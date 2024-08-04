@@ -94,16 +94,16 @@ def get_summary(mdl: BasePYMCModel, rvs: list, group='posterior') -> pd.DataFram
 
 
 def print_rvs(mdl: BasePYMCModel) -> list[str]:
-    """Convenience to print RV strings to notebook
+    """Convenience to provide RV strings to display in Notebook
     Use as _ = [display(Markdown(s for s in mt.print_rvs(mdl)))]
     """
-    return [
-        rv.str_repr(formatting='string', include_params=True)
-        for rv in mdl.model.free_RVs + mdl.model.potentials
-    ]
+    r = []
+    for k, rvs in mdl.get_rvs().items():
+        if k in ['free', 'potentials', 'deterministics']:
+            for rv in rvs:
+                r.append(rv.str_repr(formatting='string', include_params=True))
+    return r
 
-
-# _ = [print(f'{k}: {v}') for k, v in mdl.describe_rvs().items()]
 
 # def print_rvs(rvs: list[pt.TensorVariable]) -> None:
 #     """Display rvs to Notebook using latex, post sub underscores

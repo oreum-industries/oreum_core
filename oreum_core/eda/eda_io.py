@@ -19,6 +19,7 @@ from pathlib import Path
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from matplotlib import figure
 
@@ -90,7 +91,7 @@ def output_data_dict(
 
     # flag if is index
     idx_names = list(df.index.names)
-    dfi = pd.DataFrame({'ft': idx_names, 'is_index': [True] * len(idx_names)})
+    dfi = pd.DataFrame({'ft': idx_names, 'is_index': np.ones(len(idx_names))})
 
     # get desc overview
     nrows = 3
@@ -101,7 +102,7 @@ def output_data_dict(
 
     # attach
     dfd = pd.merge(dfi, dfd, how='right', on='ft')
-    dfd['is_index'] = dfd['is_index'].fillna(False)
+    dfd['is_index'] = dfd['is_index'].fillna(0).astype(bool)
     dfd.set_index('ft', inplace=True)
 
     # set dtypes categorical

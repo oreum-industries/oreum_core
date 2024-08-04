@@ -161,10 +161,10 @@ def display_fw(df: pd.DataFrame, **kwargs) -> None:
         display(df)
 
 
-def display_ht(df: pd.DataFrame, **kwargs) -> str:
+def display_ht(df: pd.DataFrame, nrows=3, **kwargs) -> str:
     """Convenience fn: Display head and tail n rows via display_fw"""
 
-    nrows = kwargs.pop('nrows', 3) if len(df) >= 3 else len(df)
+    nrows = min(nrows, len(df))
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
     display_fw(dfd, **kwargs)
     return f'Shape: {df.shape}, Memsize {df.values.nbytes / 1e6:,.1f} MB'

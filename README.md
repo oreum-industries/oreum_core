@@ -32,7 +32,7 @@ Oreum Industries.
 + Optionally enables a generalist black-box ML workflow in R&D using a leading
   Gradient Boosted Trees stack incl. `catboost`, `xgboost`, `optuna`, `shap`
   (do `pip install oreum_core[tree]`)
-+ Also includes seevral utilities for text cleaning, sql scripting, file handling
++ Also includes several utilities for text cleaning, sql scripting, file handling
 
 
 This package **is**:
@@ -54,7 +54,7 @@ This package **is not**:
 + Project began on 2021-01-01
 + The `README.md` is MacOS and POSIX oriented
 + See `LICENCE.md` for licensing and copyright details
-+ See `CONTRIBUTORS.md` for list of contributors
++ See `pyproject.toml` for various pacakge details
 + This uses a logger named `'oreum_core'`, feel free to incorporate or ignore
 + Hosting:
   + Source code repo on [GitHub](https://github.com/oreum-industries/oreum_core)

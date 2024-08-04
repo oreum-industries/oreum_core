@@ -45,6 +45,7 @@ class DatatypeConverter:
                 fcat = [],
                 fstr = [],
                 fbool = [],
+                fbool_nan_to_false = [],
                 fdate = [],
                 fyear = [],
                 fint = [],
@@ -55,6 +56,7 @@ class DatatypeConverter:
             fcat=ftsd.get('fcat', []),
             fstr=ftsd.get('fstr', []),
             fbool=ftsd.get('fbool', []),
+            fbool_nan_to_false=ftsd.get('fbool_nan_to_false', []),
             fdate=ftsd.get('fdate', []),
             fyear=ftsd.get('fyear', []),
             fint=ftsd.get('fint', []),
@@ -92,16 +94,20 @@ class DatatypeConverter:
             else:
                 df[ft] = df[ft].astype('string')
 
-        for ft in self.ftsd['fbool']:
+        for ft in self.ftsd['fbool'] + self.ftsd['fbool_nan_to_false']:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
             if df.dtypes[ft] == object:
                 df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
                 df.loc[df[ft].isin(self.strnans), ft] = np.nan
                 df[ft] = df[ft].apply(lambda x: self.bool_dict.get(x, x))
 
-                if set(df[ft].unique()) != set([True, False, np.nan]):
-                    # avoid converting anything not yet properly mapped
+                if ft in self.ftsd['fbool_nan_to_false']:
+                    df.loc[df[ft].isnull(), ft] = False
+
+                if set(df[ft].unique()) != set([True, False]):
+                    # if ft not yet properly mapped, skip without converting
                     continue
+
             df[ft] = df[ft].convert_dtypes(convert_boolean=True)
 
         for ft in self.ftsd['fyear']:
@@ -174,12 +180,25 @@ class DatatypeConverter:
 
 
 class DatasetReshaper:
-    """Convenience functions to reshape whole datasets"""
+    """Convenience functions to reshape whole datasets
+
+    Use with a ftsd dict of form:
+    ftsd = dict(
+        fcat = [],
+        fstr = [],
+        fbool = [],
+        fbool_nan_to_false = [],
+        fdate = [],
+        fyear = [],
+        fint = [],
+        ffloat = [],
+        fverbatim = [],        # maintain in current dtype)
+    """
 
     def __init__(self):
         pass
 
-    def create_dfcmb(self, df: pd.DataFrame, fts: dict) -> pd.DataFrame:
+    def create_dfcmb(self, df: pd.DataFrame, ftsd: dict) -> pd.DataFrame:
         """Create a combination dataset `dfcmb` from inputted `df`.
 
         *Not* a big groupby (equiv to cartesian join) for factor values
@@ -207,7 +226,7 @@ class DatasetReshaper:
             (aka categoricals aka strings), or ints or floats. No dates.
         """
         dfcmb = pd.DataFrame(index=[0])
-        fts_factor = fts.get('fcat', []) + fts.get('fbool', [])
+        fts_factor = ftsd.get('fcat', []) + ftsd.get('fbool', [])
         for ft in fts_factor:
             colnames_pre = list(dfcmb.columns.values)
             s = pd.Series(np.unique(df[ft]), name=ft)
@@ -221,10 +240,10 @@ class DatasetReshaper:
             # TODO: force order for categorical
             # df['fpc_aais_ctgry'] = pd.Categorical(df['fpc_aais_ctgry'].values, categories=vals, ordered=True)
 
-        for ft in fts.get('fint'):
+        for ft in ftsd.get('fint', []):
             dfcmb[ft] = 1
 
-        for ft in fts.get('ffloat'):
+        for ft in ftsd.get('ffloat', []):
             dfcmb[ft] = 1.0
 
         _log.info(
@@ -238,7 +257,7 @@ class DatasetReshaper:
 
         return dfcmb
 
-    def _create_dfcmb_big(self, df: pd.DataFrame, fts: dict) -> pd.DataFrame:
+    def _create_dfcmb_big(self, df: pd.DataFrame, ftsd: dict) -> pd.DataFrame:
         """Create a combination dataset `dfcmb` from inputted `df`.
         Just a big groupby (equiv to cartesian join) for factor values
         and concats numerics. The shape and datatypes matter.
@@ -261,14 +280,14 @@ class DatasetReshaper:
             (aka categoricals aka strings), or ints or floats. No dates.
         """
         dfcmb = pd.DataFrame(index=[0])
-        fts_factor = fts.get('fcat', []) + fts.get('fbool', [])
+        fts_factor = ftsd.get('fcat', []) + ftsd.get('fbool', [])
         if len(fts_factor) > 0:
             dfcmb = df.groupby(fts_factor).size().reset_index().iloc[:, :-1]
 
-        for ft in fts.get('fint'):
+        for ft in ftsd.get('fint', []):
             dfcmb[ft] = 1
 
-        for ft in fts.get('ffloat'):
+        for ft in ftsd.get('ffloat', []):
             dfcmb[ft] = 1.0
 
         _log.info(
@@ -297,7 +316,7 @@ class Transformer:
         self.design_info = None
         self.col_idx_numerics = None
         self.rx_get_f = re.compile(r'(F\(([a-z0-9_:]+?)\))')
-        self.fts_fact_mapping = {}
+        self.factor_map = {}
         self.original_fml = None
         self.snl = SnakeyLowercaser()
 
@@ -326,7 +345,7 @@ class Transformer:
                 # https://stackoverflow.com/a/55304375/1165112
                 map_int_to_fact = dict(enumerate(df[ft_f[1]].cat.categories))
                 map_fact_to_int = {v: k for k, v in map_int_to_fact.items()}
-                self.fts_fact_mapping[ft_f[1]] = map_fact_to_int
+                self.factor_map[ft_f[1]] = map_fact_to_int
                 df[ft_f[1]] = df[ft_f[1]].map(map_fact_to_int).astype(int)
 
                 # replace F() in fml so patsy can work as normal w/ our new int type
@@ -343,7 +362,7 @@ class Transformer:
 
         # force patsy transform of an F() to int feature back to int not float
         fts_force_to_int = ['intercept']  # also force intercept
-        fts_force_to_int = list(self.fts_fact_mapping.keys())
+        fts_force_to_int = list(self.factor_map.keys())
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(int)
 
@@ -362,13 +381,13 @@ class Transformer:
         # # hacky way to get F():F() components
         # fts_ff = set(self.rx_get_ff.findall(self.original_fml))
 
-        # map any features noted in fts_fact_mapping
+        # map any features noted in factor_map
         try:
             df = df.copy()
-            for ft, map_fact_to_int in self.fts_fact_mapping.items():
+            for ft, map_fact_to_int in self.factor_map.items():
                 df[ft] = df[ft].map(map_fact_to_int).astype(int)
         except AttributeError:
-            # self.fts_fact_mapping was never created for this instance
+            # self.factor_map was never created for this instance
             # simply because no F() in fml
             pass
 
@@ -388,7 +407,7 @@ class Transformer:
         # force patsy transform of an index feature back to int!
         # there might be a better way to do this
         fts_force_to_int = []
-        fts_force_to_int = list(self.fts_fact_mapping.keys())
+        fts_force_to_int = list(self.factor_map.keys())
         if len(fts_force_to_int) > 0:
             df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(int)
 
@@ -419,7 +438,7 @@ class Standardizer:
         are numeric and would otherwise get standardardized"""
 
         self.design_info = tfmr.design_info
-        self.fts_exclude = fts_exclude + list(tfmr.fts_fact_mapping.keys())
+        self.fts_exclude = fts_exclude + list(tfmr.factor_map.keys())
 
         col_num_excl = [0] + [
             i
