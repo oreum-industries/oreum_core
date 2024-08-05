@@ -873,8 +873,9 @@ def plot_estimate(
     arr_overplot: np.array = None,
     **kwargs,
 ) -> figure.Figure:
-    """Plot distribution for estimates, either PPC or bootstrapped, no grouping
-    Optional overplot bootstrapped dfboot"""
+    """Plot distribution for univariate estimates, either PPC or bootstrapped
+    no grouping. Optionally overplot bootstrapped dfboot"""
+    # TODO: Extend this to multivariate grouping
     txtadd = kwargs.pop('txtadd', None)
     sty = _get_kws_styling()
     clr = color if color is not None else sns.color_palette()[0]
