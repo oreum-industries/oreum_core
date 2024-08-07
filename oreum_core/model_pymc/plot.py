@@ -53,7 +53,8 @@ class IDataGroupName(str, Enum):
 
 
 def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
-    """Create traceplot for passed mdl"""
+    """Create traceplot for passed mdl NOTE a useful kwarg is `kind` e.g.
+    'trace', the default is `kind = 'rank_vlines'`"""
     kind = kwargs.pop('kind', 'rank_vlines')
     txtadd = kwargs.pop('txtadd', None)
     _ = az.plot_trace(mdl.idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
