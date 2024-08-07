@@ -91,53 +91,71 @@ def facetplot_krushke(
     """
     # TODO unpack the compressed rvs from the idata
     txtadd = kwargs.pop('txtadd', None)
+    transform = kwargs.pop('transform', None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(
-        mdl.idata, group=group, ax=axs, var_names=rvs, ref_val=ref_vals, **kwargs
+        mdl.idata,
+        group=group,
+        ax=axs,
+        var_names=rvs,
+        ref_val=ref_vals,
+        transform=transform,
+        **kwargs,
     )
-    s = 's' if len(rvs) > 1 else ''
     _ = f.suptitle(
-        ' - '.join(filter(None, [f'Distribution plot{s}', mdl.name, group, txtadd]))
+        ' - '.join(filter(None, [f'Distribution of {rvs}', mdl.name, group, txtadd]))
     )
     _ = f.tight_layout()
     return f
 
 
 def forestplot_single(
-    data: xr.core.dataarray.DataArray,
+    mdl: BasePYMCModel,
+    rv_nm: list,
     group: IDataGroupName = IDataGroupName.posterior.value,
     **kwargs,
 ) -> figure.Figure:
     """Plot forestplot for a single RV (optionally with factor sublevels)"""
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
-    clr_offset = kwargs.pop('clr_offset', 0)
     dp = kwargs.pop('dp', 2)
-    plot_med = kwargs.pop('plot_med', True)
-    plot_combined = kwargs.pop('plot_combined', False)
+    plot_mn = kwargs.pop('plot_mn', True)
+    transform = kwargs.pop('transform', None)
     kws = dict(
-        colors=sns.color_palette('tab20c', n_colors=16).as_hex()[clr_offset:][0],
+        colors=sns.color_palette('tab20c', n_colors=16).as_hex()[
+            kwargs.pop('clr_offset', 0) :
+        ][0],
         ess=False,
-        combined=plot_combined,
+        combined=kwargs.pop('plot_combined', False),
     )
 
-    qs = np.quantile(data, q=[0.03, 0.25, 0.5, 0.75, 0.97])
+    # get overall stats
+    df = az.extract(mdl.idata, group=group, var_names=rv_nm).to_dataframe()
+    if transform is not None:
+        df = df.apply(transform)
+    mn = df[rv_nm].mean()
+    qs = df[rv_nm].quantile(q=[0.03, 0.97]).values
     desc = (
-        f'\nOverall: Median {qs[2]:.{dp}f}, $HDI_{{50}}$ = ['
-        + ', '.join([f'{qs[v]:.{dp}f}' for v in [1, 3]])
-        + '], $HDI_{94}$ = ['
-        + ', '.join([f'{qs[v]:.{dp}f}' for v in [0, 4]])
+        f'\nOverall: $Mean =$ {mn:.{dp}f}'
+        + ', $HDI_{94}$ = ['
+        + ', '.join([f'{qs[v]:.{dp}f}' for v in range(2)])
         + ']'
     )
 
-    f = plt.figure(figsize=(12, 2 + 0.15 * (np.prod(data.shape[2:]))))
+    f = plt.figure(figsize=(12, 2 + 0.18 * len(df.index.get_level_values(0).unique())))
     ax0 = f.add_subplot()
-    _ = az.plot_forest(data, ax=ax0, **kws)
-    if plot_med:
-        _ = ax0.axvline(qs[2], color='#ADD8E6', ls='--', lw=3, zorder=-1)
+    _ = az.plot_forest(
+        mdl.idata[group], var_names=rv_nm, **kws, transform=transform, ax=ax0
+    )
+    _ = ax0.set_title('')
+
+    if plot_mn:
+        _ = ax0.axvline(mn, color='#ADD8E6', ls='--', lw=3, zorder=-1)
     _ = f.suptitle(
-        ' - '.join(filter(None, ['Forestplot levels', mdlname, group, txtadd])) + desc
+        ' - '.join(
+            filter(None, [f'Forestplot levels of {rv_nm}', mdl.name, group, txtadd])
+        )
+        + desc
     )
     _ = f.tight_layout()
     return f
