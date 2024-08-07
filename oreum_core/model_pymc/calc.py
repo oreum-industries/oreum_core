@@ -24,7 +24,8 @@ import pytensor
 import pytensor.gradient as tg
 import pytensor.tensor as pt
 from arviz import InferenceData, dict_to_dataset
-from fastprogress import progress_bar
+
+# from fastprogress import progress_bar
 from pymc.backends.arviz import _DefaultTrace, coords_and_dims_for_inferencedata
 from pymc.model import Model, modelcontext
 from pymc.pytensorf import PointFunc
@@ -459,6 +460,10 @@ def compute_log_likelihood_for_potential(
     orig: https://github.com/pymc-devs/pymc/blob/92278278d4a8b78f17ed0f101eb29d0d9982eb45/pymc/stats/log_likelihood.py#L29C1-L128C31
     discussion: https://discourse.pymc.io/t/using-a-random-variable-as-observed/7184/10
 
+    IMPORTANT NOTE 2024-08-04 in the intervening time, the source function that
+    this copies / modifies has changed hugely - it's going to cause substantial
+    pain to update :S
+
     ---
 
     Compute elemwise log_likelihood of model given InferenceData with posterior group
@@ -529,8 +534,8 @@ def compute_log_likelihood_for_potential(
     n_pts = len(posterior_pts)
     loglike_dict = _DefaultTrace(n_pts)
     indices = range(n_pts)
-    if progressbar:
-        indices = progress_bar(indices, total=n_pts, display=progressbar)
+    # if progressbar:
+    #     indices = progress_bar(indices, total=n_pts, display=progressbar)
 
     for idx in indices:
         loglikes_pts = elemwise_loglike_fn(posterior_pts[idx])

@@ -15,7 +15,6 @@
 # eda.plot.py
 """EDA Plotting"""
 import logging
-from textwrap import wrap
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -65,6 +64,13 @@ __all__ = [
 _log = logging.getLogger(__name__)
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
+
+sns.set_theme(
+    style='darkgrid',
+    palette='muted',
+    context='notebook',
+    rc={'figure.dpi': 72, 'savefig.dpi': 144, 'figure.figsize': (12, 4)},
+)
 
 
 def _get_kws_styling() -> dict:
@@ -867,8 +873,9 @@ def plot_estimate(
     arr_overplot: np.array = None,
     **kwargs,
 ) -> figure.Figure:
-    """Plot distribution for estimates, either PPC or bootstrapped, no grouping
-    Optional overplot bootstrapped dfboot"""
+    """Plot distribution for univariate estimates, either PPC or bootstrapped
+    no grouping. Optionally overplot bootstrapped dfboot"""
+    # TODO: Extend this to multivariate grouping
     txtadd = kwargs.pop('txtadd', None)
     sty = _get_kws_styling()
     clr = color if color is not None else sns.color_palette()[0]
