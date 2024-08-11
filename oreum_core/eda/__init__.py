@@ -27,7 +27,7 @@ from .calc import (
     tril_nan,
 )
 from .describe import describe, display_fw, display_ht, get_fts_by_dtype
-from .eda_io import FigureIO, display_image_file, output_data_dict
+from .eda_io import FigureIO, output_data_dict
 from .plot import (  # plot_umap,; plot_r2_range,; plot_r2_range_pair,
     plot_accuracy,
     plot_binary_performance,

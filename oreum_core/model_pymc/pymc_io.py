@@ -18,6 +18,7 @@ import logging
 from pathlib import Path
 
 import arviz as az
+import graphviz
 from pymc.model_graph import model_to_graphviz
 
 from ..utils.file_io import BaseFileIO
@@ -56,15 +57,24 @@ class PYMCIO(BaseFileIO):
         return fqn
 
     def write_graph(
-        self, mdl: BasePYMCModel, fn: str = '', fmt: str = 'png', **kwargs
-    ) -> Path:
+        self,
+        mdl: BasePYMCModel,
+        fn: str = '',
+        fmt: str = 'png',
+        write: bool = True,
+        **kwargs,
+    ) -> Path | graphviz.graphs.Digraph:
         """Accept a BasePYMCModel object mdl, get the graphviz representation
-        Write to file and return the fqn to allow use within eda.display_image_file()
+        Write to file and return the fqn to allow use within
+        eda_io.FigureIO.read()
+        Optionally set `write = False` and receive the graphviz directly
         """
         t = kwargs.pop('txtadd', None)
         fn = f"{'_'.join(filter(None, [mdl.name, t]))}.{fmt}" if fn == '' else fn
         fqn = self.get_path_write(fn)
         gv = model_to_graphviz(mdl.model, formatting='plain')
+        if write == False:
+            return gv
         if fmt == 'png':
             gv.attr(dpi='300')
         elif fmt == 'svg':
