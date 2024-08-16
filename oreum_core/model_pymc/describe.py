@@ -32,7 +32,8 @@ __all__ = [
     'extract_yobs_yhat',
     'describe_dist',
     'get_summary',
-]  # , 'print_rvs']
+    'print_rvs',
+]
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)

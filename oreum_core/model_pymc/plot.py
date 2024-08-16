@@ -141,8 +141,10 @@ def forestplot_single(
         + ', '.join([f'{qs[v]:.{dp}f}' for v in range(2)])
         + ']'
     )
+    nms = [nm for nm in df.index.names if nm not in ['chain', 'draw']]
+    n = sum([len(df.index.get_level_values(nm).unique()) for nm in nms])
 
-    f = plt.figure(figsize=(12, 2 + 0.18 * len(df.index.get_level_values(0).unique())))
+    f = plt.figure(figsize=(12, 2 + 0.18 * n))
     ax0 = f.add_subplot()
     _ = az.plot_forest(
         mdl.idata[group], var_names=rv_nm, **kws, transform=transform, ax=ax0

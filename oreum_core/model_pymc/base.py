@@ -63,10 +63,10 @@ class BasePYMCModel:
             chains=4,
             cores=4,
             target_accept=0.8,
-            idata_kwargs={
-                "log_likelihood": True,  # usually useful
-                ## TODO only in 5.16 "log_prior": True,  # possibly useful?
-            },
+            idata_kwargs=dict(
+                log_likelihood=True,  # usually useful
+                log_prior=True,  # possibly useful?
+            ),
             progressbar=True,
         )
         self.rvs_for_posterior_plots = []
@@ -263,7 +263,8 @@ class BasePYMCModel:
 
     def debug(self):
         """Convenience to run debug on logp and random, and
-        assert no MeasurableVariable nodes in the graph"""
+        assert no MeasurableVariable nodes in the graph
+        TODO catch these outputs in the log"""
         if self.model is not None:
             assert_no_rvs(self.model.logp())
             _ = self.model.debug(fn='logp', verbose=True)
