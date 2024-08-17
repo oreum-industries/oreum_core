@@ -275,6 +275,7 @@ def plot_ppc(
     data_pairs: dict = None,
     flatten: list = None,
     observed_rug: bool = True,
+    logx: bool = False,
     **kwargs,
 ) -> figure.Figure:
     """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF, does not
@@ -302,6 +303,8 @@ def plot_ppc(
         random_seed=42,
         **kwargs,
     )
+    if logx:
+        _ = axs.set_xscale('log')
     t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'
     _ = f.suptitle(' - '.join(filter(None, [t, mdl.name, txtadd])))
     _ = f.tight_layout()
