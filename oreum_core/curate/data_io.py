@@ -102,7 +102,7 @@ class PandasExcelIO(BaseFileIO):
 
     def read(self, fn: str, *args, **kwargs) -> pd.DataFrame:
         """Read excel fn from rootdir, pass args kwargs to pd.read_excel"""
-        fn = Path(fn).with_suffix('.xslx')
+        fn = Path(fn).with_suffix('.xlsx')
         fqn = self.get_path_read(fn)
         _log.info(f'Read from {str(fqn.resolve())}')
         return pd.read_excel(str(fqn), *args, **kwargs)
