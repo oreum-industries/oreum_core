@@ -144,7 +144,7 @@ def forestplot_single(
     nms = [nm for nm in df.index.names if nm not in ['chain', 'draw']]
     n = sum([len(df.index.get_level_values(nm).unique()) for nm in nms])
 
-    f = plt.figure(figsize=(12, 2 + 0.18 * n))
+    f = plt.figure(figsize=(12, 2 + 0.2 * n))
     ax0 = f.add_subplot()
     _ = az.plot_forest(
         mdl.idata[group], var_names=rv_nm, **kws, transform=transform, ax=ax0
@@ -291,7 +291,12 @@ def plot_ppc(
         n = 1
         for k in data_pairs.keys():
             n *= _idata['observed_data'][k].shape[-1]
-    f, axs = plt.subplots(n, 1, figsize=(12, 4 * n))
+    # wild hack to get the size of observed
+    i = list(dict(_idata.observed_data.sizes).values())[0]
+    num_pp_samples = None if i < 500 else 200
+
+    f, axs = plt.subplots(n, 1, figsize=(12, 4 * n), sharex=True)
+    # loc="best"
     _ = az.plot_ppc(
         _idata,
         group=group,
@@ -301,8 +306,15 @@ def plot_ppc(
         flatten=flatten,
         observed_rug=observed_rug,
         random_seed=42,
+        num_pp_samples=num_pp_samples,
+        legend=False,
         **kwargs,
     )
+    # fix legend to upper left not, "best", saves time plotting
+    if n > 1:
+        _ = [ax.legend(fontsize=8, loc='upper left') for ax in axs]
+    else:
+        _ = axs.legend(fontsize=8, loc='upper left')
     if logx:
         _ = axs.set_xscale('log')
     t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'

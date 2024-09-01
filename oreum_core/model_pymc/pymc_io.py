@@ -42,7 +42,7 @@ class PYMCIO(BaseFileIO):
     def read_idata(self, mdl: BasePYMCModel = None, fn: str = '') -> az.InferenceData:
         """Read arviz.InferenceData object from fn e.g. `idata_mdlname`"""
         if mdl is not None:
-            fn = f'idata_{mdl.name}' if fn == '' else fn
+            fn = f'idata_{mdl.name}_{mdl.version}' if fn == '' else fn
         fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         idata = az.from_netcdf(str(fqn.resolve()))
         _log.info(f'Read model idata from {str(fqn.resolve())}')
@@ -50,7 +50,7 @@ class PYMCIO(BaseFileIO):
 
     def write_idata(self, mdl: BasePYMCModel, fn: str = '') -> Path:
         """Accept BasePYMCModel object and fn e.g. `idata_mdlname`, write to file"""
-        fn = f'idata_{mdl.name}' if fn == '' else fn
+        fn = f'idata_{mdl.name}_{mdl.version}' if fn == '' else fn
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         mdl.idata.to_netcdf(str(fqn.resolve()))
         _log.info(f'Written to {str(fqn.resolve())}')
@@ -70,7 +70,11 @@ class PYMCIO(BaseFileIO):
         Optionally set `write = False` and receive the graphviz directly
         """
         t = kwargs.pop('txtadd', None)
-        fn = f"{'_'.join(filter(None, [mdl.name, t]))}.{fmt}" if fn == '' else fn
+        fn = (
+            f"{'_'.join(filter(None, [mdl.name, mdl.version, t]))}.{fmt}"
+            if fn == ''
+            else fn
+        )
         fqn = self.get_path_write(fn)
         gv = model_to_graphviz(mdl.model, formatting='plain')
         if write == False:
