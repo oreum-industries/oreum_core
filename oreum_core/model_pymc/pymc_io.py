@@ -19,6 +19,7 @@ from pathlib import Path
 
 import arviz as az
 import graphviz
+import regex as re
 from pymc.model_graph import model_to_graphviz
 
 from ..utils.file_io import BaseFileIO
@@ -42,7 +43,8 @@ class PYMCIO(BaseFileIO):
     def read_idata(self, mdl: BasePYMCModel = None, fn: str = '') -> az.InferenceData:
         """Read arviz.InferenceData object from fn e.g. `idata_mdlname`"""
         if mdl is not None:
-            fn = f'idata_{mdl.name}_{mdl.version}' if fn == '' else fn
+            v = re.sub('\.', '', mdl.version)
+            fn = f'idata_{mdl.name}_v{v}' if fn == '' else fn
         fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         idata = az.from_netcdf(str(fqn.resolve()))
         _log.info(f'Read model idata from {str(fqn.resolve())}')
@@ -50,7 +52,8 @@ class PYMCIO(BaseFileIO):
 
     def write_idata(self, mdl: BasePYMCModel, fn: str = '') -> Path:
         """Accept BasePYMCModel object and fn e.g. `idata_mdlname`, write to file"""
-        fn = f'idata_{mdl.name}_{mdl.version}' if fn == '' else fn
+        v = re.sub('\.', '', mdl.version)
+        fn = f'idata_{mdl.name}_v{v}' if fn == '' else fn
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         mdl.idata.to_netcdf(str(fqn.resolve()))
         _log.info(f'Written to {str(fqn.resolve())}')
@@ -70,8 +73,9 @@ class PYMCIO(BaseFileIO):
         Optionally set `write = False` and receive the graphviz directly
         """
         t = kwargs.pop('txtadd', None)
+        v = re.sub('\.', '', mdl.version)
         fn = (
-            f"{'_'.join(filter(None, [mdl.name, mdl.version, t]))}.{fmt}"
+            f"{'_'.join(filter(None, [mdl.name, f'v{v}', t]))}.{fmt}"
             if fn == ''
             else fn
         )
