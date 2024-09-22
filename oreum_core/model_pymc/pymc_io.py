@@ -19,11 +19,10 @@ from pathlib import Path
 
 import arviz as az
 import graphviz
-import regex as re
 from pymc.model_graph import model_to_graphviz
 
 from ..utils.file_io import BaseFileIO
-from . import BasePYMCModel
+from . import BasePYMCModel, get_mdlvt_specific_nm
 
 __all__ = ['PYMCIO']
 
@@ -40,20 +39,22 @@ class PYMCIO(BaseFileIO):
         """Inherit super"""
         super().__init__(*args, **kwargs)
 
-    def read_idata(self, mdl: BasePYMCModel = None, fn: str = '') -> az.InferenceData:
-        """Read arviz.InferenceData object from fn e.g. `idata_mdlname`"""
+    def read_idata(
+        self, mdl: BasePYMCModel = None, fn: str = '', **kwargs
+    ) -> az.InferenceData:
+        """Read InferenceData using mdl.name + txtadd, or from fn"""
         if mdl is not None:
-            v = re.sub('\.', '', mdl.version)
-            fn = f'idata_{mdl.name}_v{v}' if fn == '' else fn
+            fn = f"idata_{get_mdlvt_specific_nm(mdl, kwargs.pop('txtadd', None))}"
         fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         idata = az.from_netcdf(str(fqn.resolve()))
         _log.info(f'Read model idata from {str(fqn.resolve())}')
         return idata
 
-    def write_idata(self, mdl: BasePYMCModel, fn: str = '') -> Path:
-        """Accept BasePYMCModel object and fn e.g. `idata_mdlname`, write to file"""
-        v = re.sub('\.', '', mdl.version)
-        fn = f'idata_{mdl.name}_v{v}' if fn == '' else fn
+    def write_idata(self, mdl: BasePYMCModel, fn: str = '', **kwargs) -> Path:
+        """Accept BasePYMCModel object write to InferenceData using
+        mdl.name + txtaddand of fn"""
+        if fn == '':
+            fn = f"idata_{get_mdlvt_specific_nm(mdl, kwargs.pop('txtadd', None))}"
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         mdl.idata.to_netcdf(str(fqn.resolve()))
         _log.info(f'Written to {str(fqn.resolve())}')
@@ -72,14 +73,9 @@ class PYMCIO(BaseFileIO):
         eda_io.FigureIO.read()
         Optionally set `write = False` and receive the graphviz directly
         """
-        t = kwargs.pop('txtadd', None)
-        v = re.sub('\.', '', mdl.version)
-        fn = (
-            f"{'_'.join(filter(None, [mdl.name, f'v{v}', t]))}.{fmt}"
-            if fn == ''
-            else fn
-        )
-        fqn = self.get_path_write(fn)
+        if fn == '':
+            fn = f"graph_{get_mdlvt_specific_nm(mdl, kwargs.pop('txtadd', None))}"
+        fqn = self.get_path_write(f'{fn}.{fmt}')
         gv = model_to_graphviz(mdl.model, formatting='plain')
         if write == False:
             return gv

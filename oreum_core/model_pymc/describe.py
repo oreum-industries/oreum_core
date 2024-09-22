@@ -23,16 +23,13 @@ import patsy as pat
 
 from ..model_pymc import BasePYMCModel
 
-# import pytensor.tensor as pt
-# from IPython.display import Markdown, display
-
-
 __all__ = [
     'model_desc',
     'extract_yobs_yhat',
     'describe_dist',
     'get_summary',
     'print_rvs',
+    'get_mdlvt_specific_nm',
 ]
 
 RSD = 42
@@ -104,6 +101,13 @@ def print_rvs(mdl: BasePYMCModel) -> list[str]:
             for rv in rvs:
                 r.append(rv.str_repr(formatting='string', include_params=True))
     return r
+
+
+def get_mdlvt_specific_nm(mdl: BasePYMCModel, txtadd: str = None) -> str:
+    """Convenience to get full specific name of model + version + txtadd
+    to be used wherebver possible for writing filenames"""
+    v = re.sub('\.', '', mdl.version)
+    return f"{'_'.join(filter(None, [mdl.name, f'v{v}', txtadd]))}"
 
 
 # def print_rvs(rvs: list[pt.TensorVariable]) -> None:
