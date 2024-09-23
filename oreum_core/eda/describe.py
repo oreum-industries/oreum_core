@@ -36,6 +36,7 @@ def describe(
     limit: int = 50,  # MB
     get_mode: bool = False,
     get_counts: bool = True,
+    get_cr94: bool = False,
     reset_index: bool = True,
     return_df: bool = False,
     **kwargs,
@@ -68,7 +69,12 @@ def describe(
         df = df.reset_index()
 
     # start with pandas describe, add on dtypes
-    dfdesc = df.describe(include='all').T
+    quantiles = [0.25, 0.5, 0.75]  # the default
+    percentile_names = ['25%', '50%', '75%']
+    if get_cr94:
+        quantiles = [0.03] + quantiles + [0.97]
+        percentile_names = ['3%'] + percentile_names + ['97%']
+    dfdesc = df.describe(include='all', percentiles=quantiles).T
 
     dfout = pd.concat((dfdesc, df.dtypes), axis=1, join='outer', sort=False)
     dfout = dfout.loc[df.columns.values]
@@ -100,23 +106,23 @@ def describe(
             dfout.loc[ft, 'min'] = df[ft].value_counts().index.min()
             dfout.loc[ft, 'max'] = df[ft].value_counts().index.max()
 
-    fts_out_all = [
-        'dtype',
-        'count_null',
-        'count_inf',
-        'count_zero',
-        'count_unique',
-        'top',
-        'freq',
-        'sum',
-        'mean',
-        'std',
-        'min',
-        '25%',
-        '50%',
-        '75%',
-        'max',
-    ]
+    fts_out_all = (
+        [
+            'dtype',
+            'count_null',
+            'count_inf',
+            'count_zero',
+            'count_unique',
+            'top',
+            'freq',
+            'sum',
+            'mean',
+            'std',
+            'min',
+        ]
+        + percentile_names
+        + ['max']
+    )
     fts_out = [f for f in fts_out_all if f in dfout.columns.values]
 
     # add mode and mode count WARNING takes forever for large arrays (>10k row)

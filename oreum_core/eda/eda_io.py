@@ -21,15 +21,23 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from matplotlib import figure
 
 from ..curate.data_io import PandasExcelIO
 from ..utils.file_io import BaseFileIO
 from .describe import describe, get_fts_by_dtype
 
-__all__ = ['FigureIO', 'display_image_file', 'output_data_dict']
+__all__ = ['FigureIO', 'output_data_dict']
 
 _log = logging.getLogger(__name__)
+
+sns.set_theme(
+    style='darkgrid',
+    palette='muted',
+    context='notebook',
+    rc={'figure.dpi': 72, 'savefig.dpi': 144, 'figure.figsize': (12, 4)},
+)
 
 
 class FigureIO(BaseFileIO):
@@ -47,41 +55,48 @@ class FigureIO(BaseFileIO):
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn
 
+    def read(
+        self,
+        fqn: Path = None,
+        fn: str = None,
+        extension: str = '.png',
+        title: str = None,
+        figsize: tuple = (12, 4),
+    ) -> figure.Figure:
+        """Hacky way to display pre-created image file in a Notebook such that
+        nbconvert can see it and render to PDF
+        If don't supply fqn, then this will build fn according to get_path_read
+        Render according to usual rcParams (set at module-level)
+        NOTE:
+        All the alternatives are bad
+            1. This one is entirely missed by nbconvert at render to PDF
+            # <img src="img.jpg" style="float:center; width:900px" />
 
-def display_image_file(
-    fqn: str, title: str = None, figsize: tuple = (12, 6)
-) -> figure.Figure:
-    """Hacky way to display pre-created image file in a Notebook
-    such that nbconvert can see it and render to PDF
-    Force to max width 16 inches, for fullwidth render in live Notebook and PDF
-
-    NOTE:
-    Alternatives are bad
-        1. This one is entirely missed by nbconvert at render to PDF
-        # <img src="img.jpg" style="float:center; width:900px" />
-
-        2. This one causes following markdown to render monospace in PDF
-        # from IPython.display import Image
-        # Image("./assets/img/oreum_eloss_blueprint3.jpg", retina=True)
-    """
-    img = mpimg.imread(fqn)
-    f, axs = plt.subplots(1, 1, figsize=figsize)
-    _ = axs.imshow(img)
-    ax = plt.gca()
-    _ = ax.grid(False)
-    _ = ax.set_frame_on(False)
-    _ = plt.tick_params(
-        top=False,
-        bottom=False,
-        left=False,
-        right=False,
-        labelleft=False,
-        labelbottom=False,
-    )
-    if title is not None:
-        _ = f.suptitle(f'{title}', y=1.0)
-    _ = f.tight_layout()
-    return f
+            2. This one causes following markdown to render monospace in PDF
+            # from IPython.display import Image
+            # Image("./assets/img/oreum_eloss_blueprint3.jpg", retina=True)
+        """
+        if fn is not None:
+            fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix(extension))
+        img = mpimg.imread(fqn)
+        f, axs = plt.subplots(1, 1, figsize=figsize)
+        _ = axs.imshow(img)
+        ax = plt.gca()
+        _ = ax.grid(False)
+        _ = ax.set_frame_on(False)
+        _ = plt.tick_params(
+            top=False,
+            bottom=False,
+            left=False,
+            right=False,
+            labelleft=False,
+            labelbottom=False,
+        )
+        if title is not None:
+            _ = f.suptitle(f'{title}', fontsize=12, y=1.0)
+        _ = f.tight_layout()
+        _log.info(f'Read image from {str(fqn.resolve())}')
+        return f
 
 
 def output_data_dict(

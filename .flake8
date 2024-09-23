@@ -1,5 +1,5 @@
 [flake8]
-ignore = E203, E266, W291, W293, F401, F403, E501, W503, W605, C901
+ignore = E203, E266, W291, W293, F401, F403, E501, W503, W605, C901, E712
 max-line-length = 88
 max-doc-length = 144
 max-complexity = 18

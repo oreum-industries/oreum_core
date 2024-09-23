@@ -14,7 +14,13 @@
 
 # curate/
 """Various classes & functions for data curation"""
-from .data_io import PandasCSVIO, PandasParquetIO, SimpleStringIO, copy_csv2md
+from .data_io import (
+    PandasCSVIO,
+    PandasExcelIO,
+    PandasParquetIO,
+    SimpleStringIO,
+    copy_csv2md,
+)
 from .data_transform import (
     DatasetReshaper,
     DatatypeConverter,

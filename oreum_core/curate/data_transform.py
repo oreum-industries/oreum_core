@@ -228,6 +228,7 @@ class DatasetReshaper:
         dfcmb = pd.DataFrame(index=[0])
         fts_factor = ftsd.get('fcat', []) + ftsd.get('fbool', [])
         for ft in fts_factor:
+            ft = ft[2:-1] if ft[:2] == 'F(' else ft
             colnames_pre = list(dfcmb.columns.values)
             s = pd.Series(np.unique(df[ft]), name=ft)
             dfcmb = pd.concat([dfcmb, s], axis=1, join='outer', ignore_index=True)

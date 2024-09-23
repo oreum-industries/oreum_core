@@ -39,11 +39,11 @@ __all__ = [
     'plot_lkjcc_corr',
 ]
 
-sns.set(
+sns.set_theme(
     style='darkgrid',
     palette='muted',
     context='notebook',
-    rc={'savefig.dpi': 300, 'figure.figsize': (12, 6)},
+    rc={'figure.dpi': 72, 'savefig.dpi': 144, 'figure.figsize': (12, 4)},
 )
 
 
@@ -53,7 +53,8 @@ class IDataGroupName(str, Enum):
 
 
 def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
-    """Create traceplot for passed mdl"""
+    """Create traceplot for passed mdl NOTE a useful kwarg is `kind` e.g.
+    'trace', the default is `kind = 'rank_vlines'`"""
     kind = kwargs.pop('kind', 'rank_vlines')
     txtadd = kwargs.pop('txtadd', None)
     _ = az.plot_trace(mdl.idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
@@ -90,53 +91,73 @@ def facetplot_krushke(
     """
     # TODO unpack the compressed rvs from the idata
     txtadd = kwargs.pop('txtadd', None)
+    transform = kwargs.pop('transform', None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
     _ = az.plot_posterior(
-        mdl.idata, group=group, ax=axs, var_names=rvs, ref_val=ref_vals, **kwargs
+        mdl.idata,
+        group=group,
+        ax=axs,
+        var_names=rvs,
+        ref_val=ref_vals,
+        transform=transform,
+        **kwargs,
     )
-    s = 's' if len(rvs) > 1 else ''
     _ = f.suptitle(
-        ' - '.join(filter(None, [f'Distribution plot{s}', mdl.name, group, txtadd]))
+        ' - '.join(filter(None, [f'Distribution of {rvs}', mdl.name, group, txtadd]))
     )
     _ = f.tight_layout()
     return f
 
 
 def forestplot_single(
-    data: xr.core.dataarray.DataArray,
+    mdl: BasePYMCModel,
+    rv_nm: list,
     group: IDataGroupName = IDataGroupName.posterior.value,
     **kwargs,
 ) -> figure.Figure:
     """Plot forestplot for a single RV (optionally with factor sublevels)"""
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
-    clr_offset = kwargs.pop('clr_offset', 0)
     dp = kwargs.pop('dp', 2)
-    plot_med = kwargs.pop('plot_med', True)
-    plot_combined = kwargs.pop('plot_combined', False)
+    plot_mn = kwargs.pop('plot_mn', True)
+    transform = kwargs.pop('transform', None)
     kws = dict(
-        colors=sns.color_palette('tab20c', n_colors=16).as_hex()[clr_offset:][0],
+        colors=sns.color_palette('tab20c', n_colors=16).as_hex()[
+            kwargs.pop('clr_offset', 0) :
+        ][0],
         ess=False,
-        combined=plot_combined,
+        combined=kwargs.pop('plot_combined', False),
     )
 
-    qs = np.quantile(data, q=[0.03, 0.25, 0.5, 0.75, 0.97])
+    # get overall stats
+    df = az.extract(mdl.idata, group=group, var_names=rv_nm).to_dataframe()
+    if transform is not None:
+        df = df.apply(transform)
+    mn = df[rv_nm].mean()
+    qs = df[rv_nm].quantile(q=[0.03, 0.97]).values
     desc = (
-        f'\nOverall: Median {qs[2]:.{dp}f}, $HDI_{{50}}$ = ['
-        + ', '.join([f'{qs[v]:.{dp}f}' for v in [1, 3]])
-        + '], $HDI_{94}$ = ['
-        + ', '.join([f'{qs[v]:.{dp}f}' for v in [0, 4]])
+        f'\nOverall: $Mean =$ {mn:.{dp}f}'
+        + ', $HDI_{94}$ = ['
+        + ', '.join([f'{qs[v]:.{dp}f}' for v in range(2)])
         + ']'
     )
+    nms = [nm for nm in df.index.names if nm not in ['chain', 'draw']]
+    n = sum([len(df.index.get_level_values(nm).unique()) for nm in nms])
 
-    f = plt.figure(figsize=(12, 2 + 0.15 * (np.prod(data.shape[2:]))))
+    f = plt.figure(figsize=(12, 2 + 0.2 * n))
     ax0 = f.add_subplot()
-    _ = az.plot_forest(data, ax=ax0, **kws)
-    if plot_med:
-        _ = ax0.axvline(qs[2], color='#ADD8E6', ls='--', lw=3, zorder=-1)
+    _ = az.plot_forest(
+        mdl.idata[group], var_names=rv_nm, **kws, transform=transform, ax=ax0
+    )
+    _ = ax0.set_title('')
+
+    if plot_mn:
+        _ = ax0.axvline(mn, color='#ADD8E6', ls='--', lw=3, zorder=-1)
     _ = f.suptitle(
-        ' - '.join(filter(None, ['Forestplot levels', mdlname, group, txtadd])) + desc
+        ' - '.join(
+            filter(None, [f'Forestplot levels of {rv_nm}', mdl.name, group, txtadd])
+        )
+        + desc
     )
     _ = f.tight_layout()
     return f
@@ -254,6 +275,7 @@ def plot_ppc(
     data_pairs: dict = None,
     flatten: list = None,
     observed_rug: bool = True,
+    logx: bool = False,
     **kwargs,
 ) -> figure.Figure:
     """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF, does not
@@ -269,7 +291,12 @@ def plot_ppc(
         n = 1
         for k in data_pairs.keys():
             n *= _idata['observed_data'][k].shape[-1]
-    f, axs = plt.subplots(n, 1, figsize=(12, 4 * n))
+    # wild hack to get the size of observed
+    i = list(dict(_idata.observed_data.sizes).values())[0]
+    num_pp_samples = None if i < 500 else 200
+
+    f, axs = plt.subplots(n, 1, figsize=(12, 4 * n), sharex=True)
+    # loc="best"
     _ = az.plot_ppc(
         _idata,
         group=group,
@@ -279,8 +306,17 @@ def plot_ppc(
         flatten=flatten,
         observed_rug=observed_rug,
         random_seed=42,
+        num_pp_samples=num_pp_samples,
+        legend=False,
         **kwargs,
     )
+    # fix legend to upper left not, "best", saves time plotting
+    if n > 1:
+        _ = [ax.legend(fontsize=8, loc='upper left') for ax in axs]
+    else:
+        _ = axs.legend(fontsize=8, loc='upper left')
+    if logx:
+        _ = axs.set_xscale('log')
     t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'
     _ = f.suptitle(' - '.join(filter(None, [t, mdl.name, txtadd])))
     _ = f.tight_layout()
