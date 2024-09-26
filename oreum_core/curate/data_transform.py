@@ -87,7 +87,7 @@ class DatatypeConverter:
             idx = df[ft].notnull()
             vals = df.loc[idx, ft].astype(str, errors='raise').apply(snl.clean)
             df.drop(ft, axis=1, inplace=True)
-            df.loc[~idx, ft] = 'nan'
+            df.loc[~idx, ft] = np.nan
             df.loc[idx, ft] = vals
             if ft in self.ftsd['fcat']:
                 df[ft] = pd.Categorical(df[ft].values, ordered=True)

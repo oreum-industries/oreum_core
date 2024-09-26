@@ -116,7 +116,12 @@ def _get_kws_styling() -> dict:
 
 
 def plot_cat_ct(
-    df: pd.DataFrame, fts: list, topn: int = 10, vsize: float = 2, **kwargs
+    df: pd.DataFrame,
+    fts: list,
+    topn: int = 10,
+    vsize: float = 2,
+    cat_order=True,
+    **kwargs,
 ) -> figure.Figure:
     """Conv fn: plot group counts for cats"""
 
@@ -129,7 +134,10 @@ def plot_cat_ct(
     f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, 0.5 + vert * vsize))
 
     for i, ft in enumerate(fts):
+
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
+        if (df[ft].dtype == 'category') & cat_order:
+            counts_all = df.groupby(ft).size()
 
         if df[ft].dtype == bool:
             counts_all = counts_all.sort_index()  # sort so true plots on top
