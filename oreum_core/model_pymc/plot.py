@@ -60,9 +60,7 @@ def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
     _ = az.plot_trace(mdl.idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
     f = plt.gcf()
     _ = f.suptitle(
-        ' - '.join(
-            filter(None, ['Traceplot', mdl.name, 'posterior', ', '.join(rvs), txtadd])
-        )
+        ' - '.join(filter(None, [f'Posterior traces of {rvs}', txtadd])) + f'\n{mdl.id}'
     )
     _ = f.tight_layout()
     return f
@@ -104,7 +102,8 @@ def facetplot_krushke(
         **kwargs,
     )
     _ = f.suptitle(
-        ' - '.join(filter(None, [f'Distribution of {rvs}', mdl.name, group, txtadd]))
+        ' - '.join(filter(None, [f'Distribution of {rvs}', group, txtadd]))
+        + f'\n{mdl.id}'
     )
     _ = f.tight_layout()
     return f
@@ -136,7 +135,7 @@ def forestplot_single(
     mn = df[rv_nm].mean()
     qs = df[rv_nm].quantile(q=[0.03, 0.97]).values
     desc = (
-        f'\nOverall: $Mean =$ {mn:.{dp}f}'
+        f'Overall: $Mean =$ {mn:.{dp}f}'
         + ', $HDI_{94}$ = ['
         + ', '.join([f'{qs[v]:.{dp}f}' for v in range(2)])
         + ']'
@@ -154,16 +153,16 @@ def forestplot_single(
     if plot_mn:
         _ = ax0.axvline(mn, color='#ADD8E6', ls='--', lw=3, zorder=-1)
     _ = f.suptitle(
-        ' - '.join(
-            filter(None, [f'Forestplot levels of {rv_nm}', mdl.name, group, txtadd])
-        )
-        + desc
+        ' - '.join(filter(None, [f'Forestplot of {rv_nm}', group, txtadd]))
+        + f'\n{mdl.id}'
+        + f'\n{desc}'
     )
     _ = f.tight_layout()
     return f
 
 
 def forestplot_multiple(
+    mdl: BasePYMCModel,
     datasets: dict[str, xr.core.dataarray.DataArray],
     group: IDataGroupName = IDataGroupName.posterior.value,
     **kwargs,
@@ -172,7 +171,6 @@ def forestplot_multiple(
     Useful for a linear model of RVs, where each RV can have sublevel factors
     TODO This makes a few too many assumptions, will improve in future
     """
-    mdlname = kwargs.pop('mdlname', None)
     txtadd = kwargs.pop('txtadd', None)
     clr_offset = kwargs.pop('clr_offset', 0)
     dp = kwargs.pop('dp', 1)
@@ -210,7 +208,8 @@ def forestplot_multiple(
                 _ = ax.axvline(1, color='#ADD8E6', ls='--', lw=3, zorder=-1)
 
     _ = f.suptitle(
-        ' - '.join(filter(None, ['Forestplot levels', mdlname, group, txtadd]))
+        ' - '.join(filter(None, ['Forestplot levels', group, txtadd]))
+        + f'\n{mdl.id}'
         + f'\n{desc}'
     )
     _ = f.tight_layout()
@@ -315,10 +314,12 @@ def plot_ppc(
         _ = [ax.legend(fontsize=8, loc='upper left') for ax in axs]
     else:
         _ = axs.legend(fontsize=8, loc='upper left')
+    ls = None
     if logx:
         _ = axs.set_xscale('log')
+        ls = '(logscale)'
     t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'
-    _ = f.suptitle(' - '.join(filter(None, [t, mdl.name, txtadd])))
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd, ls])) + f'\n{mdl.id}')
     _ = f.tight_layout()
     return f
 
@@ -345,7 +346,9 @@ def plot_loo_pit(
         _ = axs[i][0].set_title(f'Predicted {yhat} LOO-PIT')
         _ = axs[i][1].set_title(f'Predicted {yhat} LOO-PIT cumulative')
 
-    _ = f.suptitle(' - '.join(filter(None, ['In-sample LOO-PIT', mdl.name, txtadd])))
+    _ = f.suptitle(
+        ' - '.join(filter(None, ['In-sample LOO-PIT', txtadd])) + f'\n{mdl.id}'
+    )
     _ = f.tight_layout()
     return f
 

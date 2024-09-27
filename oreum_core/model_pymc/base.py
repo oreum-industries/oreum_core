@@ -74,7 +74,8 @@ class BasePYMCModel:
         self.rvs_potential_loglike = None
         self.name = getattr(self, 'name', 'unnamed_model')
         self.version = getattr(self, 'version', 'unversioned_model')
-        self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
+        self.dfx_nm = getattr(self, 'dfx_nm', 'unnamed_dfx')
+        self.id = getattr(self, 'id', f'{self.name}, v{self.version}, {self.dfx_nm}')
 
     @property
     def posterior(self) -> xr.Dataset:
