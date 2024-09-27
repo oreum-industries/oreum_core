@@ -60,7 +60,8 @@ def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
     _ = az.plot_trace(mdl.idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
     f = plt.gcf()
     _ = f.suptitle(
-        ' - '.join(filter(None, [f'Posterior traces of {rvs}', txtadd])) + f'\n{mdl.id}'
+        ' - '.join(filter(None, [f'Posterior traces of {rvs}', txtadd]))
+        + f'\n{mdl.mdl_id}'
     )
     _ = f.tight_layout()
     return f
@@ -103,7 +104,7 @@ def facetplot_krushke(
     )
     _ = f.suptitle(
         ' - '.join(filter(None, [f'Distribution of {rvs}', group, txtadd]))
-        + f'\n{mdl.id}'
+        + f'\n{mdl.mdl_id}'
     )
     _ = f.tight_layout()
     return f
@@ -154,7 +155,7 @@ def forestplot_single(
         _ = ax0.axvline(mn, color='#ADD8E6', ls='--', lw=3, zorder=-1)
     _ = f.suptitle(
         ' - '.join(filter(None, [f'Forestplot of {rv_nm}', group, txtadd]))
-        + f'\n{mdl.id}'
+        + f'\n{mdl.mdl_id}'
         + f'\n{desc}'
     )
     _ = f.tight_layout()
@@ -209,7 +210,7 @@ def forestplot_multiple(
 
     _ = f.suptitle(
         ' - '.join(filter(None, ['Forestplot levels', group, txtadd]))
-        + f'\n{mdl.id}'
+        + f'\n{mdl.mdl_id}'
         + f'\n{desc}'
     )
     _ = f.tight_layout()
@@ -319,7 +320,7 @@ def plot_ppc(
         _ = axs.set_xscale('log')
         ls = '(logscale)'
     t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'
-    _ = f.suptitle(' - '.join(filter(None, [t, txtadd, ls])) + f'\n{mdl.id}')
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd, ls])) + f'\n{mdl.mdl_id}')
     _ = f.tight_layout()
     return f
 
@@ -347,7 +348,7 @@ def plot_loo_pit(
         _ = axs[i][1].set_title(f'Predicted {yhat} LOO-PIT cumulative')
 
     _ = f.suptitle(
-        ' - '.join(filter(None, ['In-sample LOO-PIT', txtadd])) + f'\n{mdl.id}'
+        ' - '.join(filter(None, ['In-sample LOO-PIT', txtadd])) + f'\n{mdl.mdl_id}'
     )
     _ = f.tight_layout()
     return f

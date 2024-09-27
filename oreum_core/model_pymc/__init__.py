@@ -32,7 +32,6 @@ from .calc import (
 from .describe import (
     describe_dist,
     extract_yobs_yhat,
-    get_mdlvt_specific_nm,
     get_summary,
     model_desc,
     print_rvs,

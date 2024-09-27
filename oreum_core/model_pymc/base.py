@@ -22,6 +22,7 @@ import regex as re
 import xarray as xr
 from pymc.testing import assert_no_rvs
 
+from ..utils.snakey_lowercaser import SnakeyLowercaser
 from .calc import compute_log_likelihood_for_potential
 
 __all__ = ['BasePYMCModel']
@@ -74,8 +75,18 @@ class BasePYMCModel:
         self.rvs_potential_loglike = None
         self.name = getattr(self, 'name', 'unnamed_model')
         self.version = getattr(self, 'version', 'unversioned_model')
-        self.dfx_nm = getattr(self, 'dfx_nm', 'unnamed_dfx')
-        self.id = getattr(self, 'id', f'{self.name}, v{self.version}, {self.dfx_nm}')
+
+    @property
+    def mdl_id(self) -> str:
+        """Get model id (name, version, dfx dataset)"""
+        dfx_nm = getattr(self, 'dfx_nm', 'unnamed_dfx')
+        return f'{self.name}, v{self.version}, {dfx_nm}'
+
+    @property
+    def mdl_id_fn(self) -> str:
+        """Get model id (name, version, dfx dataset) safe for filename"""
+        snl = SnakeyLowercaser()
+        return snl.clean(re.sub('\.', '', self.mdl_id))
 
     @property
     def posterior(self) -> xr.Dataset:
@@ -108,7 +119,7 @@ class BasePYMCModel:
         helper_txt = 'B' if self.model is None else 'Reb'
         try:
             self._build(**kwargs)
-            _log.info(f'{helper_txt}uilt model {self.name} {self.version}')
+            _log.info(f'{helper_txt}uilt model {self.mdl_id}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _build() in your'
