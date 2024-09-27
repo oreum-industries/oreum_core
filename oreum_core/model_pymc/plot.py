@@ -86,7 +86,7 @@ def facetplot_krushke(
     **kwargs,
 ) -> figure.Figure:
     """Create Krushke-style plots using Arviz, univariate RVs, control faceting
-    NOTE can pass kwargs like hdi_prob = 0.5
+    NOTE can pass kwargs like hdi_prob = 0.5, coords = {'oid', oids}
     """
     # TODO unpack the compressed rvs from the idata
     txtadd = kwargs.pop('txtadd', None)
@@ -112,7 +112,7 @@ def facetplot_krushke(
 
 def forestplot_single(
     mdl: BasePYMCModel,
-    rv_nm: list,
+    rv_nm: str,
     group: IDataGroupName = IDataGroupName.posterior.value,
     **kwargs,
 ) -> figure.Figure:
@@ -355,27 +355,27 @@ def plot_loo_pit(
 
 
 def plot_compare(
-    idata_dict: dict[str, az.InferenceData], obs_list: list[str], **kwargs
+    mdl_dict: dict[str, BasePYMCModel], yhats: list[str], **kwargs
 ) -> tuple[figure.Figure, dict[str, pd.DataFrame]]:
     """Calc and plot model comparison in-sample via expected log pointwise
     predictive density (ELPD) using LOO
     NOTE:
     idata needs: observed_data AND log_likelihood
-    obs_list should be the key for observed_data AND log_likelihood
-
+    hats should be the key for observed_data AND log_likelihood
     """
     txtadd = kwargs.pop('txtadd', None)
     sharex = kwargs.pop('sharex', False)
     f, axs = plt.subplots(
-        len(obs_list),
+        len(yhats),
         1,
-        figsize=(12, 2.5 * len(obs_list) + 0.3 * len(idata_dict)),
+        figsize=(12, 2.5 * len(yhats) + 0.3 * len(mdl_dict)),
         squeeze=False,
         sharex=sharex,
     )
-    mdlnms = ' vs '.join(idata_dict.keys())
+    # mdlnms = ' vs '.join(idata_dict.keys())
+    idata_dict = {f'{k}\n{v.mdl_id_fn}': v.idata for k, v in mdl_dict.items()}
     dfcompdict = {}
-    for i, y in enumerate(obs_list):
+    for i, y in enumerate(yhats):
         dfcomp = az.compare(
             idata_dict, var_name=y, ic='loo', method='stacking', scale='log'
         )
@@ -384,20 +384,11 @@ def plot_compare(
             dfcomp, ax=axs[i][0], title=False, textsize=10, legend=False
         )
         _ = ax.set_title(y)
-
-    _ = f.suptitle(
-        ' '.join(
-            filter(
-                None,
-                [
-                    'In-sample Model Comparison (ELPD via LOO):',
-                    mdlnms,
-                    '\n(higher and tighter is better)',
-                    txtadd,
-                ],
-            )
-        )
+    t = (
+        'Model Performance Comparison: ELPD via In-Sample LOO-PIT'
+        + '\n(higher & narrower is better)'
     )
+    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])))
     _ = f.tight_layout()
 
     return f, dfcompdict

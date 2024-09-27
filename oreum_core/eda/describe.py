@@ -65,8 +65,11 @@ def describe(
 
     df = df.copy()
     if reset_index:
-        nfeats += len(df.index.names)
+        idx_new_names = [f'index: {c}' for c in list(df.index.names)]
+        col_names = list(df.columns.values)
+        nfeats += len(idx_new_names)
         df = df.reset_index()
+        df.columns = idx_new_names + col_names
 
     # start with pandas describe, add on dtypes
     quantiles = [0.25, 0.5, 0.75]  # the default

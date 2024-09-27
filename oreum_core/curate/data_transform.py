@@ -426,6 +426,7 @@ class Standardizer:
     + note these standardizations use nanmean, nanstd, so they're
         already compatible with recent changes (2021-03-31) to
         transformer to propagate nans
+    + Automatically exclude post-patsy binary [T.x] features
 
     NEW FUNCTIONALITY:
     + apply standardization using a mask. allows us to exclude any col
