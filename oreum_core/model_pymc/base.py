@@ -78,13 +78,16 @@ class BasePYMCModel:
 
     @property
     def mdl_id(self) -> str:
-        """Get model id (name, version, dfx dataset)"""
-        dfx_nm = getattr(self, 'dfx_nm', 'unnamed_dfx')
-        return f'{self.name}, v{self.version}, {dfx_nm}'
+        """Get model id (name, version, obs name)
+        NOTE: By convention we'll have a single name to cover all observation
+        datasets included in the model (i.e several dfx)
+        """
+        obs_nm = getattr(self, 'obs_nm', 'unnamed_obs')
+        return f'{self.name}, v{self.version}, {obs_nm}'
 
     @property
     def mdl_id_fn(self) -> str:
-        """Get model id (name, version, dfx dataset) safe for filename"""
+        """Get model id (name, version, obs name) safe for filename"""
         snl = SnakeyLowercaser()
         return snl.clean(re.sub('\.', '', self.mdl_id))
 
@@ -130,7 +133,7 @@ class BasePYMCModel:
         """Extend build, initially developed to help PPC of GRW and missing value imputation"""
         try:
             self._extend_build(**kwargs)
-            _log.info(f'Extended build of model {self.name} {self.version}')
+            _log.info(f'Extended build of model {self.mdl_id}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _extend_build() in your'
@@ -165,7 +168,7 @@ class BasePYMCModel:
                 _log.warning('Warning in mdl.sample_prior_predictive()', exc_info=e)
             finally:
                 _ = self.update_idata(prior_pred, replace=replace)
-            _log.info(f'Sampled prior predictive for {self.name} {self.version}')
+            _log.info(f'Sampled prior predictive for {self.mdl_id}')
         return None
 
     def sample(self, **kwargs):
@@ -204,7 +207,7 @@ class BasePYMCModel:
             else:
                 _ = self.update_idata(posterior)
 
-                _log.info(f'Sampled posterior for {self.name} {self.version}')
+                _log.info(f'Sampled posterior for {self.mdl_id}')
 
                 # optional manually calculate log_likelihood for potentials
                 if self.calc_potential_loglike:
@@ -245,22 +248,25 @@ class BasePYMCModel:
         with self.model:
             ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
 
-        _log.info(f'Sampled posterior predictive for {self.name} {self.version}')
+        _log.info(f'Sampled posterior predictive for {self.mdl_id}')
 
         if store_ppc:
             _ = self.update_idata(ppc)
         else:
             return ppc
 
-    def replace_obs(self, obsd: dict = None) -> None:
-        """Replace the observations
+    def replace_obs(self, obsd: dict = None, obs_nm: str = None) -> None:
+        """Replace the observation dataset(s)
         Assumes data lives in pm.MutableData containers in your _build() function
         You must call `build()` afterward
         Optionally afterwards call `extend_build()` for future time-dependent PPC
+        Optionally set `obs_nm` (useful for downstream plotting etc)
         """
+        if obs_nm is not None:
+            self.obs_nm = obs_nm
         for k, v in obsd.items():
             setattr(self, k, v)
-            _log.info(f'Replaced obs {k} in {self.name} {self.version}')
+            _log.info(f'Replaced obs {k} in {self.mdl_id}')
 
     def update_idata(self, idata: az.InferenceData, replace: bool = False) -> None:
         """Create (and update) an Arviz InferenceData object on-model from a
