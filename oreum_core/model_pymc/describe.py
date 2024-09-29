@@ -98,7 +98,13 @@ def print_rvs(mdl: BasePYMCModel) -> list[str]:
     for k, rvs in mdl.get_rvs().items():
         if k in ['free', 'potentials', 'deterministics']:
             for rv in rvs:
-                r.append(rv.str_repr(formatting='string', include_params=True))
+                try:
+                    r.append(rv.str_repr(formatting='string', include_params=True))
+                except AttributeError:
+                    # initially developed as a bit of a hack to deal with
+                    # 'TensorVariable' object has no attribute 'str_repr'
+                    # in the case of e.g. autoimputed x_mv_unobserved
+                    pass
     return r
 
 
