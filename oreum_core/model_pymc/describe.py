@@ -85,7 +85,6 @@ def describe_dist(mdl: BasePYMCModel, log: bool = False, inc_summary: bool = Fal
 
 def get_summary(mdl: BasePYMCModel, rvs: list, group='posterior') -> pd.DataFrame:
     """Convenience fn to get arviz summary of idata posteriors"""
-
     df = az.summary(mdl.idata, var_names=rvs, group=group)
     return df
 

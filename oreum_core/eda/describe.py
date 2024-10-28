@@ -40,7 +40,7 @@ def describe(
     reset_index: bool = True,
     return_df: bool = False,
     **kwargs,
-) -> str:
+) -> pd.DataFrame | None:
     """Concat transposed topN rows, numerical desc & dtypes
     Beware a dataframe full of bools or categoricals will error
     thanks to pandas.describe() being too clever
@@ -148,12 +148,20 @@ def describe(
     if return_df:
         return dfout
     else:
-        display_fw(dfout.iloc[: nfeats + len_idx, :], max_rows=nfeats, **kwargs)
-        return f'Shape: {df.shape}, Memsize {nbytes / 1e6:,.1f} MB'
+        display_fw(
+            dfout.iloc[: nfeats + len_idx, :],
+            max_rows=nfeats,
+            shape=df.shape,
+            nbytes=nbytes,
+            **kwargs,
+        )
 
 
 def display_fw(df: pd.DataFrame, **kwargs) -> None:
-    """Conv fn: contextually display max rows"""
+    """Conv fn: contextually display max cols"""
+
+    shape = kwargs.pop('shape', df.shape)
+    nbytes = kwargs.pop('nbytes', df.values.nbytes)
 
     options = {
         'display.precision': kwargs.pop('precision', 2),
@@ -168,15 +176,15 @@ def display_fw(df: pd.DataFrame, **kwargs) -> None:
 
     with pd.option_context(*[i for tup in options.items() for i in tup]):
         display(df)
+        display(f'Shape: {shape}, Memsize {nbytes / 1e6:,.1f} MB')
 
 
-def display_ht(df: pd.DataFrame, nrows=3, **kwargs) -> str:
+def display_ht(df: pd.DataFrame, nrows=3, **kwargs) -> None:
     """Convenience fn: Display head and tail n rows via display_fw"""
 
     nrows = min(nrows, len(df))
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
-    display_fw(dfd, **kwargs)
-    return f'Shape: {df.shape}, Memsize {df.values.nbytes / 1e6:,.1f} MB'
+    display_fw(dfd, shape=df.shape, nbytes=df.values.nbytes, **kwargs)
 
 
 def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:

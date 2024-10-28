@@ -280,8 +280,8 @@ class BasePYMCModel:
             self._idata.extend(idata, join=side)
 
     def debug(self):
-        """Convenience to run debug on logp and random, and
-        assert no MeasurableVariable nodes in the graph
+        """Convenience to validate the parameterization: run debug on logp and
+        random, and assert no MeasurableVariable nodes in the graph
         TODO catch these outputs in the log"""
         if self.model is not None:
             assert_no_rvs(self.model.logp())

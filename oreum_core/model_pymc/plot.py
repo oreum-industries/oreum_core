@@ -86,7 +86,10 @@ def facetplot_krushke(
     **kwargs,
 ) -> figure.Figure:
     """Create Krushke-style plots using Arviz, univariate RVs, control faceting
-    NOTE can pass kwargs like hdi_prob = 0.5, coords = {'oid', oids}
+    NOTE
+    + ref_vals should look like a dict of list of dict with a key "ref_val"
+        e.g. ref_vals = { 'beta_sigma' : [ {'ref_val':2} ] }
+    + Optional Pass kwargs like hdi_prob = 0.5, coords = {'oid', oids}
     """
     # TODO unpack the compressed rvs from the idata
     txtadd = kwargs.pop('txtadd', None)
@@ -135,8 +138,8 @@ def forestplot_single(
     if transform is not None:
         df = df.apply(transform)
     if len(var_names) == 1:
-        mn = df[var_names].mean(axis=0).values
-        qs = df[var_names].quantile(q=[0.03, 0.97], axis=0).values
+        mn = df[var_names[0]].mean(axis=0)
+        qs = df[var_names[0]].quantile(q=[0.03, 0.97]).values
         desc = (
             f'Overall: $Mean =$ {mn:.{dp}f}'
             + ', $HDI_{94}$ = ['
@@ -307,11 +310,17 @@ def plot_ppc(
         although we remind that the constant_data has the real name, but once
         it's observed in a log-likelihoood the idata.observed_data will get the
         same name as the {group}_predictive, so data_pairs is not often needed
-
     """
     txtadd = kwargs.pop('txtadd', None)
-    kind = 'cumulative' if ecdf else 'kde'
-    kindnm = 'ECDF' if ecdf else 'KDE'
+    kind = 'kde'
+    kindnm = kind.upper()
+    ynm = 'density'
+    loc = 'upper right'
+    if ecdf:
+        kind = 'cumulative'
+        kindnm = 'ECDF'
+        ynm = 'prop'
+        loc = 'lower right'
     _idata = mdl.idata if idata is None else idata
     n = len(var_names)
     if flatten is not None:
@@ -322,7 +331,7 @@ def plot_ppc(
     i = list(dict(_idata.observed_data.sizes).values())[0]
     num_pp_samples = None if i < 500 else 200
 
-    f, axs = plt.subplots(n, 1, figsize=(12, 4 * n), sharex=True)
+    f, axs = plt.subplots(n, 1, figsize=(12, 4 * n), sharex=True, squeeze=False)
     _ = az.plot_ppc(
         _idata,
         group=group,
@@ -335,15 +344,12 @@ def plot_ppc(
         num_pp_samples=num_pp_samples,
         **kwargs,
     )
-    # fix legend to upper left not, "best", saves time plotting
-    if n > 1:
-        _ = [ax.legend(fontsize=8, loc='upper left') for ax in axs]
-    else:
-        _ = axs.legend(fontsize=8, loc='upper left')
+    _ = [ax.legend(fontsize=8, loc=loc) for ax in axs.flatten()]  # fix legend
     ls = None
     if logx:
-        _ = axs.set_xscale('log')
+        _ = [ax.set_xscale('log') for ax in axs.flatten()]
         ls = '(logscale)'
+    _ = [ax.set(title=t, ylabel=ynm) for ax, t in zip(axs.flatten(), var_names)]
     t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'
     _ = f.suptitle(' - '.join(filter(None, [t, txtadd, ls])) + f'\n{mdl.mdl_id}')
     _ = f.tight_layout()
