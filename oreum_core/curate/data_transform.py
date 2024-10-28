@@ -37,13 +37,14 @@ _log = logging.getLogger(__name__)
 class DatatypeConverter:
     """Force correct datatypes according to what model expects"""
 
-    def __init__(self, ftsd: dict, ftslvlcat: dict = {}, date_format: str = '%Y-%m-%d'):
+    def __init__(self, ftsd: dict, date_format: str = '%Y-%m-%d'):
         """Initialise with fts and optionally specify factors with specific levels
 
         Use with a fts dict of form:
             ftsd = dict(
-                fcat = [],
-                fstr = [],
+                fcat = [],           # use for unordered categoricals
+                ford = {ft0: lvls0, ft1: lvls:1, ... },  # use for ordinals
+                fstr = [],  # rarely used e.g. for for freetext strings
                 fbool = [],
                 fbool_nan_to_false = [],
                 fdate = [],
@@ -51,9 +52,12 @@ class DatatypeConverter:
                 fint = [],
                 ffloat = [],
                 fverbatim = [],        # maintain in current dtype)
+
+        Use ftsordlvl for ordinal categoricals
         """
         self.ftsd = dict(
             fcat=ftsd.get('fcat', []),
+            ford=ftsd.get('ford', {}),
             fstr=ftsd.get('fstr', []),
             fbool=ftsd.get('fbool', []),
             fbool_nan_to_false=ftsd.get('fbool_nan_to_false', []),
@@ -63,7 +67,6 @@ class DatatypeConverter:
             ffloat=ftsd.get('ffloat', []),
             fverbatim=ftsd.get('fverbatim', []),  # keep verbatim
         )
-        self.ftslvlcat = ftslvlcat
         self.rx_number_junk = re.compile(r'[#$€£₤¥,;%\s]')
         self.date_format = date_format
         inv_bool_dict = {
@@ -73,7 +76,7 @@ class DatatypeConverter:
         self.bool_dict = {v: k for k, vs in inv_bool_dict.items() for v in vs}
         self.strnans = ['none', 'nan', 'null', 'na', 'n/a', 'missing', 'empty', '']
 
-    def _force_dtypes(self, dfraw):
+    def convert_dtypes(self, dfraw: pd.DataFrame) -> pd.DataFrame:
         """Select fts and convert dtypes. Return cleaned df"""
         snl = SnakeyLowercaser()
 
@@ -90,9 +93,12 @@ class DatatypeConverter:
             df.loc[~idx, ft] = np.nan
             df.loc[idx, ft] = vals
             if ft in self.ftsd['fcat']:
-                df[ft] = pd.Categorical(df[ft].values, ordered=True)
+                df[ft] = pd.Categorical(df[ft].values, ordered=False)
             else:
                 df[ft] = df[ft].astype('string')
+
+        for ft, lvls in self.ftsd['ford'].items():
+            df[ft] = pd.Categorical(df[ft].values, categories=lvls, ordered=True)
 
         for ft in self.ftsd['fbool'] + self.ftsd['fbool_nan_to_false']:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
@@ -165,50 +171,28 @@ class DatatypeConverter:
         # for ft in self.fts['fverbatim']:
         #     _log.info(f'Kept ft verbatim: {ft}')
 
-        return df
-
-    def convert_dtypes(self, df):
-        """Force dtypes for recognised features (fts) in df"""
-        dfclean = self._force_dtypes(df)
-
-        for ft, lvls in self.ftslvlcat.items():
-            dfclean[ft] = pd.Categorical(
-                dfclean[ft].values, categories=lvls, ordered=True
-            )
-
-        return dfclean
+        return df[fts_all]
 
 
 class DatasetReshaper:
-    """Convenience functions to reshape whole datasets
-
-    Use with a ftsd dict of form:
-    ftsd = dict(
-        fcat = [],
-        fstr = [],
-        fbool = [],
-        fbool_nan_to_false = [],
-        fdate = [],
-        fyear = [],
-        fint = [],
-        ffloat = [],
-        fverbatim = [],        # maintain in current dtype)
-    """
+    """Convenience functions to reshape whole datasets"""
 
     def __init__(self):
         pass
 
-    def create_dfcmb(self, df: pd.DataFrame, ftsd: dict) -> pd.DataFrame:
-        """Create a combination dataset `dfcmb` from inputted `df`.
+    def create_dfcmb(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Create a combination dataset `dfcmb` from inputted `df`, which
+        MUST have correct / appropriate pandas datatypes.
 
-        *Not* a big groupby (equiv to cartesian join) for factor values
-        and concats numerics. Instead, this concats unique vals in cols
-        which yields a far more compact dfcmb. Note that the columns will
-        be ragged so this will fill NULLS with (any) value from that column
+        Datatypes must be understood by patsy: factor-values as
+        pd.Categoricals, or bools, or ints or floats. No dates or strings
 
-        The shape and datatypes matter.
+        Output `dfcmb` is NOT a big groupby (i.e cartesian join) of factor
+        values. Instead, it's a compact concat of unique factor values
+        (which can be horizontally ragged so we fill NaNs) and filler values
+        for ints a floats
 
-        We use this because as of the current patsy (0.5.1), design_info
+        We use `dfcmb` because as of the current patsy (0.5.1), design_info
         objects still can't be pickled, which means that when you want to
         transform a test / holdout sample according to a training dataset
         you have to instantiate a new design_info object in memory.
@@ -220,84 +204,57 @@ class DatasetReshaper:
 
         I recommend storing dfcmb in a DB: it only needs to be updated if
         the modelled features change (e.g. include a new feature) or if
-        factor values change (e.g. a new construction_type).
-
-        NOTE: only takes datatypes as understood by patsy: factor-values
-            (aka categoricals aka strings), or ints or floats. No dates.
+        factor values (aka categorical levels) change
         """
         dfcmb = pd.DataFrame(index=[0])
-        fts_factor = ftsd.get('fcat', []) + ftsd.get('fbool', [])
-        for ft in fts_factor:
-            ft = ft[2:-1] if ft[:2] == 'F(' else ft
+        sdtypes = df.dtypes
+        cats = list(sdtypes.loc[sdtypes == 'category'].index.values)
+        bools = list(sdtypes.loc[sdtypes == 'bool'].index.values)
+        ints = list(sdtypes.loc[sdtypes == 'int'].index.values)
+        floats = list(sdtypes.loc[sdtypes == 'float'].index.values)
+
+        # create ragged cats
+        for ft in cats:
             colnames_pre = list(dfcmb.columns.values)
-            s = pd.Series(np.unique(df[ft]), name=ft)
-            dfcmb = pd.concat([dfcmb, s], axis=1, join='outer', ignore_index=True)
+            dfcmb = pd.concat(
+                [dfcmb, pd.Series(df[ft].cat.categories)],
+                axis=1,
+                join='outer',
+                ignore_index=True,
+            )
             dfcmb.columns = colnames_pre + [ft]
 
-        for ft in dfcmb.columns:
-            dfcmb[ft] = dfcmb[ft].fillna(dfcmb[ft][:1].values[0])
-            dfcmb[ft] = dfcmb[ft].astype(df[ft].dtype)
+        # apply categorical dtype again
+        for ft in cats:
+            dfcmb[ft] = pd.Categorical(
+                dfcmb[ft].values,
+                categories=df[ft].cat.categories,
+                ordered=df[ft].cat.ordered,
+            )
 
-            # TODO: force order for categorical
-            # df['fpc_aais_ctgry'] = pd.Categorical(df['fpc_aais_ctgry'].values, categories=vals, ordered=True)
+        for ft in bools:
+            colnames_pre = list(dfcmb.columns.values)
+            dfcmb = pd.concat(
+                [dfcmb, pd.Series([False, True])],
+                axis=1,
+                join='outer',
+                ignore_index=True,
+            )
+            dfcmb.columns = colnames_pre + [ft]
 
-        for ft in ftsd.get('fint', []):
+        for ft in bools:  # force to bool (generally dont allow NaNs in bools)
+            # dfcmb[ft] = dfcmb[ft].convert_dtypes(convert_boolean=True)
+            dfcmb[ft] = dfcmb[ft].astype(bool)
+
+        for ft in ints:
             dfcmb[ft] = 1
 
-        for ft in ftsd.get('ffloat', []):
+        for ft in floats:
             dfcmb[ft] = 1.0
 
         _log.info(
-            'Reduced df ({} rows, {:,.0f} KB) to dfcmb ({} rows, {:,.0f} KB)'.format(
-                df.shape[0],
-                df.values.nbytes / 1e3,
-                dfcmb.shape[0],
-                dfcmb.values.nbytes / 1e3,
-            )
-        )
-
-        return dfcmb
-
-    def _create_dfcmb_big(self, df: pd.DataFrame, ftsd: dict) -> pd.DataFrame:
-        """Create a combination dataset `dfcmb` from inputted `df`.
-        Just a big groupby (equiv to cartesian join) for factor values
-        and concats numerics. The shape and datatypes matter.
-
-        We use this because as of the current patsy (0.5.1), design_info
-        objects still can't be pickled, which means that when you want to
-        transform a test / holdout sample according to a training dataset
-        you have to instantiate a new design_info object in memory.
-
-        In this codebase we set the design_info attribute on the
-        Transformer object, so you can keep that object around in memory,
-        but upon memory-loss you need to call it with the dfcmb created
-        here e.g. Transformer.fit_transform(dfcmb).
-
-        I recommend storing dfcmb in a DB: it only needs to be updated if
-        the modelled features change (e.g. include a new feature) or if
-        factor values change (e.g. a new construction_type).
-
-        NOTE: only takes datatypes as understood by patsy: factor-values
-            (aka categoricals aka strings), or ints or floats. No dates.
-        """
-        dfcmb = pd.DataFrame(index=[0])
-        fts_factor = ftsd.get('fcat', []) + ftsd.get('fbool', [])
-        if len(fts_factor) > 0:
-            dfcmb = df.groupby(fts_factor).size().reset_index().iloc[:, :-1]
-
-        for ft in ftsd.get('fint', []):
-            dfcmb[ft] = 1
-
-        for ft in ftsd.get('ffloat', []):
-            dfcmb[ft] = 1.0
-
-        _log.info(
-            'Reduced df ({} rows, {:,.0f} KB) to dfcmb ({} rows, {:,.0f} KB)'.format(
-                df.shape[0],
-                df.values.nbytes / 1e3,
-                dfcmb.shape[0],
-                dfcmb.values.nbytes / 1e3,
-            )
+            f'Reduced df {len(df)} rows, {df.values.nbytes / 1e3:,.0f} KB)'
+            + f' to dfcmb ({len(dfcmb)} rows, {dfcmb.values.nbytes / 1e3:,.0f} KB)'
         )
 
         return dfcmb
@@ -310,107 +267,77 @@ class Transformer:
         + design_info is stateful
         + it's reasonable to initialise this per-observation but far more
           efficient to initialise once and persist in-memory
-        + allows for F() and F():F() terms
+        + Categoricals must already be a pd.Categorical with levels
+          appropriate to the full data domain. This will feed
+          pd.Categorical.cat.codes (ints) representation into patsy
+        + Booleans must already be np.bool (not pd.BooleanDtype, no NaNs)
     """
 
     def __init__(self):
         self.design_info = None
-        self.col_idx_numerics = None
-        self.rx_get_f = re.compile(r'(F\(([a-z0-9_:]+?)\))')
         self.factor_map = {}
-        self.original_fml = None
         self.snl = SnakeyLowercaser()
 
+    def _convert_cats(self, dfraw: pd.DataFrame) -> tuple[pd.DataFrame, list]:
+        """Common conversion of cats to codes and store mapping"""
+        sdtypes = dfraw.dtypes
+        df = dfraw.copy()
+        cats = list(sdtypes.loc[sdtypes == 'category'].index.values)
+        for ft in cats:
+            map_int_to_fct = dict(enumerate(df[ft].cat.categories))
+            map_fct_to_int = {v: k for k, v in map_int_to_fct.items()}
+            self.factor_map[ft] = map_fct_to_int
+            df[ft] = df[ft].cat.codes.astype(int)
+
+        sdtypes = df.dtypes
+        ints = list(sdtypes.loc[sdtypes == 'int'].index.values)
+
+        return df, ints
+
     def fit_transform(
-        self, fml: str, df: pd.DataFrame, propagate_nans: bool = False
+        self, fml: str, df: pd.DataFrame, propagate_nans: bool = True
     ) -> pd.DataFrame:
-        """Fit a new design_info attribute for this instance according to
-        `fml` acting upon `df`. Return the transformed dmatrix (np.array)
+        """Fit a new `design_info` attribute for this instance according to
+        `fml` acting upon `df`. Return transformed dmatrix as a DataFrame.
         Use this for a new training set or to initialise the transformer
         based on dfcmb.
+        `fml` maps directly to feature names in `df` i.e. before patsy
+        transforms and we take the dtypes from `df`.
         """
-        self.original_fml = fml
-        # deal w/ any fml components F(), use set() to uniqify
-        fts_f = list(set(self.rx_get_f.findall(fml)))
-
-        if len(fts_f) > 0:
-            df = df.copy()
-            for ft_f in fts_f:
-                dt = df[ft_f[1]].dtype.name
-                if dt != 'category':
-                    raise AttributeError(
-                        f'fml contains F({ft_f[1]}),'
-                        + f' dtype={dt}, but {ft_f[1]} is not categorical'
-                    )
-                # map feature to int based on its preexisting categorical order
-                # https://stackoverflow.com/a/55304375/1165112
-                map_int_to_fact = dict(enumerate(df[ft_f[1]].cat.categories))
-                map_fact_to_int = {v: k for k, v in map_int_to_fact.items()}
-                self.factor_map[ft_f[1]] = map_fact_to_int
-                df[ft_f[1]] = df[ft_f[1]].map(map_fact_to_int).astype(int)
-
-                # replace F() in fml so patsy can work as normal w/ our new int type
-                fml = fml.replace(ft_f[0], ft_f[1])
-        _log.info(f'Created fml: {fml}')
-        # TODO add option to output matrix   # np.asarray(mx_ex)
         # TODO add check for fml contains `~` and handle accordingly
-
+        # TODO add option to output matrix   # np.asarray(mx_ex)
+        df, ints = self._convert_cats(df)
         # do nothing, see https://stackoverflow.com/a/51641183/1165112
-        na_action = pt.NAAction(NA_types=[]) if propagate_nans else 'raise'
-
-        df_ex = pt.dmatrix(fml, df, NA_action=na_action, return_type='dataframe')
+        na_act = pt.NAAction(NA_types=[]) if propagate_nans else 'raise'
+        df_ex = pt.dmatrix(fml, df, NA_action=na_act, return_type='dataframe')
         self.design_info = df_ex.design_info
 
-        # force patsy transform of an F() to int feature back to int not float
-        fts_force_to_int = ['intercept']  # also force intercept
-        fts_force_to_int = list(self.factor_map.keys())
-        if len(fts_force_to_int) > 0:
-            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(int)
+        for ft in ints:
+            if ft in df_ex.columns.values:
+                df_ex[ft] = df_ex[ft].astype(int)
 
         return df_ex
 
-    def transform(self, df: pd.DataFrame, propagate_nans: bool = False) -> pd.DataFrame:
+    def transform(self, df: pd.DataFrame, propagate_nans: bool = True) -> pd.DataFrame:
         """Transform input `df` to dmatrix according to pre-fitted
-        `design_info`. Return transformed dmatrix (np.array)
-
-        NEW FUNCTIONALITY: 2021-03-11
-            factorize components marked as F(), must be pd.Categorical
+        `design_info`. Return transformed dmatrix (pd.DataFrame)
         """
+        # TODO add option to output matrix   # np.asarray(mx_ex)
+
         if self.design_info is None:
             raise AttributeError('No design_info, run `fit_transform()` first')
 
-        # # hacky way to get F():F() components
-        # fts_ff = set(self.rx_get_ff.findall(self.original_fml))
-
-        # map any features noted in factor_map
-        try:
-            df = df.copy()
-            for ft, map_fact_to_int in self.factor_map.items():
-                df[ft] = df[ft].map(map_fact_to_int).astype(int)
-        except AttributeError:
-            # self.factor_map was never created for this instance
-            # simply because no F() in fml
-            pass
-
-        # TODO add option to output matrix
-        # mx_ex = pt.dmatrix(self.design_info, df, NA_action='raise',
-        #                       return_type='matrix')
-        # return np.asarray(mx_ex)
-
+        df, ints = self._convert_cats(df)
         # do nothing, see https://stackoverflow.com/a/51641183/1165112
-        na_action = pt.NAAction(NA_types=[]) if propagate_nans else 'raise'
-
+        na_act = pt.NAAction(NA_types=[]) if propagate_nans else 'raise'
         df_ex = pt.dmatrix(
-            self.design_info, df, NA_action=na_action, return_type='dataframe'
+            self.design_info, df, NA_action=na_act, return_type='dataframe'
         )
         self.design_info = df_ex.design_info
 
-        # force patsy transform of an index feature back to int!
-        # there might be a better way to do this
-        fts_force_to_int = []
-        fts_force_to_int = list(self.factor_map.keys())
-        if len(fts_force_to_int) > 0:
-            df_ex[fts_force_to_int] = df_ex[fts_force_to_int].astype(int)
+        for ft in ints:
+            if ft in df_ex.columns.values:
+                df_ex[ft] = df_ex[ft].astype(int)
 
         return df_ex
 
@@ -436,8 +363,9 @@ class Standardizer:
     """
 
     def __init__(self, tfmr: Transformer, fts_exclude: list = []):
-        """Optionally exclude from standardization a list of named fts that
-        are numeric and would otherwise get standardardized"""
+        """Automatically exclude fts in list(tfmr.factor_map.keys()) and
+        any named in `fts_exclude` that are numeric and would otherwise get
+        standardardized"""
 
         self.design_info = tfmr.design_info
         self.fts_exclude = fts_exclude + list(tfmr.factor_map.keys())
