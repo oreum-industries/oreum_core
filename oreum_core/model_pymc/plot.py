@@ -69,9 +69,13 @@ def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
 
 def plot_energy(mdl: BasePYMCModel) -> figure.Figure:
     """Simple wrapper around energy plot to provide a simpler interface"""
-    _ = az.plot_energy(mdl.idata, figsize=(12, 2))
+    _ = az.plot_energy(
+        mdl.idata, fill_alpha=(0.8, 0.6), fill_color=("C0", "C8"), figsize=(12, 1.8)
+    )
     f = plt.gcf()
-    _ = f.suptitle('NUTS Energy Plot')
+    _ = f.suptitle(
+        'NUTS Energy (Marginal vs Transitional, and E-BFMI)' + f' - `{mdl.mdl_id}`'
+    )
     _ = f.tight_layout()
     return f
 
@@ -95,7 +99,7 @@ def facetplot_krushke(
     txtadd = kwargs.pop('txtadd', None)
     transform = kwargs.pop('transform', None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
-    f, axs = plt.subplots(n, m, figsize=(4 + m * 2.4, 2 * n))
+    f, axs = plt.subplots(n, m, figsize=(2.6 * m, 0.8 + n * 1.6))
     _ = az.plot_posterior(
         mdl.idata,
         group=group,
@@ -301,7 +305,7 @@ def plot_ppc(
     logx: bool = False,
     **kwargs,
 ) -> figure.Figure:
-    """Plot In- or Out-of-Sample Prior or Posterior predictive ECDF, does not
+    """Plot In- or Out-of-Sample Prior or Posterior Retrodictive, does not
     require log-likelihood.
     NOTE:
     + use var_names to only plot e.g. yhat
@@ -350,7 +354,7 @@ def plot_ppc(
         _ = [ax.set_xscale('log') for ax in axs.flatten()]
         ls = '(logscale)'
     _ = [ax.set(title=t, ylabel=ynm) for ax, t in zip(axs.flatten(), var_names)]
-    t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Predictive {kindnm}'
+    t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Retrodictive {kindnm}'
     _ = f.suptitle(' - '.join(filter(None, [t, txtadd, ls])) + f'\n{mdl.mdl_id}')
     _ = f.tight_layout()
     return f

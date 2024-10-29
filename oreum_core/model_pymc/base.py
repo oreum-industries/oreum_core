@@ -54,7 +54,7 @@ class BasePYMCModel:
         """
         self.model = None
         self._idata = None
-        self.replace_idata = False
+        self.replace_idata = True
         self.sample_prior_pred_kws = dict(samples=500, return_inferencedata=True)
         self.sample_post_pred_kws = dict(store_ppc=True, ppc_insample=False)
         self.sample_kws = dict(

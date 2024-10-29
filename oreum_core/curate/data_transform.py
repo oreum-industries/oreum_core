@@ -19,7 +19,7 @@ import re
 
 import numpy as np
 import pandas as pd
-import patsy as pt
+import patsy as pat
 
 from ..utils.snakey_lowercaser import SnakeyLowercaser
 
@@ -299,7 +299,14 @@ class Transformer:
         self.factor_map = {}
         self.snl = SnakeyLowercaser()
 
-    def _convert_cats(self, dfraw: pd.DataFrame) -> tuple[pd.DataFrame, list]:
+    def _get_fts_to_force_to_int(self, dfraw: pd.DataFrame) -> list[str]:
+        """Get list of ffts to force to int post patsy conversion"""
+        s = dfraw.dtypes
+        ints = list(s.loc[s == 'int'].index.values)
+        bools = [f'{ft}[T.True]' for ft in s.loc[s == 'bool'].index.values]
+        return ints + bools
+
+    def _convert_cats(self, dfraw: pd.DataFrame) -> pd.DataFrame:
         """Common conversion of cats to codes and store mapping"""
         sdtypes = dfraw.dtypes
         df = dfraw.copy()
@@ -309,11 +316,30 @@ class Transformer:
             map_fct_to_int = {v: k for k, v in map_int_to_fct.items()}
             self.factor_map[ft] = map_fct_to_int
             df[ft] = df[ft].cat.codes.astype(int)
+        return df
 
-        sdtypes = df.dtypes
-        ints = list(sdtypes.loc[sdtypes == 'int'].index.values)
+    def _transform(
+        self,
+        fml_or_design_info: str | pat.DesignInfo,
+        df: pd.DataFrame,
+        propagate_nans: bool,
+    ) -> pd.DataFrame:
+        """Common to fit_transform and transform"""
+        # TODO add check for fml contains `~` and handle accordingly
+        # TODO add option to output matrix   # np.asarray(mx_ex)
+        fts_force_to_int = self._get_fts_to_force_to_int(df)
+        df = self._convert_cats(df.copy())
+        na_act = pat.NAAction(NA_types=[]) if propagate_nans else 'raise'
+        df_ex = pat.dmatrix(
+            fml_or_design_info, df, NA_action=na_act, return_type='dataframe'
+        )
+        design_info = df_ex.design_info
 
-        return df, ints
+        for ft in fts_force_to_int:
+            if ft in df_ex.columns.values:
+                df_ex[ft] = df_ex[ft].astype(int)
+
+        return df_ex, design_info
 
     def fit_transform(
         self, fml: str, df: pd.DataFrame, propagate_nans: bool = True
@@ -325,41 +351,18 @@ class Transformer:
         `fml` maps directly to feature names in `df` i.e. before patsy
         transforms and we take the dtypes from `df`.
         """
-        # TODO add check for fml contains `~` and handle accordingly
-        # TODO add option to output matrix   # np.asarray(mx_ex)
-        df, ints = self._convert_cats(df)
-        # do nothing, see https://stackoverflow.com/a/51641183/1165112
-        na_act = pt.NAAction(NA_types=[]) if propagate_nans else 'raise'
-        df_ex = pt.dmatrix(fml, df, NA_action=na_act, return_type='dataframe')
-        self.design_info = df_ex.design_info
-
-        for ft in ints:
-            if ft in df_ex.columns.values:
-                df_ex[ft] = df_ex[ft].astype(int)
-
+        df_ex, design_info = self._transform(fml, df, propagate_nans)
+        self.design_info = design_info
         return df_ex
 
     def transform(self, df: pd.DataFrame, propagate_nans: bool = True) -> pd.DataFrame:
         """Transform input `df` to dmatrix according to pre-fitted
         `design_info`. Return transformed dmatrix (pd.DataFrame)
         """
-        # TODO add option to output matrix   # np.asarray(mx_ex)
-
         if self.design_info is None:
             raise AttributeError('No design_info, run `fit_transform()` first')
 
-        df, ints = self._convert_cats(df)
-        # do nothing, see https://stackoverflow.com/a/51641183/1165112
-        na_act = pt.NAAction(NA_types=[]) if propagate_nans else 'raise'
-        df_ex = pt.dmatrix(
-            self.design_info, df, NA_action=na_act, return_type='dataframe'
-        )
-        self.design_info = df_ex.design_info
-
-        for ft in ints:
-            if ft in df_ex.columns.values:
-                df_ex[ft] = df_ex[ft].astype(int)
-
+        df_ex, _ = self._transform(self.design_info, df, propagate_nans)
         return df_ex
 
 
