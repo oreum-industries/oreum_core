@@ -74,7 +74,17 @@ class DatatypeConverter:
             False: ['no', 'n', 'false', 'f', '0', 0, 0.0],
         }
         self.bool_dict = {v: k for k, vs in inv_bool_dict.items() for v in vs}
-        self.strnans = ['none', 'nan', 'null', 'na', 'n/a', 'missing', 'empty', '']
+        self.strnans = [
+            'none',
+            'nan',
+            'null',
+            'na',
+            'n/a',
+            '<na>',
+            'missing',
+            'empty',
+            '',
+        ]
 
     def convert_dtypes(self, dfraw: pd.DataFrame) -> pd.DataFrame:
         """Select fts and convert dtypes. Return cleaned df"""
@@ -104,17 +114,22 @@ class DatatypeConverter:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
             if df.dtypes[ft] == object:
                 df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
-                df.loc[df[ft].isin(self.strnans), ft] = np.nan
+                df.loc[df[ft].isin(self.strnans), ft] = pd.NA
                 df[ft] = df[ft].apply(lambda x: self.bool_dict.get(x, x))
 
                 if ft in self.ftsd['fbool_nan_to_false']:
                     df.loc[df[ft].isnull(), ft] = False
 
-                if set(df[ft].unique()) != set([True, False]):
-                    # if ft not yet properly mapped, skip without converting
-                    continue
-
-            df[ft] = df[ft].convert_dtypes(convert_boolean=True)
+                set_tf_only = set(df[ft].unique())
+                if set_tf_only in set([True, False]):  # most common, use np.bool
+                    df[ft] = df[ft].astype(bool)
+                elif pd.isnull(df[ft]).sum() > 0:  # contains NaNs, use pd.boolean
+                    df[ft] = df[ft].convert_dtypes(convert_boolean=True)
+                else:
+                    # ft not yet properly mapped,
+                    raise ValueError(
+                        f"{ft} contains values incompatible with np.bool or pd.Boolean"
+                    )
 
         for ft in self.ftsd['fyear']:
             if df.dtypes[ft] == object:
@@ -208,6 +223,12 @@ class DatasetReshaper:
         """
         dfcmb = pd.DataFrame(index=[0])
         sdtypes = df.dtypes
+
+        if (sum(sdtypes == 'object') > 0) | (sum(sdtypes == 'boolean') > 0):
+            return (
+                ValueError,
+                "Valid dtypes are `category`, `bool`, `int`, `float` only",
+            )
         cats = list(sdtypes.loc[sdtypes == 'category'].index.values)
         bools = list(sdtypes.loc[sdtypes == 'bool'].index.values)
         ints = list(sdtypes.loc[sdtypes == 'int'].index.values)
@@ -242,7 +263,7 @@ class DatasetReshaper:
             )
             dfcmb.columns = colnames_pre + [ft]
 
-        for ft in bools:  # force to bool (generally dont allow NaNs in bools)
+        for ft in bools:  # force to bool (we choose to not allow NaNs in bools)
             # dfcmb[ft] = dfcmb[ft].convert_dtypes(convert_boolean=True)
             dfcmb[ft] = dfcmb[ft].astype(bool)
 

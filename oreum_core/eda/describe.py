@@ -189,19 +189,19 @@ def display_ht(df: pd.DataFrame, nrows=3, **kwargs) -> None:
 
 def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:
     """Return a dictionary of lists of feats within df according to dtype"""
+    dtypes = df.dtypes.to_dict().items()
     fts = dict(
-        categorical=[
-            k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'cat'
-        ],  # category
+        categorical=[k for k, v in dtypes if v.name[:3] == 'cat'],  # category
         cat=[
             k
             for k, v in df.dtypes.to_dict().items()
             if (v.name[:3] == 'obj') | (v.name[:3] == 'str')
         ],
-        bool=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'boo'],
-        datetime=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'dat'],
-        int=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'int'],
-        float=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'flo'],
+        bool=[k for k, v in dtypes if v.name == 'bool'],
+        boolean=[k for k, v in dtypes if v.name == 'boolean'],
+        datetime=[k for k, v in dtypes if v.name[:3] == 'dat'],
+        int=[k for k, v in dtypes if v.name[:3] == 'int'],
+        float=[k for k, v in dtypes if v.name[:3] == 'flo'],
     )
     w = []
     for _, v in fts.items():
@@ -215,7 +215,7 @@ def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:
         )
 
     if as_dataframe:
-        dtypes = ['categorical', 'cat', 'bool', 'datetime', 'int', 'float']
+        dtypes = ['categorical', 'cat', 'bool', 'boolean', 'datetime', 'int', 'float']
         d = {w: k for k, v in fts.items() for w in v}
         dfd = pd.DataFrame.from_dict(d, orient='index', columns=['dtype'])
         dfd.index.set_names('ft', inplace=True)
