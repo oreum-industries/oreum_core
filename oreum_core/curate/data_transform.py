@@ -288,7 +288,7 @@ class Transformer:
         + design_info is stateful
         + it's reasonable to initialise this per-observation but far more
           efficient to initialise once and persist in-memory
-        + Categoricals must already be a pd.Categorical with levels
+        + Categoricals must already be a pd.Categorical with all levels assigned
           appropriate to the full data domain. This will feed
           pd.Categorical.cat.codes (ints) representation into patsy
         + Booleans must already be np.bool (not pd.BooleanDtype, no NaNs)

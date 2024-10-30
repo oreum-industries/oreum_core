@@ -139,7 +139,7 @@ def describe(
         fts_out.append(['mode', 'mode_count'])
 
     # select summary states and prepend random rows for example cases
-    rndidx = RNG.integers(low=0, high=len(df), size=nobs)
+    rndidx = RNG.choice(np.arange(0, len(df)), size=nobs, replace=False)
     dfout = pd.concat(
         (df.iloc[rndidx].T, dfout[fts_out].copy()), axis=1, join='outer', sort=False
     )
