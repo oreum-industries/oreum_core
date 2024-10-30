@@ -57,7 +57,9 @@ def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
     'trace', the default is `kind = 'rank_vlines'`"""
     kind = kwargs.pop('kind', 'rank_vlines')
     txtadd = kwargs.pop('txtadd', None)
-    _ = az.plot_trace(mdl.idata, var_names=rvs, kind=kind, figsize=(12, 1.8 * len(rvs)))
+    _ = az.plot_trace(
+        mdl.idata, var_names=rvs, kind=kind, figsize=(12, 0.8 + 1.5 * len(rvs))
+    )
     f = plt.gcf()
     _ = f.suptitle(
         ' - '.join(filter(None, [f'Posterior traces of {rvs}', txtadd]))
@@ -99,7 +101,7 @@ def facetplot_krushke(
     txtadd = kwargs.pop('txtadd', None)
     transform = kwargs.pop('transform', None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
-    f, axs = plt.subplots(n, m, figsize=(2.6 * m, 0.8 + n * 1.6))
+    f, axs = plt.subplots(n, m, figsize=(2.6 * m, 0.8 + 1.5 * n))
     _ = az.plot_posterior(
         mdl.idata,
         group=group,
@@ -153,7 +155,7 @@ def forestplot_single(
     nms = [nm for nm in df.index.names if nm not in ['chain', 'draw']]
     n = sum([len(df.index.get_level_values(nm).unique()) for nm in nms])
 
-    f = plt.figure(figsize=(12, 2 + 0.2 * n))
+    f = plt.figure(figsize=(12, 1.4 + 0.2 * n))
     ax0 = f.add_subplot()
     _ = az.plot_forest(
         mdl.idata[group], var_names=var_names, **kws, transform=transform, ax=ax0
@@ -200,7 +202,7 @@ def forestplot_multiple(
     desc = None
 
     hs = [0.22 * (np.prod(data.shape[2:])) for data in datasets.values()]
-    f = plt.figure(figsize=(12, 2 + sum(hs)))
+    f = plt.figure(figsize=(12, 1.4 + 0.2 * sum(hs)))
     gs = gridspec.GridSpec(len(hs), 1, height_ratios=hs, figure=f)
 
     for i, (txt, data) in enumerate(datasets.items()):
@@ -403,30 +405,31 @@ def plot_compare(
     f, axs = plt.subplots(
         len(yhats),
         1,
-        figsize=(12, 2.5 * len(yhats) + 0.3 * len(mdl_dict)),
+        figsize=(12, 2.6 * len(yhats) + 0.2 * len(mdl_dict)),
         squeeze=False,
         sharex=sharex,
     )
     # mdlnms = ' vs '.join(idata_dict.keys())
     idata_dict = {f'{k}\n{v.mdl_id_fn}': v.idata for k, v in mdl_dict.items()}
-    dfcompdict = {}
+    dcomp = {}
     for i, y in enumerate(yhats):
         dfcomp = az.compare(
             idata_dict, var_name=y, ic='loo', method='stacking', scale='log'
         )
-        dfcompdict[y] = dfcomp
+        dcomp[y] = dfcomp
         ax = az.plot_compare(
             dfcomp, ax=axs[i][0], title=False, textsize=10, legend=False
         )
         _ = ax.set_title(y)
     t = (
-        'Model Performance Comparison: ELPD via In-Sample LOO-PIT'
-        + '\n(higher & narrower is better)'
+        'Model Performance Comparison: ELPD via In-Sample LOO-PIT\n`'
+        + " vs ".join(list(mdl_dict.keys()))
+        + '` (higher & narrower is better)'
     )
     _ = f.suptitle(' - '.join(filter(None, [t, txtadd])))
     _ = f.tight_layout()
 
-    return f, dfcompdict
+    return f, dcomp
 
 
 def plot_lkjcc_corr(mdl: BasePYMCModel, **kwargs) -> figure.Figure:

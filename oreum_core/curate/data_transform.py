@@ -327,8 +327,8 @@ class Transformer:
         """Common to fit_transform and transform"""
         # TODO add check for fml contains `~` and handle accordingly
         # TODO add option to output matrix   # np.asarray(mx_ex)
-        fts_force_to_int = self._get_fts_to_force_to_int(df)
         df = self._convert_cats(df.copy())
+        fts_force_to_int = self._get_fts_to_force_to_int(df)
         na_act = pat.NAAction(NA_types=[]) if propagate_nans else 'raise'
         df_ex = pat.dmatrix(
             fml_or_design_info, df, NA_action=na_act, return_type='dataframe'
