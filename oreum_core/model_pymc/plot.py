@@ -422,9 +422,9 @@ def plot_compare(
         )
         _ = ax.set_title(y)
     t = (
-        'Model Performance Comparison: ELPD via In-Sample LOO-PIT\n`'
-        + " vs ".join(list(mdl_dict.keys()))
-        + '` (higher & narrower is better)'
+        "Model Performance Comparison: ELPD via In-Sample LOO-PIT:\n`"
+        + "` vs `".join(list(mdl_dict.keys()))
+        + "`\n(higher & narrower is better)"
     )
     _ = f.suptitle(' - '.join(filter(None, [t, txtadd])))
     _ = f.tight_layout()

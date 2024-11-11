@@ -89,7 +89,7 @@ class PYMCIO(BaseFileIO):
         else:
             raise ValueError('format must be in {"png", "svg"}')
 
-        # gv auto adds the file extension, so pre-remove if present
+        # gv auto-adds the file extension, so pre-remove if present
         gv.render(filename=str(fqn.with_suffix('')), format=fmt, cleanup=True)
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn

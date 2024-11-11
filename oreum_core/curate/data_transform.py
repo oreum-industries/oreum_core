@@ -307,7 +307,9 @@ class Transformer:
         return ints + bools
 
     def _convert_cats(self, dfraw: pd.DataFrame) -> pd.DataFrame:
-        """Common conversion of cats to codes and store mapping"""
+        """Common conversion of cats to codes and store mapping
+        NOTE Missing values (np.nan) are recorded as cats.codes = -1
+        which is helpfully still an int, so we can still return int dtype"""
         sdtypes = dfraw.dtypes
         df = dfraw.copy()
         cats = list(sdtypes.loc[sdtypes == 'category'].index.values)

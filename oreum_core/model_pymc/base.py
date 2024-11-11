@@ -238,8 +238,9 @@ class BasePYMCModel:
         Note by default aimed toward out-of-sample PPC in production
         """
         store_ppc = kwargs.pop('store_ppc', self.sample_post_pred_kws['store_ppc'])
+        posterior = kwargs.pop('posterior', self.posterior)
         kws = dict(
-            trace=self.posterior,
+            trace=posterior,
             random_seed=kwargs.pop('random_seed', self.rsd),
             predictions=not kwargs.pop(
                 'ppc_insample', self.sample_post_pred_kws['ppc_insample']
