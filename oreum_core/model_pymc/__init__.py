@@ -20,7 +20,6 @@ from .calc import (
     calc_bayesian_r2,
     calc_binary_performance_measures,
     calc_f_beta,
-    calc_mse,
     calc_ppc_coverage,
     calc_r2,
     calc_rmse,

@@ -42,7 +42,6 @@ __all__ = [
     'plot_binary_performance',
     'plot_coverage',
     'plot_rmse_range',
-    'plot_rmse_range_pair',
     # 'plot_r2_range',
     # 'plot_r2_range_pair',
     'plot_estimate',
@@ -813,62 +812,34 @@ def plot_coverage(df: pd.DataFrame, **kwargs) -> figure.Figure:
 
 
 def plot_rmse_range(
-    rmse: float, rmse_q: pd.Series, qlims: tuple = (0.1, 0.9), yhat_name: str = ''
+    rmse: float, rmse_qs: pd.Series, yhat: str = 'yhat', y: str = 'y', **kwargs
 ) -> figure.Figure:
-    """Convenience to plot RMSE range from model_pymc.calc.calc_rmse"""
-    # dfp = rmse_q.reset_index()
-    dfp = rmse_q.loc[qlims[0] : qlims[1]].to_frame()
-    min_rmse = rmse_q.min()
-    min_rmse_q = rmse_q.idxmin()
+    """Convenience to plot RMSE mean and qs from model_pymc.calc.calc_rmse
+    Requires that `rmse_qs` has an entry at the median 0.5"""
+    txtadd = kwargs.get('txtadd', None)
+    dfp = rmse_qs.to_frame()
+    min_rmse_qs = rmse_qs.min()
+    min_rmse_qs_q = rmse_qs.idxmin()
+    j = max(-int(np.ceil(np.log10(rmse))) + 2, 1)
 
     f, axs = plt.subplots(1, 1, figsize=(10, 4))
     ax = sns.lineplot(x='q', y='rmse', data=dfp, lw=2, ax=axs)
-    #     _ = ax.set_yscale('log')
-    _ = ax.axhline(rmse, c='r', ls='-.', label=f'rmse @ mean {rmse:,.3f}')
+    _ = ax.axhline(rmse, c='r', ls='-.', label=f'rmse @ mean {rmse:,.{j}f}')
     _ = ax.axhline(
-        rmse_q[0.5], c='b', ls='--', label=f'rmse @ median (q0.50) {rmse_q[0.5]:,.3f}'
+        rmse_qs[0.5], c='b', ls='--', label=f'rmse @ med (q0.5) {rmse_qs[0.5]:,.{j}f}'
     )
     _ = ax.axhline(
-        min_rmse,
+        min_rmse_qs,
         c='g',
         ls='--',
-        label=f'rmse @ min (q{min_rmse_q:,.2f}) {min_rmse:,.3f}',
+        label=f'rmse @ min (q{min_rmse_qs_q:,.{j}f}) {min_rmse_qs:,.{j}f}',
     )
-    _ = f.suptitle(f'RMSE range {yhat_name}', y=0.95)
     _ = ax.legend()
-    return f
-
-
-def plot_rmse_range_pair(
-    rmse_t, rmse_pct_t, rmse_h, rmse_pct_h, lims=(0, 80), yhat_name=''
-):
-    """Convenience to plot two rmse pct results"""
-    f, axs = plt.subplots(1, 2, figsize=(14, 4))
-    t = ['train', 'holdout']
-    _ = f.suptitle('RMSE ranges {yhat_name}', y=0.97)
-
-    for i, (rmse, rmse_pct) in enumerate(
-        zip([rmse_t, rmse_h], [rmse_pct_t, rmse_pct_h])
-    ):
-        dfp = rmse_pct.reset_index()
-        dfp = dfp.loc[(dfp['pct'] >= lims[0]) & (dfp['pct'] <= lims[1])].copy()
-        min_rmse = rmse_pct.min()
-        min_rmse_pct = rmse_pct.index[rmse_pct.argmin()]
-
-        ax = sns.lineplot(x='pct', y='rmse', data=dfp, lw=2, ax=axs[i])
-        _ = ax.axhline(rmse, c='r', ls='--', label=f'mean @ {rmse:,.2f}')
-        _ = ax.axhline(
-            rmse_pct[50], c='b', ls='--', label=f'median @ {rmse_pct[50]:,.2f}'
-        )
-        _ = ax.axhline(
-            min_rmse,
-            c='g',
-            ls='--',
-            label=f'min @ pct {min_rmse_pct} @ {min_rmse:,.2f}',
-        )
-        _ = ax.legend()
-        _ = ax.set_title(t[i])
+    t = f'RMSE range for `{yhat}` vs `{y}`'
+    tq = f'qs in [{rmse_qs.index.min()}, {rmse_qs.index.max()}]'
+    _ = f.suptitle(' - '.join(filter(None, [t, tq, txtadd])))
     _ = f.tight_layout()
+    return f
 
 
 def plot_estimate(
