@@ -451,3 +451,35 @@ def plot_lkjcc_corr(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
         rvs_hack=0,
         **kwargs,
     )
+
+
+def plot_yhat_vs_y(
+    mdl: BasePYMCModel,
+    dfhat: pd.DataFrame,
+    yhat: str = "yhat",
+    y: str = "y",
+    oid: str = "oid",
+    insamp: bool = False,
+    **kwargs,
+) -> figure.Figure:
+    """Boxplot forecast yhat with overplotted y"""
+    txtadd = kwargs.pop('txtadd', None)
+    kws_mn = dict(
+        markerfacecolor="w", markeredgecolor="#333333", marker="d", markersize=12
+    )
+    kws_box = dict(kind="box", sym='', showmeans=True, whis=(3, 97), meanprops=kws_mn)
+    kws_sctr = dict(s=80, color="#32CD32")
+
+    g = sns.catplot(
+        x=yhat, y=oid, data=dfhat.reset_index(), **kws_box, height=4, aspect=3
+    )
+    _ = g.map(sns.scatterplot, y, oid, **kws_sctr, zorder=100)
+    t_io = (
+        f'{"In" if insamp else "Out-of"}-sample: boxplots of posterior `{yhat}`'
+        + f' with overplotted actual `{y}` values per observation'
+        + f' `{oid}` (green dots) - `{mdl.name}`'
+    )
+    _ = g.fig.suptitle(' - '.join(filter(None, [t_io, txtadd])) + f'\n{mdl.mdl_id}')
+
+    _ = g.tight_layout()
+    return g.fig

@@ -48,5 +48,6 @@ from .plot import (
     plot_loo_pit,
     plot_ppc,
     plot_trace,
+    plot_yhat_vs_y,
 )
 from .pymc_io import PYMCIO
