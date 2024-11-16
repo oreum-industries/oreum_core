@@ -136,7 +136,7 @@ def forestplot_single(
             kwargs.pop('clr_offset', 0) :
         ][0],
         ess=False,
-        combined=kwargs.pop('plot_combined', False),
+        combined=kwargs.pop('combined', False),
     )
 
     # get overall stats
@@ -155,7 +155,7 @@ def forestplot_single(
     nms = [nm for nm in df.index.names if nm not in ['chain', 'draw']]
     n = sum([len(df.index.get_level_values(nm).unique()) for nm in nms])
 
-    f = plt.figure(figsize=(12, 1.4 + 0.2 * n))
+    f = plt.figure(figsize=(12, 1.2 + 0.3 * n))
     ax0 = f.add_subplot()
     _ = az.plot_forest(
         mdl.idata[group], var_names=var_names, **kws, transform=transform, ax=ax0
@@ -336,7 +336,6 @@ def plot_ppc(
     # wild hack to get the size of observed
     i = list(dict(_idata.observed_data.sizes).values())[0]
     num_pp_samples = None if i < 500 else 200
-
     f, axs = plt.subplots(n, 1, figsize=(12, 4 * n), sharex=True, squeeze=False)
     _ = az.plot_ppc(
         _idata,

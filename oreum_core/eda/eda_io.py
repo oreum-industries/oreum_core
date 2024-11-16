@@ -47,8 +47,11 @@ class FigureIO(BaseFileIO):
         super().__init__(*args, **kwargs)
 
     def write(self, f: figure.Figure, fn: str, *args, **kwargs) -> Path:
-        """Accept figure.Figure & fqn e.g. `plots/plot.png`, write to fqn"""
-        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.png'))
+        """Accept figure.Figure & fn str incl. dots e.g. `plots/plot.2.png`,
+        write to fqn"""
+        if Path(fn).suffix != '.png':  # either no suffix or there's dots in fn
+            fn = Path(self.snl.clean(fn)).with_suffix('.png')
+        fqn = self.get_path_write(fn)
         f.savefig(
             fname=fqn, format='png', bbox_inches='tight', dpi=300, *args, **kwargs
         )
@@ -69,33 +72,41 @@ class FigureIO(BaseFileIO):
         Render according to usual rcParams (set at module-level)
         NOTE:
         All the alternatives are bad
-            1. This one is entirely missed by nbconvert at render to PDF
+            1. This is entirely missed by nbconvert --to pdf because it goes
+            looking from the dir structure point from which you call nbconvert
+            and also missed by --to slides because that even more stupidly
+            prepends the output dir onto the URL for the image!!??
             # <img src="img.jpg" style="float:center; width:900px" />
 
-            2. This one causes following markdown to render monospace in PDF
+            2. This one used to cause any following markdown to render as
+            monospace font in the PDF, but as-at 2024-11-14 it seems to not be
+            an issue? Keep this not around for future reference. Still doesn't
+            render to slides though.
             # from IPython.display import Image
             # Image("./assets/img/oreum_eloss_blueprint3.jpg", retina=True)
         """
         if fn is not None:
-            fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix(extension))
-        img = mpimg.imread(fqn)
-        f, axs = plt.subplots(1, 1, figsize=figsize)
-        _ = axs.imshow(img)
-        ax = plt.gca()
-        _ = ax.grid(False)
-        _ = ax.set_frame_on(False)
-        _ = plt.tick_params(
-            top=False,
-            bottom=False,
-            left=False,
-            right=False,
-            labelleft=False,
-            labelbottom=False,
-        )
-        if title is not None:
-            _ = f.suptitle(f'{title}', fontsize=12, y=1.0)
-        _ = f.tight_layout()
+            fqn = self.get_path_read(Path(fn).with_suffix(extension))
         _log.info(f'Read image from {str(fqn.resolve())}')
+        img = mpimg.imread(fqn)
+        with plt.ioff():
+            f, axs = plt.subplots(1, 1, figsize=figsize)
+            _ = axs.imshow(img)
+            ax = plt.gca()
+            _ = ax.grid(False)
+            _ = ax.set_frame_on(False)
+            _ = plt.tick_params(
+                top=False,
+                bottom=False,
+                left=False,
+                right=False,
+                labelleft=False,
+                labelbottom=False,
+            )
+            if title is not None:
+                _ = f.suptitle(f'{title}', fontsize=12, y=1.0)
+            _ = f.tight_layout()
+        plt.show()
         return f
 
 
