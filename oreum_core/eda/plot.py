@@ -953,12 +953,13 @@ def plot_estimate(
         if force_xlim is not None:
             _ = gd.ax.set(xlim=force_xlim)
 
-        hdi = df[yhat].quantile(q=[0.03, 0.1, 0.25, 0.75, 0.9, 0.97]).values
+        hdi = df[yhat].quantile(q=[0.03, 0.1, 0.25, 0.5, 0.75, 0.9, 0.97]).values
         summary = (
-            f'Mean = {mn[0]:,.{j}f}, '
-            + f'$HDI_{{50}}$ = [{hdi[2]:,.{j}f}, {hdi[3]:,.{j}f}], '
-            + f'$HDI_{{80}}$ = [{hdi[1]:,.{j}f}, {hdi[4]:,.{j}f}], '
-            + f'$HDI_{{94}}$ = [{hdi[0]:,.{j}f}, {hdi[5]:,.{j}f}]'
+            f'$\mu = {mn[0]:,.{j}f}$, '
+            + f'$q_{{50}} = {hdi[3]:,.{j}f}$, '
+            + f'$HDI_{{50}} = [{hdi[2]:,.{j}f}, {hdi[4]:,.{j}f}]$, '
+            + f'$HDI_{{80}} = [{hdi[1]:,.{j}f}, {hdi[5]:,.{j}f}]$, '
+            + f'$HDI_{{94}} = [{hdi[0]:,.{j}f}, {hdi[6]:,.{j}f}]$'
         )
 
     t = f'Summary Distribution of {yhat} estimate for {nobs} obs'
