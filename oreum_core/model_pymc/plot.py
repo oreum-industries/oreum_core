@@ -136,7 +136,7 @@ def forestplot_single(
             kwargs.pop('clr_offset', 0) :
         ][0],
         ess=False,
-        combined=kwargs.pop('combined', False),
+        combined=kwargs.pop('combined', True),
     )
 
     # get overall stats
