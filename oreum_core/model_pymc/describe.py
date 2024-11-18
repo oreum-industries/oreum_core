@@ -29,7 +29,6 @@ __all__ = [
     'describe_dist',
     'get_summary',
     'print_rvs',
-    'get_mdlvt_specific_nm',
 ]
 
 RSD = 42
@@ -86,7 +85,6 @@ def describe_dist(mdl: BasePYMCModel, log: bool = False, inc_summary: bool = Fal
 
 def get_summary(mdl: BasePYMCModel, rvs: list, group='posterior') -> pd.DataFrame:
     """Convenience fn to get arviz summary of idata posteriors"""
-
     df = az.summary(mdl.idata, var_names=rvs, group=group)
     return df
 
@@ -99,15 +97,14 @@ def print_rvs(mdl: BasePYMCModel) -> list[str]:
     for k, rvs in mdl.get_rvs().items():
         if k in ['free', 'potentials', 'deterministics']:
             for rv in rvs:
-                r.append(rv.str_repr(formatting='string', include_params=True))
+                try:
+                    r.append(rv.str_repr(formatting='string', include_params=True))
+                except AttributeError:
+                    # initially developed as a bit of a hack to deal with
+                    # 'TensorVariable' object has no attribute 'str_repr'
+                    # in the case of e.g. autoimputed x_mv_unobserved
+                    pass
     return r
-
-
-def get_mdlvt_specific_nm(mdl: BasePYMCModel, txtadd: str = None) -> str:
-    """Convenience to get full specific name of model + version + txtadd
-    to be used wherebver possible for writing filenames"""
-    v = re.sub('\.', '', mdl.version)
-    return f"{'_'.join(filter(None, [mdl.name, f'v{v}', txtadd]))}"
 
 
 # def print_rvs(rvs: list[pt.TensorVariable]) -> None:

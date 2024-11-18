@@ -22,7 +22,7 @@ import graphviz
 from pymc.model_graph import model_to_graphviz
 
 from ..utils.file_io import BaseFileIO
-from . import BasePYMCModel, get_mdlvt_specific_nm
+from . import BasePYMCModel
 
 __all__ = ['PYMCIO']
 
@@ -42,9 +42,10 @@ class PYMCIO(BaseFileIO):
     def read_idata(
         self, mdl: BasePYMCModel = None, fn: str = '', **kwargs
     ) -> az.InferenceData:
-        """Read InferenceData using mdl.name + txtadd, or from fn"""
+        """Read InferenceData using mdl.mdl_id_fn + txtadd, or from fn"""
+        txtadd = kwargs.pop('txtadd', None)
         if mdl is not None:
-            fn = f"idata_{get_mdlvt_specific_nm(mdl, kwargs.pop('txtadd', None))}"
+            fn = '_'.join(filter(None, ['idata', mdl.mdl_id_fn, txtadd]))
         fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         idata = az.from_netcdf(str(fqn.resolve()))
         _log.info(f'Read model idata from {str(fqn.resolve())}')
@@ -52,9 +53,10 @@ class PYMCIO(BaseFileIO):
 
     def write_idata(self, mdl: BasePYMCModel, fn: str = '', **kwargs) -> Path:
         """Accept BasePYMCModel object write to InferenceData using
-        mdl.name + txtaddand of fn"""
+        mdl.mdl_id_fn + txtadd"""
+        txtadd = kwargs.pop('txtadd', None)
         if fn == '':
-            fn = f"idata_{get_mdlvt_specific_nm(mdl, kwargs.pop('txtadd', None))}"
+            fn = '_'.join(filter(None, ['idata', mdl.mdl_id_fn, txtadd]))
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
         mdl.idata.to_netcdf(str(fqn.resolve()))
         _log.info(f'Written to {str(fqn.resolve())}')
@@ -73,8 +75,9 @@ class PYMCIO(BaseFileIO):
         eda_io.FigureIO.read()
         Optionally set `write = False` and receive the graphviz directly
         """
+        txtadd = kwargs.pop('txtadd', None)
         if fn == '':
-            fn = f"graph_{get_mdlvt_specific_nm(mdl, kwargs.pop('txtadd', None))}"
+            fn = '_'.join(filter(None, ['graph', mdl.mdl_id_fn, txtadd]))
         fqn = self.get_path_write(f'{fn}.{fmt}')
         gv = model_to_graphviz(mdl.model, formatting='plain')
         if write == False:
@@ -86,7 +89,7 @@ class PYMCIO(BaseFileIO):
         else:
             raise ValueError('format must be in {"png", "svg"}')
 
-        # gv auto adds the file extension, so pre-remove if present
+        # gv auto-adds the file extension, so pre-remove if present
         gv.render(filename=str(fqn.with_suffix('')), format=fmt, cleanup=True)
         _log.info(f'Written to {str(fqn.resolve())}')
         return fqn

@@ -22,6 +22,7 @@ import regex as re
 import xarray as xr
 from pymc.testing import assert_no_rvs
 
+from ..utils.snakey_lowercaser import SnakeyLowercaser
 from .calc import compute_log_likelihood_for_potential
 
 __all__ = ['BasePYMCModel']
@@ -53,7 +54,7 @@ class BasePYMCModel:
         """
         self.model = None
         self._idata = None
-        self.replace_idata = False
+        self.replace_idata = True
         self.sample_prior_pred_kws = dict(samples=500, return_inferencedata=True)
         self.sample_post_pred_kws = dict(store_ppc=True, ppc_insample=False)
         self.sample_kws = dict(
@@ -74,7 +75,21 @@ class BasePYMCModel:
         self.rvs_potential_loglike = None
         self.name = getattr(self, 'name', 'unnamed_model')
         self.version = getattr(self, 'version', 'unversioned_model')
-        self.name = f"{self.name}{kwargs.pop('name_ext', '')}"
+
+    @property
+    def mdl_id(self) -> str:
+        """Get model id (name, version, obs name)
+        NOTE: By convention we'll have a single name to cover all observation
+        datasets included in the model (i.e several dfx)
+        """
+        obs_nm = getattr(self, 'obs_nm', 'unnamed_obs')
+        return f'{self.name}, v{self.version}, {obs_nm}'
+
+    @property
+    def mdl_id_fn(self) -> str:
+        """Get model id (name, version, obs name) safe for filename"""
+        snl = SnakeyLowercaser()
+        return snl.clean(re.sub('\.', '', self.mdl_id))
 
     @property
     def posterior(self) -> xr.Dataset:
@@ -107,7 +122,7 @@ class BasePYMCModel:
         helper_txt = 'B' if self.model is None else 'Reb'
         try:
             self._build(**kwargs)
-            _log.info(f'{helper_txt}uilt model {self.name} {self.version}')
+            _log.info(f'{helper_txt}uilt model {self.mdl_id}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _build() in your'
@@ -118,7 +133,7 @@ class BasePYMCModel:
         """Extend build, initially developed to help PPC of GRW and missing value imputation"""
         try:
             self._extend_build(**kwargs)
-            _log.info(f'Extended build of model {self.name} {self.version}')
+            _log.info(f'Extended build of model {self.mdl_id}')
         except AttributeError:
             raise NotImplementedError(
                 'Create a method _extend_build() in your'
@@ -153,7 +168,7 @@ class BasePYMCModel:
                 _log.warning('Warning in mdl.sample_prior_predictive()', exc_info=e)
             finally:
                 _ = self.update_idata(prior_pred, replace=replace)
-            _log.info(f'Sampled prior predictive for {self.name} {self.version}')
+            _log.info(f'Sampled prior predictive for {self.mdl_id}')
         return None
 
     def sample(self, **kwargs):
@@ -192,7 +207,7 @@ class BasePYMCModel:
             else:
                 _ = self.update_idata(posterior)
 
-                _log.info(f'Sampled posterior for {self.name} {self.version}')
+                _log.info(f'Sampled posterior for {self.mdl_id}')
 
                 # optional manually calculate log_likelihood for potentials
                 if self.calc_potential_loglike:
@@ -223,8 +238,9 @@ class BasePYMCModel:
         Note by default aimed toward out-of-sample PPC in production
         """
         store_ppc = kwargs.pop('store_ppc', self.sample_post_pred_kws['store_ppc'])
+        posterior = kwargs.pop('posterior', self.posterior)
         kws = dict(
-            trace=self.posterior,
+            trace=posterior,
             random_seed=kwargs.pop('random_seed', self.rsd),
             predictions=not kwargs.pop(
                 'ppc_insample', self.sample_post_pred_kws['ppc_insample']
@@ -233,22 +249,25 @@ class BasePYMCModel:
         with self.model:
             ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
 
-        _log.info(f'Sampled posterior predictive for {self.name} {self.version}')
+        _log.info(f'Sampled posterior predictive for {self.mdl_id}')
 
         if store_ppc:
             _ = self.update_idata(ppc)
         else:
             return ppc
 
-    def replace_obs(self, obsd: dict = None) -> None:
-        """Replace the observations
+    def replace_obs(self, obsd: dict = None, obs_nm: str = None) -> None:
+        """Replace the observation dataset(s)
         Assumes data lives in pm.MutableData containers in your _build() function
         You must call `build()` afterward
         Optionally afterwards call `extend_build()` for future time-dependent PPC
+        Optionally set `obs_nm` (useful for downstream plotting etc)
         """
+        if obs_nm is not None:
+            self.obs_nm = obs_nm
         for k, v in obsd.items():
             setattr(self, k, v)
-            _log.info(f'Replaced obs {k} in {self.name} {self.version}')
+            _log.info(f'Replaced obs {k} in {self.mdl_id}')
 
     def update_idata(self, idata: az.InferenceData, replace: bool = False) -> None:
         """Create (and update) an Arviz InferenceData object on-model from a
@@ -262,8 +281,8 @@ class BasePYMCModel:
             self._idata.extend(idata, join=side)
 
     def debug(self):
-        """Convenience to run debug on logp and random, and
-        assert no MeasurableVariable nodes in the graph
+        """Convenience to validate the parameterization: run debug on logp and
+        random, and assert no MeasurableVariable nodes in the graph
         TODO catch these outputs in the log"""
         if self.model is not None:
             assert_no_rvs(self.model.logp())

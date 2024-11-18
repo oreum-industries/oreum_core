@@ -36,7 +36,6 @@ __all__ = [
     'get_log_jcd_scan',
     'calc_f_beta',
     'calc_binary_performance_measures',
-    'calc_mse',
     'calc_rmse',
     'calc_r2',
     'calc_bayesian_r2',
@@ -180,52 +179,79 @@ def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFram
     return perf.round(6)
 
 
-def calc_mse(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
-    r""" Convenience: Calculate MSE using quantiles of all samples from PPC
-        y shape: (nobs, )
-        yhat shape: (nsamples, nobs)
+def calc_rmse(
+    dfhat: pd.DataFrame,
+    oid: str = 'oid',
+    yhat: str = 'yhat',
+    y: str = 'y',
+    method: str = 'a',
+    qs: bool = False,
+    mse_only: bool = False,
+) -> float | tuple[float, pd.Series]:
+    r"""Calculate (R)MSE using the mean PPC samples:
 
-    Mean-Squared Error of prediction vs observed
-    $$\frac{1}{n}\sum_{i=1}^{i=n}(\hat{y}_{i}-y_{i})^{2}$$
+    Require that dfhat is a long-format left join of PPC samples `yhat` and
+    observed `y` values (which of course will contain nsamples duplicates)
+    ie.: len(dfhat) == (nobs * nsamples)
+    and: dfhat has index [oid, chain, draw] and fts [yhat, y]
+
+    Optionally set mse_only = True to get just the MSE (default is RMSE)
+    Optionally set qs = True to also return a Series of quantiles
+
+    For the SE calc, we have two options:
+    + A: compress samples to a summary statistic before calculate MSE
+    + B: calculate MSE for all samples and then take summary statistic
 
     \begin{align}
-    \text{Method A, compress to mean of samples: } \text{MSE} &= \frac{1}{n} \sum_{i=1}^{i=n}(\mu_{j}(\hat{y}_{i}) - y_{i})^{2} \\
-    \text{Method B, use all samples then mean: } \text{MSE} &= \frac{1}{n} \sum_{i=1}^{i=n}(\mu_{j}(\hat{y}_{ij} - y_{i})^{2})
+    \text{A:} \text{MSE} &= \frac{1}{n} \sum_{i=1}^{i=n}(\mu_{j}(\hat{y}_{i}) - y_{i})^{2} \\
+    \text{B:} \text{MSE} &= \frac{1}{n} \sum_{i=1}^{i=n}(\mu_{j}(\hat{y}_{ij} - y_{i})^{2})
     \end{align}
 
-    WARNING:
-        the 'samples' approach squares outliers pushing farther from the mean
-        # se_samples = np.power(yhat - yobs, 2)      # (nsamp, nobs)
-        # mse_samples = np.mean(se_samples, axis=1)  # (nsamp,)
-        i.e.
-        take mean across samples then square the differences is usually smaller than
-        square the differences each sample and preserve samples
-        https://en.wikipedia.org/wiki/Generalized_mean
+    Option B can create huge MSE values because outliers for each obs are
+    squared and push farther from the mean. This might be useful for a very
+    sensitive analysis.
 
-        I can only think to calc summary stats and then calc MSE for them
+    i.e.
+    take mean across samples then square the differences is usually smaller
+    than square the differences each sample and preserve samples
+    https://en.wikipedia.org/wiki/Generalized_mean
+
+    But here we will default to the easier-to-understand Option A
     """
-    # collapse samples to mean then calc error
-    se = np.power(yhat.mean(axis=0) - y, 2)  # (nobs, )
-    mse = np.mean(se, axis=0)  # 1
+    if method not in ['a', 'b']:
+        raise AttributeError("method must be in `a` or `b`")
 
-    # collapse samples to a range of summary stats then calc error
-    qs = np.round(np.arange(0, 1.01, 0.01), 2)
-    se_q = np.power(np.quantile(yhat, qs, axis=0) - y, 2)  # (len(smry), nobs)
-    mse_q = np.mean(se_q, axis=1)  # len(smry)
+    def _grp_se_at_mn(g):
+        if method == 'a':
+            return np.power(g[yhat].mean() - g[y].max(), 2)
+        else:
+            return np.power(g[yhat] - g[y], 2).mean()
 
-    s_mse_q = pd.Series(mse_q, index=qs, name='mse')
-    s_mse_q.index.rename('q', inplace=True)
-    return mse, s_mse_q
+    def _grp_se_at_qs(g):
+        qs = np.round(np.linspace(0, 1, 100 + 1), 2)
+        if method == 'a':
+            se_at_qs = np.power(np.quantile(g[yhat], qs) - g[y].max(), 2)
+        else:
+            se_at_qs = np.quantile(np.power(g[yhat] - g[y], 2), qs)
 
+        s_se_at_qs = pd.Series(se_at_qs, index=qs, name='se')
+        s_se_at_qs.index.rename('q', inplace=True)
+        return s_se_at_qs
 
-def calc_rmse(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
-    """Convenience: Calculate RMSE using quantiles of all samples from PPC
-    shape (nsamples, nobs)
-    """
-    mse, s_mse_q = calc_mse(y, yhat)
-    s_rmse_q = s_mse_q.map(np.sqrt)
-    s_rmse_q._set_name('rmse', inplace=True)
-    return np.sqrt(mse), s_rmse_q
+    mse_at_mn = dfhat.groupby(level=oid).apply(_grp_se_at_mn).mean(axis=0)
+    if not qs:
+        if mse_only:
+            return mse_at_mn
+        else:
+            return np.sqrt(mse_at_mn)
+    else:
+        mse_at_qs = dfhat.groupby(level=oid).apply(_grp_se_at_qs).mean(axis=0)
+        if mse_only:
+            return mse_at_mn, mse_at_qs
+        else:
+            rmse_at_qs = mse_at_qs.map(np.sqrt)
+            rmse_at_qs._set_name('rmse', inplace=True)
+            return np.sqrt(mse_at_mn), rmse_at_qs
 
 
 def calc_r2(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:

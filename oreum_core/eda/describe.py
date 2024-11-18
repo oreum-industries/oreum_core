@@ -40,7 +40,7 @@ def describe(
     reset_index: bool = True,
     return_df: bool = False,
     **kwargs,
-) -> str:
+) -> pd.DataFrame | None:
     """Concat transposed topN rows, numerical desc & dtypes
     Beware a dataframe full of bools or categoricals will error
     thanks to pandas.describe() being too clever
@@ -65,8 +65,11 @@ def describe(
 
     df = df.copy()
     if reset_index:
-        nfeats += len(df.index.names)
+        idx_new_names = [f'index: {c}' for c in list(df.index.names)]
+        col_names = list(df.columns.values)
+        nfeats += len(idx_new_names)
         df = df.reset_index()
+        df.columns = idx_new_names + col_names
 
     # start with pandas describe, add on dtypes
     quantiles = [0.25, 0.5, 0.75]  # the default
@@ -136,7 +139,7 @@ def describe(
         fts_out.append(['mode', 'mode_count'])
 
     # select summary states and prepend random rows for example cases
-    rndidx = RNG.integers(low=0, high=len(df), size=nobs)
+    rndidx = RNG.choice(np.arange(0, len(df)), size=nobs, replace=False)
     dfout = pd.concat(
         (df.iloc[rndidx].T, dfout[fts_out].copy()), axis=1, join='outer', sort=False
     )
@@ -145,12 +148,20 @@ def describe(
     if return_df:
         return dfout
     else:
-        display_fw(dfout.iloc[: nfeats + len_idx, :], max_rows=nfeats, **kwargs)
-        return f'Shape: {df.shape}, Memsize {nbytes / 1e6:,.1f} MB'
+        display_fw(
+            dfout.iloc[: nfeats + len_idx, :],
+            max_rows=nfeats,
+            shape=df.shape,
+            nbytes=nbytes,
+            **kwargs,
+        )
 
 
 def display_fw(df: pd.DataFrame, **kwargs) -> None:
-    """Conv fn: contextually display max rows"""
+    """Conv fn: contextually display max cols"""
+
+    shape = kwargs.pop('shape', df.shape)
+    nbytes = kwargs.pop('nbytes', df.values.nbytes)
 
     options = {
         'display.precision': kwargs.pop('precision', 2),
@@ -165,32 +176,32 @@ def display_fw(df: pd.DataFrame, **kwargs) -> None:
 
     with pd.option_context(*[i for tup in options.items() for i in tup]):
         display(df)
+        display(f'Shape: {shape}, Memsize {nbytes / 1e6:,.1f} MB')
 
 
-def display_ht(df: pd.DataFrame, nrows=3, **kwargs) -> str:
+def display_ht(df: pd.DataFrame, nrows=3, **kwargs) -> None:
     """Convenience fn: Display head and tail n rows via display_fw"""
 
     nrows = min(nrows, len(df))
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
-    display_fw(dfd, **kwargs)
-    return f'Shape: {df.shape}, Memsize {df.values.nbytes / 1e6:,.1f} MB'
+    display_fw(dfd, shape=df.shape, nbytes=df.values.nbytes, **kwargs)
 
 
 def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:
     """Return a dictionary of lists of feats within df according to dtype"""
+    dtypes = df.dtypes.to_dict().items()
     fts = dict(
-        categorical=[
-            k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'cat'
-        ],  # category
+        categorical=[k for k, v in dtypes if v.name[:3] == 'cat'],  # category
         cat=[
             k
             for k, v in df.dtypes.to_dict().items()
             if (v.name[:3] == 'obj') | (v.name[:3] == 'str')
         ],
-        bool=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'boo'],
-        datetime=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'dat'],
-        int=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'int'],
-        float=[k for k, v in df.dtypes.to_dict().items() if v.name[:3] == 'flo'],
+        bool=[k for k, v in dtypes if v.name == 'bool'],
+        boolean=[k for k, v in dtypes if v.name == 'boolean'],
+        datetime=[k for k, v in dtypes if v.name[:3] == 'dat'],
+        int=[k for k, v in dtypes if v.name[:3] == 'int'],
+        float=[k for k, v in dtypes if v.name[:3] == 'flo'],
     )
     w = []
     for _, v in fts.items():
@@ -204,7 +215,7 @@ def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:
         )
 
     if as_dataframe:
-        dtypes = ['categorical', 'cat', 'bool', 'datetime', 'int', 'float']
+        dtypes = ['categorical', 'cat', 'bool', 'boolean', 'datetime', 'int', 'float']
         d = {w: k for k, v in fts.items() for w in v}
         dfd = pd.DataFrame.from_dict(d, orient='index', columns=['dtype'])
         dfd.index.set_names('ft', inplace=True)

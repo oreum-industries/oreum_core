@@ -15,7 +15,7 @@
 """Core tools for use on projects by Oreum Industries"""
 import logging
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 # logger goes to null handler by default
 # packages that import oreum_core can override this and direct elsewhere

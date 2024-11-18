@@ -20,7 +20,6 @@ from .calc import (
     calc_bayesian_r2,
     calc_binary_performance_measures,
     calc_f_beta,
-    calc_mse,
     calc_ppc_coverage,
     calc_r2,
     calc_rmse,
@@ -32,7 +31,6 @@ from .calc import (
 from .describe import (
     describe_dist,
     extract_yobs_yhat,
-    get_mdlvt_specific_nm,
     get_summary,
     model_desc,
     print_rvs,
@@ -49,5 +47,6 @@ from .plot import (
     plot_loo_pit,
     plot_ppc,
     plot_trace,
+    plot_yhat_vs_y,
 )
 from .pymc_io import PYMCIO
