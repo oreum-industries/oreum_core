@@ -15,10 +15,10 @@
 # model.base.py
 """Base Model Class"""
 import logging
+import re
 
 import arviz as az
 import pymc as pm
-import regex as re
 import xarray as xr
 from pymc.testing import assert_no_rvs
 

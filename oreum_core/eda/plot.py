@@ -15,12 +15,12 @@
 # eda.plot.py
 """EDA Plotting"""
 import logging
+import re
 from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import regex as re
 import seaborn as sns
 from matplotlib import figure, gridspec, lines, ticker
 from scipy import integrate, stats
