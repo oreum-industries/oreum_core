@@ -65,6 +65,7 @@ class FigureIO(BaseFileIO):
         extension: str = '.png',
         title: str = None,
         figsize: tuple = (12, 4),
+        fontsize=12,
     ) -> figure.Figure:
         """Hacky way to display pre-created image file in a Notebook such that
         nbconvert can see it and render to PDF
@@ -104,7 +105,7 @@ class FigureIO(BaseFileIO):
                 labelbottom=False,
             )
             if title is not None:
-                _ = f.suptitle(f'{title}', fontsize=12, y=1.0)
+                _ = f.suptitle(f'{title}', fontsize=fontsize, y=1.0)
             _ = f.tight_layout()
         plt.show()
         return f
