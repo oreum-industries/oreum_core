@@ -14,6 +14,7 @@
 
 # model.describe.py
 """Model Descriptions"""
+
 import re
 
 import arviz as az
@@ -24,11 +25,11 @@ import patsy as pat
 from ..model_pymc import BasePYMCModel
 
 __all__ = [
-    'model_desc',
-    'extract_yobs_yhat',
-    'describe_dist',
-    'get_summary',
-    'print_rvs',
+    "model_desc",
+    "extract_yobs_yhat",
+    "describe_dist",
+    "get_summary",
+    "print_rvs",
 ]
 
 RSD = 42
@@ -40,23 +41,23 @@ def model_desc(fml: str) -> str:
     NOTE: `.describe()` doesn't return the `1 +` (intercept) term in the
         case that it's present. check and add if needed
     """
-    fmls = fml.split(' ~ ')
-    add_intercept = False if re.match(r'1 \+', fml) is None else True
+    fmls = fml.split(" ~ ")
+    add_intercept = False if re.match(r"1 \+", fml) is None else True
     r = pat.ModelDesc.from_formula(fml).describe()
     if len(fmls) == 2:
-        rs = r.split(' ~ ')
+        rs = r.split(" ~ ")
         if add_intercept:
-            r = f'{rs[0]} ~ 1 + {rs[1]}'
+            r = f"{rs[0]} ~ 1 + {rs[1]}"
     elif len(fmls) == 1:
         if add_intercept:
-            r = f'1 + {r[2:]}'
+            r = f"1 + {r[2:]}"
     else:
-        raise ValueError('fml must have only a single tilde `~`')
-    return f'patsy linear model desc:\n{r}\n'
+        raise ValueError("fml must have only a single tilde `~`")
+    return f"patsy linear model desc:\n{r}\n"
 
 
 def extract_yobs_yhat(
-    idata: az.InferenceData, obs: str = 'y', pred: str = 'yhat'
+    idata: az.InferenceData, obs: str = "y", pred: str = "yhat"
 ) -> tuple:
     """Convenience: extract y_obs, y_hat from idata
     get yhat in the shape (nsamples, nobs)
@@ -72,10 +73,10 @@ def describe_dist(mdl: BasePYMCModel, log: bool = False, inc_summary: bool = Fal
     and return for printing or Markdown
     NOTE: consider deprecating
     """
-    title = f'{mdl.name}: Natural Distributions'
+    title = f"{mdl.name}: Natural Distributions"
     dist = mdl.dist_natural
     if log:
-        title = f'{mdl.name}: Logged Distributions'
+        title = f"{mdl.name}: Logged Distributions"
         dist = mdl.dist_log
 
     if inc_summary:
@@ -83,7 +84,7 @@ def describe_dist(mdl: BasePYMCModel, log: bool = False, inc_summary: bool = Fal
     return title, {**dist}
 
 
-def get_summary(mdl: BasePYMCModel, rvs: list, group='posterior') -> pd.DataFrame:
+def get_summary(mdl: BasePYMCModel, rvs: list, group="posterior") -> pd.DataFrame:
     """Convenience fn to get arviz summary of idata posteriors"""
     df = az.summary(mdl.idata, var_names=rvs, group=group)
     return df
@@ -95,10 +96,10 @@ def print_rvs(mdl: BasePYMCModel) -> list[str]:
     """
     r = []
     for k, rvs in mdl.get_rvs().items():
-        if k in ['free', 'potentials', 'deterministics']:
+        if k in ["free", "potentials", "deterministics"]:
             for rv in rvs:
                 try:
-                    r.append(rv.str_repr(formatting='string', include_params=True))
+                    r.append(rv.str_repr(formatting="string", include_params=True))
                 except AttributeError:
                     # initially developed as a bit of a hack to deal with
                     # 'TensorVariable' object has no attribute 'str_repr'

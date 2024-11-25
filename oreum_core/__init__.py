@@ -13,13 +13,14 @@
 # limitations under the License.
 
 """Core tools for use on projects by Oreum Industries"""
+
 import logging
 
-__version__ = "0.9.8"
+__version__ = "0.10.0"
 
 # logger goes to null handler by default
 # packages that import oreum_core can override this and direct elsewhere
 # e.g.
 #   logger = logging.getLogger('oreum_core')
 #   logger.addHandler(logging.FileHandler('log.log', mode='a', encoding='utf-8'))
-logging.getLogger('oreum_core').addHandler(logging.NullHandler())
+logging.getLogger("oreum_core").addHandler(logging.NullHandler())

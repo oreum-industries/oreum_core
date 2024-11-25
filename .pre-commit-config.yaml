@@ -1,7 +1,7 @@
 # .pre-commit-config.yaml
 default_language_version:
   python: python3.11
-default_stages: [commit, push]
+default_stages: [pre-commit, pre-push]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks  # general checks
     rev: v5.0.0
@@ -30,21 +30,27 @@ repos:
     hooks:
       - id: no-print-statements
         files: ^oreum_core/
-  - repo: https://github.com/psf/black  # black formatter
-    rev: 24.10.0
-    hooks:
-      - id: black
-        files: ^oreum_core/
-  - repo: https://github.com/PyCQA/isort  # isort sort imports
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        files: ^oreum_core/
-  - repo: https://github.com/pycqa/flake8  # flake8 linter
-    rev: 7.1.1
-    hooks:
-      - id: flake8
-        files: ^oreum_core/
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.8.0
+  #   hooks:
+  #     - id: ruff   # lint
+  #       args: [ --fix ]
+  #     - id: ruff-format  # formatter
+  # - repo: https://github.com/psf/black  # black formatter
+  #   rev: 24.10.0
+  #   hooks:
+  #     - id: black
+  #       files: ^oreum_core/
+  # - repo: https://github.com/PyCQA/isort  # isort sort imports
+  #   rev: 5.13.2
+  #   hooks:
+  #     - id: isort
+  #       files: ^oreum_core/
+  # - repo: https://github.com/pycqa/flake8  # flake8 linter
+  #   rev: 7.1.1
+  #   hooks:
+  #     - id: flake8
+  #       files: ^oreum_core/
   - repo: https://github.com/pycqa/bandit  # basic security checks for python code
     rev: 1.7.10
     hooks:

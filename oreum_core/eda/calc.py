@@ -14,6 +14,7 @@
 
 # eda.calc.py
 """Calculations to help EDA"""
+
 import logging
 import warnings
 
@@ -33,16 +34,16 @@ rng = np.random.default_rng(seed=RSD)
 _log = logging.getLogger(__name__)
 
 __all__ = [
-    'fit_and_plot_fn',
-    'get_gini',
-    'bootstrap',
-    'bootstrap_lr',
-    'calc_geometric_cv',
-    'calc_location_in_ecdf',
-    'month_diff',
-    'tril_nan',
-    'calc_svd',
-    'calc_umap',
+    "fit_and_plot_fn",
+    "get_gini",
+    "bootstrap",
+    "bootstrap_lr",
+    "calc_geometric_cv",
+    "calc_location_in_ecdf",
+    "month_diff",
+    "tril_nan",
+    "calc_svd",
+    "calc_umap",
 ]
 
 
@@ -53,39 +54,39 @@ def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
     """
 
     dists_discrete_support_gte_zero = {
-        'poisson': stats.poisson,
+        "poisson": stats.poisson
         # 'binom': stats.binom,  # placeholder
         # 'nbinom': stats.nbinom,  # placeholder
     }
 
     dists_cont_support_real = {
-        'norm': stats.norm,
-        'cauchy': stats.cauchy,
-        'gumbel': stats.gumbel_r,
-        'invweibull': stats.invweibull,
+        "norm": stats.norm,
+        "cauchy": stats.cauchy,
+        "gumbel": stats.gumbel_r,
+        "invweibull": stats.invweibull,
     }
 
     dists_cont_support_gte_zero = {
-        'expon': stats.expon,
-        'halfnorm': stats.halfnorm,
-        'halfcauchy': stats.halfcauchy,
-        'fisk': stats.fisk,
+        "expon": stats.expon,
+        "halfnorm": stats.halfnorm,
+        "halfcauchy": stats.halfcauchy,
+        "fisk": stats.fisk,
     }
 
     dists_cont_support_gt_zero = {
-        'gamma': stats.gamma,
-        'invgamma': stats.invgamma,
-        'lognorm': stats.lognorm,
+        "gamma": stats.gamma,
+        "invgamma": stats.invgamma,
+        "lognorm": stats.lognorm,
     }
 
     nbins = 50
-    dist_kind = 'Continuous'
+    dist_kind = "Continuous"
     params = {}
     f, ax1d = plt.subplots(1, 1, figsize=(14, 6))
     hist_kws = dict(
-        kde=False, label='data', ax=ax1d, alpha=0.5, color='#aaaaaa', zorder=-1
+        kde=False, label="data", ax=ax1d, alpha=0.5, color="#aaaaaa", zorder=-1
     )
-    line_kws = dict(lw=2, ls='--', ax=ax1d)
+    line_kws = dict(lw=2, ls="--", ax=ax1d)
 
     # handle nans and infs
     n_nans = pd.isnull(obs).sum()
@@ -107,28 +108,28 @@ def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
             0.5,
             0.97,
             (
-                f'NaNs: {n_nans},  infs+/-: {n_infs},  zeros: {n_zeros},  '
-                + f'mean: {mean:.2f},  med: {med:.2f}'
+                f"NaNs: {n_nans},  infs+/-: {n_infs},  zeros: {n_zeros},  "
+                + f"mean: {mean:.2f},  med: {med:.2f}"
             ),
             transform=ax.transAxes,
-            ha='center',
-            va='top',
-            backgroundcolor='w',
+            ha="center",
+            va="top",
+            backgroundcolor="w",
             fontsize=10,
         )
 
     if obs_is_discrete:
-        dist_kind = 'Discrete'
+        dist_kind = "Discrete"
         nbins = np.int(obs.max())
         obs_count, bin_edges = np.histogram(obs, bins=nbins, density=False)
         bin_centers = (bin_edges + np.roll(bin_edges, -1))[:-1] / 2.0
         bin_centers_int = np.round(bin_centers)
         dists = dists_discrete_support_gte_zero
 
-        _ = sns.histplot(x=obs, bins=nbins, stat='count', **hist_kws)
+        _ = sns.histplot(x=obs, bins=nbins, stat="count", **hist_kws)
 
         # TODO fix this hack: only works for poisson right now
-        for i, (d, dist) in enumerate(dists.items()):
+        for d, _dist in dists.items():
             mle_pois = obs.mean()
             params[d] = dict(shape=mle_pois, loc=0, scale=None)
             pmf = stats.poisson.pmf(k=bin_centers_int, mu=mle_pois) * len(obs)
@@ -137,7 +138,7 @@ def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
             # https://stats.stackexchange.com/questions/48811/cost-function-for-validating-poisson-regression-models
             rmse = np.sqrt(np.sum(np.power(obs_count - pmf, 2.0)) / len(obs))
             _ = sns.lineplot(
-                x=bin_centers_int, y=pmf, label=f'{d}: {rmse:#.2g}', **line_kws
+                x=bin_centers_int, y=pmf, label=f"{d}: {rmse:#.2g}", **line_kws
             )
 
     else:
@@ -150,23 +151,23 @@ def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
         if n_zeros == 0:
             dists.update(dists_cont_support_gt_zero)
 
-        _ = sns.histplot(x=obs, bins=nbins, stat='density', **hist_kws)
+        _ = sns.histplot(x=obs, bins=nbins, stat="density", **hist_kws)
 
         for i, (d, dist) in enumerate(dists.items()):
             with warnings.catch_warnings():
-                warnings.simplefilter(action='ignore')
+                warnings.simplefilter(action="ignore")
                 ps = dist.fit(obs, floc=0)  # can throw RuntimeWarnings which we ignore
             shape, loc, scale = ps[:-2], ps[-2], ps[-1]
             params[d] = dict(shape=shape, loc=loc, scale=scale)
             pdf = dist.pdf(bin_centers, loc=loc, scale=scale, *shape)
             rmse = np.sqrt(np.sum(np.power(obs_density - pdf, 2.0)) / len(obs))
             _ = sns.lineplot(
-                x=bin_centers, y=pdf, label=f'{d}: {rmse:#.2g}', **line_kws
+                x=bin_centers, y=pdf, label=f"{d}: {rmse:#.2g}", **line_kws
             )
 
-    title = f'{dist_kind} function approximations to {obs.name}'
+    title = f"{dist_kind} function approximations to {obs.name}"
     _ = f.suptitle(title, y=0.97)
-    _ = f.axes[0].legend(title='dist: RMSE', title_fontsize=10)
+    _ = f.axes[0].legend(title="dist: RMSE", title_fontsize=10)
     _annotate_facets(n_nans, n_infs, n_zeros)
 
     return f, params
@@ -206,7 +207,7 @@ def bootstrap(
 
 
 def bootstrap_lr(
-    df: pd.DataFrame, prm: str = 'premium', clm: str = 'claim', nboot: int = 1000
+    df: pd.DataFrame, prm: str = "premium", clm: str = "claim", nboot: int = 1000
 ) -> pd.DataFrame:
     """Calc vectorised bootstrap loss ratios for df
     Pass dataframe or group, accept nans in clm
@@ -218,12 +219,12 @@ def bootstrap_lr(
 
     dfboot = pd.DataFrame(
         {
-            'premium_sum': np.apply_along_axis(np.sum, 0, s_prm),
-            'claim_sum': np.apply_along_axis(np.sum, 0, np.nan_to_num(s_clm, 0)),
+            "premium_sum": np.apply_along_axis(np.sum, 0, s_prm),
+            "claim_sum": np.apply_along_axis(np.sum, 0, np.nan_to_num(s_clm, 0)),
         }
     )
 
-    dfboot['lr'] = dfboot['claim_sum'] / dfboot['premium_sum']
+    dfboot["lr"] = dfboot["claim_sum"] / dfboot["premium_sum"]
     return dfboot
 
 
@@ -257,7 +258,7 @@ def calc_location_in_ecdf(baseline_arr, test_arr):
 
 
 def month_diff(
-    a: pd.Series, b: pd.Series, series_name: str = 'month_diff'
+    a: pd.Series, b: pd.Series, series_name: str = "month_diff"
 ) -> pd.Series:
     """Integer month count between dates a to b
 
@@ -297,7 +298,7 @@ def calc_svd(df: pd.DataFrame, k: int = 10) -> tuple[pd.DataFrame, TruncatedSVD]
     idx_nulls = df.isnull().sum(axis=1) > 0
     if sum(idx_nulls) > 0:
         df = df.loc[~idx_nulls].copy()
-        _log.info(f'Excluding {sum(idx_nulls)} rows containing a null, prior to SVD')
+        _log.info(f"Excluding {sum(idx_nulls)} rows containing a null, prior to SVD")
 
     # standardize
     scaler = StandardScaler().fit(df)
@@ -310,9 +311,9 @@ def calc_svd(df: pd.DataFrame, k: int = 10) -> tuple[pd.DataFrame, TruncatedSVD]
 
     # Are any eigenvalues NaN or really small?
     n_null = sum(np.isnan(svd_fit.singular_values_))
-    assert n_null == 0, f'{n_null} Singular Values are NaN'
+    assert n_null == 0, f"{n_null} Singular Values are NaN"
     n_tiny = sum(svd_fit.singular_values_ < 1e-12)
-    assert n_tiny == 0, f'{n_tiny} Singular Values are < 1e-12'
+    assert n_tiny == 0, f"{n_tiny} Singular Values are < 1e-12"
 
     dfx = svd_fit.transform(dfs)
 
@@ -327,10 +328,10 @@ def calc_umap(df: pd.DataFrame) -> tuple[pd.DataFrame, UMAP]:
     idx_nulls = df.isnull().sum(axis=1) > 0
     if sum(idx_nulls) > 0:
         df = df.loc[~idx_nulls].copy()
-        _log.info(f'Excluding {sum(idx_nulls)} rows containing a null, prior to UMAP')
+        _log.info(f"Excluding {sum(idx_nulls)} rows containing a null, prior to UMAP")
 
     umapper = UMAP(n_neighbors=5)
     umap_fit = umapper.fit(df)
-    dfx = pd.DataFrame(umap_fit.transform(df), columns=['c0', 'c1'], index=df.index)
+    dfx = pd.DataFrame(umap_fit.transform(df), columns=["c0", "c1"], index=df.index)
 
     return dfx, umap_fit

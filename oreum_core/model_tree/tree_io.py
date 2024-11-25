@@ -14,6 +14,7 @@
 
 # model_tree.tree_io.py
 """Handling of Fitted Model Parameters"""
+
 import logging
 from pathlib import Path
 
@@ -21,7 +22,7 @@ from xgboost.core import Booster
 
 from ..utils.file_io import BaseFileIO
 
-__all__ = ['XGBIO']
+__all__ = ["XGBIO"]
 
 _log = logging.getLogger(__name__)
 
@@ -37,22 +38,22 @@ class XGBIO(BaseFileIO):
 
     def read(self, fn: str) -> Booster:
         """Read XGB.core.Booster object from fn e.g. `bst.json`"""
-        fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix('.json'))
+        fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix(".json"))
         bst = Booster()
         bst.load_model(fname=str(fqn.resolve()))
-        _log.info(f'Read Booster model data from {str(fqn.resolve())}')
+        _log.info(f"Read Booster model data from {str(fqn.resolve())}")
         return bst
 
-    def write(self, bst: Booster, fn: str = '') -> Path:
+    def write(self, bst: Booster, fn: str = "") -> Path:
         """Accept XGB.core.Booster object and fn e.g. `bst.json`, write to file"""
-        fn = 'bst.json' if fn == '' else fn
-        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.json'))
+        fn = "bst.json" if fn == "" else fn
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".json"))
         bst.save_model(str(fqn.resolve()))
-        _log.info(f'Written to {str(fqn.resolve())}')
+        _log.info(f"Written to {str(fqn.resolve())}")
         return fqn
 
-    def get_sqlite_uri_for_optuna_study(self, fn: str = '') -> str:
+    def get_sqlite_uri_for_optuna_study(self, fn: str = "") -> str:
         """Get URI of local SQLite DB to pass to optuna.create_study(storage=)"""
-        fn = 'optuna_study.sqlite' if fn == '' else fn
-        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.sqlite'))
-        return f'sqlite:////{str(fqn.resolve())}'
+        fn = "optuna_study.sqlite" if fn == "" else fn
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".sqlite"))
+        return f"sqlite:////{str(fqn.resolve())}"
