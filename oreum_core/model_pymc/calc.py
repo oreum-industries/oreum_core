@@ -14,6 +14,7 @@
 
 # model.calc.py
 """Common Calculations for Model Evaluation"""
+
 import sys
 from typing import Any, Dict, Optional, Sequence, Tuple, cast
 
@@ -32,18 +33,18 @@ from pymc.pytensorf import PointFunc
 from pymc.util import dataset_to_point_list
 
 __all__ = [
-    'get_log_jcd_scalar',
-    'get_log_jcd_scan',
-    'calc_f_beta',
-    'calc_binary_performance_measures',
-    'calc_rmse',
-    'calc_r2',
-    'calc_bayesian_r2',
-    'calc_ppc_coverage',
-    'expand_packed_triangular',
-    'calc_2_sample_delta_prop',
-    'numpy_invlogit',
-    'compute_log_likelihood_for_potential',
+    "get_log_jcd_scalar",
+    "get_log_jcd_scan",
+    "calc_f_beta",
+    "calc_binary_performance_measures",
+    "calc_rmse",
+    "calc_r2",
+    "calc_bayesian_r2",
+    "calc_ppc_coverage",
+    "expand_packed_triangular",
+    "calc_2_sample_delta_prop",
+    "numpy_invlogit",
+    "compute_log_likelihood_for_potential",
 ]
 
 
@@ -134,7 +135,7 @@ def get_log_jcd_scan(
 
 def calc_f_beta(precision: np.array, recall: np.array, beta: float = 1.0) -> np.array:
     """Set beta such that recall is beta times more important than precision"""
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         fb = (1 + beta**2) * (precision * recall) / ((beta**2 * precision) + recall)
     return np.nan_to_num(fb, nan=0, posinf=0, neginf=0)
 
@@ -145,7 +146,7 @@ def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFram
     shapes y: (nsamples,), yhat: (nsamples, nobservations)
     """
     qs = np.round(np.arange(0, 1.01, 0.01), 2)
-    yhat_q = np.quantile(yhat, qs, axis=0, method='linear').T
+    yhat_q = np.quantile(yhat, qs, axis=0, method="linear").T
     y_mx = np.tile(y.reshape(-1, 1), 101)
 
     # calc tp, fp, tn, fn vectorized
@@ -155,7 +156,7 @@ def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFram
     fn = np.nansum(np.where(yhat_q == 0, y_mx, np.nan), axis=0)
 
     # calc tpr (recall), fpr, precision etc
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         accuracy = (tp + tn) / (tp + tn + fp + fn)
         tpr = recall = tp / (tp + fn)
         fpr = fp / (tn + fp)
@@ -163,28 +164,28 @@ def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFram
 
     perf = pd.DataFrame(
         {
-            'accuracy': accuracy,
-            'tpr': tpr,
-            'fpr': fpr,
-            'recall': recall,
-            'precision': precision,
-            'f0.5': calc_f_beta(precision, recall, beta=0.5),
-            'f1': calc_f_beta(precision, recall, beta=1),
-            'f2': calc_f_beta(precision, recall, beta=2),
+            "accuracy": accuracy,
+            "tpr": tpr,
+            "fpr": fpr,
+            "recall": recall,
+            "precision": precision,
+            "f0.5": calc_f_beta(precision, recall, beta=0.5),
+            "f1": calc_f_beta(precision, recall, beta=1),
+            "f2": calc_f_beta(precision, recall, beta=2),
         },
         index=qs,
     )
-    perf.index.set_names('q', inplace=True)
+    perf.index.set_names("q", inplace=True)
 
     return perf.round(6)
 
 
 def calc_rmse(
     dfhat: pd.DataFrame,
-    oid: str = 'oid',
-    yhat: str = 'yhat',
-    y: str = 'y',
-    method: str = 'a',
+    oid: str = "oid",
+    yhat: str = "yhat",
+    y: str = "y",
+    method: str = "a",
     qs: bool = False,
     mse_only: bool = False,
 ) -> float | tuple[float, pd.Series]:
@@ -218,24 +219,24 @@ def calc_rmse(
 
     But here we will default to the easier-to-understand Option A
     """
-    if method not in ['a', 'b']:
+    if method not in ["a", "b"]:
         raise AttributeError("method must be in `a` or `b`")
 
     def _grp_se_at_mn(g):
-        if method == 'a':
+        if method == "a":
             return np.power(g[yhat].mean() - g[y].max(), 2)
         else:
             return np.power(g[yhat] - g[y], 2).mean()
 
     def _grp_se_at_qs(g):
         qs = np.round(np.linspace(0, 1, 100 + 1), 2)
-        if method == 'a':
+        if method == "a":
             se_at_qs = np.power(np.quantile(g[yhat], qs) - g[y].max(), 2)
         else:
             se_at_qs = np.quantile(np.power(g[yhat] - g[y], 2), qs)
 
-        s_se_at_qs = pd.Series(se_at_qs, index=qs, name='se')
-        s_se_at_qs.index.rename('q', inplace=True)
+        s_se_at_qs = pd.Series(se_at_qs, index=qs, name="se")
+        s_se_at_qs.index.rename("q", inplace=True)
         return s_se_at_qs
 
     mse_at_mn = dfhat.groupby(level=oid).apply(_grp_se_at_mn).mean(axis=0)
@@ -250,7 +251,7 @@ def calc_rmse(
             return mse_at_mn, mse_at_qs
         else:
             rmse_at_qs = mse_at_qs.map(np.sqrt)
-            rmse_at_qs._set_name('rmse', inplace=True)
+            rmse_at_qs._set_name("rmse", inplace=True)
             return np.sqrt(mse_at_mn), rmse_at_qs
 
 
@@ -272,8 +273,8 @@ def calc_r2(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
     sse_model = np.sum(
         (y - np.percentile(yhat, smry, axis=0)) ** 2, axis=1
     )  # (len(smry), nobs)
-    r2_pct = pd.Series(1 - (sse_model / sse_mean), index=smry, name='r2')
-    r2_pct.index.rename('pct', inplace=True)
+    r2_pct = pd.Series(1 - (sse_model / sse_mean), index=smry, name="r2")
+    r2_pct.index.rename("pct", inplace=True)
 
     return r2_mean, r2_pct
 
@@ -289,7 +290,7 @@ def calc_bayesian_r2(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
     var_yhat = np.var(yhat, axis=0)
     var_residuals = np.var(y.reshape(-1, 1) - yhat, axis=0)
     r2 = var_yhat / (var_yhat + var_residuals)
-    return pd.DataFrame(r2, columns=['r2'])
+    return pd.DataFrame(r2, columns=["r2"])
 
 
 def calc_ppc_coverage(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
@@ -319,12 +320,12 @@ def calc_ppc_coverage(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
                 (
                     k,
                     cr,
-                    np.sum(np.int64(y >= v['lower'][i]) * np.int64(y <= v['upper'][i]))
+                    np.sum(np.int64(y >= v["lower"][i]) * np.int64(y <= v["upper"][i]))
                     / len(y),
                 )
             )
 
-    return pd.DataFrame(cov, columns=['method', 'cr', 'coverage'])
+    return pd.DataFrame(cov, columns=["method", "cr", "coverage"])
 
 
 def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
@@ -348,9 +349,9 @@ def expand_packed_triangular(n, packed, lower=True, diagonal_only=False):
         If true, return only the diagonal of the matrix.
     """
     if packed.ndim != 1:
-        raise ValueError('Packed triagular is not one dimensional.')
+        raise ValueError("Packed triagular is not one dimensional.")
     if not isinstance(n, int):
-        raise TypeError('n must be an integer')
+        raise TypeError("n must be an integer")
 
     if diagonal_only and lower:
         diag_idxs = np.arange(1, n + 1).cumsum() - 1
@@ -423,7 +424,7 @@ def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
     def _bincount_pad(a, maxval=2):
         b = np.bincount(a)
         return np.pad(
-            b, (0, np.maximum(0, maxval + 1 - len(b))), 'constant', constant_values=(0)
+            b, (0, np.maximum(0, maxval + 1 - len(b))), "constant", constant_values=(0)
         )
 
     # silently deal with the common mistake of sending a 1D array for testing
@@ -452,14 +453,12 @@ def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
 
     prop_intersects_across_aref = np.apply_along_axis(
         lambda r: _bincount_pad(r, len(rope)), 1, n_intersects
-    ) / len(
-        aref
-    )  # (len(a), [0, 1, 2])
+    ) / len(aref)  # (len(a), [0, 1, 2])
 
     if a_index is not None:
         prop_intersects_across_aref = pd.DataFrame(
             prop_intersects_across_aref,
-            columns=['subs_lower', 'no_difference', 'subs_higher'],
+            columns=["subs_lower", "no_difference", "subs_higher"],
             index=a_index,
         )
 
@@ -565,7 +564,7 @@ def compute_log_likelihood_for_potential(
 
     for idx in indices:
         loglikes_pts = elemwise_loglike_fn(posterior_pts[idx])
-        for rv_name, rv_loglike in zip(var_names, loglikes_pts):
+        for rv_name, rv_loglike in zip(var_names, loglikes_pts, strict=False):
             loglike_dict.insert(rv_name, rv_loglike, idx)
 
     loglike_trace = loglike_dict.trace_dict

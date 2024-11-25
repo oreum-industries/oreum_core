@@ -21,7 +21,7 @@ import pytensor.tensor as pt
 from pymc.distributions.dist_math import check_icdf_parameters, check_icdf_value
 from scipy import stats
 
-__all__ = ['sanity_check_lognorm', 'normal_icdf', 'lognormal_icdf', 'mv_dist']
+__all__ = ["sanity_check_lognorm", "normal_icdf", "lognormal_icdf", "mv_dist"]
 
 # NOTE hack to clip values away from {0, 1} for invcdfs
 # Whilst value = {0, 1} is theoretically allowed, is seems to cause a

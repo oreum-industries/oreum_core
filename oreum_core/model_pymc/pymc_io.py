@@ -14,6 +14,7 @@
 
 # model_pymc.pymc_io.py
 """Handling of Model Posterior Samples"""
+
 import logging
 from pathlib import Path
 
@@ -21,10 +22,10 @@ import arviz as az
 import graphviz
 from pymc.model_graph import model_to_graphviz
 
-from ..utils.file_io import BaseFileIO
 from . import BasePYMCModel
+from ..utils.file_io import BaseFileIO
 
-__all__ = ['PYMCIO']
+__all__ = ["PYMCIO"]
 
 _log = logging.getLogger(__name__)
 
@@ -40,33 +41,33 @@ class PYMCIO(BaseFileIO):
         super().__init__(*args, **kwargs)
 
     def read_idata(
-        self, mdl: BasePYMCModel = None, fn: str = '', **kwargs
+        self, mdl: BasePYMCModel = None, fn: str = "", **kwargs
     ) -> az.InferenceData:
         """Read InferenceData using mdl.mdl_id_fn + txtadd, or from fn"""
-        txtadd = kwargs.pop('txtadd', None)
+        txtadd = kwargs.pop("txtadd", None)
         if mdl is not None:
-            fn = '_'.join(filter(None, ['idata', mdl.mdl_id_fn, txtadd]))
-        fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
+            fn = "_".join(filter(None, ["idata", mdl.mdl_id_fn, txtadd]))
+        fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix(".netcdf"))
         idata = az.from_netcdf(str(fqn.resolve()))
-        _log.info(f'Read model idata from {str(fqn.resolve())}')
+        _log.info(f"Read model idata from {str(fqn.resolve())}")
         return idata
 
-    def write_idata(self, mdl: BasePYMCModel, fn: str = '', **kwargs) -> Path:
+    def write_idata(self, mdl: BasePYMCModel, fn: str = "", **kwargs) -> Path:
         """Accept BasePYMCModel object write to InferenceData using
         mdl.mdl_id_fn + txtadd"""
-        txtadd = kwargs.pop('txtadd', None)
-        if fn == '':
-            fn = '_'.join(filter(None, ['idata', mdl.mdl_id_fn, txtadd]))
-        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix('.netcdf'))
+        txtadd = kwargs.pop("txtadd", None)
+        if fn == "":
+            fn = "_".join(filter(None, ["idata", mdl.mdl_id_fn, txtadd]))
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".netcdf"))
         mdl.idata.to_netcdf(str(fqn.resolve()))
-        _log.info(f'Written to {str(fqn.resolve())}')
+        _log.info(f"Written to {str(fqn.resolve())}")
         return fqn
 
     def write_graph(
         self,
         mdl: BasePYMCModel,
-        fn: str = '',
-        fmt: str = 'png',
+        fn: str = "",
+        fmt: str = "png",
         write: bool = True,
         **kwargs,
     ) -> Path | graphviz.graphs.Digraph:
@@ -75,21 +76,21 @@ class PYMCIO(BaseFileIO):
         eda_io.FigureIO.read()
         Optionally set `write = False` and receive the graphviz directly
         """
-        txtadd = kwargs.pop('txtadd', None)
-        if fn == '':
-            fn = '_'.join(filter(None, ['graph', mdl.mdl_id_fn, txtadd]))
-        fqn = self.get_path_write(f'{fn}.{fmt}')
-        gv = model_to_graphviz(mdl.model, formatting='plain')
+        txtadd = kwargs.pop("txtadd", None)
+        if fn == "":
+            fn = "_".join(filter(None, ["graph", mdl.mdl_id_fn, txtadd]))
+        fqn = self.get_path_write(f"{fn}.{fmt}")
+        gv = model_to_graphviz(mdl.model, formatting="plain")
         if write == False:
             return gv
-        if fmt == 'png':
-            gv.attr(dpi='300')
-        elif fmt == 'svg':
+        if fmt == "png":
+            gv.attr(dpi="300")
+        elif fmt == "svg":
             pass
         else:
             raise ValueError('format must be in {"png", "svg"}')
 
         # gv auto-adds the file extension, so pre-remove if present
-        gv.render(filename=str(fqn.with_suffix('')), format=fmt, cleanup=True)
-        _log.info(f'Written to {str(fqn.resolve())}')
+        gv.render(filename=str(fqn.with_suffix("")), format=fmt, cleanup=True)
+        _log.info(f"Written to {str(fqn.resolve())}")
         return fqn
