@@ -113,7 +113,7 @@ class DatatypeConverter:
 
         for ft in self.ftsd["fbool"] + self.ftsd["fbool_nan_to_false"]:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
-            if df.dtypes[ft] == object:
+            if isinstance(df.dtypes[ft], object):
                 df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
                 df.loc[df[ft].isin(self.strnans), ft] = pd.NA
                 df[ft] = df[ft].apply(lambda x: self.bool_dict.get(x, x))
@@ -133,7 +133,7 @@ class DatatypeConverter:
                     )
 
         for ft in self.ftsd["fyear"]:
-            if df.dtypes[ft] == object:
+            if isinstance(df.dtypes[ft], object):
                 df[ft] = (
                     df[ft]
                     .astype(str)
@@ -151,7 +151,7 @@ class DatatypeConverter:
             df[ft] = pd.to_datetime(df[ft], errors="raise", format=self.date_format)
         try:
             for ft in self.ftsd["fint"]:
-                if df.dtypes[ft] == object:
+                if isinstance(df.dtypes[ft], object):
                     df[ft] = (
                         df[ft]
                         .astype(str)
@@ -170,7 +170,7 @@ class DatatypeConverter:
 
         try:
             for ft in self.ftsd["ffloat"]:
-                if df.dtypes[ft] == object:
+                if isinstance(df.dtypes[ft], object):
                     df[ft] = (
                         df[ft]
                         .astype(str)
@@ -389,11 +389,13 @@ class Standardizer:
     TODO: introduce minmax scaling as an option
     """
 
-    def __init__(self, tfmr: Transformer, fts_exclude: list = []):
+    def __init__(self, tfmr: Transformer, fts_exclude: list = None):
         """Automatically exclude fts in list(tfmr.factor_map.keys()) and
         any named in `fts_exclude` that are numeric and would otherwise get
         standardardized"""
 
+        if fts_exclude is None:
+            fts_exclude = []
         self.design_info = tfmr.design_info
         self.fts_exclude = fts_exclude + list(tfmr.factor_map.keys())
 

@@ -43,12 +43,9 @@ dependencies = [
 all = ["oreum_core[dev,pymc,tree]"]
 dev = [
     "bandit",
-    # "black",
-    # "flake8",
     "hypothesis",
     "interrogate",
     "ipython",
-    # "isort",
     "pipdeptree",
     "pip-licenses",
     "pre-commit",
@@ -116,33 +113,12 @@ badge-style = "flat"
 [tool.flit.module]
 name = "oreum_core"
 
-# [tool.black]
-# line-length = 88
-# target-version = ["py311"]
-# skip-string-normalization = true
-# skip-magic-trailing-comma = true
-# include = '\.py$'
-# extend-exclude = """/(__pycache__)/"""
-# # check = true # diff = true  # allow for different calls to use this
-# color = true
-# fast = false
-# verbose = true
-
-# [tool.isort]
-# profile = 'black'
-# multi_line_output = 3
-# skip_gitignore = true
-# py_version = 311
-
 [tool.ruff]  # settings: https://docs.astral.sh/ruff/settings/
 indent-width = 4
 line-length = 88
 target-version = "py311"
-
-# max-line-length = 88
-# max-doc-length = 144
-# max-complexity = 18
 extend-exclude = [
+    "__pycache__",
     "build",
     "dev",
     "lib",

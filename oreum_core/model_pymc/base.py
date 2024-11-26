@@ -96,10 +96,10 @@ class BasePYMCModel:
     def posterior(self) -> xr.Dataset:
         """Returns posterior from idata from previous run of sample"""
         try:
-            self.idata.posterior
+            s = self.idata.posterior
         except AttributeError as e:
             raise e("Run sample() first") from e
-        return self.idata.posterior
+        return s
 
     @property
     def idata(self) -> az.InferenceData:

@@ -153,7 +153,7 @@ def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
 
         _ = sns.histplot(x=obs, bins=nbins, stat="density", **hist_kws)
 
-        for i, (d, dist) in enumerate(dists.items()):
+        for d, dist in dists.items():
             with warnings.catch_warnings():
                 warnings.simplefilter(action="ignore")
                 ps = dist.fit(obs, floc=0)  # can throw RuntimeWarnings which we ignore
