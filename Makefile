@@ -60,8 +60,8 @@ lint: ## run code linters and static security (checks only)
 	$(PYTHON) -m pip install bandit interrogate ruff
 	ruff check --diff
 	ruff format --no-cache --diff
-	interrogate --config pyproject.toml src/
-	bandit --config pyproject.toml -r src/
+	interrogate --config pyproject.toml oreum_core/
+	bandit --config pyproject.toml -r oreum_core/
 
 help:
 	@echo "Use \make <target> where <target> is:"
