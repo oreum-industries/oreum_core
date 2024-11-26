@@ -53,13 +53,13 @@ dev = [
     "ruff",
 ]
 pymc = [
-    "graphviz<=0.18",  # NOTE capped https://stackoverflow.com/a/69997168/4473230
+    "graphviz<=0.20.3",  # NOTE capped https://stackoverflow.com/a/69997168/4473230
     "pymc==5.16.*",  # latest as-at 2024-08-04, brings many deps see DEPS NOTE
 ]
 tree = [
     "catboost",  # beats xgboost often, ref: https://arxiv.org/pdf/2305.02997.pdf
     "category_encoders>=2.6.3",  # brings many deps see DEPS NOTE
-    "graphviz<=0.18",  # NOTE capped https://stackoverflow.com/a/69997168/4473230
+    "graphviz<=0.20.3",  # NOTE capped https://stackoverflow.com/a/69997168/4473230
     "optuna>=3.4.0",  # brings many deps see DEPS NOTE
     "nbformat",
     "shap<0.45.0",  # plotting seems broken in 0.45, to investigate and resolve
