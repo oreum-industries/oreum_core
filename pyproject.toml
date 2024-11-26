@@ -127,10 +127,11 @@ extend-exclude = [
     "var",
     "wheels",
 ]
+
 [tool.ruff.lint]
-# fixable = ["ALL"]  # Allow fix for all enabled rules (when `--fix`) is provided.
+# fixable = ["ALL"]  # allow fix for all enabled rules (when `--fix`) provided
 unfixable = ["B"]
-# Allow unused variables when underscore-prefixed.
+# allow unused underscore-prefix vars
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 select = [
@@ -161,12 +162,10 @@ ignore = [
 ]
 
 [tool.ruff.format]
-# include = '\.py$'
 indent-style = "space"
 line-ending = "auto"
 quote-style = "double"
 skip-magic-trailing-comma = true
-
 
 [tool.ruff.lint.isort]
 order-by-type = true
