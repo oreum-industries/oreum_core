@@ -14,6 +14,7 @@
 
 # curate.data_transform.py
 """Data Transformations"""
+
 import logging
 import re
 
@@ -24,11 +25,11 @@ import patsy as pat
 from ..utils.snakey_lowercaser import SnakeyLowercaser
 
 __all__ = [
-    'DatatypeConverter',
-    'DatasetReshaper',
-    'Transformer',
-    'Standardizer',
-    'compress_factor_levels',
+    "DatatypeConverter",
+    "DatasetReshaper",
+    "Transformer",
+    "Standardizer",
+    "compress_factor_levels",
 ]
 
 _log = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ _log = logging.getLogger(__name__)
 class DatatypeConverter:
     """Force correct datatypes according to what model expects"""
 
-    def __init__(self, ftsd: dict, date_format: str = '%Y-%m-%d'):
+    def __init__(self, ftsd: dict, date_format: str = "%Y-%m-%d"):
         """Initialise with fts and optionally specify factors with specific levels
 
         Use with a fts dict of form:
@@ -56,34 +57,34 @@ class DatatypeConverter:
         Use ftsordlvl for ordinal categoricals
         """
         self.ftsd = dict(
-            fcat=ftsd.get('fcat', []),
-            ford=ftsd.get('ford', {}),
-            fstr=ftsd.get('fstr', []),
-            fbool=ftsd.get('fbool', []),
-            fbool_nan_to_false=ftsd.get('fbool_nan_to_false', []),
-            fdate=ftsd.get('fdate', []),
-            fyear=ftsd.get('fyear', []),
-            fint=ftsd.get('fint', []),
-            ffloat=ftsd.get('ffloat', []),
-            fverbatim=ftsd.get('fverbatim', []),  # keep verbatim
+            fcat=ftsd.get("fcat", []),
+            ford=ftsd.get("ford", {}),
+            fstr=ftsd.get("fstr", []),
+            fbool=ftsd.get("fbool", []),
+            fbool_nan_to_false=ftsd.get("fbool_nan_to_false", []),
+            fdate=ftsd.get("fdate", []),
+            fyear=ftsd.get("fyear", []),
+            fint=ftsd.get("fint", []),
+            ffloat=ftsd.get("ffloat", []),
+            fverbatim=ftsd.get("fverbatim", []),  # keep verbatim
         )
-        self.rx_number_junk = re.compile(r'[#$€£₤¥,;%\s]')
+        self.rx_number_junk = re.compile(r"[#$€£₤¥,;%\s]")
         self.date_format = date_format
         inv_bool_dict = {
-            True: ['yes', 'y', 'true', 't', '1', 1, 1.0],
-            False: ['no', 'n', 'false', 'f', '0', 0, 0.0],
+            True: ["yes", "y", "true", "t", "1", 1, 1.0],
+            False: ["no", "n", "false", "f", "0", 0, 0.0],
         }
         self.bool_dict = {v: k for k, vs in inv_bool_dict.items() for v in vs}
         self.strnans = [
-            'none',
-            'nan',
-            'null',
-            'na',
-            'n/a',
-            '<na>',
-            'missing',
-            'empty',
-            '',
+            "none",
+            "nan",
+            "null",
+            "na",
+            "n/a",
+            "<na>",
+            "missing",
+            "empty",
+            "",
         ]
 
     def convert_dtypes(self, dfraw: pd.DataFrame) -> pd.DataFrame:
@@ -95,29 +96,29 @@ class DatatypeConverter:
         fts_all = [w for _, v in self.ftsd.items() for w in v]
         df = dfraw[fts_all].copy()
 
-        for ft in self.ftsd['fcat'] + self.ftsd['fstr']:
+        for ft in self.ftsd["fcat"] + self.ftsd["fstr"]:
             # tame string, clean, handle nulls
             idx = df[ft].notnull()
-            vals = df.loc[idx, ft].astype(str, errors='raise').apply(snl.clean)
+            vals = df.loc[idx, ft].astype(str, errors="raise").apply(snl.clean)
             df.drop(ft, axis=1, inplace=True)
             df.loc[~idx, ft] = np.nan
             df.loc[idx, ft] = vals
-            if ft in self.ftsd['fcat']:
+            if ft in self.ftsd["fcat"]:
                 df[ft] = pd.Categorical(df[ft].values, ordered=False)
             else:
-                df[ft] = df[ft].astype('string')
+                df[ft] = df[ft].astype("string")
 
-        for ft, lvls in self.ftsd['ford'].items():
+        for ft, lvls in self.ftsd["ford"].items():
             df[ft] = pd.Categorical(df[ft].values, categories=lvls, ordered=True)
 
-        for ft in self.ftsd['fbool'] + self.ftsd['fbool_nan_to_false']:
+        for ft in self.ftsd["fbool"] + self.ftsd["fbool_nan_to_false"]:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
-            if df.dtypes[ft] == object:
+            if isinstance(df.dtypes[ft], object):
                 df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
                 df.loc[df[ft].isin(self.strnans), ft] = pd.NA
                 df[ft] = df[ft].apply(lambda x: self.bool_dict.get(x, x))
 
-                if ft in self.ftsd['fbool_nan_to_false']:
+                if ft in self.ftsd["fbool_nan_to_false"]:
                     df.loc[df[ft].isnull(), ft] = False
 
                 set_tf_only = set(df[ft].unique())
@@ -131,56 +132,56 @@ class DatatypeConverter:
                         f"{ft} contains values incompatible with np.bool or pd.Boolean"
                     )
 
-        for ft in self.ftsd['fyear']:
-            if df.dtypes[ft] == object:
+        for ft in self.ftsd["fyear"]:
+            if isinstance(df.dtypes[ft], object):
                 df[ft] = (
                     df[ft]
                     .astype(str)
                     .str.strip()
                     .str.lower()
-                    .map(lambda x: self.rx_number_junk.sub('', x))
+                    .map(lambda x: self.rx_number_junk.sub("", x))
                 )
                 df.loc[df[ft].isin(self.strnans), ft] = np.nan
-            df[ft] = df[ft].astype(float, errors='raise')
+            df[ft] = df[ft].astype(float, errors="raise")
             if pd.isnull(df[ft]).sum() == 0:
-                df[ft] = df[ft].astype(int, errors='raise')
-            df[ft] = pd.to_datetime(df[ft], errors='raise', format='%Y')
+                df[ft] = df[ft].astype(int, errors="raise")
+            df[ft] = pd.to_datetime(df[ft], errors="raise", format="%Y")
 
-        for ft in self.ftsd['fdate']:
-            df[ft] = pd.to_datetime(df[ft], errors='raise', format=self.date_format)
+        for ft in self.ftsd["fdate"]:
+            df[ft] = pd.to_datetime(df[ft], errors="raise", format=self.date_format)
         try:
-            for ft in self.ftsd['fint']:
-                if df.dtypes[ft] == object:
+            for ft in self.ftsd["fint"]:
+                if isinstance(df.dtypes[ft], object):
                     df[ft] = (
                         df[ft]
                         .astype(str)
                         .str.strip()
                         .str.lower()
-                        .map(lambda x: self.rx_number_junk.sub('', x))
+                        .map(lambda x: self.rx_number_junk.sub("", x))
                     )
                     df.loc[df[ft].isin(self.strnans), ft] = np.nan
-                df[ft] = df[ft].astype(float, errors='raise')
+                df[ft] = df[ft].astype(float, errors="raise")
                 if pd.isnull(df[ft]).sum() == 0:
-                    df[ft] = df[ft].astype(int, errors='raise')
+                    df[ft] = df[ft].astype(int, errors="raise")
         except Exception as e:
-            raise Exception(f'{str(e)} in ft: {ft}').with_traceback(
+            raise Exception(f"{str(e)} in ft: {ft}").with_traceback(
                 e.__traceback__
-            )  # from e
+            ) from e
 
         try:
-            for ft in self.ftsd['ffloat']:
-                if df.dtypes[ft] == object:
+            for ft in self.ftsd["ffloat"]:
+                if isinstance(df.dtypes[ft], object):
                     df[ft] = (
                         df[ft]
                         .astype(str)
                         .str.strip()
                         .str.lower()
-                        .map(lambda x: self.rx_number_junk.sub('', x))
+                        .map(lambda x: self.rx_number_junk.sub("", x))
                     )
                     df.loc[df[ft].isin(self.strnans), ft] = np.nan
-                df[ft] = df[ft].astype(float, errors='raise')
+                df[ft] = df[ft].astype(float, errors="raise")
         except Exception as e:
-            raise e(ft)
+            raise e(ft) from e
 
         # NOTE verbatim will simply remain. We're now at the end of the columns
         # for ft in self.fts['fverbatim']:
@@ -224,15 +225,15 @@ class DatasetReshaper:
         dfcmb = pd.DataFrame(index=[0])
         sdtypes = df.dtypes
 
-        if (sum(sdtypes == 'object') > 0) | (sum(sdtypes == 'boolean') > 0):
+        if (sum(sdtypes == "object") > 0) | (sum(sdtypes == "boolean") > 0):
             return (
                 ValueError,
                 "Valid dtypes are `category`, `bool`, `int`, `float` only",
             )
-        cats = list(sdtypes.loc[sdtypes == 'category'].index.values)
-        bools = list(sdtypes.loc[sdtypes == 'bool'].index.values)
-        ints = list(sdtypes.loc[sdtypes == 'int'].index.values)
-        floats = list(sdtypes.loc[sdtypes == 'float'].index.values)
+        cats = list(sdtypes.loc[sdtypes == "category"].index.values)
+        bools = list(sdtypes.loc[sdtypes == "bool"].index.values)
+        ints = list(sdtypes.loc[sdtypes == "int"].index.values)
+        floats = list(sdtypes.loc[sdtypes == "float"].index.values)
 
         # create ragged cats
         for ft in cats:
@@ -240,7 +241,7 @@ class DatasetReshaper:
             dfcmb = pd.concat(
                 [dfcmb, pd.Series(df[ft].cat.categories)],
                 axis=1,
-                join='outer',
+                join="outer",
                 ignore_index=True,
             )
             dfcmb.columns = colnames_pre + [ft]
@@ -258,7 +259,7 @@ class DatasetReshaper:
             dfcmb = pd.concat(
                 [dfcmb, pd.Series([False, True])],
                 axis=1,
-                join='outer',
+                join="outer",
                 ignore_index=True,
             )
             dfcmb.columns = colnames_pre + [ft]
@@ -274,8 +275,8 @@ class DatasetReshaper:
             dfcmb[ft] = 1.0
 
         _log.info(
-            f'Reduced df {len(df)} rows, {df.values.nbytes / 1e3:,.0f} KB)'
-            + f' to dfcmb ({len(dfcmb)} rows, {dfcmb.values.nbytes / 1e3:,.0f} KB)'
+            f"Reduced df {len(df)} rows, {df.values.nbytes / 1e3:,.0f} KB)"
+            + f" to dfcmb ({len(dfcmb)} rows, {dfcmb.values.nbytes / 1e3:,.0f} KB)"
         )
 
         return dfcmb
@@ -302,8 +303,8 @@ class Transformer:
     def _get_fts_to_force_to_int(self, dfraw: pd.DataFrame) -> list[str]:
         """Get list of ffts to force to int post patsy conversion"""
         s = dfraw.dtypes
-        ints = list(s.loc[s == 'int'].index.values)
-        bools = [f'{ft}[T.True]' for ft in s.loc[s == 'bool'].index.values]
+        ints = list(s.loc[s == "int"].index.values)
+        bools = [f"{ft}[T.True]" for ft in s.loc[s == "bool"].index.values]
         return ints + bools
 
     def _convert_cats(self, dfraw: pd.DataFrame) -> pd.DataFrame:
@@ -312,7 +313,7 @@ class Transformer:
         which is helpfully still an int, so we can still return int dtype"""
         sdtypes = dfraw.dtypes
         df = dfraw.copy()
-        cats = list(sdtypes.loc[sdtypes == 'category'].index.values)
+        cats = list(sdtypes.loc[sdtypes == "category"].index.values)
         for ft in cats:
             map_int_to_fct = dict(enumerate(df[ft].cat.categories))
             map_fct_to_int = {v: k for k, v in map_int_to_fct.items()}
@@ -331,9 +332,9 @@ class Transformer:
         # TODO add option to output matrix   # np.asarray(mx_ex)
         df = self._convert_cats(df.copy())
         fts_force_to_int = self._get_fts_to_force_to_int(df)
-        na_act = pat.NAAction(NA_types=[]) if propagate_nans else 'raise'
+        na_act = pat.NAAction(NA_types=[]) if propagate_nans else "raise"
         df_ex = pat.dmatrix(
-            fml_or_design_info, df, NA_action=na_act, return_type='dataframe'
+            fml_or_design_info, df, NA_action=na_act, return_type="dataframe"
         )
         design_info = df_ex.design_info
 
@@ -362,7 +363,7 @@ class Transformer:
         `design_info`. Return transformed dmatrix (pd.DataFrame)
         """
         if self.design_info is None:
-            raise AttributeError('No design_info, run `fit_transform()` first')
+            raise AttributeError("No design_info, run `fit_transform()` first")
 
         df_ex, _ = self._transform(self.design_info, df, propagate_nans)
         return df_ex
@@ -388,18 +389,20 @@ class Standardizer:
     TODO: introduce minmax scaling as an option
     """
 
-    def __init__(self, tfmr: Transformer, fts_exclude: list = []):
+    def __init__(self, tfmr: Transformer, fts_exclude: list = None):
         """Automatically exclude fts in list(tfmr.factor_map.keys()) and
         any named in `fts_exclude` that are numeric and would otherwise get
         standardardized"""
 
+        if fts_exclude is None:
+            fts_exclude = []
         self.design_info = tfmr.design_info
         self.fts_exclude = fts_exclude + list(tfmr.factor_map.keys())
 
         col_num_excl = [0] + [
             i
             for i, n in enumerate(self.design_info.column_names)
-            if (n in self.fts_exclude) or re.search(r'\[T\.', n)
+            if (n in self.fts_exclude) or re.search(r"\[T\.", n)
         ]
 
         # col_mask is True where we want to exclude the col from standardization
@@ -418,8 +421,8 @@ class Standardizer:
         """
         if any([v is None for v in [self.means, self.sdevs, self.scale]]):
             raise AttributeError(
-                'No mns, sdevs or scale, '
-                + 'run `fit_standardize()` on training set first'
+                "No mns, sdevs or scale, "
+                + "run `fit_standardize()` on training set first"
             )
 
         df_s = (df - self.means) / (self.sdevs * self.scale)
@@ -444,8 +447,8 @@ class Standardizer:
         """
         if any([v is None for v in [self.means, self.sdevs, self.scale]]):
             raise AttributeError(
-                'No mns, sdevs or scale, '
-                + 'run `fit_standardize()` on training set first'
+                "No mns, sdevs or scale, "
+                + "run `fit_standardize()` on training set first"
             )
 
         mxs_all = (mx - self.means) / (self.sdevs * self.scale)
@@ -466,7 +469,7 @@ class Standardizer:
     def get_scale(self) -> tuple[pd.DataFrame, float]:
         """Get values followuing fit_standardize. Persist values over time."""
         means_sdevs = pd.DataFrame(
-            {'means': self.means, 'sdevs': self.sdevs},
+            {"means": self.means, "sdevs": self.sdevs},
             index=self.design_info.column_names,
         )
 
@@ -476,8 +479,8 @@ class Standardizer:
         """Set values saved from a prior fit_standardize. Now can run
         standardize for new data
         """
-        self.means = df_means_sdevs['means'].values
-        self.sdevs = df_means_sdevs['sdevs'].values
+        self.means = df_means_sdevs["means"].values
+        self.sdevs = df_means_sdevs["sdevs"].values
         self.scale = scale
 
 
@@ -488,16 +491,16 @@ def compress_factor_levels(df: pd.DataFrame, fts: list, topn: int = 20) -> pd.Da
     newdf = pd.DataFrame(index=df.index)
     for ft in fts:
         vc = df[ft].value_counts(dropna=False)
-        _log.info(f'{ft}: compress {vc[:topn].sum()} ({vc[:topn].sum()/vc.sum():.1%})')
+        _log.info(f"{ft}: compress {vc[:topn].sum()} ({vc[:topn].sum()/vc.sum():.1%})")
         _log.info(
-            f'{ft}: compressed {len(vc)}-{topn} ({len(vc)-topn}) levels '
-            + 'into `other`, '
-            + f'{vc[topn:].sum()} rows ({vc[topn:].sum() / len(df):.1%}) affected'
+            f"{ft}: compressed {len(vc)}-{topn} ({len(vc)-topn}) levels "
+            + "into `other`, "
+            + f"{vc[topn:].sum()} rows ({vc[topn:].sum() / len(df):.1%}) affected"
         )
         vc_map = {
-            k: (k if i < topn else 'other')
+            k: (k if i < topn else "other")
             for i, (k, v) in enumerate(vc.to_dict().items())
         }
-        newdf[f'{ft}_topn'] = df[ft].map(vc_map)
+        newdf[f"{ft}_topn"] = df[ft].map(vc_map)
 
     return newdf

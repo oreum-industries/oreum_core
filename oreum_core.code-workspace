@@ -8,5 +8,9 @@
 		"python.defaultInterpreterPath": "~/miniforge/envs/oreum_core/bin/python",
 		"workbench.colorTheme": "Theme",
 		"editor.unusualLineTerminators": "off",
+		"cSpell.enabled": true,
+		"cSpell.enabledFileTypes": {
+			"jupyter": true
+		}
 	}
 }

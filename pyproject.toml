@@ -43,16 +43,14 @@ dependencies = [
 all = ["oreum_core[dev,pymc,tree]"]
 dev = [
     "bandit",
-    "black",
-    "flake8",
     "hypothesis",
     "interrogate",
     "ipython",
-    "isort",
     "pipdeptree",
     "pip-licenses",
     "pre-commit",
     "pytest",
+    "ruff",
 ]
 pymc = [
     "graphviz<=0.18",  # NOTE capped https://stackoverflow.com/a/69997168/4473230
@@ -89,24 +87,6 @@ skips = [
     "B607",
 ]
 
-[tool.black]
-line-length = 88
-target-version = ["py311"]
-skip-string-normalization = true
-skip-magic-trailing-comma = true
-include = '\.py$'
-extend-exclude = """/(__pycache__)/"""
-# check = true # diff = true  # allow for different calls to use this
-color = true
-fast = false
-verbose = true
-
-[tool.isort]
-profile = 'black'
-multi_line_output = 3
-skip_gitignore = true
-py_version = 311
-
 [tool.interrogate]
 ignore-init-method = false
 ignore-init-module = true  # doesnt work with precommit see https://github.com/econchick/interrogate/issues/100
@@ -132,6 +112,68 @@ badge-style = "flat"
 
 [tool.flit.module]
 name = "oreum_core"
+
+[tool.ruff]  # settings: https://docs.astral.sh/ruff/settings/
+indent-width = 4
+line-length = 88
+target-version = "py311"
+extend-exclude = [
+    "__pycache__",
+    "build",
+    "dev",
+    "lib",
+    "lib64",
+    "sdist",
+    "var",
+    "wheels",
+]
+
+[tool.ruff.lint]
+# fixable = ["ALL"]  # allow fix for all enabled rules (when `--fix`) provided
+unfixable = ["B"]
+# allow unused underscore-prefix vars
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+select = [
+    "B",  # flake8-bugbear
+    "C",  # flake8-comprehensions
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "W",  # pycodestyle warnings
+    "B9", # legacy from .flake8 config
+]
+ignore = [
+    "B026",  # let me do star unpacking
+    "C405",  # let me use set()
+    "C408",  # let me use dict()
+    "C416",  # let me use list comprehensions
+    "C419",  # let me use list comprehensions
+    "C901",  # too complex
+    "E203",  # legacy from .flake8 config
+    "E266",  # legacy from .flake8 config
+    "E501",  # line too long
+    "E712",  # legacy from .flake8 config
+    "F401",  # legacy from .flake8 config
+    "F403",  # legacy from .flake8 config
+    "W291",  # legacy from .flake8 config
+    "W293",  # legacy from .flake8 config
+    "W605",  # legacy from .flake8 config
+]
+
+[tool.ruff.format]
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint.isort]
+order-by-type = true
+relative-imports-order = "closest-to-furthest"
+extra-standard-library = ["typing"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+known-first-party = []
+split-on-trailing-comma=false
 
 [tool.setuptools.dynamic]
 version = {attr = "oreum_core.__version__"}

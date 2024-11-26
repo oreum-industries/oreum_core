@@ -14,6 +14,7 @@
 
 # model.plot.py
 """Model Plotting"""
+
 from enum import Enum
 
 import arviz as az
@@ -27,43 +28,43 @@ from matplotlib import figure, gridspec
 from ..model_pymc import BasePYMCModel
 
 __all__ = [
-    'plot_trace',
-    'plot_energy',
-    'facetplot_krushke',
-    'pairplot_corr',
-    'forestplot_single',
-    'forestplot_multiple',
-    'plot_ppc',
-    'plot_loo_pit',
-    'plot_compare',
-    'plot_lkjcc_corr',
+    "plot_trace",
+    "plot_energy",
+    "facetplot_krushke",
+    "pairplot_corr",
+    "forestplot_single",
+    "forestplot_multiple",
+    "plot_ppc",
+    "plot_loo_pit",
+    "plot_compare",
+    "plot_lkjcc_corr",
 ]
 
 sns.set_theme(
-    style='darkgrid',
-    palette='muted',
-    context='notebook',
-    rc={'figure.dpi': 72, 'savefig.dpi': 144, 'figure.figsize': (12, 4)},
+    style="darkgrid",
+    palette="muted",
+    context="notebook",
+    rc={"figure.dpi": 72, "savefig.dpi": 144, "figure.figsize": (12, 4)},
 )
 
 
 class IDataGroupName(str, Enum):
-    prior = 'prior'
-    posterior = 'posterior'
+    prior = "prior"
+    posterior = "posterior"
 
 
 def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
     """Create traceplot for passed mdl NOTE a useful kwarg is `kind` e.g.
     'trace', the default is `kind = 'rank_vlines'`"""
-    kind = kwargs.pop('kind', 'rank_vlines')
-    txtadd = kwargs.pop('txtadd', None)
+    kind = kwargs.pop("kind", "rank_vlines")
+    txtadd = kwargs.pop("txtadd", None)
     _ = az.plot_trace(
         mdl.idata, var_names=rvs, kind=kind, figsize=(12, 0.8 + 1.5 * len(rvs))
     )
     f = plt.gcf()
     _ = f.suptitle(
-        ' - '.join(filter(None, [f'Posterior traces of {rvs}', txtadd]))
-        + f'\n{mdl.mdl_id}'
+        " - ".join(filter(None, [f"Posterior traces of {rvs}", txtadd]))
+        + f"\n{mdl.mdl_id}"
     )
     _ = f.tight_layout()
     return f
@@ -76,7 +77,7 @@ def plot_energy(mdl: BasePYMCModel) -> figure.Figure:
     )
     f = plt.gcf()
     _ = f.suptitle(
-        'NUTS Energy (Marginal vs Transitional, and E-BFMI)' + f' - `{mdl.mdl_id}`'
+        "NUTS Energy (Marginal vs Transitional, and E-BFMI)" + f" - `{mdl.mdl_id}`"
     )
     _ = f.tight_layout()
     return f
@@ -98,8 +99,8 @@ def facetplot_krushke(
     + Optional Pass kwargs like hdi_prob = 0.5, coords = {'oid', oids}
     """
     # TODO unpack the compressed rvs from the idata
-    txtadd = kwargs.pop('txtadd', None)
-    transform = kwargs.pop('transform', None)
+    txtadd = kwargs.pop("txtadd", None)
+    transform = kwargs.pop("transform", None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
     f, axs = plt.subplots(n, m, figsize=(2.6 * m, 0.8 + 1.5 * n))
     _ = az.plot_posterior(
@@ -112,8 +113,8 @@ def facetplot_krushke(
         **kwargs,
     )
     _ = f.suptitle(
-        ' - '.join(filter(None, [f'Distribution of {rvs}', group, txtadd]))
-        + f'\n{mdl.mdl_id}'
+        " - ".join(filter(None, [f"Distribution of {rvs}", group, txtadd]))
+        + f"\n{mdl.mdl_id}"
     )
     _ = f.tight_layout()
     return f
@@ -126,17 +127,17 @@ def forestplot_single(
     **kwargs,
 ) -> figure.Figure:
     """Plot forestplot for list of var_names RV (optionally with factor sublevels)"""
-    txtadd = kwargs.pop('txtadd', None)
-    dp = kwargs.pop('dp', 2)
-    plot_mn = kwargs.pop('plot_mn', True)
-    transform = kwargs.pop('transform', None)
+    txtadd = kwargs.pop("txtadd", None)
+    dp = kwargs.pop("dp", 2)
+    plot_mn = kwargs.pop("plot_mn", True)
+    transform = kwargs.pop("transform", None)
     desc = None
     kws = dict(
-        colors=sns.color_palette('tab20c', n_colors=16).as_hex()[
-            kwargs.pop('clr_offset', 0) :
+        colors=sns.color_palette("tab20c", n_colors=16).as_hex()[
+            kwargs.pop("clr_offset", 0) :
         ][0],
         ess=False,
-        combined=kwargs.pop('combined', True),
+        combined=kwargs.pop("combined", True),
     )
 
     # get overall stats
@@ -147,12 +148,12 @@ def forestplot_single(
         mn = df[var_names[0]].mean(axis=0)
         qs = df[var_names[0]].quantile(q=[0.03, 0.97]).values
         desc = (
-            f'Overall: $Mean =$ {mn:.{dp}f}'
-            + ', $HDI_{94}$ = ['
-            + ', '.join([f'{qs[v]:.{dp}f}' for v in range(2)])
-            + ']'
+            f"Overall: $Mean =$ {mn:.{dp}f}"
+            + ", $HDI_{94}$ = ["
+            + ", ".join([f"{qs[v]:.{dp}f}" for v in range(2)])
+            + "]"
         )
-    nms = [nm for nm in df.index.names if nm not in ['chain', 'draw']]
+    nms = [nm for nm in df.index.names if nm not in ["chain", "draw"]]
     n = sum([len(df.index.get_level_values(nm).unique()) for nm in nms])
 
     f = plt.figure(figsize=(12, 1.2 + 0.3 * n))
@@ -160,19 +161,19 @@ def forestplot_single(
     _ = az.plot_forest(
         mdl.idata[group], var_names=var_names, **kws, transform=transform, ax=ax0
     )
-    _ = ax0.set_title('')
+    _ = ax0.set_title("")
 
     if plot_mn & (len(var_names) == 1):
-        _ = ax0.axvline(mn, color='#ADD8E6', ls='--', lw=3, zorder=-1)
+        _ = ax0.axvline(mn, color="#ADD8E6", ls="--", lw=3, zorder=-1)
     else:
-        _ = ax0.axvline(0, color='#ADD8E6', ls='--', lw=3, zorder=-1)
+        _ = ax0.axvline(0, color="#ADD8E6", ls="--", lw=3, zorder=-1)
     _ = f.suptitle(
-        '\n'.join(
+        "\n".join(
             filter(
                 None,
                 [
-                    ' - '.join(
-                        filter(None, [f'Forestplot of {var_names}', group, txtadd])
+                    " - ".join(
+                        filter(None, [f"Forestplot of {var_names}", group, txtadd])
                     ),
                     mdl.mdl_id,
                     desc,
@@ -194,11 +195,11 @@ def forestplot_multiple(
     Useful for a linear model of RVs, where each RV can have sublevel factors
     TODO This makes a few too many assumptions, will improve in future
     """
-    txtadd = kwargs.pop('txtadd', None)
-    clr_offset = kwargs.pop('clr_offset', 0)
-    dp = kwargs.pop('dp', 1)
-    plot_med = kwargs.pop('plot_med', True)
-    plot_combined = kwargs.pop('plot_combined', False)
+    txtadd = kwargs.pop("txtadd", None)
+    clr_offset = kwargs.pop("clr_offset", 0)
+    dp = kwargs.pop("dp", 1)
+    plot_med = kwargs.pop("plot_med", True)
+    plot_combined = kwargs.pop("plot_combined", False)
     desc = None
 
     hs = [0.22 * (np.prod(data.shape[2:])) for data in datasets.values()]
@@ -210,7 +211,7 @@ def forestplot_multiple(
         _ = az.plot_forest(
             data,
             ax=ax,
-            colors=sns.color_palette('tab20c', n_colors=16).as_hex()[clr_offset:][i],
+            colors=sns.color_palette("tab20c", n_colors=16).as_hex()[clr_offset:][i],
             ess=False,
             combined=plot_combined,
         )
@@ -219,23 +220,23 @@ def forestplot_multiple(
         if plot_med:
             if i == 0:
                 qs = np.quantile(data, q=[0.03, 0.25, 0.5, 0.75, 0.97])
-                _ = ax.axvline(qs[2], color='#ADD8E6', ls='--', lw=3, zorder=-1)
+                _ = ax.axvline(qs[2], color="#ADD8E6", ls="--", lw=3, zorder=-1)
                 desc = (
-                    f'med {qs[2]:.{dp}f}, HDI50 ['
-                    + ', '.join([f'{qs[v]:.{dp}f}' for v in [1, 3]])
-                    + '], HDI94 ['
-                    + ', '.join([f'{qs[v]:.{dp}f}' for v in [0, 4]])
-                    + ']'
+                    f"med {qs[2]:.{dp}f}, HDI50 ["
+                    + ", ".join([f"{qs[v]:.{dp}f}" for v in [1, 3]])
+                    + "], HDI94 ["
+                    + ", ".join([f"{qs[v]:.{dp}f}" for v in [0, 4]])
+                    + "]"
                 )
             else:
-                _ = ax.axvline(1, color='#ADD8E6', ls='--', lw=3, zorder=-1)
+                _ = ax.axvline(1, color="#ADD8E6", ls="--", lw=3, zorder=-1)
 
     _ = f.suptitle(
-        '\n'.join(
+        "\n".join(
             filter(
                 None,
                 [
-                    ' - '.join(filter(None, ['Forestplot levels', group, txtadd])),
+                    " - ".join(filter(None, ["Forestplot levels", group, txtadd])),
                     mdl.mdl_id,
                     desc,
                 ],
@@ -257,8 +258,8 @@ def pairplot_corr(
     Pass-through kwargs to az.plot_pair, e.g. ref_vals
     Default to posterior, allow for override to prior
     """
-    txtadd = kwargs.pop('txtadd', None)
-    kind = kwargs.pop('kind', 'kde')
+    txtadd = kwargs.pop("txtadd", None)
+    kind = kwargs.pop("kind", "kde")
 
     pair_kws = dict(
         group=group,
@@ -268,8 +269,8 @@ def pairplot_corr(
         marginals=True,
         kind=kind,
         kde_kwargs=dict(
-            contourf_kwargs=dict(alpha=0.5, cmap='Blues'),
-            contour_kwargs=dict(colors=None, cmap='Blues'),
+            contourf_kwargs=dict(alpha=0.5, cmap="Blues"),
+            contour_kwargs=dict(colors=None, cmap="Blues"),
             hdi_probs=[0.5, 0.94, 0.99],
         ),
         figsize=(2 + 1.8 * len(rvs), 2 + 1.8 * len(rvs)),
@@ -280,16 +281,16 @@ def pairplot_corr(
         az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)[1].T
     ).corr()
     i, j = np.tril_indices(n=len(corr), k=-1)
-    for ij in zip(i, j):
-        axs[ij].set_title(f'rho: {corr.iloc[ij]:.2f}', fontsize=8, loc='right', pad=2)
-    vh_y = dict(rotation=0, va='center', ha='right')
-    vh_x = dict(rotation=40, va='top', ha='right')
+    for ij in zip(i, j, strict=False):
+        axs[ij].set_title(f"rho: {corr.iloc[ij]:.2f}", fontsize=8, loc="right", pad=2)
+    vh_y = dict(rotation=0, va="center", ha="right")
+    vh_x = dict(rotation=40, va="top", ha="right")
     _ = [a.set_ylabel(a.get_ylabel(), **vh_y) for ax in axs for a in ax]
     _ = [a.set_xlabel(a.get_xlabel(), **vh_x) for ax in axs for a in ax]
 
     f = plt.gcf()
     _ = f.suptitle(
-        ' - '.join(filter(None, ['Pairplot', mdl.name, group, 'selected RVs', txtadd]))
+        " - ".join(filter(None, ["Pairplot", mdl.name, group, "selected RVs", txtadd]))
     )
     _ = f.tight_layout()
     return f
@@ -299,7 +300,7 @@ def plot_ppc(
     mdl: BasePYMCModel,
     var_names: list,
     idata: az.InferenceData = None,
-    group: str = 'posterior',
+    group: str = "posterior",
     insamp: bool = True,
     ecdf: bool = True,
     flatten: list = None,
@@ -317,22 +318,22 @@ def plot_ppc(
         it's observed in a log-likelihoood the idata.observed_data will get the
         same name as the {group}_predictive, so data_pairs is not often needed
     """
-    txtadd = kwargs.pop('txtadd', None)
-    kind = 'kde'
+    txtadd = kwargs.pop("txtadd", None)
+    kind = "kde"
     kindnm = kind.upper()
-    ynm = 'density'
-    loc = 'upper right'
+    ynm = "density"
+    loc = "upper right"
     if ecdf:
-        kind = 'cumulative'
-        kindnm = 'ECDF'
-        ynm = 'prop'
-        loc = 'lower right'
+        kind = "cumulative"
+        kindnm = "ECDF"
+        ynm = "prop"
+        loc = "lower right"
     _idata = mdl.idata if idata is None else idata
     n = len(var_names)
     if flatten is not None:
         n = 1
         for k in var_names:
-            n *= _idata['observed_data'][k].shape[-1]
+            n *= _idata["observed_data"][k].shape[-1]
     # wild hack to get the size of observed
     i = list(dict(_idata.observed_data.sizes).values())[0]
     num_pp_samples = None if i < 500 else 200
@@ -352,11 +353,14 @@ def plot_ppc(
     _ = [ax.legend(fontsize=8, loc=loc) for ax in axs.flatten()]  # fix legend
     ls = None
     if logx:
-        _ = [ax.set_xscale('log') for ax in axs.flatten()]
-        ls = '(logscale)'
-    _ = [ax.set(title=t, ylabel=ynm) for ax, t in zip(axs.flatten(), var_names)]
+        _ = [ax.set_xscale("log") for ax in axs.flatten()]
+        ls = "(logscale)"
+    _ = [
+        ax.set(title=t, ylabel=ynm)
+        for ax, t in zip(axs.flatten(), var_names, strict=False)
+    ]
     t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Retrodictive {kindnm}'
-    _ = f.suptitle(' - '.join(filter(None, [t, txtadd, ls])) + f'\n{mdl.mdl_id}')
+    _ = f.suptitle(" - ".join(filter(None, [t, txtadd, ls])) + f"\n{mdl.mdl_id}")
     _ = f.tight_layout()
     return f
 
@@ -371,7 +375,7 @@ def plot_loo_pit(
     data_pairs {key (in observed AND log_likelihood): value (in posterior_predictive)}
 
     """
-    txtadd = kwargs.pop('txtadd', None)
+    txtadd = kwargs.pop("txtadd", None)
     f, axs = plt.subplots(
         len(data_pairs), 2, figsize=(12, 3 * len(data_pairs)), squeeze=False
     )
@@ -380,11 +384,11 @@ def plot_loo_pit(
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][0], **kwargs)
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][1], ecdf=True, **kwargs)
 
-        _ = axs[i][0].set_title(f'Predicted {yhat} LOO-PIT')
-        _ = axs[i][1].set_title(f'Predicted {yhat} LOO-PIT cumulative')
+        _ = axs[i][0].set_title(f"Predicted {yhat} LOO-PIT")
+        _ = axs[i][1].set_title(f"Predicted {yhat} LOO-PIT cumulative")
 
     _ = f.suptitle(
-        ' - '.join(filter(None, ['In-sample LOO-PIT', txtadd])) + f'\n{mdl.mdl_id}'
+        " - ".join(filter(None, ["In-sample LOO-PIT", txtadd])) + f"\n{mdl.mdl_id}"
     )
     _ = f.tight_layout()
     return f
@@ -399,8 +403,8 @@ def plot_compare(
     idata needs: observed_data AND log_likelihood
     hats should be the key for observed_data AND log_likelihood
     """
-    txtadd = kwargs.pop('txtadd', None)
-    sharex = kwargs.pop('sharex', False)
+    txtadd = kwargs.pop("txtadd", None)
+    sharex = kwargs.pop("sharex", False)
     f, axs = plt.subplots(
         len(yhats),
         1,
@@ -409,11 +413,11 @@ def plot_compare(
         sharex=sharex,
     )
     # mdlnms = ' vs '.join(idata_dict.keys())
-    idata_dict = {f'{k}\n{v.mdl_id_fn}': v.idata for k, v in mdl_dict.items()}
+    idata_dict = {f"{k}\n{v.mdl_id_fn}": v.idata for k, v in mdl_dict.items()}
     dcomp = {}
     for i, y in enumerate(yhats):
         dfcomp = az.compare(
-            idata_dict, var_name=y, ic='loo', method='stacking', scale='log'
+            idata_dict, var_name=y, ic="loo", method="stacking", scale="log"
         )
         dcomp[y] = dfcomp
         ax = az.plot_compare(
@@ -425,7 +429,7 @@ def plot_compare(
         + "` vs `".join(list(mdl_dict.keys()))
         + "`\n(higher & narrower is better)"
     )
-    _ = f.suptitle(' - '.join(filter(None, [t, txtadd])))
+    _ = f.suptitle(" - ".join(filter(None, [t, txtadd])))
     _ = f.tight_layout()
 
     return f, dcomp
@@ -437,14 +441,14 @@ def plot_lkjcc_corr(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
     Also see https://python.arviz.org/en/stable/user_guide/label_guide.html#custom-labellers
     """
     coords = {
-        'lkjcc_corr_dim_0': xr.DataArray([0, 1], dims=['asdf']),
-        'lkjcc_corr_dim_1': xr.DataArray([1, 0], dims=['asdf']),
+        "lkjcc_corr_dim_0": xr.DataArray([0, 1], dims=["asdf"]),
+        "lkjcc_corr_dim_1": xr.DataArray([1, 0], dims=["asdf"]),
     }
 
     return facetplot_krushke(
         mdl=mdl,
-        txtadd='lkjcc_corr, diagonals only',
-        rvs=['lkjcc_corr'],
+        txtadd="lkjcc_corr, diagonals only",
+        rvs=["lkjcc_corr"],
         coords=coords,
         m=2,
         rvs_hack=0,
@@ -462,11 +466,11 @@ def plot_yhat_vs_y(
     **kwargs,
 ) -> figure.Figure:
     """Boxplot forecast yhat with overplotted y"""
-    txtadd = kwargs.pop('txtadd', None)
+    txtadd = kwargs.pop("txtadd", None)
     kws_mn = dict(
         markerfacecolor="w", markeredgecolor="#333333", marker="d", markersize=12
     )
-    kws_box = dict(kind="box", sym='', showmeans=True, whis=(3, 97), meanprops=kws_mn)
+    kws_box = dict(kind="box", sym="", showmeans=True, whis=(3, 97), meanprops=kws_mn)
     kws_sctr = dict(s=80, color="#32CD32")
 
     g = sns.catplot(
@@ -475,10 +479,10 @@ def plot_yhat_vs_y(
     _ = g.map(sns.scatterplot, y, oid, **kws_sctr, zorder=100)
     t_io = (
         f'{"In" if insamp else "Out-of"}-sample: boxplots of posterior `{yhat}`'
-        + f' with overplotted actual `{y}` values per observation'
-        + f' `{oid}` (green dots) - `{mdl.name}`'
+        + f" with overplotted actual `{y}` values per observation"
+        + f" `{oid}` (green dots) - `{mdl.name}`"
     )
-    _ = g.fig.suptitle(' - '.join(filter(None, [t_io, txtadd])) + f'\n{mdl.mdl_id}')
+    _ = g.fig.suptitle(" - ".join(filter(None, [t_io, txtadd])) + f"\n{mdl.mdl_id}")
 
     _ = g.tight_layout()
     return g.fig

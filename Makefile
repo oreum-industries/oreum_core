@@ -57,10 +57,9 @@ install-mamba:  ## get mamba via miniforge, explicitly use bash
 	rm $(HOME)/miniforge.sh
 
 lint:  ## run code lint & security checks
-	$(PYTHON) -m pip install black flake8 interrogate isort bandit
-	black --check --diff --config pyproject.toml oreum_core/
-	isort --check-only oreum_core/
-	flake8 oreum_core/
+	$(PYTHON) -m pip install bandit interrogate ruff
+	ruff check --diff oreum_core/
+	ruff format --config pyproject.toml --no-cache --diff oreum_core/
 	interrogate oreum_core/
 	bandit --config pyproject.toml -r oreum_core/
 

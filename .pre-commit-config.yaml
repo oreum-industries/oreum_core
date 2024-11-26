@@ -1,10 +1,10 @@
 # .pre-commit-config.yaml
 default_language_version:
   python: python3.11
-default_stages: [commit, push]
+default_stages: [pre-commit, pre-push]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks  # general checks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-added-large-files
         args: ['--maxkb=1024']
@@ -30,23 +30,14 @@ repos:
     hooks:
       - id: no-print-statements
         files: ^oreum_core/
-  - repo: https://github.com/psf/black  # black formatter
-    rev: 24.8.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
     hooks:
-      - id: black
-        files: ^oreum_core/
-  - repo: https://github.com/PyCQA/isort  # isort sort imports
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        files: ^oreum_core/
-  - repo: https://github.com/pycqa/flake8  # flake8 linter
-    rev: 7.1.0
-    hooks:
-      - id: flake8
-        files: ^oreum_core/
+      - id: ruff   # lint
+        args: [ --fix]
+      - id: ruff-format  # formatter
   - repo: https://github.com/pycqa/bandit  # basic security checks for python code
-    rev: 1.7.9
+    rev: 1.7.10
     hooks:
       - id: bandit
         files: ^oreum_core/
@@ -60,7 +51,7 @@ repos:
         args: [--config, pyproject.toml]
         pass_filenames: false  # see https://github.com/econchick/interrogate/issues/60#issuecomment-1180262851
   - repo: https://gitlab.com/iam-cms/pre-commit-hooks  # apply Apache2 header
-    rev: v0.6.0
+    rev: v0.7.0
     hooks:
       - id: apache-license
         files: ^oreum_core/

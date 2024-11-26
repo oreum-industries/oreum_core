@@ -14,11 +14,12 @@
 
 # utils.file_io.py
 """Common File IO utils"""
+
 from pathlib import Path
 
 from .snakey_lowercaser import SnakeyLowercaser
 
-__all__ = ['BaseFileIO', 'check_fqns_exist']
+__all__ = ["BaseFileIO", "check_fqns_exist"]
 
 
 class BaseFileIO:
@@ -39,7 +40,7 @@ class BaseFileIO:
         else:
             if not rootdir.is_dir():
                 raise FileNotFoundError(
-                    f'Required dir does not exist {str(self.rootdir.resolve())}'
+                    f"Required dir does not exist {str(self.rootdir.resolve())}"
                 )
             else:
                 self.rootdir = rootdir
@@ -50,7 +51,7 @@ class BaseFileIO:
         fqn = self.rootdir.joinpath(fn)
         if not fqn.exists():
             raise FileNotFoundError(
-                f'Required file does not exist {str(fqn.resolve())}'
+                f"Required file does not exist {str(fqn.resolve())}"
             )
         return fqn
 
@@ -60,7 +61,7 @@ class BaseFileIO:
         fqn = self.rootdir.joinpath(fn)
         dr = Path(*fqn.parts[:-1])
         if not dr.is_dir():
-            raise FileNotFoundError(f'Required dir does not exist {str(dr.resolve())}')
+            raise FileNotFoundError(f"Required dir does not exist {str(dr.resolve())}")
         return fqn
 
 
@@ -69,6 +70,6 @@ def check_fqns_exist(fqns: dict[str:Path]) -> bool:
     for _, path in fqns.items():
         if not path.resolve().exists():
             raise FileNotFoundError(
-                f'Required file does not exist {str(path.resolve())}'
+                f"Required file does not exist {str(path.resolve())}"
             )
     return True

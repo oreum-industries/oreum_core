@@ -6,14 +6,10 @@
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
 [![CI](https://github.com/oreum-industries/oreum_core/workflows/ci/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/ci.yml)
 [![publish](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml)
-<!-- [![Conda Forge](https://img.shields.io/conda/vn/oreum-industries/oreum_core.svg)](https://anaconda.org/oreum-industries/oreum_core) -->
-
-[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![code style: flake8](https://img.shields.io/badge/code%20style-flake8-331188.svg)](https://flake8.pycqa.org/en/latest/)
-[![code style: isort](https://img.shields.io/badge/code%20style-isort-%231674b1?style=flat)](https://pycqa.github.io/isort/)
+[![code style:](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![code style: interrogate](https://raw.githubusercontent.com/oreum-industries/oreum_core/master/assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
 [![code security: bandit](https://img.shields.io/badge/code%20security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
-
+<!-- [![Conda Forge](https://img.shields.io/conda/vn/oreum-industries/oreum_core.svg)](https://anaconda.org/oreum-industries/oreum_core) -->
 
 ---
 
@@ -46,7 +42,7 @@ This package **is not**:
 
 + Intended for public usage and will not be supported for public usage
 + Intended for contributions by anyone not an employee of Oreum Industries,
-  and unsolicitied contributions will not be accepted.
+  and unsolicited contributions will not be accepted.
 
 
 ### Notes
@@ -54,7 +50,7 @@ This package **is not**:
 + Project began on 2021-01-01
 + The `README.md` is MacOS and POSIX oriented
 + See `LICENCE.md` for licensing and copyright details
-+ See `pyproject.toml` for various pacakge details
++ See `pyproject.toml` for various package details
 + This uses a logger named `'oreum_core'`, feel free to incorporate or ignore
 + Hosting:
   + Source code repo on [GitHub](https://github.com/oreum-industries/oreum_core)
@@ -69,7 +65,7 @@ For local development on MacOS
 
 ### 2.0 Pre-requisite installs via `homebrew`
 
-1. Install Homebrew, see instuctions at [https://brew.sh](https://brew.sh)
+1. Install Homebrew, see instructions at [https://brew.sh](https://brew.sh)
 2. Install `direnv`, `git`, `git-lfs`, `graphviz`, `zsh`
 
 ```zsh
@@ -162,6 +158,74 @@ Github Workflows to run:
 
 + See `Makefile` for the CLI commands that are issued
 + See `.github/workflows/*` for workflow details
+
+
+#### 2.3.3 Git LFS
+
+We use [Git LFS](https://git-lfs.github.com) to store any large files alongside
+the repo. This can be useful to replicate exact environments during development
+and/or for automated tests
+
++ This requires a local machine install
+  (see [Getting Started](https://git-lfs.github.com))
++ See `.gitattributes` for details
+
+
+### 2.4 Configs for Local Development
+
+Some notes to help configure local development environment
+
+#### 2.4.1 Git config `~/.gitconfig`
+
+```yaml
+[user]
+    name = <YOUR NAME>
+    email = <YOUR EMAIL ADDRESS>
+```
+
+
+### 2.5 Install VSCode IDE
+
+We strongly recommend using [VSCode](https://code.visualstudio.com) for all
+development on local machines, and this is a hard pre-requisite to use
+the `.devcontainer` environment (see section 3)
+
+This repo includes relevant lightweight project control and config in:
+
+```zsh
+oreum_core.code-workspace
+.vscode/extensions.json
+.vscode/settings.json
+```
+---
+
+## 3. Code Standards
+
+Even when writing R&D code, we strive to meet and exceed (even define) best
+practices for code quality, documentation and reproducibility for modern
+data science projects.
+
+### 3.1 Code Linting & Repo Control
+
+We use a suite of automated tools to check and enforce code quality. We indicate
+the relevant shields at the top of this README. See section 1.4 above for how
+this is enforced at precommit on developer machines and upon PR at the origin as
+part of our CI process, prior to master branch merge.
+
+These include:
+
++ [`black`](https://github.com/psf/black) - standardised Python linting
++ [`flake8`](https://flake8.pycqa.org/en/latest/) - additional PEP8 Python linting
++ [`isort`](https://pycqa.github.io/isort/) - sort Python package imports
++ [`interrogate`](https://pypi.org/project/interrogate/) - ensure complete Python
+  docstrings
++ [`bandit`](https://github.com/PyCQA/bandit) - test for common Python security
+  issues
+
+We also run a suite of general tests pre-packaged in
+[`precommit`](https://pre-commit.com).
+
+
 
 ---
 
