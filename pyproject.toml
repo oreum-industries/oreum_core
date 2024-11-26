@@ -166,6 +166,7 @@ indent-style = "space"
 line-ending = "auto"
 quote-style = "double"
 skip-magic-trailing-comma = true
+exclude = ["*.ipynb"]
 
 [tool.ruff.lint.isort]
 order-by-type = true

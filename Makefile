@@ -56,12 +56,12 @@ install-mamba:  ## get mamba via miniforge, explicitly use bash
 		conda init zsh;
 	rm $(HOME)/miniforge.sh
 
-lint:  ## run code lint & security checks
+lint: ## run code linters and static security (checks only)
 	$(PYTHON) -m pip install bandit interrogate ruff
-	ruff check --diff oreum_core/
-	ruff format --config pyproject.toml --no-cache --diff oreum_core/
-	interrogate oreum_core/
-	bandit --config pyproject.toml -r oreum_core/
+	ruff check --diff
+	ruff format --no-cache --diff
+	interrogate --config pyproject.toml src/
+	bandit --config pyproject.toml -r src/
 
 help:
 	@echo "Use \make <target> where <target> is:"
