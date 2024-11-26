@@ -6,7 +6,7 @@
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
 [![CI](https://github.com/oreum-industries/oreum_core/workflows/ci/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/ci.yml)
 [![publish](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml)
-[![code style:](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![code style: interrogate](https://raw.githubusercontent.com/oreum-industries/oreum_core/master/assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
 [![code security: bandit](https://img.shields.io/badge/code%20security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
 <!-- [![Conda Forge](https://img.shields.io/conda/vn/oreum-industries/oreum_core.svg)](https://anaconda.org/oreum-industries/oreum_core) -->
@@ -21,7 +21,7 @@ Oreum Industries.
 + Provides an essential workflow for data curation, EDA, basic ML using the core
   scientific Python stack incl. `numpy`, `scipy`, `matplotlib`, `seaborn`,
   `pandas`, `scikit-learn`, `umap-learn`
-+ Optionally provides an advanced Bayesian modelling workflow in R&D and
++ Optionally provides an advanced Bayesian modeling workflow in R&D and
   Production using a leading probabilistic programming stack incl. `pymc`,
   `pytensor`, `arviz`
   (do `pip install oreum_core[pymc]`)
@@ -214,9 +214,8 @@ part of our CI process, prior to master branch merge.
 
 These include:
 
-+ [`black`](https://github.com/psf/black) - standardised Python linting
-+ [`flake8`](https://flake8.pycqa.org/en/latest/) - additional PEP8 Python linting
-+ [`isort`](https://pycqa.github.io/isort/) - sort Python package imports
++ [`ruff`](https://docs.astral.sh/ruff/) - extremely fast standardised linting
+  and formatting, which replaces `black`, `flake8`, `isort`
 + [`interrogate`](https://pypi.org/project/interrogate/) - ensure complete Python
   docstrings
 + [`bandit`](https://github.com/PyCQA/bandit) - test for common Python security
