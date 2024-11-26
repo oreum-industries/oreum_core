@@ -34,7 +34,7 @@ repos:
     rev: v0.8.0
     hooks:
       - id: ruff   # lint
-        args: [ --fix ]
+        args: [ --fix]
       - id: ruff-format  # formatter
   - repo: https://github.com/pycqa/bandit  # basic security checks for python code
     rev: 1.7.10
