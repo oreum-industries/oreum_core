@@ -62,7 +62,7 @@ tree = [
     "graphviz<=0.18",  # NOTE capped https://stackoverflow.com/a/69997168/4473230
     "optuna>=3.4.0",  # brings many deps see DEPS NOTE
     "nbformat",
-    "shap<0.47.0",  # plotting seems broken in 0.45, to investigate and resolve
+    "shap<0.45.0",  # plotting seems broken in 0.45, to investigate and resolve
     "xgboost>=2.0.2",
 ]
 # DEPS NOTE
