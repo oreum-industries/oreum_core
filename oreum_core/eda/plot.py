@@ -866,7 +866,6 @@ def plot_estimate(
     Optionally overplot bootstrapped summarised y.
     Refactored this to operate on simple arrays
     """
-    # TODO: Extend this to multivariate grouping
     txtadd = kwargs.pop("txtadd", None)
     t = f"{yhat_nm} for {nobs} obs"
     sty = _get_kws_styling()
@@ -880,43 +879,40 @@ def plot_estimate(
         "meanprops": sty["mn_pt_kws"],
     }
     kws_exc = kws | {"complementary": True, "lw": 3, "legend": None}
-    f, axs = plt.subplots(1, 1, figsize=(12, 3 + 3 * exceedance))
+    kws_pt = {"errorbar": ("ci", 94), "color": "C1", "orient": "h"}
+    mn_pt_kws = copy(sty["mn_pt_kws"])
+    mn_pt_kws.update(
+        markerfacecolor="C1", markeredgecolor="C1", c="C1", marker="o", markersize=8
+    )
+    mn_txt_kws = copy(sty["mn_txt_kws"])
+    mn_txt_kws["backgroundcolor"] = "C1"
+
+    mn = yhat.mean()
+    j = max(-int(np.ceil(np.log10(mn))) + 1, 0)
+    f, axs = plt.subplots(1, 1, figsize=(12, 3 + 2 * exceedance))
 
     if not exceedance:  # default to boxplot, nice and simple
-        mn = yhat.mean()
-        j = max(-int(np.ceil(np.log10(mn))) + 2, 0)
         ax = sns.boxplot(x=yhat, ax=axs, **kws_box)
         _ = ax.annotate(f"{mn:,.{1}f}", xy=(mn, 0), **sty["mn_txt_kws"])
         elems = [lines.Line2D([0], [0], label=f"mean {yhat_nm}", **sty["mn_pt_kws"])]
         if y is not None:
             mn_y = y.mean()
             j_y = max(-int(np.ceil(np.log10(mn_y))) + 2, 0)
-            kws_pt = {
-                "estimator": np.mean,
-                "errorbar": ("ci", 94),
-                "color": "C1",
-                "linestyles": "-",
-                "orient": "h",
-            }
-            _ax = sns.pointplot(y, **kws_pt, ax=axs)
-            mn_txt_kws = sty["mn_txt_kws"]
-            mn_txt_kws["backgroundcolor"] = "C1"
+            _kws_pt = kws_pt | {"estimator": np.mean}
+            _ax = sns.pointplot(y, ax=axs, **_kws_pt)
             _ = _ax.annotate(f"{mn_y:,.{j_y}f}", xy=(mn_y, 0), **mn_txt_kws)
-            mn_pt_kws = copy(sty["mn_pt_kws"])
-            mn_pt_kws.update(
-                markerfacecolor="C1", markeredgecolor="C1", marker="o", markersize=8
-            )
             elems.append(lines.Line2D([0], [0], label=f"mean {y_nm}", **mn_pt_kws))
             txtadd = ", ".join(filter(None, [txtadd, f"overplotted w/ {y_nm}"]))
 
         _ = ax.legend(handles=elems, loc="upper right", fontsize=8)
+        _ = ax.set(yticklabels="", xlabel=yhat_nm)
 
         if force_xlim is not None:
             _ = ax.set(xlim=force_xlim)
 
         hdi = np.quantile(a=yhat, q=[0.03, 0.1, 0.25, 0.5, 0.75, 0.9, 0.97])
         smry_stats = (
-            f"Smry stats for {yhat_nm}: $\mu = {mn:,.{j}f}$, "
+            f"$\mu = {mn:,.{j}f}$, "  # for {yhat_nm}
             + f"$q_{{50}} = {hdi[3]:,.{j}f}$, "
             + f"$HDI_{{50}} = [{hdi[2]:,.{j}f}, {hdi[4]:,.{j}f}]$, "
             + f"$HDI_{{80}} = [{hdi[1]:,.{j}f}, {hdi[5]:,.{j}f}]$, "
@@ -926,7 +922,7 @@ def plot_estimate(
 
     else:  # do exceedance, slightly less intuitive for beginner clients
         ax0 = sns.ecdfplot(x=yhat, ax=axs, **kws_exc)
-        _ = ax0.set(ylabel=f"$P({yhat_nm} > x)$", xlabel="x")
+        _ = ax0.set(ylabel=f"P({yhat_nm} ≥ x)", xlabel="x")
         qs = kwargs.pop("qs", np.array([0.5, 0.9, 0.95, 0.99]))
         qvals = np.quantile(a=yhat, q=qs)
         clrs = sns.color_palette("Blues", len(qs))
@@ -938,20 +934,25 @@ def plot_estimate(
             color=clrs,
             style=qs,
             markers=["s", "o", "^", "d"],
+            edgecolor="#999",
             ax=axs,
-            s=100,
+            s=120,
             zorder=10,
+            legend=True,
         )
         hdls, _lbls = ax1.get_legend_handles_labels()
         lbls = [str(round(1 - float(lbl), 2)) for lbl in _lbls]  # HACK floating pt
-        _ = ax1.legend(hdls, lbls, loc="upper right", title=f"P({yhat_nm}) > x")
-        # smry_stats = (f"Exceedance stats for {yhat_nm}:" +
-        #     ", ".join([f'$P({yhat_nm})_{{{q:.2f}}}$' for q in 1 - qs]))
-        # \geq {{{r[1]:.{j}f}}}$"]
-        smry_stats = ""
+        _ = ax1.legend(hdls, lbls, loc="upper right", title=f"P({yhat_nm}) ≥ x")
+        smry_stats = ", ".join(
+            [
+                f"$P_{{@{{{q:.2f}}}}} \geq {{{qv:.{j}f}}}$"
+                for q, qv in zip(1 - qs, qvals, strict=True)
+            ]
+        )
         t = " ".join(filter(None, ["Exceedance Curve", t]))
+        _ = ax0.set(xlabel=yhat_nm)
 
-    _ = f.suptitle(", ".join(filter(None, [t, txtadd])) + f"\n{smry_stats}")
+    _ = f.suptitle(", ".join(filter(None, [t, txtadd])) + f"\nSummary: {smry_stats}")
     _ = f.tight_layout()
     return f
 
