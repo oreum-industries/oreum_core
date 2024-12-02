@@ -259,7 +259,8 @@ class BasePYMCModel:
 
     def replace_obs(self, obsd: dict = None, obs_nm: str = None) -> None:
         """Replace the observation dataset(s)
-        Assumes data lives in pm.MutableData containers in your _build() function
+        Data must live in (mutable) pm.Data containers in your _build() function
+        must be: obsd = {internal_name_of_obs_variable: obs_dataframe}
         You must call `build()` afterward
         Optionally afterwards call `extend_build()` for future time-dependent PPC
         Optionally set `obs_nm` (useful for downstream plotting etc)

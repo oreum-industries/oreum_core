@@ -36,6 +36,7 @@ _log = logging.getLogger(__name__)
 __all__ = [
     "fit_and_plot_fn",
     "get_gini",
+    "bootstrap_index_only",
     "bootstrap",
     "bootstrap_lr",
     "calc_geometric_cv",
@@ -180,25 +181,25 @@ def get_gini(r: np.ndarray, n: np.ndarray) -> np.ndarray:
     return 1 - sum(r.sort_values().cumsum() * (2 / n))
 
 
-def bootstrap(
-    a: np.ndarray | pd.Series, nboot: int = 1000, summary_fn=np.mean, idx_only=False
-) -> np.ndarray:
-    """Calc vectorised bootstrap sample of ndarray of observations
-    By default return the mean value of the observations per sample
-    i.e. if len(a)=20 and nboot=100, this returns 100 bootstrap resampled
-    mean estimates of those 20 observations
-    Vectorised sampling via numpy broadcasting random indexes to a 2D shape
+def bootstrap_index_only(a: np.ndarray, nboot: int = None) -> np.ndarray:
+    """Create a 2D index for vectorised resampling via numpy broadcasting
+    If nboot is None, use len(a): this preserves sample error in the resamples,
+    and allows the resample to behave with the same variance as the sample a.
     """
+    if not isinstance(a, np.ndarray):
+        raise ValueError("must supply a as np.array to broadcast 2D properly")
     rng = np.random.default_rng(seed=RSD)
-    sample_idx = rng.integers(0, len(a), size=(len(a), nboot))
+    if nboot is None:
+        nboot = len(a)
+    return rng.integers(0, len(a), size=(len(a), nboot))
 
-    if idx_only:
-        return sample_idx
 
-    # hack allow for passing a series, need a ndarray to broadcast 2D properly
-    if isinstance(a, pd.Series):
-        a = a.values
-
+def bootstrap(a: np.ndarray, summary_fn=np.mean, nboot: int = None) -> np.ndarray:
+    """Calc vectorised bootstrap resample of ndarray of observations with
+    optional summary_fn.
+    nboot also optional, see https://sedar.co/posts/bootstrap-primer/
+    """
+    sample_idx = bootstrap_index_only(a, nboot)
     samples = a[sample_idx]
     if summary_fn is not None:
         return np.apply_along_axis(summary_fn, 0, samples)
