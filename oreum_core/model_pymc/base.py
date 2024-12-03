@@ -72,7 +72,7 @@ class BasePYMCModel:
             progressbar=True,
         )
         self.rvs_for_posterior_plots = []
-        self.calc_potential_loglike = False
+        self.calc_loglike_of_potential = False
         self.rvs_potential_loglike = None
         self.name = getattr(self, "name", "unnamed_model")
         self.version = getattr(self, "version", "unversioned_model")
@@ -211,7 +211,7 @@ class BasePYMCModel:
                 _log.info(f"Sampled posterior for {self.mdl_id}")
 
                 # optional manually calculate log_likelihood for potentials
-                if self.calc_potential_loglike:
+                if self.calc_loglike_of_potential:
                     self.idata.add_groups(
                         dict(
                             log_likelihood=compute_log_likelihood_for_potential(
@@ -282,11 +282,22 @@ class BasePYMCModel:
             side = "right" if replace else "left"
             self._idata.extend(idata, join=side)
 
-    def debug(self):
+    def debug(self) -> str:
         """Convenience to validate the parameterization: run debug on logp and
         random, and assert no MeasurableVariable nodes in the graph
         TODO catch these outputs in the log"""
+        msg = []
         if self.model is not None:
             assert_no_rvs(self.model.logp())
-            _ = self.model.debug(fn="logp", verbose=True)
+            msg.append("test: assert_no_rvs(logp)")
             _ = self.model.debug(fn="random", verbose=True)
+            msg.append("debug: random")
+            try:
+                _ = self.model.debug(fn="logp", verbose=True)
+                msg.append("debug: logp")
+            except TypeError:
+                _log.exception(
+                    "Model contains Potentials, debug logp not compatible",
+                    exc_info=True,
+                )
+        return f"Ran {len(msg)} debug checks: [" + ", ".join(msg) + "]"
