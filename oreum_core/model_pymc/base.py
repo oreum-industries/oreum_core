@@ -285,7 +285,7 @@ class BasePYMCModel:
     def debug(self) -> str:
         """Convenience to validate the parameterization: run debug on logp and
         random, and assert no MeasurableVariable nodes in the graph
-        TODO catch these outputs in the log"""
+        TODO capture the pymc debug outputs into the log"""
         msg = []
         if self.model is not None:
             assert_no_rvs(self.model.logp())
@@ -300,4 +300,4 @@ class BasePYMCModel:
                     "Model contains Potentials, debug logp not compatible",
                     exc_info=True,
                 )
-        return f"Ran {len(msg)} debug checks: [" + ", ".join(msg) + "]"
+        return f"Ran {len(msg)} checks: [" + ", ".join(msg) + "]"

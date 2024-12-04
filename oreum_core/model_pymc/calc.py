@@ -119,7 +119,7 @@ def get_log_jcd_scan(
     def _grads(i, s, c, w, *args):
         """Inner function allows for extra args that we dont actually use:
         because scan needs to know about upstream_rvs in non_sequences and also
-        wants to passes them into the inner funciton _grad.
+        wants to passes them into the inner function `_grad`.
         See https://github.com/pymc-devs/pytensor/pull/191
 
         """

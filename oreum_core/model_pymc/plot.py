@@ -308,8 +308,9 @@ def plot_ppc(
     logx: bool = False,
     **kwargs,
 ) -> figure.Figure:
-    """Plot In- or Out-of-Sample Prior or Posterior Retrodictive, does not
-    require log-likelihood.
+    """Plot In- or Out-of-Sample Prior or Posterior Retrodictive. Does not
+    require log-likelihood. Does require `observed_data`, which is not made by
+    Potentials
     NOTE:
     + use var_names to only plot e.g. yhat
     + pass through kwargs, possibly of particular use is:
