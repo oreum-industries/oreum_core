@@ -64,8 +64,9 @@ def get_log_jcd_scalar(
     + Initially developed for a model with 1D f_inv_x
 
     Also see detail from Stan docs:
-    + https://mc-stan.org/docs/2_25/reference-manual/change-of-variables-section.html#multivariate-changes-of-variables
+    + https://archive.ph/C9hWB
     + https://mc-stan.org/documentation/case-studies/mle-params.html
+    + https://mc-stan.org/docs/2_25/reference-manual/change-of-variables-section.html#multivariate-changes-of-variables
     "The absolute derivative of the inverse transform measures how the scale of
     the transformed variable changes with respect to the underlying variable."
 
