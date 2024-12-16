@@ -54,7 +54,7 @@ def normal_icdf(
         Whilst value = {0, 1} is theoretically allowed, it seems to cause a
         numeric computational issue somewhere in pt.erfcinv which throws infs.
         This screws up the downstream, so clip slightly away from edges [0, 1]
-    + Used in oreum_lab.src.model.copula.model_a
+    + Used in oreum_copula.src.copula
         NOTE: Possibly after pymc > 5.5 will change to use
         y_cop_u_rv = pm.Normal.dist(mu=0., sigma=1.)
         pm.icdf(y_cop_u_rv, pt.stack([y_m1u, y_m2u], axis=1)),
@@ -70,6 +70,8 @@ def lognormal_icdf(
     """LogNormal icdf, defaulted to mean-centered, 1sd
     NOTE:
     + Modified from pymc.distributions.continuous.LogNormal.icdf in pymc > v5.5
+      so that we can use normal_icdf above which has CLIP protection.
+    + Consider replacing with pm.LogNormal.icdf(u_d, mu, s),
     """
     return pt.exp(normal_icdf(x=x, mu=mu, sigma=sigma))
 

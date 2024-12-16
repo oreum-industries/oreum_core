@@ -308,14 +308,15 @@ def plot_ppc(
     logx: bool = False,
     **kwargs,
 ) -> figure.Figure:
-    """Plot In- or Out-of-Sample Prior or Posterior Retrodictive, does not
-    require log-likelihood.
+    """Plot In- or Out-of-Sample Prior or Posterior Retrodictive. Does not
+    require log-likelihood. Does require `observed_data`, which is not made by
+    Potentials
     NOTE:
     + use var_names to only plot e.g. yhat
     + pass through kwargs, possibly of particular use is:
         `data_pairs` = {key (in observed_data): value (in {group}_predictive)}
         although we remind that the constant_data has the real name, but once
-        it's observed in a log-likelihoood the idata.observed_data will get the
+        it's observed in a log-likelihood the idata.observed_data will get the
         same name as the {group}_predictive, so data_pairs is not often needed
     """
     txtadd = kwargs.pop("txtadd", None)
@@ -337,7 +338,7 @@ def plot_ppc(
     # wild hack to get the size of observed
     i = list(dict(_idata.observed_data.sizes).values())[0]
     num_pp_samples = None if i < 500 else 200
-    f, axs = plt.subplots(n, 1, figsize=(12, 4 * n), sharex=True, squeeze=False)
+    f, axs = plt.subplots(n, 1, figsize=(12, 1 + 2 * n), sharex=True, squeeze=False)
     _ = az.plot_ppc(
         _idata,
         group=group,
