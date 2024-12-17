@@ -44,8 +44,8 @@ class DatatypeConverter:
         Use with a fts dict of form:
             ftsd = dict(
                 fcat = [],           # use for unordered categoricals
-                ford = {ft0: lvls0, ft1: lvls:1, ... },  # use for ordinals
-                fstr = [],  # rarely used e.g. for for freetext strings
+                ford = {ft0: ['a', 'b', 'c'], ... },  # use for ordinals
+                fstr = [],  # rarely used e.g. freetext strings / IDs
                 fbool = [],
                 fbool_nan_to_false = [],
                 fdate = [],
@@ -99,14 +99,14 @@ class DatatypeConverter:
         for ft in self.ftsd["fcat"] + self.ftsd["fstr"]:
             # tame string, clean, handle nulls
             idx = df[ft].notnull()
-            vals = df.loc[idx, ft].astype(str, errors="raise").apply(snl.clean)
+            vals = df.loc[idx, ft].astype(str, errors="ignore").apply(snl.clean)
             df.drop(ft, axis=1, inplace=True)
-            df.loc[~idx, ft] = np.nan
+            df.loc[~idx, ft] = ""
             df.loc[idx, ft] = vals
             if ft in self.ftsd["fcat"]:
                 df[ft] = pd.Categorical(df[ft].values, ordered=False)
             else:
-                df[ft] = df[ft].astype("string")
+                df[ft] = df[ft].astype(str)
 
         for ft, lvls in self.ftsd["ford"].items():
             df[ft] = pd.Categorical(df[ft].values, categories=lvls, ordered=True)
