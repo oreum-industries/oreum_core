@@ -16,7 +16,7 @@
 
 import logging
 
-__version__ = "0.9.10"
+__version__ = "0.9.11"
 
 # logger goes to null handler by default
 # packages that import oreum_core can override this and direct elsewhere

@@ -214,7 +214,7 @@ def bootstrap_lr(
     Pass dataframe or group, accept nans in clm
     Use the same index for prem and claims
     """
-    idx = bootstrap(df[prm], nboot, idx_only=True)
+    idx = bootstrap_index_only(a=df[prm].values, nboot=nboot)
     s_prm = df[prm].values[idx]
     s_clm = df[clm].values[idx]
 
