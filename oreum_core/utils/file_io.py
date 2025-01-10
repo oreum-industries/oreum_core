@@ -30,7 +30,7 @@ class BaseFileIO:
     + Allows a rootdir / rootpath as we often use in R&D Notebooks
     """
 
-    def __init__(self, rootdir: Path = None):
+    def __init__(self, rootdir: Path = None, **kwargs):
         """Allow set a root path for convenience in Notebooks
         e.g. rootdir = DIR_MODELS_A = ['data', 'models', 'a']
         If used, then read/write will prepend this root to their input fqns
@@ -44,7 +44,8 @@ class BaseFileIO:
                 )
             else:
                 self.rootdir = rootdir
-        self.snl = SnakeyLowercaser()
+        allow_hyphen = kwargs.get("allow_hyphen", False)
+        self.snl = SnakeyLowercaser(allow_hyphen=allow_hyphen)
 
     def get_path_read(self, fn: str) -> Path:
         """Create and test fqn file existence for read"""

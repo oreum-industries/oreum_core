@@ -84,7 +84,7 @@ class BasePYMCModel:
         datasets included in the model (i.e several dfx)
         """
         obs_nm = getattr(self, "obs_nm", "unnamed_obs")
-        return f"{self.name}, v{self.version}, {obs_nm}"
+        return f"{self.name}_v{self.version}_{obs_nm}"
 
     @property
     def mdl_id_fn(self) -> str:
@@ -290,12 +290,12 @@ class BasePYMCModel:
         if self.model is not None:
             assert_no_rvs(self.model.logp())
             msg.append("test: assert_no_rvs(logp)")
-            _ = self.model.debug(fn="random", verbose=True)
+            _ = self.model.debug(fn="random", verbose=False)
             msg.append("debug: random")
             try:
-                _ = self.model.debug(fn="logp", verbose=True)
+                _ = self.model.debug(fn="logp", verbose=False)
                 msg.append("debug: logp")
-            except TypeError:
+            except (TypeError, ValueError):
                 _log.exception(
                     "Model contains Potentials, debug logp not compatible",
                     exc_info=True,
