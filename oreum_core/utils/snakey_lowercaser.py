@@ -28,10 +28,14 @@ class SnakeyLowercaser:
     Useful for the often messy column names present in Excel tables
     """
 
-    def __init__(self):
+    def __init__(self, allow_hyphen: bool = False):
         """Init and setup lots of regexes"""
-        punct_to_remove = re.sub(r"[_]", "", string.punctuation)
-        self.rx_to_underscore = re.compile(r"[-/.]")
+        if allow_hyphen:
+            punct_to_remove = re.sub(r"[_-]", "", string.punctuation)
+            self.rx_to_underscore = re.compile(r"[/.]")
+        else:
+            punct_to_remove = re.sub(r"[_]", "", string.punctuation)
+            self.rx_to_underscore = re.compile(r"[-/.]")
         self.rx_punct = re.compile("[{}]".format(re.escape(punct_to_remove)))
         self.rx_splitter1 = re.compile(r"([A-Za-z0-9])([A-Z][a-z]+)")
         self.rx_patsy_factor = re.compile(r"^(.*)(\[T\.|\[)(.*)(\])(.*)$")

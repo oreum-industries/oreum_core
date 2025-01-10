@@ -301,7 +301,6 @@ def plot_ppc(
     var_names: list,
     idata: az.InferenceData = None,
     group: str = "posterior",
-    insamp: bool = True,
     ecdf: bool = True,
     flatten: list = None,
     observed_rug: bool = True,
@@ -324,13 +323,20 @@ def plot_ppc(
     kindnm = kind.upper()
     ynm = "density"
     loc = "upper right"
+    n = len(var_names)
     if ecdf:
         kind = "cumulative"
         kindnm = "ECDF"
         ynm = "prop"
         loc = "lower right"
-    _idata = mdl.idata if idata is None else idata
-    n = len(var_names)
+
+    if idata is None:
+        _idata = mdl.idata
+        insamp = True
+    else:
+        _idata = idata
+        insamp = False
+
     if flatten is not None:
         n = 1
         for k in var_names:
@@ -338,6 +344,7 @@ def plot_ppc(
     # wild hack to get the size of observed
     i = list(dict(_idata.observed_data.sizes).values())[0]
     num_pp_samples = None if i < 500 else 200
+    # with plt.ioff():
     f, axs = plt.subplots(n, 1, figsize=(12, 1 + 2 * n), sharex=True, squeeze=False)
     _ = az.plot_ppc(
         _idata,
