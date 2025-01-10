@@ -182,7 +182,7 @@ def copy_csv2md(fn: str) -> str:
     fileio = BaseFileIO()
     fqn = fileio.get_path_read(fn)
     r = subprocess.run(["csv2md", f"{fqn}"], capture_output=True)
-    fn_out = f'{fn[:-3] + "md"}'
+    fn_out = f"{fn[:-3] + 'md'}"
     fqn_out = fileio.get_path_write(fn_out)
     with open(fqn_out, "wb") as f:
         f.write(r.stdout)

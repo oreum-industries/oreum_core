@@ -491,9 +491,11 @@ def compress_factor_levels(df: pd.DataFrame, fts: list, topn: int = 20) -> pd.Da
     newdf = pd.DataFrame(index=df.index)
     for ft in fts:
         vc = df[ft].value_counts(dropna=False)
-        _log.info(f"{ft}: compress {vc[:topn].sum()} ({vc[:topn].sum()/vc.sum():.1%})")
         _log.info(
-            f"{ft}: compressed {len(vc)}-{topn} ({len(vc)-topn}) levels "
+            f"{ft}: compress {vc[:topn].sum()} ({vc[:topn].sum() / vc.sum():.1%})"
+        )
+        _log.info(
+            f"{ft}: compressed {len(vc)}-{topn} ({len(vc) - topn}) levels "
             + "into `other`, "
             + f"{vc[topn:].sum()} rows ({vc[topn:].sum() / len(df):.1%}) affected"
         )

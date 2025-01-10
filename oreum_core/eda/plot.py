@@ -417,7 +417,7 @@ def plot_joint_numeric(
 
     dfp = data.copy()
     ngrps = 1
-    kws = dict(color=f"C{colori%7}")  # color rotation max 7
+    kws = dict(color=f"C{colori % 7}")  # color rotation max 7
 
     if nsamp is not None:
         dfp = dfp.sample(nsamp, random_state=RSD).copy()
@@ -437,7 +437,7 @@ def plot_joint_numeric(
             else:
                 if palette_type == "g":
                     kws["palette"] = sns.color_palette(
-                        [f"C{i + colori%7}" for i in range(ngrps)]
+                        [f"C{i + colori % 7}" for i in range(ngrps)]
                     )
                 else:  # palette_type == 'q':
                     kws["palette"] = sns.color_palette(
@@ -640,7 +640,7 @@ def plot_f_measure(df: pd.DataFrame) -> figure.Figure:
     _ = ax.set_ylim(0, 1)
     _ = f.suptitle(
         "F-scores across the percentage range of PPC"
-        + f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct',
+        + f"\nBest F1 = {df.loc[f1_at, 'f1']:.3f} @ {f1_at} pct",
         y=1.03,
     )
     return f
@@ -655,7 +655,7 @@ def plot_accuracy(df: pd.DataFrame) -> figure.Figure:
     _ = ax.set_ylim(0, 1)
     _ = f.suptitle(
         "Accuracy across the percentage range of PPC"
-        + f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct',
+        + f"\nBest = {df.loc[acc_at, 'accuracy']:.1%} @ {acc_at} pct",
         y=1.03,
     )
     return f
@@ -737,7 +737,7 @@ def plot_binary_performance(
     _ = axs[2].legend(loc="upper left")
     _ = axs[2].set(
         title="F-measures across the PPC qs"
-        + f'\nBest F1 = {dfperf.loc[f1_at, "f1"]:.3f} @ q{f1_at}',
+        + f"\nBest F1 = {dfperf.loc[f1_at, 'f1']:.3f} @ q{f1_at}",
         xlabel="q",
         ylabel="F-Score",
         ylim=(0, 1),
@@ -751,8 +751,8 @@ def plot_binary_performance(
         y=0.04,
         s=(
             "Class imbalance:"
-            + f'\n0: {dfperf["accuracy"].values[0]:.1%}'
-            + f'\n1: {dfperf["accuracy"].values[-1]:.1%}'
+            + f"\n0: {dfperf['accuracy'].values[0]:.1%}"
+            + f"\n1: {dfperf['accuracy'].values[-1]:.1%}"
         ),
         transform=axs[3].transAxes,
         ha="left",
@@ -762,7 +762,7 @@ def plot_binary_performance(
     )
     _ = axs[3].set(
         title="Accuracy across the PPC pcts"
-        + f'\nBest = {dfperf.loc[acc_at, "accuracy"]:.1%} @ q{acc_at}',
+        + f"\nBest = {dfperf.loc[acc_at, 'accuracy']:.1%} @ q{acc_at}",
         xlabel="q",
         ylabel="Accuracy",
         ylim=(0, 1),
@@ -1015,9 +1015,9 @@ def plot_bootstrap_lr(
         summary += (
             f"Inception {str(pmin)} - {str(pmax)} inclusive, "
             + f"{len(df):,.0f} policies with "
-            + f"\\${df[prm].sum()/1e6:.1f}M premium, "
+            + f"\\${df[prm].sum() / 1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():,.0f} claims totalling "
-            + f"\\${df[clm].sum()/1e6:.1f}M"
+            + f"\\${df[clm].sum() / 1e6:.1f}M"
         )
     if lr_summary:
         summary += (
@@ -1143,9 +1143,9 @@ def plot_bootstrap_lr_grp(
         summary += (
             f"Inception {str(pmin)} - {str(pmax)} inclusive, "
             + f"{len(df):,.0f} policies with "
-            + f"\\${df[prm].sum()/1e6:.1f}M premium, "
+            + f"\\${df[prm].sum() / 1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():,.0f} claims totalling "
-            + f"\\${df[clm].sum()/1e6:.1f}M"
+            + f"\\${df[clm].sum() / 1e6:.1f}M"
         )
 
     txtadd = kwargs.pop("txtadd", None)
@@ -1414,7 +1414,7 @@ def plot_smrystat_grp(
     _ = sns.countplot(**kws, ax=ax2)
     _ = [
         ax2.annotate(
-            f"{c} ({c/ct.sum():.0%})", xy=(c, i % len(ct)), **sty["count_txt_h_kws"]
+            f"{c} ({c / ct.sum():.0%})", xy=(c, i % len(ct)), **sty["count_txt_h_kws"]
         )
         for i, c in enumerate(ct)
     ]
@@ -1607,7 +1607,9 @@ def plot_grp_ct(
     _ = sns.countplot(y=grp, data=df, order=ct.index, ax=axs, palette="viridis")
     _ = [
         axs.annotate(
-            f"{v:.0f} ({v/len(df):.0%})", xy=(v, i % len(ct)), **sty["count_txt_h_kws"]
+            f"{v:.0f} ({v / len(df):.0%})",
+            xy=(v, i % len(ct)),
+            **sty["count_txt_h_kws"],
         )
         for i, v in enumerate(ct)
     ]
@@ -1635,7 +1637,7 @@ def plot_cdf_ppc_vs_obs(
     """
     ps = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 97]
     df_yhat_qs = pd.DataFrame(
-        np.percentile(yhat, ps, axis=1).T, columns=[f"q{p/100}" for p in ps]
+        np.percentile(yhat, ps, axis=1).T, columns=[f"q{p / 100}" for p in ps]
     )
 
     f, axs = plt.subplots(1, 1, figsize=(14, 5), sharey=True, sharex=True)

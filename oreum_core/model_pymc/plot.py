@@ -367,7 +367,7 @@ def plot_ppc(
         ax.set(title=t, ylabel=ynm)
         for ax, t in zip(axs.flatten(), var_names, strict=False)
     ]
-    t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Retrodictive {kindnm}'
+    t = f"{'In' if insamp else 'Out-of'}-sample {group.title()} Retrodictive {kindnm}"
     _ = f.suptitle(" - ".join(filter(None, [t, txtadd, ls])) + f"\n{mdl.mdl_id}")
     _ = f.tight_layout()
     return f
@@ -486,7 +486,7 @@ def plot_yhat_vs_y(
     )
     _ = g.map(sns.scatterplot, y, oid, **kws_sctr, zorder=100)
     t_io = (
-        f'{"In" if insamp else "Out-of"}-sample: boxplots of posterior `{yhat}`'
+        f"{'In' if insamp else 'Out-of'}-sample: boxplots of posterior `{yhat}`"
         + f" with overplotted actual `{y}` values per observation"
         + f" `{oid}` (green dots) - `{mdl.name}`"
     )
