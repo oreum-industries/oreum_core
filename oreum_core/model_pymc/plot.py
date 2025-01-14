@@ -345,7 +345,6 @@ def plot_ppc(
     # wild hack to get the size of observed
     i = list(dict(_idata.observed_data.sizes).values())[0]
     num_pp_samples = None if i < 500 else 200
-    # with plt.ioff():
     f, axs = plt.subplots(n, 1, figsize=(12, 1 + 2 * n), sharex=sharex, squeeze=False)
     _ = az.plot_ppc(
         _idata,

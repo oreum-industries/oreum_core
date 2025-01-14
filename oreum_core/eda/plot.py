@@ -856,14 +856,14 @@ def plot_estimate(
     force_xlim: list = None,
     color: str = None,
     exceedance: bool = False,
-    y: np.array = None,
+    y: np.ndarray = None,
     y_nm: str = "y",
     **kwargs,
 ) -> figure.Figure:
     """Plot distribution of univariate estimates in 1D array yhat: either PPC
     samples or bootstrapped resamples made without grouping.
     Default to boxplot, allow exceedance curve.
-    Optionally overplot bootstrapped summarised y.
+    Optionally overplot bootstrapped summarised y 1D array.
     Refactored this to operate on simple arrays
     """
     txtadd = kwargs.pop("txtadd", None)
@@ -893,7 +893,7 @@ def plot_estimate(
 
     if not exceedance:  # default to boxplot, nice and simple
         ax = sns.boxplot(x=yhat, ax=axs, **kws_box)
-        _ = ax.annotate(f"{mn:,.{1}f}", xy=(mn, 0), **sty["mn_txt_kws"])
+        _ = ax.annotate(f"{mn:,.{j}f}", xy=(mn, 0), **sty["mn_txt_kws"])
         elems = [lines.Line2D([0], [0], label=f"mean {yhat_nm}", **sty["mn_pt_kws"])]
         if y is not None:
             mn_y = y.mean()
