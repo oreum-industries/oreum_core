@@ -319,6 +319,7 @@ def plot_ppc(
         same name as the {group}_predictive, so data_pairs is not often needed
     """
     txtadd = kwargs.pop("txtadd", None)
+    sharex = kwargs.pop("sharex", True)
     kind = "kde"
     kindnm = kind.upper()
     ynm = "density"
@@ -345,7 +346,7 @@ def plot_ppc(
     i = list(dict(_idata.observed_data.sizes).values())[0]
     num_pp_samples = None if i < 500 else 200
     # with plt.ioff():
-    f, axs = plt.subplots(n, 1, figsize=(12, 1 + 2 * n), sharex=True, squeeze=False)
+    f, axs = plt.subplots(n, 1, figsize=(12, 1 + 2 * n), sharex=sharex, squeeze=False)
     _ = az.plot_ppc(
         _idata,
         group=group,
