@@ -193,7 +193,7 @@ class BasePYMCModel:
         with self.model:
             common_stepper_options = {
                 "nuts": pm.NUTS(target_accept=target_accept),
-                "metropolis": pm.Metropolis(target_accept=target_accept),
+                "metropolis": pm.Metropolis(),
                 "advi": pm.ADVI(),
             }
             kws["step"] = common_stepper_options.get(step, None)

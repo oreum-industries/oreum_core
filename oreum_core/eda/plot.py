@@ -362,23 +362,26 @@ def plot_float_dist(
     dfm = dfm.loc[~idx_inf].copy()
 
     gd = sns.FacetGrid(
+        data=dfm,
         row="variable",
         hue="variable",
-        data=dfm,
         palette=sns.color_palette(),
-        height=1.6,
-        aspect=8,
+        height=2,
+        aspect=6,
         sharex=sharex,
     )
-    _ = gd.map(sns.violinplot, "value", order="variable", cut=0, scale="count")
+    _ = gd.map(
+        sns.violinplot, "value", order=None, cut=0, density_norm="count"
+    )  # order=variable
     _ = gd.map(
         sns.pointplot,
         "value",
-        order="variable",
+        order=None,  # "variable",
         color="C3",
         estimator=np.mean,
         errorbar=("ci", 94),
     )
+
     # https://stackoverflow.com/q/33486613/1165112
     # scatter_kws=(dict(edgecolor='k', edgewidth=100)))
     _ = gd.map_dataframe(_annotate_facets, n_infs=sum(idx_inf))
@@ -879,7 +882,7 @@ def plot_estimate(
         "meanprops": sty["mn_pt_kws"],
     }
     kws_exc = kws | {"complementary": True, "lw": 3, "legend": None}
-    kws_pt = {"errorbar": ("ci", 94), "color": "C1", "orient": "h"}
+    kws_pt = {"orient": "h", "color": "C1", "errorbar": ("ci", 94), "linestyle": "none"}
     mn_pt_kws = copy(sty["mn_pt_kws"])
     mn_pt_kws.update(
         markerfacecolor="C1", markeredgecolor="C1", c="C1", marker="o", markersize=8
@@ -892,14 +895,16 @@ def plot_estimate(
     f, axs = plt.subplots(1, 1, figsize=(12, 3 + 2 * exceedance))
 
     if not exceedance:  # default to boxplot, nice and simple
-        ax = sns.boxplot(x=yhat, ax=axs, **kws_box)
+        ax = sns.boxplot(x=yhat, y=0, ax=axs, **kws_box)
         _ = ax.annotate(f"{mn:,.{j}f}", xy=(mn, 0), **sty["mn_txt_kws"])
         elems = [lines.Line2D([0], [0], label=f"mean {yhat_nm}", **sty["mn_pt_kws"])]
         if y is not None:
+            if y.ndim == 1:
+                y = y.reshape(-1, 1)
             mn_y = y.mean()
             j_y = max(-int(np.ceil(np.log10(mn_y))) + 2, 0)
             _kws_pt = kws_pt | {"estimator": np.mean}
-            _ax = sns.pointplot(y, ax=axs, **_kws_pt)
+            _ax = sns.pointplot(data=y, ax=axs, **_kws_pt)
             _ = _ax.annotate(f"{mn_y:,.{j_y}f}", xy=(mn_y, 0), **mn_txt_kws)
             elems.append(lines.Line2D([0], [0], label=f"mean {y_nm}", **mn_pt_kws))
             txtadd = ", ".join(filter(None, [txtadd, f"overplotted w/ {y_nm}"]))
@@ -931,14 +936,15 @@ def plot_estimate(
         ax1 = sns.scatterplot(
             x=qvals,
             y=1 - qs,
-            color=clrs,
+            hue=qs,
+            palette=clrs,
             style=qs,
             markers=["s", "o", "^", "d"],
             edgecolor="#999",
             ax=axs,
             s=120,
             zorder=10,
-            legend=True,
+            # legend=True,
         )
         hdls, _lbls = ax1.get_legend_handles_labels()
         lbls = [str(round(1 - float(lbl), 2)) for lbl in _lbls]  # HACK floating pt
