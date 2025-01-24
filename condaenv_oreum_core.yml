@@ -10,8 +10,6 @@
 #    also see https://numpy.org/install/ and https://github.com/numpy/numpy/pull/24053
 #  + libblas, libcblas, liblapack, not strictly needed here but we want to be
 #    explicit about forcing BLAS to use Accelerate
-#  + pooch and scipy-tests required because conda-forge scipy (brought in by pymc)
-#    doesnt contain tests
 name: oreum_core
 channels:
   - conda-forge
@@ -23,5 +21,3 @@ dependencies:
 - conda-forge::libcblas=*[build=*accelerate]  # see NOTES
 - conda-forge::liblapack=*[build=*accelerate]  # see NOTES
 - conda-forge::python==3.12.*
-# - conda-forge::scipy-tests  # see NOTES
-# - conda-forge::pooch  # see NOTES

@@ -116,7 +116,7 @@ name = "oreum_core"
 [tool.ruff]  # settings: https://docs.astral.sh/ruff/settings/
 indent-width = 4
 line-length = 88
-target-version = "py311"
+target-version = "py312"
 extend-exclude = [
     "__pycache__",
     "build",

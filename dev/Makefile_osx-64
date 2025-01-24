@@ -3,6 +3,8 @@
 # + Intended for dev install on MacOS x64 (Intel via Rosetta 2)
 # + On MacOS, the miniforge.sh installer is too clever and complains
 #   that "$(uname -m)" != "x86_64", but we ignore that: Rosetta2 will run x86_64
+# NOTE as-at 2025-01-24 this is largely untested since 2023, so if/when needed,
+# expect to need to do some updating / troubleshooting
 .PHONY: build create-env dev lint help mamba pre-build pub test-pub test-dev-env test-dl-ins uninstall uninstall-mamba
 .SILENT: build create-env dev lint help mamba pre-build pub test-pub test-dev-env test-dl-ins uninstall uninstall-mamba
 MAMBADL := https://github.com/conda-forge/miniforge/releases/download/23.3.1-1
