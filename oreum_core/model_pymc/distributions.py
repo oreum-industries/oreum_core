@@ -24,10 +24,10 @@ from scipy import stats
 __all__ = ["sanity_check_lognorm", "normal_icdf", "lognormal_icdf", "mv_dist"]
 
 # NOTE hack to clip values away from {0, 1} for invcdfs
-# Whilst value = {0, 1} is theoretically allowed, is seems to cause a
-# numeric compuational issue somewhere in pt.erfcinv which throws infs.
+# Whilst value = {0, 1} is theoretically allowed, it seems to cause a
+# numeric computational issue somewhere in pt.erfcinv which throws infs.
 # This screws up the downstream, so clip slightly away from {0, 1}
-CLIP = 1e-15  # NOTE 1e-18 too small
+CLIP = 1e-12  # NOTE issues at 1e-15? and definitely 1e-18 too small
 
 
 def sanity_check_lognorm(mu: float = 0.0, sigma: float = 1.0) -> None:

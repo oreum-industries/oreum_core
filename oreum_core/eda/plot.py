@@ -137,7 +137,7 @@ def plot_cat_ct(
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
         if (df[ft].dtype == "category") & cat_order:
-            counts_all = df.groupby(ft).size()
+            counts_all = df.groupby(ft).size()[::-1]  # need to invert
 
         if df[ft].dtype == bool:
             counts_all = counts_all.sort_index()  # sort so true plots on top
@@ -1469,7 +1469,7 @@ def plot_smrystat_grp_year(
 
     for i, yr in enumerate(yrs):  # ugly loop over years
         dfs = df.loc[df[year] == yr].copy()
-        grpsort = sorted(dfs[grp].unique())[::-1]
+        grpsort = sorted(dfs[grp].unique())  # dont need to invert?? [::-1]
 
         if dfs[grp].dtypes not in ["object", "category", "string"]:
             dfs[grp] = dfs[grp].map(lambda x: f"s{x}")
