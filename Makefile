@@ -7,7 +7,7 @@
 	    test-dev-env test-dl-ins uninstall-env uninstall-mamba
 .SILENT: build dev help install-env install-mamba lint pre-build pub test-pub\
 	    test-dev-env test-dl-ins uninstall-env uninstall-mamba
-MAMBADL := https://github.com/conda-forge/miniforge/releases/download/23.3.1-1
+MAMBADL := https://github.com/conda-forge/miniforge/releases/download/24.11.3-0
 MAMBAV := Miniforge3-MacOSX-arm64.sh
 MAMBARCMSG := Please create file $(MAMBARC), importantly set `platform: osx-arm64`
 MAMBARC := $(HOME)/.mambarc
