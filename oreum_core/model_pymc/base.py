@@ -48,7 +48,7 @@ class BasePYMCModel:
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
         https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc/sampling.py#L277
-        Usage note: override kws directly on downstream instance e.g.
+        Usage note: override kwargs directly on downstream instance e.g.
         def __init__(self, **kwargs):
             super().__init__(*args, **kwargs)
             self.sample_kws.update(dict(tune=1000, draws=500, target_accept=0.85))
@@ -202,6 +202,10 @@ class BasePYMCModel:
                 posterior = pm.sample(**{**kws, **kwargs})
             except UserWarning as e:
                 _log.warning("Warning in mdl.sample()", exc_info=e)
+                pass
+            except NotImplementedError as e:
+                _log.error("NotImplementedError in mdl.sample()", exc_info=e)
+                raise e
             except Exception as e:
                 _log.error("Uncaught exception in mdl.sample()", exc_info=e)
                 raise e

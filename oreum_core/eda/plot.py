@@ -137,7 +137,7 @@ def plot_cat_ct(
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
         if (df[ft].dtype == "category") & cat_order:
-            counts_all = df.groupby(ft).size()
+            counts_all = df.groupby(ft).size()[::-1]  # need to invert
 
         if df[ft].dtype == bool:
             counts_all = counts_all.sort_index()  # sort so true plots on top
@@ -856,14 +856,14 @@ def plot_estimate(
     force_xlim: list = None,
     color: str = None,
     exceedance: bool = False,
-    y: np.array = None,
+    y: np.ndarray = None,
     y_nm: str = "y",
     **kwargs,
 ) -> figure.Figure:
     """Plot distribution of univariate estimates in 1D array yhat: either PPC
     samples or bootstrapped resamples made without grouping.
     Default to boxplot, allow exceedance curve.
-    Optionally overplot bootstrapped summarised y.
+    Optionally overplot bootstrapped summarised y 1D array.
     Refactored this to operate on simple arrays
     """
     txtadd = kwargs.pop("txtadd", None)
@@ -893,7 +893,7 @@ def plot_estimate(
 
     if not exceedance:  # default to boxplot, nice and simple
         ax = sns.boxplot(x=yhat, ax=axs, **kws_box)
-        _ = ax.annotate(f"{mn:,.{1}f}", xy=(mn, 0), **sty["mn_txt_kws"])
+        _ = ax.annotate(f"{mn:,.{j}f}", xy=(mn, 0), **sty["mn_txt_kws"])
         elems = [lines.Line2D([0], [0], label=f"mean {yhat_nm}", **sty["mn_pt_kws"])]
         if y is not None:
             mn_y = y.mean()
@@ -1469,7 +1469,7 @@ def plot_smrystat_grp_year(
 
     for i, yr in enumerate(yrs):  # ugly loop over years
         dfs = df.loc[df[year] == yr].copy()
-        grpsort = sorted(dfs[grp].unique())[::-1]
+        grpsort = sorted(dfs[grp].unique())  # dont need to invert?? [::-1]
 
         if dfs[grp].dtypes not in ["object", "category", "string"]:
             dfs[grp] = dfs[grp].map(lambda x: f"s{x}")
