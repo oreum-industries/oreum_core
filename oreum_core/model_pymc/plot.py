@@ -478,7 +478,9 @@ def plot_yhat_vs_y(
     kws_mn = dict(
         markerfacecolor="w", markeredgecolor="#333333", marker="d", markersize=12
     )
-    kws_box = dict(kind="box", sym="", showmeans=True, whis=(3, 97), meanprops=kws_mn)
+    kws_box = dict(
+        kind="box", showfliers=False, showmeans=True, whis=(3, 97), meanprops=kws_mn
+    )
     kws_sctr = dict(s=80, color="#32CD32")
 
     g = sns.catplot(
