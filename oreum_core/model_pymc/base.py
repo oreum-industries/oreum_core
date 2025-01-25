@@ -90,7 +90,7 @@ class BasePYMCModel:
     def mdl_id_fn(self) -> str:
         """Get model id (name, version, obs name) safe for filename"""
         snl = SnakeyLowercaser()
-        return snl.clean(re.sub("\.", "", self.mdl_id))
+        return snl.clean(re.sub(r"\.", "", self.mdl_id))
 
     @property
     def posterior(self) -> xr.Dataset:
@@ -229,7 +229,7 @@ class BasePYMCModel:
                     # rename to have exact same name as observedRVs
                     for nm in self.rvs_potential_loglike:
                         rx_pot = re.compile(r"^pot_")
-                        nm0 = rx_pot.sub("", nm)
+                        nm0 = rx_pot.sub(r"", nm)
                         self.idata["log_likelihood"][nm0] = self.idata[
                             "log_likelihood"
                         ][nm]

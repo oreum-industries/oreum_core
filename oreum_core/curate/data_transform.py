@@ -139,7 +139,7 @@ class DatatypeConverter:
                     .astype(str)
                     .str.strip()
                     .str.lower()
-                    .map(lambda x: self.rx_number_junk.sub("", x))
+                    .map(lambda x: self.rx_number_junk.sub(r"", x))
                 )
                 df.loc[df[ft].isin(self.strnans), ft] = np.nan
             df[ft] = df[ft].astype(float, errors="raise")
@@ -157,7 +157,7 @@ class DatatypeConverter:
                         .astype(str)
                         .str.strip()
                         .str.lower()
-                        .map(lambda x: self.rx_number_junk.sub("", x))
+                        .map(lambda x: self.rx_number_junk.sub(r"", x))
                     )
                     df.loc[df[ft].isin(self.strnans), ft] = np.nan
                 df[ft] = df[ft].astype(float, errors="raise")
@@ -176,7 +176,7 @@ class DatatypeConverter:
                         .astype(str)
                         .str.strip()
                         .str.lower()
-                        .map(lambda x: self.rx_number_junk.sub("", x))
+                        .map(lambda x: self.rx_number_junk.sub(r"", x))
                     )
                     df.loc[df[ft].isin(self.strnans), ft] = np.nan
                 df[ft] = df[ft].astype(float, errors="raise")

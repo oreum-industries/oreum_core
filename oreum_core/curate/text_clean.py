@@ -94,7 +94,7 @@ class TextCleaner:
         """Fix bad unicode / emojis etc and try to remove crud"""
 
         t = ftfy.fix_text(txt, fix_character_width=False)  # fix encoding
-        t = self.rx_hex.sub("", t)  # remove hex like '=b7', '=f5' etc
+        t = self.rx_hex.sub(r"", t)  # remove hex like '=b7', '=f5' etc
 
         return t
 
@@ -104,15 +104,15 @@ class TextCleaner:
             doesnottokenise
             dOes Not chAnge Casing: allows proper noun removal later
         """
-        t = self.rx_line.sub("", txt)
-        t = self.rx_arrows.sub("", t)
-        t = self.rx_repeatgt3.sub("", t)
-        t = self.rx_nbsp.sub("", t)
-        t = self.rx_htmlcom.sub("", t)
-        t = self.rx_neg_apostrophe.sub("\1\2\3", t)
-        t = self.rx_email.sub("", t)
-        t = self.rx_web.sub("", t)
-        t = self.rx_numbers.sub("", t)
+        t = self.rx_line.sub(r"", txt)
+        t = self.rx_arrows.sub(r"", t)
+        t = self.rx_repeatgt3.sub(r"", t)
+        t = self.rx_nbsp.sub(r"", t)
+        t = self.rx_htmlcom.sub(r"", t)
+        t = self.rx_neg_apostrophe.sub(r"\1\2\3", t)
+        t = self.rx_email.sub(r"", t)
+        t = self.rx_web.sub(r"", t)
+        t = self.rx_numbers.sub(r"", t)
 
         return t
 
@@ -136,7 +136,7 @@ class TextCleaner:
             print(t, convert_bad_number_representation_to_float(t))
         """
         r = np.nan
-        s0 = self.rx_number_junk.sub("", str(s).strip().lower())
+        s0 = self.rx_number_junk.sub(r"", str(s).strip().lower())
         gm = self.rx_num_m.match(s0)
         gk = self.rx_num_k.match(s0)
         gn = self.rx_num.match(s0)
