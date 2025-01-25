@@ -1291,7 +1291,7 @@ def plot_smrystat(
     val: str = "y_eloss",
     smry: Literal["sum", "mean"] = "sum",
     plot_outliers: bool = False,
-    palette: sns.palettes._ColorPalette = None,
+    pal: sns.palettes._ColorPalette = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist) of numeric value `val`"""
@@ -1307,23 +1307,25 @@ def plot_smrystat(
     ax0.set_title(f"Distribution of bootstrapped {smry}")
     ax1.set_title("Distribution of indiv. values")
 
-    if palette is None:
-        palette = "viridis"
+    if pal is None:
+        pal = "viridis"
+    clr = sns.color_palette(pal, 1)[0]
 
     estimator = np.sum if smry == "sum" else np.mean
     _ = sns.pointplot(
         x=val,
         data=dfp,
-        palette=palette,
+        color=clr,
         estimator=estimator,
         errorbar=("ci", 94),
         ax=ax0,
+        legend=False,
     )
 
     _ = sns.boxplot(
         x=val,
         data=dfp,
-        palette=palette,
+        color=clr,
         showfliers=plot_outliers,
         whis=[3, 97],
         showmeans=True,
