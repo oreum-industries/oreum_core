@@ -1106,7 +1106,7 @@ def plot_bootstrap_lr_grp(
     ax1 = f.add_subplot(gs[1], sharey=ax0)
 
     # add violinplot
-    v_kws = dict(kind="violin", cut=0, scale="count", width=0.6, palette="cubehelix_r")
+    v_kws = dict(cut=0, density_norm="count", width=0.6, palette="cubehelix_r")
     _ = sns.violinplot(
         x="lr", y=grp, data=dfboot, ax=ax0, order=order_idx.values, **v_kws
     )
@@ -1191,7 +1191,7 @@ def plot_bootstrap_grp(
         data=dfboot,
         kind="violin",
         cut=0,
-        scale="count",
+        density_norm="count",
         width=0.6,
         palette="cubehelix_r",
         ax=ax0,
@@ -1290,7 +1290,7 @@ def plot_smrystat(
     df: pd.DataFrame,
     val: str = "y_eloss",
     smry: Literal["sum", "mean"] = "sum",
-    plot_outliers: bool = True,
+    plot_outliers: bool = False,
     palette: sns.palettes._ColorPalette = None,
     **kwargs,
 ) -> figure.Figure:
@@ -1356,7 +1356,7 @@ def plot_smrystat_grp(
     grpkind: str = None,
     val: str = "y_eloss",
     smry: Literal["sum", "mean"] = "sum",
-    plot_outliers: bool = True,
+    plot_outliers: bool = False,
     plot_compact: bool = True,
     plot_grid: bool = True,
     pal: sns.palettes._ColorPalette = None,
