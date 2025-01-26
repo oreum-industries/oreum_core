@@ -17,6 +17,7 @@
 
 from .calc import (
     bootstrap,
+    bootstrap_index_only,
     bootstrap_lr,
     calc_geometric_cv,
     calc_location_in_ecdf,

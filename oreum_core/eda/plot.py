@@ -17,6 +17,7 @@
 
 import logging
 import re
+from copy import copy
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -136,7 +137,7 @@ def plot_cat_ct(
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft).size().sort_values(ascending=True)
         if (df[ft].dtype == "category") & cat_order:
-            counts_all = df.groupby(ft).size()
+            counts_all = df.groupby(ft).size()[::-1]  # need to invert
 
         if df[ft].dtype == bool:
             counts_all = counts_all.sort_index()  # sort so true plots on top
@@ -408,6 +409,7 @@ def plot_joint_numeric(
     palette_type: Literal["q", "g"] = "g",
     palette: str = None,
     eq: int = 7,  # equal quantiles. Set higher in the case of extreme values
+    overplot: dict = None,
     **kwargs,
 ) -> figure.Figure:
     """Jointplot of 2 numeric fts with optional: hue shading, linear regression
@@ -415,7 +417,7 @@ def plot_joint_numeric(
 
     dfp = data.copy()
     ngrps = 1
-    kws = dict(color=f"C{colori%7}")  # color rotation max 7
+    kws = dict(color=f"C{colori % 7}")  # color rotation max 7
 
     if nsamp is not None:
         dfp = dfp.sample(nsamp, random_state=RSD).copy()
@@ -435,7 +437,7 @@ def plot_joint_numeric(
             else:
                 if palette_type == "g":
                     kws["palette"] = sns.color_palette(
-                        [f"C{i + colori%7}" for i in range(ngrps)]
+                        [f"C{i + colori % 7}" for i in range(ngrps)]
                     )
                 else:  # palette_type == 'q':
                     kws["palette"] = sns.color_palette(
@@ -476,6 +478,11 @@ def plot_joint_numeric(
         _ = sns.move_legend(gd.ax_joint, legendpos)
 
     _ = gd.plot_marginals(sns.histplot, kde=True, **kws)
+
+    if overplot is not None:
+        _ = sns.scatterplot(
+            x=overplot["ft0"], y=overplot["ft1"], data=overplot["data"], ax=gd.ax_joint
+        )
 
     if linreg:
         r = stats.linregress(x=dfp[ft0], y=dfp[ft1])
@@ -633,7 +640,7 @@ def plot_f_measure(df: pd.DataFrame) -> figure.Figure:
     _ = ax.set_ylim(0, 1)
     _ = f.suptitle(
         "F-scores across the percentage range of PPC"
-        + f'\nBest F1 = {df.loc[f1_at, "f1"]:.3f} @ {f1_at} pct',
+        + f"\nBest F1 = {df.loc[f1_at, 'f1']:.3f} @ {f1_at} pct",
         y=1.03,
     )
     return f
@@ -648,7 +655,7 @@ def plot_accuracy(df: pd.DataFrame) -> figure.Figure:
     _ = ax.set_ylim(0, 1)
     _ = f.suptitle(
         "Accuracy across the percentage range of PPC"
-        + f'\nBest = {df.loc[acc_at, "accuracy"]:.1%} @ {acc_at} pct',
+        + f"\nBest = {df.loc[acc_at, 'accuracy']:.1%} @ {acc_at} pct",
         y=1.03,
     )
     return f
@@ -730,7 +737,7 @@ def plot_binary_performance(
     _ = axs[2].legend(loc="upper left")
     _ = axs[2].set(
         title="F-measures across the PPC qs"
-        + f'\nBest F1 = {dfperf.loc[f1_at, "f1"]:.3f} @ q{f1_at}',
+        + f"\nBest F1 = {dfperf.loc[f1_at, 'f1']:.3f} @ q{f1_at}",
         xlabel="q",
         ylabel="F-Score",
         ylim=(0, 1),
@@ -744,8 +751,8 @@ def plot_binary_performance(
         y=0.04,
         s=(
             "Class imbalance:"
-            + f'\n0: {dfperf["accuracy"].values[0]:.1%}'
-            + f'\n1: {dfperf["accuracy"].values[-1]:.1%}'
+            + f"\n0: {dfperf['accuracy'].values[0]:.1%}"
+            + f"\n1: {dfperf['accuracy'].values[-1]:.1%}"
         ),
         transform=axs[3].transAxes,
         ha="left",
@@ -755,7 +762,7 @@ def plot_binary_performance(
     )
     _ = axs[3].set(
         title="Accuracy across the PPC pcts"
-        + f'\nBest = {dfperf.loc[acc_at, "accuracy"]:.1%} @ q{acc_at}',
+        + f"\nBest = {dfperf.loc[acc_at, 'accuracy']:.1%} @ q{acc_at}",
         xlabel="q",
         ylabel="Accuracy",
         ylim=(0, 1),
@@ -843,129 +850,111 @@ def plot_rmse_range(
 
 
 def plot_estimate(
-    df: pd.DataFrame,
+    yhat: np.ndarray,
     nobs: int,
-    yhat: str = "yhat",
+    yhat_nm: str = "yhat",
     force_xlim: list = None,
     color: str = None,
-    kind: str = "box",
-    arr_overplot: np.array = None,
+    exceedance: bool = False,
+    y: np.ndarray = None,
+    y_nm: str = "y",
     **kwargs,
 ) -> figure.Figure:
-    """Plot distribution for univariate estimates, either PPC or bootstrapped
-    no grouping. Optionally overplot bootstrapped dfboot"""
-    # TODO: Extend this to multivariate grouping
+    """Plot distribution of univariate estimates in 1D array yhat: either PPC
+    samples or bootstrapped resamples made without grouping.
+    Default to boxplot, allow exceedance curve.
+    Optionally overplot bootstrapped summarised y 1D array.
+    Refactored this to operate on simple arrays
+    """
     txtadd = kwargs.pop("txtadd", None)
+    t = f"{yhat_nm} for {nobs} obs"
     sty = _get_kws_styling()
     clr = color if color is not None else sns.color_palette()[0]
-    _kws = dict(
-        box=dict(
-            kind="box",
-            sym="",
-            orient="h",
-            showmeans=True,
-            whis=(3, 97),
-            meanprops=sty["mn_pt_kws"],
-        ),
-        violin=dict(kind="violin", cut=0),
-        exceedance=dict(kind="ecdf", complementary=True, lw=2, legend=None),
+    kws = {"color": clr}
+    kws_box = kws | {
+        "sym": "",
+        "orient": "h",
+        "showmeans": True,
+        "whis": (3, 97),
+        "meanprops": sty["mn_pt_kws"],
+    }
+    kws_exc = kws | {"complementary": True, "lw": 3, "legend": None}
+    kws_pt = {"errorbar": ("ci", 94), "color": "C1", "orient": "h"}
+    mn_pt_kws = copy(sty["mn_pt_kws"])
+    mn_pt_kws.update(
+        markerfacecolor="C1", markeredgecolor="C1", c="C1", marker="o", markersize=8
     )
-    kws = _kws.get(kind)
+    mn_txt_kws = copy(sty["mn_txt_kws"])
+    mn_txt_kws["backgroundcolor"] = "C1"
 
-    mn = df[[yhat]].mean().tolist()  # estimated mean
-    j = max(-int(np.ceil(np.log10(mn[0]))) + 2, 0)
+    mn = yhat.mean()
+    j = max(-int(np.ceil(np.log10(mn))) + 1, 0)
+    f, axs = plt.subplots(1, 1, figsize=(12, 3 + 2 * exceedance))
 
-    if kind == "exceedance":
-        qs = kwargs.pop("qs", [0.5, 0.9, 0.95, 0.99])
-        txtadd = " - ".join(filter(None, ["Exceedance Curve", txtadd]))
-        gd = sns.displot(x=yhat, data=df, **kws, height=4, aspect=2.5)
-        _ = gd.axes[0][0].set(ylabel=f"P({yhat} > x)")  # , xlabel='dollars')
-        # _ = gd.axes[0][0].xaxis.set_major_formatter('${x:,.1f}')
-        df_qvals = df[[yhat]].quantile(qs)
-        df_qvals.index.name = "quantile"
-        df_qvals = df_qvals.reset_index()
-        df_qvals["p_gt"] = 1 - df_qvals["quantile"].values
-        for q in qs:
-            _ = gd.axes[0][0].vlines(
-                df_qvals.loc[df_qvals["quantile"] == q, yhat].values,
-                0,
-                1 - q,
-                linestyles="dotted",
-                zorder=-1,
-                colors="#999999",
-            )
-        _ = sns.scatterplot(
-            x=yhat,
-            y="p_gt",
-            style="p_gt",
-            data=df_qvals,
-            markers=["*", "d", "^", "o"],
-            ax=gd.axes[0][0],
-            s=100,
-        )
-        handles, labels = gd.axes[0][0].get_legend_handles_labels()
-        lbls = [str(round(float(lb), 2)) for lb in labels]  # HACK floating point
-        gd.axes[0][0].legend(handles, lbls, loc="upper right", title=f"P({yhat}) > x")
-        v = re.sub("hat$", "", yhat)
-        summary = ",  ".join(
-            df_qvals[["p_gt", yhat]]
-            .apply(
-                lambda r: f"$P(\hat{{{v}}})_{{{r[0]:.2f}}} \geq {{{r[1]:.{j}f}}}$",
-                axis=1,
-            )
-            .tolist()
-        )
+    if not exceedance:  # default to boxplot, nice and simple
+        ax = sns.boxplot(x=yhat, ax=axs, **kws_box)
+        _ = ax.annotate(f"{mn:,.{j}f}", xy=(mn, 0), **sty["mn_txt_kws"])
+        elems = [lines.Line2D([0], [0], label=f"mean {yhat_nm}", **sty["mn_pt_kws"])]
+        if y is not None:
+            mn_y = y.mean()
+            j_y = max(-int(np.ceil(np.log10(mn_y))) + 2, 0)
+            _kws_pt = kws_pt | {"estimator": np.mean}
+            _ax = sns.pointplot(y, ax=axs, **_kws_pt)
+            _ = _ax.annotate(f"{mn_y:,.{j_y}f}", xy=(mn_y, 0), **mn_txt_kws)
+            elems.append(lines.Line2D([0], [0], label=f"mean {y_nm}", **mn_pt_kws))
+            txtadd = ", ".join(filter(None, [txtadd, f"overplotted w/ {y_nm}"]))
 
-    elif kind == "box":
-        gd = sns.catplot(x=yhat, data=df, **kws, color=clr, height=2.5, aspect=4)
-        _ = [
-            gd.ax.annotate(f"{v:,.{1}f}", xy=(v, i % len(mn)), **sty["mn_txt_kws"])
-            for i, v in enumerate(mn)
-        ]
-        elems = [lines.Line2D([0], [0], label=f"mean {yhat}", **sty["mn_pt_kws"])]
-        if arr_overplot is not None:
-            mn_arr_overplot = arr_overplot.mean()  # estimated mean
-            j_arr_overplot = -int(np.ceil(np.log10(mn_arr_overplot))) + 2
-            ax = sns.pointplot(
-                arr_overplot,
-                estimator=np.mean,
-                errorbar=("ci", 94),
-                color="C1",
-                linestyles="-",
-                orient="h",
-            )
-            mn_txt_kws = sty["mn_txt_kws"]
-            mn_txt_kws["backgroundcolor"] = "C1"
-            _ = ax.annotate(
-                f"{mn_arr_overplot:,.{j_arr_overplot}f}",
-                xy=(mn_arr_overplot, 0),
-                **mn_txt_kws,
-            )
-            mn_pt_kws = sty["mn_pt_kws"]
-            mn_pt_kws.update(
-                markerfacecolor="C1", markeredgecolor="C1", marker="o", markersize=8
-            )
-            nm = kwargs.get("arr_overplot_nm", "overplot")
-            elems.append(lines.Line2D([0], [0], label=f"mean {nm}", **mn_pt_kws))
-
-        gd.ax.legend(handles=elems, loc="upper right", fontsize=8)
+        _ = ax.legend(handles=elems, loc="upper right", fontsize=8)
+        _ = ax.set(yticklabels="", xlabel=yhat_nm)
 
         if force_xlim is not None:
-            _ = gd.ax.set(xlim=force_xlim)
+            _ = ax.set(xlim=force_xlim)
 
-        hdi = df[yhat].quantile(q=[0.03, 0.1, 0.25, 0.5, 0.75, 0.9, 0.97]).values
-        summary = (
-            f"$\mu = {mn[0]:,.{j}f}$, "
+        hdi = np.quantile(a=yhat, q=[0.03, 0.1, 0.25, 0.5, 0.75, 0.9, 0.97])
+        smry_stats = (
+            f"$\mu = {mn:,.{j}f}$, "  # for {yhat_nm}
             + f"$q_{{50}} = {hdi[3]:,.{j}f}$, "
             + f"$HDI_{{50}} = [{hdi[2]:,.{j}f}, {hdi[4]:,.{j}f}]$, "
             + f"$HDI_{{80}} = [{hdi[1]:,.{j}f}, {hdi[5]:,.{j}f}]$, "
             + f"$HDI_{{94}} = [{hdi[0]:,.{j}f}, {hdi[6]:,.{j}f}]$"
         )
+        t = " ".join(filter(None, ["Boxplot", t]))
 
-    t = f"Summary Distribution of {yhat} estimate for {nobs} obs"
-    _ = gd.fig.suptitle(" - ".join(filter(None, [t, txtadd])) + f"\n{summary}")
-    _ = gd.fig.tight_layout()
-    return gd.fig
+    else:  # do exceedance, slightly less intuitive for beginner clients
+        ax0 = sns.ecdfplot(x=yhat, ax=axs, **kws_exc)
+        _ = ax0.set(ylabel=f"P({yhat_nm} ≥ x)", xlabel="x")
+        qs = kwargs.pop("qs", np.array([0.5, 0.9, 0.95, 0.99]))
+        qvals = np.quantile(a=yhat, q=qs)
+        clrs = sns.color_palette("Blues", len(qs))
+        for i, (q, qv) in enumerate(zip(qs, qvals, strict=True)):
+            _ = ax0.vlines(x=qv, ymin=0, ymax=1 - q, lw=2, zorder=-1, colors=clrs[i])
+        ax1 = sns.scatterplot(
+            x=qvals,
+            y=1 - qs,
+            color=clrs,
+            style=qs,
+            markers=["s", "o", "^", "d"],
+            edgecolor="#999",
+            ax=axs,
+            s=120,
+            zorder=10,
+            legend=True,
+        )
+        hdls, _lbls = ax1.get_legend_handles_labels()
+        lbls = [str(round(1 - float(lbl), 2)) for lbl in _lbls]  # HACK floating pt
+        _ = ax1.legend(hdls, lbls, loc="upper right", title=f"P({yhat_nm}) ≥ x")
+        smry_stats = ", ".join(
+            [
+                f"$P_{{@{{{q:.2f}}}}} \geq {{{qv:.{j}f}}}$"
+                for q, qv in zip(1 - qs, qvals, strict=True)
+            ]
+        )
+        t = " ".join(filter(None, ["Exceedance Curve", t]))
+        _ = ax0.set(xlabel=yhat_nm)
+
+    _ = f.suptitle(", ".join(filter(None, [t, txtadd])) + f"\nSummary: {smry_stats}")
+    _ = f.tight_layout()
+    return f
 
 
 def plot_bootstrap_lr(
@@ -1026,9 +1015,9 @@ def plot_bootstrap_lr(
         summary += (
             f"Inception {str(pmin)} - {str(pmax)} inclusive, "
             + f"{len(df):,.0f} policies with "
-            + f"\\${df[prm].sum()/1e6:.1f}M premium, "
+            + f"\\${df[prm].sum() / 1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():,.0f} claims totalling "
-            + f"\\${df[clm].sum()/1e6:.1f}M"
+            + f"\\${df[clm].sum() / 1e6:.1f}M"
         )
     if lr_summary:
         summary += (
@@ -1154,9 +1143,9 @@ def plot_bootstrap_lr_grp(
         summary += (
             f"Inception {str(pmin)} - {str(pmax)} inclusive, "
             + f"{len(df):,.0f} policies with "
-            + f"\\${df[prm].sum()/1e6:.1f}M premium, "
+            + f"\\${df[prm].sum() / 1e6:.1f}M premium, "
             + f"{df[clm_ct].sum():,.0f} claims totalling "
-            + f"\\${df[clm].sum()/1e6:.1f}M"
+            + f"\\${df[clm].sum() / 1e6:.1f}M"
         )
 
     txtadd = kwargs.pop("txtadd", None)
@@ -1425,7 +1414,7 @@ def plot_smrystat_grp(
     _ = sns.countplot(**kws, ax=ax2)
     _ = [
         ax2.annotate(
-            f"{c} ({c/ct.sum():.0%})", xy=(c, i % len(ct)), **sty["count_txt_h_kws"]
+            f"{c} ({c / ct.sum():.0%})", xy=(c, i % len(ct)), **sty["count_txt_h_kws"]
         )
         for i, c in enumerate(ct)
     ]
@@ -1480,7 +1469,7 @@ def plot_smrystat_grp_year(
 
     for i, yr in enumerate(yrs):  # ugly loop over years
         dfs = df.loc[df[year] == yr].copy()
-        grpsort = sorted(dfs[grp].unique())[::-1]
+        grpsort = sorted(dfs[grp].unique())  # dont need to invert?? [::-1]
 
         if dfs[grp].dtypes not in ["object", "category", "string"]:
             dfs[grp] = dfs[grp].map(lambda x: f"s{x}")
@@ -1618,7 +1607,9 @@ def plot_grp_ct(
     _ = sns.countplot(y=grp, data=df, order=ct.index, ax=axs, palette="viridis")
     _ = [
         axs.annotate(
-            f"{v:.0f} ({v/len(df):.0%})", xy=(v, i % len(ct)), **sty["count_txt_h_kws"]
+            f"{v:.0f} ({v / len(df):.0%})",
+            xy=(v, i % len(ct)),
+            **sty["count_txt_h_kws"],
         )
         for i, v in enumerate(ct)
     ]
@@ -1646,7 +1637,7 @@ def plot_cdf_ppc_vs_obs(
     """
     ps = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 97]
     df_yhat_qs = pd.DataFrame(
-        np.percentile(yhat, ps, axis=1).T, columns=[f"q{p/100}" for p in ps]
+        np.percentile(yhat, ps, axis=1).T, columns=[f"q{p / 100}" for p in ps]
     )
 
     f, axs = plt.subplots(1, 1, figsize=(14, 5), sharey=True, sharex=True)

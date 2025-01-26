@@ -228,11 +228,9 @@ We also run a suite of general tests pre-packaged in
 
 ---
 
-Copyright 2024 Oreum OÜ t/a Oreum Industries. All rights reserved.
-See LICENSE.md.
-
-Oreum OÜ t/a Oreum Industries, Sepapaja 6, Tallinn, 15551, Estonia,
-reg.16122291, [oreum.io](https://oreum.io)
+Copyright 2024 Oreum FZCO t/a Oreum Industries. All rights reserved.
+Oreum FZCO, IFZA, Dubai Silicon Oasis, Dubai, UAE, reg. 25515
+[oreum.io](https://oreum.io)
 
 ---
-Oreum OÜ &copy; 2024
+Oreum Industries &copy; 2024

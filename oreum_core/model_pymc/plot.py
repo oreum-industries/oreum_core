@@ -301,35 +301,43 @@ def plot_ppc(
     var_names: list,
     idata: az.InferenceData = None,
     group: str = "posterior",
-    insamp: bool = True,
     ecdf: bool = True,
     flatten: list = None,
     observed_rug: bool = True,
     logx: bool = False,
     **kwargs,
 ) -> figure.Figure:
-    """Plot In- or Out-of-Sample Prior or Posterior Retrodictive, does not
-    require log-likelihood.
+    """Plot In- or Out-of-Sample Prior or Posterior Retrodictive. Does not
+    require log-likelihood. Does require `observed_data`, which is not made by
+    Potentials
     NOTE:
     + use var_names to only plot e.g. yhat
     + pass through kwargs, possibly of particular use is:
         `data_pairs` = {key (in observed_data): value (in {group}_predictive)}
         although we remind that the constant_data has the real name, but once
-        it's observed in a log-likelihoood the idata.observed_data will get the
+        it's observed in a log-likelihood the idata.observed_data will get the
         same name as the {group}_predictive, so data_pairs is not often needed
     """
     txtadd = kwargs.pop("txtadd", None)
+    sharex = kwargs.pop("sharex", True)
     kind = "kde"
     kindnm = kind.upper()
     ynm = "density"
     loc = "upper right"
+    n = len(var_names)
     if ecdf:
         kind = "cumulative"
         kindnm = "ECDF"
         ynm = "prop"
         loc = "lower right"
-    _idata = mdl.idata if idata is None else idata
-    n = len(var_names)
+
+    if idata is None:
+        _idata = mdl.idata
+        insamp = True
+    else:
+        _idata = idata
+        insamp = False
+
     if flatten is not None:
         n = 1
         for k in var_names:
@@ -337,7 +345,7 @@ def plot_ppc(
     # wild hack to get the size of observed
     i = list(dict(_idata.observed_data.sizes).values())[0]
     num_pp_samples = None if i < 500 else 200
-    f, axs = plt.subplots(n, 1, figsize=(12, 4 * n), sharex=True, squeeze=False)
+    f, axs = plt.subplots(n, 1, figsize=(12, 1 + 2 * n), sharex=sharex, squeeze=False)
     _ = az.plot_ppc(
         _idata,
         group=group,
@@ -359,7 +367,7 @@ def plot_ppc(
         ax.set(title=t, ylabel=ynm)
         for ax, t in zip(axs.flatten(), var_names, strict=False)
     ]
-    t = f'{"In" if insamp else "Out-of"}-sample {group.title()} Retrodictive {kindnm}'
+    t = f"{'In' if insamp else 'Out-of'}-sample {group.title()} Retrodictive {kindnm}"
     _ = f.suptitle(" - ".join(filter(None, [t, txtadd, ls])) + f"\n{mdl.mdl_id}")
     _ = f.tight_layout()
     return f
@@ -478,7 +486,7 @@ def plot_yhat_vs_y(
     )
     _ = g.map(sns.scatterplot, y, oid, **kws_sctr, zorder=100)
     t_io = (
-        f'{"In" if insamp else "Out-of"}-sample: boxplots of posterior `{yhat}`'
+        f"{'In' if insamp else 'Out-of'}-sample: boxplots of posterior `{yhat}`"
         + f" with overplotted actual `{y}` values per observation"
         + f" `{oid}` (green dots) - `{mdl.name}`"
     )

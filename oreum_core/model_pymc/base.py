@@ -48,7 +48,7 @@ class BasePYMCModel:
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
         https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc/sampling.py#L277
-        Usage note: override kws directly on downstream instance e.g.
+        Usage note: override kwargs directly on downstream instance e.g.
         def __init__(self, **kwargs):
             super().__init__(*args, **kwargs)
             self.sample_kws.update(dict(tune=1000, draws=500, target_accept=0.85))
@@ -72,7 +72,7 @@ class BasePYMCModel:
             progressbar=True,
         )
         self.rvs_for_posterior_plots = []
-        self.calc_potential_loglike = False
+        self.calc_loglike_of_potential = False
         self.rvs_potential_loglike = None
         self.name = getattr(self, "name", "unnamed_model")
         self.version = getattr(self, "version", "unversioned_model")
@@ -84,7 +84,7 @@ class BasePYMCModel:
         datasets included in the model (i.e several dfx)
         """
         obs_nm = getattr(self, "obs_nm", "unnamed_obs")
-        return f"{self.name}, v{self.version}, {obs_nm}"
+        return f"{self.name}_v{self.version}_{obs_nm}"
 
     @property
     def mdl_id_fn(self) -> str:
@@ -202,6 +202,10 @@ class BasePYMCModel:
                 posterior = pm.sample(**{**kws, **kwargs})
             except UserWarning as e:
                 _log.warning("Warning in mdl.sample()", exc_info=e)
+                pass
+            except NotImplementedError as e:
+                _log.error("NotImplementedError in mdl.sample()", exc_info=e)
+                raise e
             except Exception as e:
                 _log.error("Uncaught exception in mdl.sample()", exc_info=e)
                 raise e
@@ -211,7 +215,7 @@ class BasePYMCModel:
                 _log.info(f"Sampled posterior for {self.mdl_id}")
 
                 # optional manually calculate log_likelihood for potentials
-                if self.calc_potential_loglike:
+                if self.calc_loglike_of_potential:
                     self.idata.add_groups(
                         dict(
                             log_likelihood=compute_log_likelihood_for_potential(
@@ -259,7 +263,8 @@ class BasePYMCModel:
 
     def replace_obs(self, obsd: dict = None, obs_nm: str = None) -> None:
         """Replace the observation dataset(s)
-        Assumes data lives in pm.MutableData containers in your _build() function
+        Data must live in (mutable) pm.Data containers in your _build() function
+        must be: obsd = {internal_name_of_obs_variable: obs_dataframe}
         You must call `build()` afterward
         Optionally afterwards call `extend_build()` for future time-dependent PPC
         Optionally set `obs_nm` (useful for downstream plotting etc)
@@ -281,11 +286,22 @@ class BasePYMCModel:
             side = "right" if replace else "left"
             self._idata.extend(idata, join=side)
 
-    def debug(self):
+    def debug(self) -> str:
         """Convenience to validate the parameterization: run debug on logp and
         random, and assert no MeasurableVariable nodes in the graph
-        TODO catch these outputs in the log"""
+        TODO capture the pymc debug outputs into the log"""
+        msg = []
         if self.model is not None:
             assert_no_rvs(self.model.logp())
-            _ = self.model.debug(fn="logp", verbose=True)
-            _ = self.model.debug(fn="random", verbose=True)
+            msg.append("test: assert_no_rvs(logp)")
+            _ = self.model.debug(fn="random", verbose=False)
+            msg.append("debug: random")
+            try:
+                _ = self.model.debug(fn="logp", verbose=False)
+                msg.append("debug: logp")
+            except (TypeError, ValueError):
+                _log.exception(
+                    "Model contains Potentials, debug logp not compatible",
+                    exc_info=True,
+                )
+        return f"Ran {len(msg)} checks: [" + ", ".join(msg) + "]"

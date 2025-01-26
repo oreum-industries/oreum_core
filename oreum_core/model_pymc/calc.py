@@ -64,8 +64,9 @@ def get_log_jcd_scalar(
     + Initially developed for a model with 1D f_inv_x
 
     Also see detail from Stan docs:
-    + https://mc-stan.org/docs/2_25/reference-manual/change-of-variables-section.html#multivariate-changes-of-variables
+    + https://archive.ph/C9hWB
     + https://mc-stan.org/documentation/case-studies/mle-params.html
+    + https://mc-stan.org/docs/2_25/reference-manual/change-of-variables-section.html#multivariate-changes-of-variables
     "The absolute derivative of the inverse transform measures how the scale of
     the transformed variable changes with respect to the underlying variable."
 
@@ -119,7 +120,7 @@ def get_log_jcd_scan(
     def _grads(i, s, c, w, *args):
         """Inner function allows for extra args that we dont actually use:
         because scan needs to know about upstream_rvs in non_sequences and also
-        wants to passes them into the inner funciton _grad.
+        wants to passes them into the inner function `_grad`.
         See https://github.com/pymc-devs/pytensor/pull/191
 
         """
@@ -256,22 +257,21 @@ def calc_rmse(
 
 
 def calc_r2(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
-    """Calculate R2,
-    return mean r2 and via summary stats of yhat
-    NOTE: shape (nsamples, nobservations)
+    """Calculate R2 at mean and quantiles (summary stats)
+    shapes: y (nobs), yhat (nobs, nsamples)
     $$R^{2} = 1 - \frac{\sum e_{model}^{2}}{\sum e_{mean}^{2}}$$
     R2 normal range [0, 1]
     """
     sse_mean = np.sum((y - y.mean(axis=0)) ** 2)
 
     # Collapse samples to mean then calc error
-    sse_model_mean = np.sum((y - yhat.mean(axis=0)) ** 2)
+    sse_model_mean = np.sum((y - yhat.mean(axis=1)) ** 2)
     r2_mean = 1 - (sse_model_mean / sse_mean)
 
     # calc summary stats of yhat
     smry = np.arange(0, 101, 5)
     sse_model = np.sum(
-        (y - np.percentile(yhat, smry, axis=0)) ** 2, axis=1
+        (y - np.percentile(yhat, smry, axis=1)) ** 2, axis=1
     )  # (len(smry), nobs)
     r2_pct = pd.Series(1 - (sse_model / sse_mean), index=smry, name="r2")
     r2_pct.index.rename("pct", inplace=True)
@@ -280,13 +280,10 @@ def calc_r2(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
 
 
 def calc_bayesian_r2(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
-    """Calculate R2 across all samples
-    NOTE:
-        y shape: (nobs,)
-        yhat shape: (nobs, nsamples)
-        return shape: (nsamples, )
+    """Calculate a much better Bayesian R2 using all samples
+    shapes: y (nobs,), yhat (nobs, nsamples), return: (nsamples, )
+    Related to arviz.r2_score
     """
-
     var_yhat = np.var(yhat, axis=0)
     var_residuals = np.var(y.reshape(-1, 1) - yhat, axis=0)
     r2 = var_yhat / (var_yhat + var_residuals)
@@ -295,24 +292,23 @@ def calc_bayesian_r2(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
 
 def calc_ppc_coverage(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
     """Calc the proportion of coverage from full yhat ppc
-    shapes: y (nobservations), yhat (nsamples, nobservations)
+    shapes: y (nobservations), yhat (nobservations, nsamples)
     """
 
     crs = np.arange(0, 1.01, 0.02)
     bounds = dict(
         pin_left=dict(
-            lower=np.tile(np.percentile(yhat, 0.0, axis=0), reps=(len(crs), 1)),
-            upper=np.percentile(yhat, 100.0 * crs, axis=0),
+            lower=np.tile(np.percentile(yhat, 0.0, axis=1), reps=(len(crs), 1)),
+            upper=np.percentile(yhat, 100.0 * crs, axis=1),
         ),
         middle_out=dict(
-            lower=np.percentile(yhat, 50.0 - (50.0 * crs), axis=0),
-            upper=np.percentile(yhat, 50.0 + (50.0 * crs), axis=0),
+            lower=np.percentile(yhat, 50.0 - (50.0 * crs), axis=1),
+            upper=np.percentile(yhat, 50.0 + (50.0 * crs), axis=1),
         ),
         # pin_right=dict(       ##just a rotation of pin_left
         #     lower=np.percentile(yhat, 100. - (100 * crs), axis=0),
         #     upper=np.tile(np.percentile(yhat, 100., axis=0), reps=(len(crs), 1)))
     )
-
     cov = []
     for k, v in bounds.items():
         for i, cr in enumerate(crs):

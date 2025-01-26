@@ -105,6 +105,8 @@ def print_rvs(mdl: BasePYMCModel) -> list[str]:
                     # 'TensorVariable' object has no attribute 'str_repr'
                     # in the case of e.g. autoimputed x_mv_unobserved
                     pass
+                except AssertionError:
+                    pass
     return r
 
 
