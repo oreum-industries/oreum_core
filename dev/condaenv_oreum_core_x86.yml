@@ -1,5 +1,5 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2023-10-04
+# Last updated as-at 2025-01-24
 # NOTE:
 #  + Creates a virtual env for project usage
 #  + Require running on Intel x86 AMD64 CPU (or Rosetta2 on MacOS)
@@ -15,12 +15,11 @@ channels:
   - conda-forge
   # - defaults
 dependencies:
-- pkgs/main::numpy==1.24.3  # force numpy MKL see NOTE
-- conda-forge::ipykernel>=6.23.1
+- pkgs/main::numpy==1.26.0  # force numpy MKL see NOTE
+- conda-forge::ipykernel>=6.29.0
 - conda-forge::libblas=*[build=*mkl]  # force BLAS with MKL see NOTE
 - conda-forge::libcblas=*[build=*mkl]  # force BLAS with MKL see NOTE
 - conda-forge::liblapack=*[build=*mkl]  # force BLAS with MKL see NOTE
 - conda-forge::mkl==2021.4.*  # force MKL version see NOTE
 - conda-forge::mkl-service==2.4.*
-- conda-forge::python==3.11.*
-- conda-forge::pymc>=5.9.0
+- conda-forge::python==3.12.*

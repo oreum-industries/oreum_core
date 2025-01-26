@@ -1,6 +1,6 @@
 # Oreum Core Tools `oreum_core`
 
-[![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org)
 [![License](https://img.shields.io/badge/license-Apache2.0-blue.svg)](https://choosealicense.com/licenses/apache-2.0/)
 [![GitHub Release](https://img.shields.io/github/v/release/oreum-industries/oreum_core?display_name=tag&sort=semver)](https://github.com/oreum-industries/oreum_core/releases)
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
@@ -56,8 +56,16 @@ This package **is not**:
   + Source code repo on [GitHub](https://github.com/oreum-industries/oreum_core)
   + Source code release on [GitHub](https://github.com/oreum-industries/oreum_core/releases)
   + Package release on [PyPi](https://pypi.org/project/oreum_core)
-
-
++ Implementation:
+  + This project is enabled by a modern, open-source, advanced software stack
+    for data curation, statistical analysis and predictive modelling
+  + Specifically we use an open-source Python-based suite of software packages,
+    the core of which is often known as the Scientific Python stack, supported
+    by [NumFOCUS](https://numfocus.org)
+  + Once installed (see section 2), see `LICENSES_THIRD_PARTY.md` for full
+    details of all package licences
++ Environments: this project was originally developed on a Macbook Air M2
+  (Apple Silicon ARM64) running MacOS 15.2 (Sequoia) using `osx-arm64` Accelerate
 
 ## 2. Instructions to Create Dev Environment
 

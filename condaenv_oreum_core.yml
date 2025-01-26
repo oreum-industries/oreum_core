@@ -1,5 +1,5 @@
 # Manually created as-at 2021-12-01
-# Last updated as-at 2023-12-10
+# Last updated as-at 2025-01-24
 # NOTES:
 #  + Creates a virtual env for project development
 #  + Require running on Apple Silicon ARM64 (NOT Intel x86 AMD64 CPU via Rosetta2)
@@ -10,19 +10,14 @@
 #    also see https://numpy.org/install/ and https://github.com/numpy/numpy/pull/24053
 #  + libblas, libcblas, liblapack, not strictly needed here but we want to be
 #    explicit about forcing BLAS to use Accelerate
-#  + pooch and scipy-tests required because conda-forge scipy (brought in by pymc)
-#    doesnt contain tests
 name: oreum_core
 channels:
   - conda-forge
   # - defaults
 dependencies:
-- conda-forge::ipykernel>=6.23.1
-- conda-forge::numpy>=1.25.2   #>=1.26.2  # see NOTES
+- conda-forge::ipykernel>=6.29.0
+- conda-forge::numpy>=1.26.0  # see NOTES
 - conda-forge::libblas=*[build=*accelerate]  # see NOTES
 - conda-forge::libcblas=*[build=*accelerate]  # see NOTES
 - conda-forge::liblapack=*[build=*accelerate]  # see NOTES
-- conda-forge::python==3.11.*
-- conda-forge::pymc==5.9.*  # >=5.10.1
-- conda-forge::scipy-tests  # see NOTES
-- conda-forge::pooch  # see NOTES
+- conda-forge::python==3.12.*

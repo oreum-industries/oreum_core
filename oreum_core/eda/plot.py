@@ -362,23 +362,26 @@ def plot_float_dist(
     dfm = dfm.loc[~idx_inf].copy()
 
     gd = sns.FacetGrid(
+        data=dfm,
         row="variable",
         hue="variable",
-        data=dfm,
         palette=sns.color_palette(),
-        height=1.6,
-        aspect=8,
+        height=2,
+        aspect=6,
         sharex=sharex,
     )
-    _ = gd.map(sns.violinplot, "value", order="variable", cut=0, scale="count")
+    _ = gd.map(
+        sns.violinplot, "value", order=None, cut=0, density_norm="count"
+    )  # order=variable
     _ = gd.map(
         sns.pointplot,
         "value",
-        order="variable",
+        order=None,  # "variable",
         color="C3",
         estimator=np.mean,
         errorbar=("ci", 94),
     )
+
     # https://stackoverflow.com/q/33486613/1165112
     # scatter_kws=(dict(edgecolor='k', edgewidth=100)))
     _ = gd.map_dataframe(_annotate_facets, n_infs=sum(idx_inf))
@@ -566,7 +569,7 @@ def plot_mincovdet(df: pd.DataFrame, mcd, thresh: float = 0.99):
     ax1 = plt.subplot(grd[1], sharey=ax0)
     bx = ax1.boxplot(
         dfp["mcd_delta"],
-        sym="k",
+        showfliers=True,
         showmeans=True,
         meanprops={
             "marker": "D",
@@ -872,14 +875,14 @@ def plot_estimate(
     clr = color if color is not None else sns.color_palette()[0]
     kws = {"color": clr}
     kws_box = kws | {
-        "sym": "",
+        "showfliers": False,
         "orient": "h",
         "showmeans": True,
         "whis": (3, 97),
         "meanprops": sty["mn_pt_kws"],
     }
     kws_exc = kws | {"complementary": True, "lw": 3, "legend": None}
-    kws_pt = {"errorbar": ("ci", 94), "color": "C1", "orient": "h"}
+    kws_pt = {"orient": "h", "color": "C1", "errorbar": ("ci", 94), "linestyle": "none"}
     mn_pt_kws = copy(sty["mn_pt_kws"])
     mn_pt_kws.update(
         markerfacecolor="C1", markeredgecolor="C1", c="C1", marker="o", markersize=8
@@ -892,14 +895,16 @@ def plot_estimate(
     f, axs = plt.subplots(1, 1, figsize=(12, 3 + 2 * exceedance))
 
     if not exceedance:  # default to boxplot, nice and simple
-        ax = sns.boxplot(x=yhat, ax=axs, **kws_box)
+        ax = sns.boxplot(x=yhat, y=0, ax=axs, **kws_box)
         _ = ax.annotate(f"{mn:,.{j}f}", xy=(mn, 0), **sty["mn_txt_kws"])
         elems = [lines.Line2D([0], [0], label=f"mean {yhat_nm}", **sty["mn_pt_kws"])]
         if y is not None:
+            if y.ndim == 1:
+                y = y.reshape(-1, 1)
             mn_y = y.mean()
             j_y = max(-int(np.ceil(np.log10(mn_y))) + 2, 0)
             _kws_pt = kws_pt | {"estimator": np.mean}
-            _ax = sns.pointplot(y, ax=axs, **_kws_pt)
+            _ax = sns.pointplot(data=y, ax=axs, **_kws_pt)
             _ = _ax.annotate(f"{mn_y:,.{j_y}f}", xy=(mn_y, 0), **mn_txt_kws)
             elems.append(lines.Line2D([0], [0], label=f"mean {y_nm}", **mn_pt_kws))
             txtadd = ", ".join(filter(None, [txtadd, f"overplotted w/ {y_nm}"]))
@@ -912,7 +917,7 @@ def plot_estimate(
 
         hdi = np.quantile(a=yhat, q=[0.03, 0.1, 0.25, 0.5, 0.75, 0.9, 0.97])
         smry_stats = (
-            f"$\mu = {mn:,.{j}f}$, "  # for {yhat_nm}
+            f"$\\mu = {mn:,.{j}f}$, "  # for {yhat_nm}
             + f"$q_{{50}} = {hdi[3]:,.{j}f}$, "
             + f"$HDI_{{50}} = [{hdi[2]:,.{j}f}, {hdi[4]:,.{j}f}]$, "
             + f"$HDI_{{80}} = [{hdi[1]:,.{j}f}, {hdi[5]:,.{j}f}]$, "
@@ -931,21 +936,22 @@ def plot_estimate(
         ax1 = sns.scatterplot(
             x=qvals,
             y=1 - qs,
-            color=clrs,
+            hue=qs,
+            palette=clrs,
             style=qs,
             markers=["s", "o", "^", "d"],
             edgecolor="#999",
             ax=axs,
             s=120,
             zorder=10,
-            legend=True,
+            # legend=True,
         )
         hdls, _lbls = ax1.get_legend_handles_labels()
         lbls = [str(round(1 - float(lbl), 2)) for lbl in _lbls]  # HACK floating pt
         _ = ax1.legend(hdls, lbls, loc="upper right", title=f"P({yhat_nm}) ≥ x")
         smry_stats = ", ".join(
             [
-                f"$P_{{@{{{q:.2f}}}}} \geq {{{qv:.{j}f}}}$"
+                f"$P_{{@{{{q:.2f}}}}} \\geq {{{qv:.{j}f}}}$"
                 for q, qv in zip(1 - qs, qvals, strict=True)
             ]
         )
@@ -1100,7 +1106,7 @@ def plot_bootstrap_lr_grp(
     ax1 = f.add_subplot(gs[1], sharey=ax0)
 
     # add violinplot
-    v_kws = dict(kind="violin", cut=0, scale="count", width=0.6, palette="cubehelix_r")
+    v_kws = dict(cut=0, density_norm="count", width=0.6, palette="cubehelix_r")
     _ = sns.violinplot(
         x="lr", y=grp, data=dfboot, ax=ax0, order=order_idx.values, **v_kws
     )
@@ -1185,7 +1191,7 @@ def plot_bootstrap_grp(
         data=dfboot,
         kind="violin",
         cut=0,
-        scale="count",
+        density_norm="count",
         width=0.6,
         palette="cubehelix_r",
         ax=ax0,
@@ -1252,7 +1258,7 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
         y=grp,
         data=dfboot,
         palette="cubehelix_r",
-        sym="",
+        showfliers=False,
         whis=[3, 97],
         showmeans=True,
         notch=True,
@@ -1284,8 +1290,8 @@ def plot_smrystat(
     df: pd.DataFrame,
     val: str = "y_eloss",
     smry: Literal["sum", "mean"] = "sum",
-    plot_outliers: bool = True,
-    palette: sns.palettes._ColorPalette = None,
+    plot_outliers: bool = False,
+    pal: sns.palettes._ColorPalette = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist) of numeric value `val`"""
@@ -1301,25 +1307,26 @@ def plot_smrystat(
     ax0.set_title(f"Distribution of bootstrapped {smry}")
     ax1.set_title("Distribution of indiv. values")
 
-    if palette is None:
-        palette = "viridis"
+    if pal is None:
+        pal = "viridis"
+    clr = sns.color_palette(pal, 1)[0]
 
     estimator = np.sum if smry == "sum" else np.mean
     _ = sns.pointplot(
         x=val,
         data=dfp,
-        palette=palette,
+        color=clr,
         estimator=estimator,
         errorbar=("ci", 94),
         ax=ax0,
+        legend=False,
     )
 
-    sym = "k" if plot_outliers else ""
     _ = sns.boxplot(
         x=val,
         data=dfp,
-        palette=palette,
-        sym=sym,
+        color=clr,
+        showfliers=plot_outliers,
         whis=[3, 97],
         showmeans=True,
         meanprops=sty["mn_pt_kws"],
@@ -1351,7 +1358,7 @@ def plot_smrystat_grp(
     grpkind: str = None,
     val: str = "y_eloss",
     smry: Literal["sum", "mean"] = "sum",
-    plot_outliers: bool = True,
+    plot_outliers: bool = False,
     plot_compact: bool = True,
     plot_grid: bool = True,
     pal: sns.palettes._ColorPalette = None,
@@ -1406,8 +1413,10 @@ def plot_smrystat_grp(
 
     kws = dict(y=grp, order=ct.index.values, data=dfp, palette=pal)
     kws_point = {**kws, **dict(estimator=est, errorbar=("ci", 94))}
-    sym = "k" if plot_outliers else ""
-    kws_box = {**kws, **dict(sym=sym, whis=[3, 97], meanprops=sty["mn_pt_kws"])}
+    kws_box = {
+        **kws,
+        **dict(showfliers=plot_outliers, whis=[3, 97], meanprops=sty["mn_pt_kws"]),
+    }
 
     _ = sns.pointplot(**kws_point, x=val, ax=ax0)
     _ = sns.boxplot(**kws_box, x=val, showmeans=True, ax=ax1)
@@ -1502,8 +1511,10 @@ def plot_smrystat_grp_year(
         est = np.sum if smry == "sum" else np.mean
         kws = dict(y=grp, data=dfs, order=ct.index.values, palette=pal)
         kws_point = {**kws, **dict(estimator=est, errorbar=("ci", 94))}
-        sym = "k" if plot_outliers else ""
-        kws_box = {**kws, **dict(sym=sym, whis=[3, 97], meanprops=sty["mn_pt_kws"])}
+        kws_box = {
+            **kws,
+            **dict(showfliers=plot_outliers, whis=[3, 97], meanprops=sty["mn_pt_kws"]),
+        }
 
         _ = sns.pointplot(**kws_point, x=val, linestyles="-", ax=ax0d[i])
         _ = sns.boxplot(**kws_box, x=val, showmeans=True, ax=ax1d[i])
