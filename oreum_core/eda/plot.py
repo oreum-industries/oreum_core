@@ -863,10 +863,16 @@ def plot_estimate(
     y_nm: str = "y",
     **kwargs,
 ) -> figure.Figure:
-    """Plot distribution of univariate estimates in 1D array yhat: either PPC
-    samples or bootstrapped resamples made without grouping.
+    """Plot distribution of univariate estimates in 1D array yhat:
+        typically used for PPC output pre-summarised across observations or for
+        bootstrap summarised observed data. The sampling / bootstrapping and
+        summary stat should have already been applied to yhat
     Default to boxplot, allow exceedance curve.
-    Optionally overplot bootstrapped summarised y 1D array.
+    Optionally overplot true values y 1D array: this will be shown as a modified
+        sns.pointplot (which has internal bootstrapping to show the mean of y)
+        where we slightly abuse the errorbar to show y (min, max), rather than
+        the default which is some ci of the internal bootstrapping. This makes
+        the error bar comparable to the boxplot
     Refactored this to operate on simple arrays
     """
     txtadd = kwargs.pop("txtadd", None)
@@ -890,6 +896,9 @@ def plot_estimate(
     mn_txt_kws = copy(sty["mn_txt_kws"])
     mn_txt_kws["backgroundcolor"] = "C1"
 
+    def _tuple_minmax(a) -> tuple[float]:
+        return (a.min(), a.max())
+
     mn = yhat.mean()
     j = max(-int(np.ceil(np.log10(mn))) + 1, 0)
     f, axs = plt.subplots(1, 1, figsize=(12, 3 + 2 * exceedance))
@@ -903,13 +912,13 @@ def plot_estimate(
                 y = y.reshape(-1, 1)
             mn_y = y.mean()
             j_y = max(-int(np.ceil(np.log10(mn_y))) + 2, 0)
-            _kws_pt = kws_pt | {"estimator": np.mean}
+            _kws_pt = kws_pt | {"estimator": np.mean, "errorbar": _tuple_minmax}
             _ax = sns.pointplot(data=y, ax=axs, **_kws_pt)
             _ = _ax.annotate(f"{mn_y:,.{j_y}f}", xy=(mn_y, 0), **mn_txt_kws)
             elems.append(lines.Line2D([0], [0], label=f"mean {y_nm}", **mn_pt_kws))
             txtadd = ", ".join(filter(None, [txtadd, f"overplotted w/ {y_nm}"]))
 
-        _ = ax.legend(handles=elems, loc="upper right", fontsize=8)
+        _ = ax.legend(handles=elems, loc="lower right", fontsize=8)
         _ = ax.set(yticklabels="", xlabel=yhat_nm)
 
         if force_xlim is not None:
