@@ -870,11 +870,18 @@ def plot_estimate(
     Default to boxplot, allow exceedance curve.
     Optionally overplot true values y 1D array: this will be shown as a modified
         sns.pointplot (which has internal bootstrapping to show the mean of y)
-        where we slightly abuse the errorbar to show y (min, max), rather than
-        the default which is some ci of the internal bootstrapping. This makes
-        the error bar comparable to the boxplot
+        NOTE we slightly abuse the pointplot by (1) set n_boot = 1, and (2)
+        set errorbar to show y CR94(min, max), rather than the default which is
+        some ci of internal bootstrapping. This makes the pointplot comparable
+        to the boxplot, but usefully different in drawing style
     Refactored this to operate on simple arrays
     """
+
+    def _tuple_errorbar(a) -> tuple[float]:
+        """Convenient hack for pointplot errorbar to return CR94"""
+        cr = np.quantile(a, q=[0.03, 0.97])
+        return (cr[0], cr[1])
+
     txtadd = kwargs.pop("txtadd", None)
     t = f"{yhat_nm} for {nobs} obs"
     sty = _get_kws_styling()
@@ -888,17 +895,20 @@ def plot_estimate(
         "meanprops": sty["mn_pt_kws"],
     }
     kws_exc = kws | {"complementary": True, "lw": 3, "legend": None}
-    kws_pt = {"orient": "h", "color": "C1", "errorbar": ("ci", 94), "linestyle": "none"}
+    kws_pt = {
+        "estimator": np.mean,
+        "n_boot": 1,
+        "errorbar": _tuple_errorbar,
+        "linestyle": "none",
+        "orient": "h",
+        "color": "C1",
+    }  # , "dodge":True}
     mn_pt_kws = copy(sty["mn_pt_kws"])
     mn_pt_kws.update(
         markerfacecolor="C1", markeredgecolor="C1", c="C1", marker="o", markersize=8
     )
     mn_txt_kws = copy(sty["mn_txt_kws"])
     mn_txt_kws["backgroundcolor"] = "C1"
-
-    def _tuple_minmax(a) -> tuple[float]:
-        return (a.min(), a.max())
-
     mn = yhat.mean()
     j = max(-int(np.ceil(np.log10(mn))) + 1, 0)
     f, axs = plt.subplots(1, 1, figsize=(12, 3 + 2 * exceedance))
@@ -906,17 +916,22 @@ def plot_estimate(
     if not exceedance:  # default to boxplot, nice and simple
         ax = sns.boxplot(x=yhat, y=0, ax=axs, **kws_box)
         _ = ax.annotate(f"{mn:,.{j}f}", xy=(mn, 0), **sty["mn_txt_kws"])
-        elems = [lines.Line2D([0], [0], label=f"mean {yhat_nm}", **sty["mn_pt_kws"])]
+        elems = [
+            lines.Line2D(
+                [0], [0], label=f"{yhat_nm} (sample $\\mu$)", **sty["mn_pt_kws"]
+            )
+        ]
         if y is not None:
             if y.ndim == 1:
                 y = y.reshape(-1, 1)
             mn_y = y.mean()
             j_y = max(-int(np.ceil(np.log10(mn_y))) + 2, 0)
-            _kws_pt = kws_pt | {"estimator": np.mean, "errorbar": _tuple_minmax}
-            _ax = sns.pointplot(data=y, ax=axs, **_kws_pt)
+            _ax = sns.pointplot(data=y, ax=axs, **kws_pt)
             _ = _ax.annotate(f"{mn_y:,.{j_y}f}", xy=(mn_y, 0), **mn_txt_kws)
-            elems.append(lines.Line2D([0], [0], label=f"mean {y_nm}", **mn_pt_kws))
-            txtadd = ", ".join(filter(None, [txtadd, f"overplotted w/ {y_nm}"]))
+            elems.append(
+                lines.Line2D([0], [0], label=f"{y_nm} (sample $\\mu$)", **mn_pt_kws)
+            )
+            txtadd = ". ".join(filter(None, [txtadd, f"Overplotted {y_nm}"]))
 
         _ = ax.legend(handles=elems, loc="lower right", fontsize=8)
         _ = ax.set(yticklabels="", xlabel=yhat_nm)
@@ -929,7 +944,7 @@ def plot_estimate(
             f"$\\mu = {mn:,.{j}f}$, "  # for {yhat_nm}
             + f"$q_{{50}} = {hdi[3]:,.{j}f}$, "
             + f"$HDI_{{50}} = [{hdi[2]:,.{j}f}, {hdi[4]:,.{j}f}]$, "
-            + f"$HDI_{{80}} = [{hdi[1]:,.{j}f}, {hdi[5]:,.{j}f}]$, "
+            # + f"$HDI_{{80}} = [{hdi[1]:,.{j}f}, {hdi[5]:,.{j}f}]$, "
             + f"$HDI_{{94}} = [{hdi[0]:,.{j}f}, {hdi[6]:,.{j}f}]$"
         )
         t = " ".join(filter(None, ["Boxplot", t]))
