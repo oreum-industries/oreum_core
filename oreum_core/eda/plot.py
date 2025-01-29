@@ -171,8 +171,8 @@ def plot_cat_ct(
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
 
     t = "Empirical distribution"
-    txtadd = kwargs.pop("txtadd", "cats")
-    _ = f.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    txtadd = kwargs.pop("txtadd", None)
+    _ = f.suptitle(" - ".join(filter(None, [t, "cats", txtadd])), y=1, fontsize=14)
     _ = f.tight_layout(pad=0.9)
     return f
 
@@ -215,8 +215,8 @@ def plot_bool_ct(
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
 
     t = "Empirical distribution"
-    txtadd = kwargs.pop("txtadd", "bools")
-    _ = f.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    txtadd = kwargs.pop("txtadd", None)
+    _ = f.suptitle(" - ".join(filter(None, [t, "bools", txtadd])), y=1, fontsize=14)
     f.tight_layout(pad=0.9)
     return f
 
@@ -258,8 +258,8 @@ def plot_date_ct(
         )
         ax.legend(loc="upper right")
     t = "Empirical distribution"
-    txtadd = kwargs.pop("txtadd", "dates")
-    _ = f.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    txtadd = kwargs.pop("txtadd", None)
+    _ = f.suptitle(" - ".join(filter(None, [t, "dates", txtadd])), y=1, fontsize=14)
     _ = f.tight_layout(pad=0.9)
     return f
 
@@ -304,8 +304,8 @@ def plot_int_dist(
         _ = ax.set(title=ft, ylabel="count", xlabel=None)  # 'value'
         _ = ax.legend(loc="upper right")
     t = "Empirical distribution"
-    txtadd = kwargs.pop("txtadd", "ints")
-    _ = f.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    txtadd = kwargs.pop("txtadd", None)
+    _ = f.suptitle(" - ".join(filter(None, [t, "ints", txtadd])), y=1, fontsize=14)
     _ = f.tight_layout(pad=0.9)
     return f
 
@@ -389,9 +389,11 @@ def plot_float_dist(
     if log:
         _ = gd.set(xscale="log")  # , title=ft, ylabel='log(count)')
 
-    txtadd = kwargs.pop("txtadd", "floats")
+    txtadd = kwargs.pop("txtadd", None)
     t = "Empirical distribution"
-    _ = gd.fig.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = gd.fig.suptitle(
+        " - ".join(filter(None, [t, "floats", txtadd])), y=1, fontsize=14
+    )
     _ = gd.fig.tight_layout(pad=0.9)
     return gd.fig
 
