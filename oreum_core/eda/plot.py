@@ -910,7 +910,7 @@ def plot_estimate(
     mn_txt_kws = copy(sty["mn_txt_kws"])
     mn_txt_kws["backgroundcolor"] = "C1"
     mn = yhat.mean()
-    sigfigs_min = 2
+    sigfigs_min = 3
     j = max(-int(np.ceil(np.log10(mn))), sigfigs_min)
     f, axs = plt.subplots(1, 1, figsize=(12, 3 + 2 * exceedance))
 
@@ -981,7 +981,7 @@ def plot_estimate(
         _ = ax1.legend(hdls, lbls, loc="upper right", title=f"P({yhat_nm}) ≥ x")
         smry_stats = ", ".join(
             [
-                f"$P_{{@{{{q:.2f}}}}} \\geq {{{qv:.{j}f}}}$"
+                f"$P_{{@{{{q:.2f}}}}} \\geq {{{qv:.{j}g}}}$"
                 for q, qv in zip(1 - qs, qvals, strict=True)
             ]
         )
