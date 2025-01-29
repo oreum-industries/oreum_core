@@ -942,12 +942,7 @@ def plot_estimate(
 
         hdi = np.quantile(a=yhat, q=[0.03, 0.1, 0.25, 0.5, 0.75, 0.9, 0.97])
         smry_stats = (
-            # f"$\\mu = {mn:,.{j}f}$; "  # for {yhat_nm}
-            # + f"$q_{{50}} = {hdi[3]:,.{j}f}$; "
-            # + f"$HDI_{{50}} = [{hdi[2]:,.{j}f}, {hdi[4]:,.{j}f}]$; "
-            # # + f"$HDI_{{80}} = [{hdi[1]:,.{j}f}, {hdi[5]:,.{j}f}]$; "
-            # + f"$HDI_{{94}} = [{hdi[0]:,.{j}f}, {hdi[6]:,.{j}f}]$"
-            f"$\\mu = {mn:,.{j}g}$; "  # for {yhat_nm}
+            f"$\\mu = {mn:,.{j}g}$; "
             + f"$q_{{50}} = {hdi[3]:,.{j}g}$; "
             + f"$HDI_{{50}} = [{hdi[2]:,.{j}g}, {hdi[4]:,.{j}g}]$; "
             # + f"$HDI_{{80}} = [{hdi[1]:,.{j}g}, {hdi[5]:,.{j}g}]$; "
@@ -1031,8 +1026,12 @@ def plot_bootstrap_lr(
         for i, v in enumerate(pest_mn)
     ]
     elems = [
-        lines.Line2D([0], [0], label="population LR (bootstrap)", **sty["mn_pt_kws"]),
-        lines.Line2D([0], [0], label="sample LR", **sty["pest_mn_pt_kws"]),
+        lines.Line2D(
+            [0], [0], label="population LR (bootstrap $\\mu$)", **sty["mn_pt_kws"]
+        ),
+        lines.Line2D(
+            [0], [0], label="sample LR (point est. $\\mu$)", **sty["pest_mn_pt_kws"]
+        ),
     ]
     gd.ax.legend(handles=elems, loc="upper right", fontsize=8)
     if force_xlim is not None:
@@ -1057,7 +1056,7 @@ def plot_bootstrap_lr(
         )
     if lr_summary:
         summary += (
-            f"\nPopulation LR: mean = {mn[0]:.1%}, "
+            f"\nPopulation LR: $\\mu$ = {mn[0]:.1%}, "
             + f"$HDI_{{50}}$ = [{hdi[1]:.1%}, {hdi[2]:.1%}], "
             + f"$HDI_{{94}}$ = [{hdi[0]:.1%}, {hdi[3]:.1%}]"
         )
