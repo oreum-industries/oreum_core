@@ -910,12 +910,13 @@ def plot_estimate(
     mn_txt_kws = copy(sty["mn_txt_kws"])
     mn_txt_kws["backgroundcolor"] = "C1"
     mn = yhat.mean()
-    j = max(-int(np.ceil(np.log10(mn))) + 1, 0)
+    sigfigs_min = 2
+    j = max(-int(np.ceil(np.log10(mn))), sigfigs_min)
     f, axs = plt.subplots(1, 1, figsize=(12, 3 + 2 * exceedance))
 
     if not exceedance:  # default to boxplot, nice and simple
         ax = sns.boxplot(x=yhat, y=0, ax=axs, **kws_box)
-        _ = ax.annotate(f"{mn:,.{j}f}", xy=(mn, 0), **sty["mn_txt_kws"])
+        _ = ax.annotate(f"{mn:,.{j}g}", xy=(mn, 0), **sty["mn_txt_kws"])
         elems = [
             lines.Line2D(
                 [0], [0], label=f"{yhat_nm} (sample $\\mu$)", **sty["mn_pt_kws"]
@@ -925,9 +926,9 @@ def plot_estimate(
             if y.ndim == 1:
                 y = y.reshape(-1, 1)
             mn_y = y.mean()
-            j_y = max(-int(np.ceil(np.log10(mn_y))) + 2, 0)
+            j_y = max(-int(np.ceil(np.log10(mn_y))), sigfigs_min)
             _ax = sns.pointplot(data=y, ax=axs, **kws_pt)
-            _ = _ax.annotate(f"{mn_y:,.{j_y}f}", xy=(mn_y, 0), **mn_txt_kws)
+            _ = _ax.annotate(f"{mn_y:,.{j_y}g}", xy=(mn_y, 0), **mn_txt_kws)
             elems.append(
                 lines.Line2D([0], [0], label=f"{y_nm} (sample $\\mu$)", **mn_pt_kws)
             )
@@ -941,11 +942,16 @@ def plot_estimate(
 
         hdi = np.quantile(a=yhat, q=[0.03, 0.1, 0.25, 0.5, 0.75, 0.9, 0.97])
         smry_stats = (
-            f"$\\mu = {mn:,.{j}f}$, "  # for {yhat_nm}
-            + f"$q_{{50}} = {hdi[3]:,.{j}f}$, "
-            + f"$HDI_{{50}} = [{hdi[2]:,.{j}f}, {hdi[4]:,.{j}f}]$, "
-            # + f"$HDI_{{80}} = [{hdi[1]:,.{j}f}, {hdi[5]:,.{j}f}]$, "
-            + f"$HDI_{{94}} = [{hdi[0]:,.{j}f}, {hdi[6]:,.{j}f}]$"
+            # f"$\\mu = {mn:,.{j}f}$; "  # for {yhat_nm}
+            # + f"$q_{{50}} = {hdi[3]:,.{j}f}$; "
+            # + f"$HDI_{{50}} = [{hdi[2]:,.{j}f}, {hdi[4]:,.{j}f}]$; "
+            # # + f"$HDI_{{80}} = [{hdi[1]:,.{j}f}, {hdi[5]:,.{j}f}]$; "
+            # + f"$HDI_{{94}} = [{hdi[0]:,.{j}f}, {hdi[6]:,.{j}f}]$"
+            f"$\\mu = {mn:,.{j}g}$; "  # for {yhat_nm}
+            + f"$q_{{50}} = {hdi[3]:,.{j}g}$; "
+            + f"$HDI_{{50}} = [{hdi[2]:,.{j}g}, {hdi[4]:,.{j}g}]$; "
+            # + f"$HDI_{{80}} = [{hdi[1]:,.{j}g}, {hdi[5]:,.{j}g}]$; "
+            + f"$HDI_{{94}} = [{hdi[0]:,.{j}g}, {hdi[6]:,.{j}g}]$"
         )
         t = " ".join(filter(None, ["Boxplot", t]))
 
