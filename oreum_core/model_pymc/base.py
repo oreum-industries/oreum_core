@@ -61,7 +61,7 @@ class BasePYMCModel:
         self._idata = None
         self.replace_idata = True
         self.sample_prior_pred_kws = dict(samples=500, return_inferencedata=True)
-        self.sample_post_pred_kws = dict(store_ppc=True, ppc_insample=False)
+        self.sample_post_pred_kws = dict(store_ppc=True, insamp=False)
         self.sample_kws = dict(
             init="auto",  # aka jitter+adapt_diag
             tune=2000,  # twice the 1000 of pymc default
@@ -256,9 +256,7 @@ class BasePYMCModel:
         kws = dict(
             trace=posterior,
             random_seed=kwargs.pop("random_seed", self.rsd),
-            predictions=not kwargs.pop(
-                "ppc_insample", self.sample_post_pred_kws["ppc_insample"]
-            ),
+            predictions=not kwargs.pop("insamp", self.sample_post_pred_kws["insamp"]),
         )
         with self.model:
             ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
