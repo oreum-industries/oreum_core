@@ -1003,32 +1003,18 @@ def plot_bootstrap_lr(
     lr_summary: bool = True,
     force_xlim: list = None,
     color: str = None,
+    pretty_plot: bool = False,
     **kwargs,
 ) -> figure.Figure:
-    """Plot bootstrapped loss ratio, no grouping"""
+    """Plot bootstrapped loss ratio, no grouping
+    `pretty_plot`=True returns a low rezzed KDE suitable for presentations
+    """
 
     sty = _get_kws_styling()
-    mn = dfboot[["lr"]].mean().tolist()  # boot mean
-    hdi = dfboot["lr"].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # boot qs
-    pest_mn = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]  # point est mean
-    clr = color if color is not None else sns.color_palette()[0]
+    mn = dfboot["lr"].mean()
+    hdi = dfboot["lr"].quantile(q=[0.03, 0.25, 0.75, 0.97]).values
 
-    gd = sns.catplot(
-        x="lr", data=dfboot, kind="violin", cut=0, color=clr, height=3, aspect=4
-    )
-    _ = [gd.ax.plot(v, i % len(mn), **sty["mn_pt_kws"]) for i, v in enumerate(mn)]
-    _ = [
-        gd.ax.annotate(f"{v:.1%}", xy=(v, i % len(mn)), **sty["mn_txt_kws"])
-        for i, v in enumerate(mn)
-    ]
-    _ = [
-        gd.ax.plot(v, i % len(pest_mn), **sty["pest_mn_pt_kws"])
-        for i, v in enumerate(pest_mn)
-    ]
-    _ = [
-        gd.ax.annotate(f"{v:.1%}", xy=(v, i % len(pest_mn)), **sty["pest_mn_txt_kws"])
-        for i, v in enumerate(pest_mn)
-    ]
+    clr = color if color is not None else sns.color_palette()[0]
     elems = [
         lines.Line2D(
             [0], [0], label="population LR (bootstrap $\\mu$)", **sty["mn_pt_kws"]
@@ -1037,10 +1023,46 @@ def plot_bootstrap_lr(
             [0], [0], label="sample LR (point est. $\\mu$)", **sty["pest_mn_pt_kws"]
         ),
     ]
-    gd.ax.legend(handles=elems, loc="upper right", fontsize=8)
+
+    if not pretty_plot:  # default violin plots, mre technical
+        gd = sns.catplot(
+            x="lr", data=dfboot, kind="violin", cut=0, color=clr, height=3, aspect=4
+        )
+        pest_mn = np.nan_to_num(df[clm], 0).sum() / df[prm].sum()  # point est mean
+        _ = gd.ax.plot(pest_mn, 0, **sty["pest_mn_pt_kws"])
+        _ = gd.ax.annotate(f"{pest_mn:.1%}", xy=(pest_mn, 0), **sty["pest_mn_txt_kws"])
+        elems = [
+            lines.Line2D(
+                [0], [0], label="population LR (bootstrap $\\mu$)", **sty["mn_pt_kws"]
+            ),
+            lines.Line2D(
+                [0], [0], label="sample LR (point est. $\\mu$)", **sty["pest_mn_pt_kws"]
+            ),
+        ]
+        gd.ax.legend(handles=elems, loc="upper right", fontsize=8)
+
+    else:  # optional prettier plot
+        gd = sns.displot(
+            x="lr",
+            data=dfboot,
+            kind="kde",
+            color=clr,
+            height=4,
+            aspect=3,
+            fill=True,
+            lw=0,
+            alpha=0.7,
+        )
+        xlims = dfboot["lr"].quantile(q=[0.00, 0.99]).values  # cut the upper tail
+        _ = gd.ax.set(xlim=xlims, ylim=(-0.05, None))
+        _ = gd.ax.yaxis.grid(False)
+
+    _ = gd.ax.plot(mn, 0, **sty["mn_pt_kws"])
+    _ = gd.ax.annotate(f"{mn:.1%}", xy=(mn, 0), **sty["mn_txt_kws"])
     if force_xlim is not None:
         _ = gd.ax.set(xlim=force_xlim)
-    gd.ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
+
+    _ = gd.ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0, decimals=0))
 
     # hacky way to deal with year as int or datetime
     pmin = df[ftname_year].min()
@@ -1060,12 +1082,12 @@ def plot_bootstrap_lr(
         )
     if lr_summary:
         summary += (
-            f"\nPopulation LR: $\\mu$ = {mn[0]:.1%}, "
+            f"\nPopulation LR: $\\mu$ = {mn:.1%}, "
             + f"$HDI_{{50}}$ = [{hdi[1]:.1%}, {hdi[2]:.1%}], "
             + f"$HDI_{{94}}$ = [{hdi[0]:.1%}, {hdi[3]:.1%}]"
         )
     txtadd = kwargs.pop("txtadd", None)
-    t = "Bootstrapped Distribution of Population Loss Ratio"
+    t = "Population Loss Ratio"
     t = " - ".join(filter(None, [t, txtadd]))
     _ = gd.fig.suptitle("\n".join(filter(None, [t, summary])), y=1, fontsize=14)
     _ = gd.fig.tight_layout()

@@ -211,7 +211,7 @@ def bootstrap(a: np.ndarray, nboot: int = None, summary_fn=None) -> np.ndarray:
 def bootstrap_lr(
     df: pd.DataFrame, prm: str = "premium", clm: str = "claim", nboot: int = 1000
 ) -> pd.DataFrame:
-    """Calc vectorised bootstrap loss ratios for df
+    """Calc vectorised bootstrap loss ratios for df one-row-per-policy
     Pass dataframe or group, accept nans in clm
     Use the same index for prem and claims
     """
