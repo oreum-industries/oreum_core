@@ -418,16 +418,18 @@ def plot_joint_numeric(
     **kwargs,
 ) -> figure.Figure:
     """Jointplot of 2 numeric fts with optional: hue shading, linear regression
-    Suitable for int or float"""
+    Suitable for int or float
+    NOTE this is not NaN friendly, and will fill nans with zeros"""
 
     dfp = data.copy()
-    ngrps = 1
     kws = dict(color=f"C{colori % 7}")  # color rotation max 7
 
     if nsamp is not None:
         dfp = dfp.sample(nsamp, random_state=RSD).copy()
 
     nobs = len(dfp)
+    for ft in [ft0, ft1]:
+        dfp[ft] = dfp[ft].fillna(0)
 
     if hue is not None:
         ngrps = len(dfp[hue].unique())

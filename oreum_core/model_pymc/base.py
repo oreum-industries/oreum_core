@@ -247,8 +247,8 @@ class BasePYMCModel:
         return None
 
     def sample_posterior_predictive(self, **kwargs) -> az.InferenceData | None:
-        """Sample posterior predictive
-        use self.sample_post_pred_kws or passed kwargs
+        """Sample posterior predictive for kwarg var_names=[]
+        Also uses self.sample_post_pred_kws or passed kwargs
         Note by default aimed toward out-of-sample PPC in production
         """
         store_ppc = kwargs.pop("store_ppc", self.sample_post_pred_kws["store_ppc"])
