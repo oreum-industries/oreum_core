@@ -171,8 +171,8 @@ def plot_cat_ct(
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
 
     t = "Empirical distribution"
-    txtadd = kwargs.pop("txtadd", "cats")
-    _ = f.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    txtadd = kwargs.pop("txtadd", None)
+    _ = f.suptitle(" - ".join(filter(None, [t, "cats", txtadd])), y=1, fontsize=14)
     _ = f.tight_layout(pad=0.9)
     return f
 
@@ -215,8 +215,8 @@ def plot_bool_ct(
         _ = ax.set_yticklabels([lbl.get_text()[:30] for lbl in ax.get_yticklabels()])
 
     t = "Empirical distribution"
-    txtadd = kwargs.pop("txtadd", "bools")
-    _ = f.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    txtadd = kwargs.pop("txtadd", None)
+    _ = f.suptitle(" - ".join(filter(None, [t, "bools", txtadd])), y=1, fontsize=14)
     f.tight_layout(pad=0.9)
     return f
 
@@ -258,8 +258,8 @@ def plot_date_ct(
         )
         ax.legend(loc="upper right")
     t = "Empirical distribution"
-    txtadd = kwargs.pop("txtadd", "dates")
-    _ = f.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    txtadd = kwargs.pop("txtadd", None)
+    _ = f.suptitle(" - ".join(filter(None, [t, "dates", txtadd])), y=1, fontsize=14)
     _ = f.tight_layout(pad=0.9)
     return f
 
@@ -304,8 +304,8 @@ def plot_int_dist(
         _ = ax.set(title=ft, ylabel="count", xlabel=None)  # 'value'
         _ = ax.legend(loc="upper right")
     t = "Empirical distribution"
-    txtadd = kwargs.pop("txtadd", "ints")
-    _ = f.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    txtadd = kwargs.pop("txtadd", None)
+    _ = f.suptitle(" - ".join(filter(None, [t, "ints", txtadd])), y=1, fontsize=14)
     _ = f.tight_layout(pad=0.9)
     return f
 
@@ -389,9 +389,11 @@ def plot_float_dist(
     if log:
         _ = gd.set(xscale="log")  # , title=ft, ylabel='log(count)')
 
-    txtadd = kwargs.pop("txtadd", "floats")
+    txtadd = kwargs.pop("txtadd", None)
     t = "Empirical distribution"
-    _ = gd.fig.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = gd.fig.suptitle(
+        " - ".join(filter(None, [t, "floats", txtadd])), y=1, fontsize=14
+    )
     _ = gd.fig.tight_layout(pad=0.9)
     return gd.fig
 
@@ -416,16 +418,18 @@ def plot_joint_numeric(
     **kwargs,
 ) -> figure.Figure:
     """Jointplot of 2 numeric fts with optional: hue shading, linear regression
-    Suitable for int or float"""
+    Suitable for int or float
+    NOTE this is not NaN friendly, and will fill nans with zeros"""
 
     dfp = data.copy()
-    ngrps = 1
     kws = dict(color=f"C{colori % 7}")  # color rotation max 7
 
     if nsamp is not None:
         dfp = dfp.sample(nsamp, random_state=RSD).copy()
 
     nobs = len(dfp)
+    for ft in [ft0, ft1]:
+        dfp[ft] = dfp[ft].fillna(0)
 
     if hue is not None:
         ngrps = len(dfp[hue].unique())
@@ -863,12 +867,25 @@ def plot_estimate(
     y_nm: str = "y",
     **kwargs,
 ) -> figure.Figure:
-    """Plot distribution of univariate estimates in 1D array yhat: either PPC
-    samples or bootstrapped resamples made without grouping.
+    """Plot distribution of univariate estimates in 1D array yhat:
+        typically used for PPC output pre-summarised across observations or for
+        bootstrap summarised observed data. The sampling / bootstrapping and
+        summary stat should have already been applied to yhat
     Default to boxplot, allow exceedance curve.
-    Optionally overplot bootstrapped summarised y 1D array.
+    Optionally overplot true values y 1D array: this will be shown as a modified
+        sns.pointplot (which has internal bootstrapping to show the mean of y)
+        NOTE we slightly abuse the pointplot by (1) set n_boot = 1, and (2)
+        set errorbar to show y CR94(min, max), rather than the default which is
+        some ci of internal bootstrapping. This makes the pointplot comparable
+        to the boxplot, but usefully different in drawing style
     Refactored this to operate on simple arrays
     """
+
+    def _tuple_errorbar(a) -> tuple[float]:
+        """Convenient hack for pointplot errorbar to return CR94"""
+        cr = np.quantile(a, q=[0.03, 0.97])
+        return (cr[0], cr[1])
+
     txtadd = kwargs.pop("txtadd", None)
     t = f"{yhat_nm} for {nobs} obs"
     sty = _get_kws_styling()
@@ -882,34 +899,46 @@ def plot_estimate(
         "meanprops": sty["mn_pt_kws"],
     }
     kws_exc = kws | {"complementary": True, "lw": 3, "legend": None}
-    kws_pt = {"orient": "h", "color": "C1", "errorbar": ("ci", 94), "linestyle": "none"}
+    kws_pt = {
+        "estimator": np.mean,
+        "n_boot": 1,
+        "errorbar": _tuple_errorbar,
+        "linestyle": "none",
+        "orient": "h",
+        "color": "C1",
+    }  # , "dodge":True}
     mn_pt_kws = copy(sty["mn_pt_kws"])
     mn_pt_kws.update(
         markerfacecolor="C1", markeredgecolor="C1", c="C1", marker="o", markersize=8
     )
     mn_txt_kws = copy(sty["mn_txt_kws"])
     mn_txt_kws["backgroundcolor"] = "C1"
-
     mn = yhat.mean()
-    j = max(-int(np.ceil(np.log10(mn))) + 1, 0)
+    sigfigs_min = 3
+    j = max(-int(np.ceil(np.log10(mn))), sigfigs_min)
     f, axs = plt.subplots(1, 1, figsize=(12, 3 + 2 * exceedance))
 
     if not exceedance:  # default to boxplot, nice and simple
         ax = sns.boxplot(x=yhat, y=0, ax=axs, **kws_box)
-        _ = ax.annotate(f"{mn:,.{j}f}", xy=(mn, 0), **sty["mn_txt_kws"])
-        elems = [lines.Line2D([0], [0], label=f"mean {yhat_nm}", **sty["mn_pt_kws"])]
+        _ = ax.annotate(f"{mn:,.{j}g}", xy=(mn, 0), **sty["mn_txt_kws"])
+        elems = [
+            lines.Line2D(
+                [0], [0], label=f"{yhat_nm} (sample $\\mu$)", **sty["mn_pt_kws"]
+            )
+        ]
         if y is not None:
             if y.ndim == 1:
                 y = y.reshape(-1, 1)
             mn_y = y.mean()
-            j_y = max(-int(np.ceil(np.log10(mn_y))) + 2, 0)
-            _kws_pt = kws_pt | {"estimator": np.mean}
-            _ax = sns.pointplot(data=y, ax=axs, **_kws_pt)
-            _ = _ax.annotate(f"{mn_y:,.{j_y}f}", xy=(mn_y, 0), **mn_txt_kws)
-            elems.append(lines.Line2D([0], [0], label=f"mean {y_nm}", **mn_pt_kws))
-            txtadd = ", ".join(filter(None, [txtadd, f"overplotted w/ {y_nm}"]))
+            j_y = max(-int(np.ceil(np.log10(mn_y))), sigfigs_min)
+            _ax = sns.pointplot(data=y, ax=axs, **kws_pt)
+            _ = _ax.annotate(f"{mn_y:,.{j_y}g}", xy=(mn_y, 0), **mn_txt_kws)
+            elems.append(
+                lines.Line2D([0], [0], label=f"{y_nm} (sample $\\mu$)", **mn_pt_kws)
+            )
+            txtadd = ". ".join(filter(None, [txtadd, f"Overplotted {y_nm}"]))
 
-        _ = ax.legend(handles=elems, loc="upper right", fontsize=8)
+        _ = ax.legend(handles=elems, loc="lower right", fontsize=8)
         _ = ax.set(yticklabels="", xlabel=yhat_nm)
 
         if force_xlim is not None:
@@ -917,22 +946,22 @@ def plot_estimate(
 
         hdi = np.quantile(a=yhat, q=[0.03, 0.1, 0.25, 0.5, 0.75, 0.9, 0.97])
         smry_stats = (
-            f"$\\mu = {mn:,.{j}f}$, "  # for {yhat_nm}
-            + f"$q_{{50}} = {hdi[3]:,.{j}f}$, "
-            + f"$HDI_{{50}} = [{hdi[2]:,.{j}f}, {hdi[4]:,.{j}f}]$, "
-            + f"$HDI_{{80}} = [{hdi[1]:,.{j}f}, {hdi[5]:,.{j}f}]$, "
-            + f"$HDI_{{94}} = [{hdi[0]:,.{j}f}, {hdi[6]:,.{j}f}]$"
+            f"$\\mu = {mn:,.{j}g}$; "
+            + f"$q_{{50}} = {hdi[3]:,.{j}g}$; "
+            + f"$HDI_{{50}} = [{hdi[2]:,.{j}g}, {hdi[4]:,.{j}g}]$; "
+            # + f"$HDI_{{80}} = [{hdi[1]:,.{j}g}, {hdi[5]:,.{j}g}]$; "
+            + f"$HDI_{{94}} = [{hdi[0]:,.{j}g}, {hdi[6]:,.{j}g}]$"
         )
         t = " ".join(filter(None, ["Boxplot", t]))
 
     else:  # do exceedance, slightly less intuitive for beginner clients
-        ax0 = sns.ecdfplot(x=yhat, ax=axs, **kws_exc)
-        _ = ax0.set(ylabel=f"P({yhat_nm} ≥ x)", xlabel="x")
+        ax = sns.ecdfplot(x=yhat, ax=axs, **kws_exc)
+        _ = ax.set(ylabel=f"P({yhat_nm} ≥ x)", xlabel="x")
         qs = kwargs.pop("qs", np.array([0.5, 0.9, 0.95, 0.99]))
         qvals = np.quantile(a=yhat, q=qs)
         clrs = sns.color_palette("Blues", len(qs))
         for i, (q, qv) in enumerate(zip(qs, qvals, strict=True)):
-            _ = ax0.vlines(x=qv, ymin=0, ymax=1 - q, lw=2, zorder=-1, colors=clrs[i])
+            _ = ax.vlines(x=qv, ymin=0, ymax=1 - q, lw=2, zorder=-1, colors=clrs[i])
         ax1 = sns.scatterplot(
             x=qvals,
             y=1 - qs,
@@ -951,12 +980,15 @@ def plot_estimate(
         _ = ax1.legend(hdls, lbls, loc="upper right", title=f"P({yhat_nm}) ≥ x")
         smry_stats = ", ".join(
             [
-                f"$P_{{@{{{q:.2f}}}}} \\geq {{{qv:.{j}f}}}$"
+                f"$P_{{@{{{q:.2f}}}}} \\geq {{{qv:.{j}g}}}$"
                 for q, qv in zip(1 - qs, qvals, strict=True)
             ]
         )
         t = " ".join(filter(None, ["Exceedance Curve", t]))
-        _ = ax0.set(xlabel=yhat_nm)
+        _ = ax.set(xlabel=yhat_nm)
+
+    if kwargs.get("ispercent", False):
+        _ = ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0, decimals=0))
 
     _ = f.suptitle(", ".join(filter(None, [t, txtadd])) + f"\nSummary: {smry_stats}")
     _ = f.tight_layout()
@@ -974,40 +1006,66 @@ def plot_bootstrap_lr(
     lr_summary: bool = True,
     force_xlim: list = None,
     color: str = None,
+    pretty_plot: bool = False,
     **kwargs,
 ) -> figure.Figure:
-    """Plot bootstrapped loss ratio, no grouping"""
+    """Plot bootstrapped loss ratio, no grouping
+    `pretty_plot`=True returns a low rezzed KDE suitable for presentations
+    """
 
     sty = _get_kws_styling()
-    mn = dfboot[["lr"]].mean().tolist()  # boot mean
-    hdi = dfboot["lr"].quantile(q=[0.03, 0.25, 0.75, 0.97]).values  # boot qs
-    pest_mn = [np.nan_to_num(df[clm], 0).sum() / df[prm].sum()]  # point est mean
-    clr = color if color is not None else sns.color_palette()[0]
+    mn = dfboot["lr"].mean()
+    hdi = dfboot["lr"].quantile(q=[0.03, 0.25, 0.75, 0.97]).values
 
-    gd = sns.catplot(
-        x="lr", data=dfboot, kind="violin", cut=0, color=clr, height=3, aspect=4
-    )
-    _ = [gd.ax.plot(v, i % len(mn), **sty["mn_pt_kws"]) for i, v in enumerate(mn)]
-    _ = [
-        gd.ax.annotate(f"{v:.1%}", xy=(v, i % len(mn)), **sty["mn_txt_kws"])
-        for i, v in enumerate(mn)
-    ]
-    _ = [
-        gd.ax.plot(v, i % len(pest_mn), **sty["pest_mn_pt_kws"])
-        for i, v in enumerate(pest_mn)
-    ]
-    _ = [
-        gd.ax.annotate(f"{v:.1%}", xy=(v, i % len(pest_mn)), **sty["pest_mn_txt_kws"])
-        for i, v in enumerate(pest_mn)
-    ]
+    clr = color if color is not None else sns.color_palette()[0]
     elems = [
-        lines.Line2D([0], [0], label="population LR (bootstrap)", **sty["mn_pt_kws"]),
-        lines.Line2D([0], [0], label="sample LR", **sty["pest_mn_pt_kws"]),
+        lines.Line2D(
+            [0], [0], label="population LR (bootstrap $\\mu$)", **sty["mn_pt_kws"]
+        ),
+        lines.Line2D(
+            [0], [0], label="sample LR (point est. $\\mu$)", **sty["pest_mn_pt_kws"]
+        ),
     ]
-    gd.ax.legend(handles=elems, loc="upper right", fontsize=8)
+
+    if not pretty_plot:  # default violin plots, mre technical
+        gd = sns.catplot(
+            x="lr", data=dfboot, kind="violin", cut=0, color=clr, height=3, aspect=4
+        )
+        pest_mn = np.nan_to_num(df[clm], 0).sum() / df[prm].sum()  # point est mean
+        _ = gd.ax.plot(pest_mn, 0, **sty["pest_mn_pt_kws"])
+        _ = gd.ax.annotate(f"{pest_mn:.1%}", xy=(pest_mn, 0), **sty["pest_mn_txt_kws"])
+        elems = [
+            lines.Line2D(
+                [0], [0], label="population LR (bootstrap $\\mu$)", **sty["mn_pt_kws"]
+            ),
+            lines.Line2D(
+                [0], [0], label="sample LR (point est. $\\mu$)", **sty["pest_mn_pt_kws"]
+            ),
+        ]
+        gd.ax.legend(handles=elems, loc="upper right", fontsize=8)
+
+    else:  # optional prettier plot
+        gd = sns.displot(
+            x="lr",
+            data=dfboot,
+            kind="kde",
+            color=clr,
+            height=4,
+            aspect=3,
+            fill=True,
+            lw=0,
+            alpha=0.7,
+        )
+        xlims = dfboot["lr"].quantile(q=[0.00, 0.99]).values  # cut the upper tail
+        _ = gd.ax.set(xlim=xlims, ylim=(-0.05, None))
+        _ = gd.ax.yaxis.grid(False)
+
+    _ = gd.ax.plot(mn, 0, **sty["mn_pt_kws"])
+    _ = gd.ax.annotate(f"{mn:.1%}", xy=(mn, 0), **sty["mn_txt_kws"])
     if force_xlim is not None:
         _ = gd.ax.set(xlim=force_xlim)
-    gd.ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0))
+
+    _ = gd.ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0, decimals=0))
 
     # hacky way to deal with year as int or datetime
     pmin = df[ftname_year].min()
@@ -1027,12 +1085,12 @@ def plot_bootstrap_lr(
         )
     if lr_summary:
         summary += (
-            f"\nPopulation LR: mean = {mn[0]:.1%}, "
+            f"\nPopulation LR: $\\mu$ = {mn:.1%}, "
             + f"$HDI_{{50}}$ = [{hdi[1]:.1%}, {hdi[2]:.1%}], "
             + f"$HDI_{{94}}$ = [{hdi[0]:.1%}, {hdi[3]:.1%}]"
         )
     txtadd = kwargs.pop("txtadd", None)
-    t = "Bootstrapped Distribution of Population Loss Ratio"
+    t = "Population Loss Ratio"
     t = " - ".join(filter(None, [t, txtadd]))
     _ = gd.fig.suptitle("\n".join(filter(None, [t, summary])), y=1, fontsize=14)
     _ = gd.fig.tight_layout()

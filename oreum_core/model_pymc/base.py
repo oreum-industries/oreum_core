@@ -52,24 +52,35 @@ class BasePYMCModel:
         def __init__(self, **kwargs):
             super().__init__(*args, **kwargs)
             self.sample_kws.update(dict(tune=1000, draws=500, target_accept=0.85))
+        Issue encountered 2025-01-26 in ParallelSampler, details here
+        https://discourse.pymc.io/t/dataset-size-dependent-eoferror/11977/13
+        solution is to undo the mp_ctx set by pymc to use spawn instead
+        though it might be a good idea to leave as None (fork) by default
         """
         self.model = None
         self._idata = None
         self.replace_idata = True
         self.sample_prior_pred_kws = dict(samples=500, return_inferencedata=True)
-        self.sample_post_pred_kws = dict(store_ppc=True, ppc_insample=False)
+        self.sample_post_pred_kws = dict(store_ppc=True, insamp=False)
         self.sample_kws = dict(
             init="auto",  # aka jitter+adapt_diag
             tune=2000,  # twice the 1000 of pymc default
             draws=500,
             chains=4,
             cores=4,
-            target_accept=0.8,
+            progressbar=True,
+            mp_ctx=None,  # default 'fork' (thanks to pymc) alternative 'spawn'
+            nuts_sampler="pymc",  # alternative “nutpie”
+            nuts_sampler_kwargs=dict(
+                target_accept=0.8,  # default, this is a reminder
+                max_treedepth=10,  # default, this is a reminder
+                early_max_treedepth=8,  # default, this is a reminder
+                step_scale=0.25,  # default, this is a reminder
+            ),
             idata_kwargs=dict(
                 log_likelihood=True,  # usually useful
                 log_prior=True,  # possibly useful?
             ),
-            progressbar=True,
         )
         self.rvs_for_posterior_plots = []
         self.calc_loglike_of_potential = False
@@ -184,20 +195,18 @@ class BasePYMCModel:
             chains=kwargs.pop("chains", self.sample_kws["chains"]),
             cores=kwargs.pop("cores", self.sample_kws["cores"]),
             progressbar=kwargs.pop("progressbar", self.sample_kws["progressbar"]),
-            idata_kwargs=kwargs.pop("idata_kwargs", self.sample_kws["idata_kwargs"]),
+            nuts_sampler=kwargs.pop("nuts_sampler", self.sample_kws["nuts_sampler"]),
+            mp_ctx=kwargs.pop("mp_ctx", self.sample_kws["mp_ctx"]),
         )
-
-        target_accept = kwargs.pop("target_accept", self.sample_kws["target_accept"])
-        step = kwargs.pop("step", "nuts")
+        # these kwargs are dicts, so need to carefully update
+        idata_kwargs = self.sample_kws["idata_kwargs"]
+        idata_kwargs.update(kwargs.pop("idata_kwargs", {}))
+        kws.update({"idata_kwargs": idata_kwargs})
+        nuts_sampler_kwargs = self.sample_kws["nuts_sampler_kwargs"]
+        nuts_sampler_kwargs.update(kwargs.pop("nuts_sampler_kwargs", {}))
+        kws.update({"nuts_sampler_kwargs": nuts_sampler_kwargs})
 
         with self.model:
-            common_stepper_options = {
-                "nuts": pm.NUTS(target_accept=target_accept),
-                "metropolis": pm.Metropolis(),
-                "advi": pm.ADVI(),
-            }
-            kws["step"] = common_stepper_options.get(step, None)
-
             try:
                 posterior = pm.sample(**{**kws, **kwargs})
             except UserWarning as e:
@@ -238,8 +247,8 @@ class BasePYMCModel:
         return None
 
     def sample_posterior_predictive(self, **kwargs) -> az.InferenceData | None:
-        """Sample posterior predictive
-        use self.sample_post_pred_kws or passed kwargs
+        """Sample posterior predictive for kwarg var_names=[]
+        Also uses self.sample_post_pred_kws or passed kwargs
         Note by default aimed toward out-of-sample PPC in production
         """
         store_ppc = kwargs.pop("store_ppc", self.sample_post_pred_kws["store_ppc"])
@@ -247,9 +256,7 @@ class BasePYMCModel:
         kws = dict(
             trace=posterior,
             random_seed=kwargs.pop("random_seed", self.rsd),
-            predictions=not kwargs.pop(
-                "ppc_insample", self.sample_post_pred_kws["ppc_insample"]
-            ),
+            predictions=not kwargs.pop("insamp", self.sample_post_pred_kws["insamp"]),
         )
         with self.model:
             ppc = pm.sample_posterior_predictive(**{**kws, **kwargs})
