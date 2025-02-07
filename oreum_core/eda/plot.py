@@ -955,13 +955,13 @@ def plot_estimate(
         t = " ".join(filter(None, ["Boxplot", t]))
 
     else:  # do exceedance, slightly less intuitive for beginner clients
-        ax0 = sns.ecdfplot(x=yhat, ax=axs, **kws_exc)
-        _ = ax0.set(ylabel=f"P({yhat_nm} ≥ x)", xlabel="x")
+        ax = sns.ecdfplot(x=yhat, ax=axs, **kws_exc)
+        _ = ax.set(ylabel=f"P({yhat_nm} ≥ x)", xlabel="x")
         qs = kwargs.pop("qs", np.array([0.5, 0.9, 0.95, 0.99]))
         qvals = np.quantile(a=yhat, q=qs)
         clrs = sns.color_palette("Blues", len(qs))
         for i, (q, qv) in enumerate(zip(qs, qvals, strict=True)):
-            _ = ax0.vlines(x=qv, ymin=0, ymax=1 - q, lw=2, zorder=-1, colors=clrs[i])
+            _ = ax.vlines(x=qv, ymin=0, ymax=1 - q, lw=2, zorder=-1, colors=clrs[i])
         ax1 = sns.scatterplot(
             x=qvals,
             y=1 - qs,
@@ -985,7 +985,10 @@ def plot_estimate(
             ]
         )
         t = " ".join(filter(None, ["Exceedance Curve", t]))
-        _ = ax0.set(xlabel=yhat_nm)
+        _ = ax.set(xlabel=yhat_nm)
+
+    if kwargs.get("ispercent", False):
+        _ = ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1.0, decimals=0))
 
     _ = f.suptitle(", ".join(filter(None, [t, txtadd])) + f"\nSummary: {smry_stats}")
     _ = f.tight_layout()
