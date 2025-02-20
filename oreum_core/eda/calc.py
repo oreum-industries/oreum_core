@@ -194,10 +194,11 @@ def bootstrap_index_only(a: np.ndarray, nboot: int = None) -> np.ndarray:
     return rng.integers(0, len(a), size=(len(a), nboot))
 
 
-def bootstrap(a: np.ndarray, summary_fn=np.mean, nboot: int = None) -> np.ndarray:
+def bootstrap(a: np.ndarray, nboot: int = None, summary_fn=None) -> np.ndarray:
     """Calc vectorised bootstrap resample of ndarray of observations with
-    optional summary_fn.
-    nboot also optional, see https://sedar.co/posts/bootstrap-primer/
+    optional summary_fn which must be the numpy function to be used in
+    np.apply_along_axis. e.g. np.mean or np.sum
+    NOTE nboot will default to len(a) see https://sedar.co/posts/bootstrap-primer/
     """
     sample_idx = bootstrap_index_only(a, nboot)
     samples = a[sample_idx]
@@ -210,7 +211,7 @@ def bootstrap(a: np.ndarray, summary_fn=np.mean, nboot: int = None) -> np.ndarra
 def bootstrap_lr(
     df: pd.DataFrame, prm: str = "premium", clm: str = "claim", nboot: int = 1000
 ) -> pd.DataFrame:
-    """Calc vectorised bootstrap loss ratios for df
+    """Calc vectorised bootstrap loss ratios for df one-row-per-policy
     Pass dataframe or group, accept nans in clm
     Use the same index for prem and claims
     """
