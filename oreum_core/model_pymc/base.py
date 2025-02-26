@@ -307,8 +307,9 @@ class BasePYMCModel:
                 _ = self.model.debug(fn="logp", verbose=False)
                 msg.append("debug: logp")
             except (TypeError, ValueError):
-                _log.exception(
-                    "Model contains Potentials, debug logp not compatible",
-                    exc_info=True,
-                )
+                _log.error("Model contains Potentials, debug logp not compatible")
+                # _log.exception(
+                #     "Model contains Potentials, debug logp not compatible",
+                #     exc_info=True,
+                # )
         return f"Ran {len(msg)} checks: [" + ", ".join(msg) + "]"

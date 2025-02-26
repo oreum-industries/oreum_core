@@ -43,7 +43,8 @@ class PYMCIO(BaseFileIO):
     def read_idata(
         self, mdl: BasePYMCModel = None, fn: str = "", **kwargs
     ) -> az.InferenceData:
-        """Read InferenceData using mdl.mdl_id_fn + txtadd, or from fn"""
+        """Read InferenceData appropriate to a built model using
+        mdl.mdl_id_fn + txtadd, or from fn"""
         txtadd = kwargs.pop("txtadd", None)
         if mdl is not None:
             fn = "_".join(filter(None, ["idata", mdl.mdl_id_fn, txtadd]))
@@ -52,14 +53,22 @@ class PYMCIO(BaseFileIO):
         _log.info(f"Read model idata from {str(fqn.resolve())}")
         return idata
 
-    def write_idata(self, mdl: BasePYMCModel, fn: str = "", **kwargs) -> Path:
-        """Accept BasePYMCModel object write to InferenceData using
-        mdl.mdl_id_fn + txtadd"""
+    def write_idata(
+        self, mdl: BasePYMCModel, idata: az.InferenceData = None, fn: str = "", **kwargs
+    ) -> Path:
+        """Accept BasePYMCModel object with attached in-sample idata, and write
+        to netcdf file with name mdl.mdl_id_fn + txtadd. Optionally use this to
+        write out-of-sample InferenceData passed as idata kwarg. Can implicitly
+        use mdl.mdl_id_fn in either case"""
         txtadd = kwargs.pop("txtadd", None)
         if fn == "":
             fn = "_".join(filter(None, ["idata", mdl.mdl_id_fn, txtadd]))
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".netcdf"))
-        mdl.idata.to_netcdf(str(fqn.resolve()))
+
+        if idata is not None:
+            idata.to_netcdf(str(fqn.resolve()))
+        else:
+            mdl.idata.to_netcdf(str(fqn.resolve()))
         _log.info(f"Written to {str(fqn.resolve())}")
         return fqn
 
