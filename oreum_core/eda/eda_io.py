@@ -117,7 +117,7 @@ class FigureIO(BaseFileIO):
 
 def output_data_dict(
     df: pd.DataFrame, dd_notes: dict[str, str], fqp: Path, fn: str = ""
-) -> None:
+) -> Path:
     """Helper fn to output a data dict with automatic eda.describe"""
 
     # flag if is index
@@ -167,4 +167,5 @@ def output_data_dict(
                 na_rep="NULL",
             )
 
-    excelio.writer_close()
+    fqn = excelio.writer_close()
+    return fqn
