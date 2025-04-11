@@ -135,9 +135,9 @@ def plot_cat_ct(
     f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, 0.5 + vert * vsize))
 
     for i, ft in enumerate(fts):
-        counts_all = df.groupby(ft).size().sort_values(ascending=True)
+        counts_all = df.groupby(ft, observed=False).size().sort_values(ascending=True)
         if (df[ft].dtype == "category") & cat_order:
-            counts_all = df.groupby(ft).size()[::-1]  # need to invert
+            counts_all = df.groupby(ft, observed=False).size()[::-1]  # need to invert
 
         if df[ft].dtype == bool:
             counts_all = counts_all.sort_index()  # sort so true plots on top
@@ -322,6 +322,8 @@ def plot_float_dist(
     Plot distributions for floats
     Annotate with count of nans, infs (+/-) and zeros
     """
+    s = None
+    t = "Empirical distribution"
 
     def _annotate_facets(data, **kwargs):
         """Func to be mapped to the dataframe (named `data` by seaborn)
@@ -353,6 +355,12 @@ def plot_float_dist(
     if len(fts) == 0:
         return None
 
+    # hacky protect against massive datasets with a subsample
+    ldf = len(df)
+    if ldf > 1e5:
+        df = df.sample(n=100000, random_state=42)
+        s = f"subsample 1e5 of {ldf:.0g} total ({1e5 / ldf:.1%})"
+
     if sort:
         dfm = df[sorted(fts)].melt(var_name="variable")
     else:
@@ -370,13 +378,11 @@ def plot_float_dist(
         aspect=6,
         sharex=sharex,
     )
-    _ = gd.map(
-        sns.violinplot, "value", order=None, cut=0, density_norm="count"
-    )  # order=variable
+    _ = gd.map(sns.violinplot, "value", order=None, cut=0, density_norm="count")
     _ = gd.map(
         sns.pointplot,
         "value",
-        order=None,  # "variable",
+        order=None,
         color="C3",
         estimator=np.mean,
         errorbar=("ci", 94),
@@ -390,9 +396,8 @@ def plot_float_dist(
         _ = gd.set(xscale="log")  # , title=ft, ylabel='log(count)')
 
     txtadd = kwargs.pop("txtadd", None)
-    t = "Empirical distribution"
     _ = gd.fig.suptitle(
-        " - ".join(filter(None, [t, "floats", txtadd])), y=1, fontsize=14
+        " - ".join(filter(None, [t, "floats", s, txtadd])), y=1, fontsize=14
     )
     _ = gd.fig.tight_layout(pad=0.9)
     return gd.fig
