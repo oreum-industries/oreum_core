@@ -42,6 +42,7 @@ class SnakeyLowercaser:
         self.rx_patsy_numpy = re.compile(r"^np\.(.*)\((.*)\)$")
         self.rx_patsy_interaction = re.compile(r":")
         self.rx_multi_underscore = re.compile(r"[_]{2,}")
+        self.rx_underscore_startend = re.compile(r"^\_|\_$")
 
     def clean(self, s: str) -> str:
         """Clean strings essential"""
@@ -50,7 +51,8 @@ class SnakeyLowercaser:
         s2 = self.rx_splitter1.sub(r"\1_\2 ", s1)
         s3 = "_".join(s2.lower().split())
         s4 = self.rx_multi_underscore.sub(r"_", s3)
-        return s4
+        s5 = self.rx_underscore_startend.sub(r"", s4)
+        return s5
 
     def clean_patsy(self, s: str) -> str:
         """Clean strings for patsy features"""

@@ -41,10 +41,10 @@ class TextCleaner:
             r"[{}]+".format(re.escape(string.punctuation))
         )  # regular punctuation
         self.rx_neg_apostrophe = re.compile(
-            r"""\b(ca|do|wo|is|are|was|does|
-                    shall|should|would|could|must|ai)(n)(?:\')(t)\b""",
+            r"""\b(ca|do|wo|is|are|was|does|shall|should|would|could|
+                must|might|may|ai)(n)(?:\')(t)\b""",
             re.I,
-        )  # find apsotrophes in negations
+        )  # find apostrophes in negations
         self.rx_hex = re.compile(r"=[a-f0-9]{2}", re.I)  # stray hexadecimal
         self.rx_arrows = re.compile("(>)+")  # sequences of ">" at start of line
         self.rx_repeatgt3 = re.compile(r"(.)\1{3,}")  # any char repeating more than 3x
