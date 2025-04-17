@@ -1005,7 +1005,7 @@ def plot_bootstrap_lr(
     df: pd.DataFrame,
     prm: str = "premium",
     clm: str = "claim",
-    clm_ct: str = None,  # "claim_ct",
+    clm_ct: str = None,
     ftname_year: str = "incept_year",
     pol_summary: bool = True,
     lr_summary: bool = True,
@@ -1121,7 +1121,7 @@ def plot_bootstrap_lr_grp(
     grp: str = "grp",
     prm: str = "premium",
     clm: str = "claim",
-    clm_ct: str = "claim_ct",
+    clm_ct: str = None,
     ftname_year: str = "incept_year",
     pol_summary: bool = True,
     force_xlim: list = None,
@@ -1221,13 +1221,26 @@ def plot_bootstrap_lr_grp(
     ]
 
     summary = ""
+    if clm_ct is None:
+        n_clm = ""
+    else:
+        n_clm = f"{df[clm_ct].sum():,.0f}"
+
+    # get nicer units. There's almost certainly a better way of doing this
+    exp = int(np.floor(np.log10(df["prm_written"].sum())))
+    a = np.arange(0, 12 + 1, 3)
+    u = ["", "k", "M", "B", "T"]
+    a_idx = np.argwhere(a < exp)[-1][0]
+    unit_v = a[a_idx]
+    unit_nm = u[a_idx]
+
     if pol_summary:
         summary += (
             f"Inception {str(pmin)} - {str(pmax)} inclusive, "
             + f"{len(df):,.0f} policies with "
-            + f"\\${df[prm].sum() / 1e6:.1f}M premium, "
-            + f"{df[clm_ct].sum():,.0f} claims totalling "
-            + f"\\${df[clm].sum() / 1e6:.1f}M"
+            + f"\\${df[prm].sum() / 10**unit_v:.1f}{unit_nm} premium, "
+            + f"{n_clm}claims totalling "
+            + f"\\${df[clm].sum() / 10**unit_v:.1f}{unit_nm}"
         )
 
     txtadd = kwargs.pop("txtadd", None)
