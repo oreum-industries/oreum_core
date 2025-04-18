@@ -1129,6 +1129,7 @@ def plot_bootstrap_lr_grp(
     force_xlim: list = None,
     plot_grid: bool = True,
     annot_pest: bool = False,
+    pal: str = "viridis",
     orderby: Literal["ordinal", "count", "lr"] = "ordinal",
     **kwargs,
 ) -> figure.Figure:
@@ -1185,7 +1186,7 @@ def plot_bootstrap_lr_grp(
     ax1 = f.add_subplot(gs[1], sharey=ax0)
 
     # add violinplot
-    v_kws = dict(cut=0, density_norm="count", width=0.6, palette="cubehelix_r")
+    v_kws = dict(cut=0, density_norm="count", width=0.6, palette=pal)
     _ = sns.violinplot(
         x="lr", y=grp, data=dfboot, ax=ax0, order=order_idx.values, **v_kws
     )
@@ -1215,9 +1216,7 @@ def plot_bootstrap_lr_grp(
         _ = ax0.set(xlim=force_xlim)
 
     # add countplot
-    _ = sns.countplot(
-        y=grp, data=df, order=order_idx.values, ax=ax1, palette="cubehelix_r"
-    )
+    _ = sns.countplot(y=grp, data=df, order=order_idx.values, ax=ax1, palette=pal)
     _ = [
         ax1.annotate(f"{v}", xy=(v, i % len(ct)), **sty["count_txt_h_kws"])
         for i, v in enumerate(ct)
