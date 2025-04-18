@@ -1006,6 +1006,7 @@ def plot_bootstrap_lr(
     prm: str = "premium",
     clm: str = "claim",
     clm_ct: str = None,
+    obs_unit: str = "policies",
     ftname_year: str = "incept_year",
     pol_summary: bool = True,
     lr_summary: bool = True,
@@ -1096,7 +1097,7 @@ def plot_bootstrap_lr(
     if pol_summary:
         summary += (
             f"Inception {str(pmin)} - {str(pmax)} inclusive, "
-            + f"{len(df):,.0f} policies with "
+            + f"{len(df):,.0f} {obs_unit} with "
             + f"\\${df[prm].sum() / 10**unit_v:.1f}{unit_nm} premium, "
             + f"{n_clm}claims totalling "
             + f"\\${df[clm].sum() / 10**unit_v:.1f}{unit_nm}"
@@ -1122,9 +1123,11 @@ def plot_bootstrap_lr_grp(
     prm: str = "premium",
     clm: str = "claim",
     clm_ct: str = None,
+    obs_unit: str = "policies",
     ftname_year: str = "incept_year",
     pol_summary: bool = True,
     force_xlim: list = None,
+    plot_grid: bool = True,
     annot_pest: bool = False,
     orderby: Literal["ordinal", "count", "lr"] = "ordinal",
     **kwargs,
@@ -1219,6 +1222,14 @@ def plot_bootstrap_lr_grp(
         ax1.annotate(f"{v}", xy=(v, i % len(ct)), **sty["count_txt_h_kws"])
         for i, v in enumerate(ct)
     ]
+    # make easier to read labels for the count axis..
+    # idea 1: shorten labels, doesnt work becase shared with ax0
+    # _ = ax1.set_yticks(ticks=ax1.get_yticks(), labels=[f"{lbl.get_text()[:8]}.." for lbl in ax1.get_yticklabels()])
+    # idea 2 just make invisible, and add grid lines to aid the eye
+    _ = ax1.get_yaxis().set_visible(False)
+    if plot_grid:
+        ax0.yaxis.grid(True)
+        ax1.yaxis.grid(True)
 
     summary = ""
     if clm_ct is None:
@@ -1237,7 +1248,7 @@ def plot_bootstrap_lr_grp(
     if pol_summary:
         summary += (
             f"Inception {str(pmin)} - {str(pmax)} inclusive, "
-            + f"{len(df):,.0f} policies with "
+            + f"{len(df):,.0f} {obs_unit} with "
             + f"\\${df[prm].sum() / 10**unit_v:.1f}{unit_nm} premium, "
             + f"{n_clm}claims totalling "
             + f"\\${df[clm].sum() / 10**unit_v:.1f}{unit_nm}"
