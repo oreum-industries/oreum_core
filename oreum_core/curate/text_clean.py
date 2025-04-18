@@ -40,11 +40,12 @@ class TextCleaner:
         self.rx_punct = re.compile(
             r"[{}]+".format(re.escape(string.punctuation))
         )  # regular punctuation
+        # https://en.wikipedia.org/wiki/Wikipedia:List_of_English_contractions
         self.rx_neg_apostrophe = re.compile(
-            r"""\b(ca|do|wo|is|are|was|does|
-                    shall|should|would|could|must|ai)(n)(?:\')(t)\b""",
+            r"""\b(ai|are|ca|could|did|do|does|is|had|has|hav|may|might|must|
+                    shall|should|was|were|wo|would)(n)(?:\')(t)\b""",
             re.I,
-        )  # find apsotrophes in negations
+        )
         self.rx_hex = re.compile(r"=[a-f0-9]{2}", re.I)  # stray hexadecimal
         self.rx_arrows = re.compile("(>)+")  # sequences of ">" at start of line
         self.rx_repeatgt3 = re.compile(r"(.)\1{3,}")  # any char repeating more than 3x

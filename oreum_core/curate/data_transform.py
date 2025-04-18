@@ -88,7 +88,10 @@ class DatatypeConverter:
         ]
 
     def convert_dtypes(self, dfraw: pd.DataFrame) -> pd.DataFrame:
-        """Select fts and convert dtypes. Return cleaned df"""
+        """Select fts and convert dtypes. Return cleaned df
+        TODO keep up to date with pandas missing value handling
+             https://pandas.pydata.org/docs/user_guide/missing_data.html
+        """
         snl = SnakeyLowercaser()
 
         # subselect desired fts
@@ -101,7 +104,7 @@ class DatatypeConverter:
             idx = df[ft].notnull()
             vals = df.loc[idx, ft].astype(str, errors="ignore").apply(snl.clean)
             df.drop(ft, axis=1, inplace=True)
-            df.loc[~idx, ft] = ""
+            df.loc[~idx, ft] = pd.NA
             df.loc[idx, ft] = vals
             if ft in self.ftsd["fcat"]:
                 df[ft] = pd.Categorical(df[ft].values, ordered=False)
@@ -149,8 +152,9 @@ class DatatypeConverter:
 
         for ft in self.ftsd["fdate"]:
             df[ft] = pd.to_datetime(df[ft], errors="raise", format=self.date_format)
-        try:
-            for ft in self.ftsd["fint"]:
+
+        for ft in self.ftsd["fint"]:
+            try:
                 if isinstance(df.dtypes[ft], object):
                     df[ft] = (
                         df[ft]
@@ -163,13 +167,13 @@ class DatatypeConverter:
                 df[ft] = df[ft].astype(float, errors="raise")
                 if pd.isnull(df[ft]).sum() == 0:
                     df[ft] = df[ft].astype(int, errors="raise")
-        except Exception as e:
-            raise Exception(f"{str(e)} in ft: {ft}").with_traceback(
-                e.__traceback__
-            ) from e
+            except Exception as e:
+                raise Exception(f"{str(e)} in ft: {ft}").with_traceback(
+                    e.__traceback__
+                ) from e
 
-        try:
-            for ft in self.ftsd["ffloat"]:
+        for ft in self.ftsd["ffloat"]:
+            try:
                 if isinstance(df.dtypes[ft], object):
                     df[ft] = (
                         df[ft]
@@ -180,12 +184,16 @@ class DatatypeConverter:
                     )
                     df.loc[df[ft].isin(self.strnans), ft] = np.nan
                 df[ft] = df[ft].astype(float, errors="raise")
-        except Exception as e:
-            raise e(ft) from e
+            except Exception as e:
+                raise e(ft) from e
 
-        # NOTE verbatim will simply remain. We're now at the end of the columns
-        # for ft in self.fts['fverbatim']:
-        #     _log.info(f'Kept ft verbatim: {ft}')
+        for ft in self.ftsd["fverbatim"]:
+            # just force missing to pd.NA
+            idx = df[ft].isnull()
+            df.loc[idx, ft] = pd.NA
+            _log.info(f"Kept ft verbatim: {ft}")
+
+        # NOTE we're now at the end of the columns
 
         return df[fts_all]
 

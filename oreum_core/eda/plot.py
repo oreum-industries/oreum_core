@@ -135,9 +135,9 @@ def plot_cat_ct(
     f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, 0.5 + vert * vsize))
 
     for i, ft in enumerate(fts):
-        counts_all = df.groupby(ft).size().sort_values(ascending=True)
+        counts_all = df.groupby(ft, observed=False).size().sort_values(ascending=True)
         if (df[ft].dtype == "category") & cat_order:
-            counts_all = df.groupby(ft).size()[::-1]  # need to invert
+            counts_all = df.groupby(ft, observed=False).size()[::-1]  # need to invert
 
         if df[ft].dtype == bool:
             counts_all = counts_all.sort_index()  # sort so true plots on top
@@ -322,6 +322,8 @@ def plot_float_dist(
     Plot distributions for floats
     Annotate with count of nans, infs (+/-) and zeros
     """
+    s = None
+    t = "Empirical distribution"
 
     def _annotate_facets(data, **kwargs):
         """Func to be mapped to the dataframe (named `data` by seaborn)
@@ -353,6 +355,12 @@ def plot_float_dist(
     if len(fts) == 0:
         return None
 
+    # hacky protect against massive datasets with a subsample
+    ldf = len(df)
+    if ldf > 1e5:
+        df = df.sample(n=100000, random_state=42)
+        s = f"subsample 1e5 of {ldf:.0g} total ({1e5 / ldf:.1%})"
+
     if sort:
         dfm = df[sorted(fts)].melt(var_name="variable")
     else:
@@ -370,13 +378,11 @@ def plot_float_dist(
         aspect=6,
         sharex=sharex,
     )
-    _ = gd.map(
-        sns.violinplot, "value", order=None, cut=0, density_norm="count"
-    )  # order=variable
+    _ = gd.map(sns.violinplot, "value", order=None, cut=0, density_norm="count")
     _ = gd.map(
         sns.pointplot,
         "value",
-        order=None,  # "variable",
+        order=None,
         color="C3",
         estimator=np.mean,
         errorbar=("ci", 94),
@@ -390,9 +396,8 @@ def plot_float_dist(
         _ = gd.set(xscale="log")  # , title=ft, ylabel='log(count)')
 
     txtadd = kwargs.pop("txtadd", None)
-    t = "Empirical distribution"
     _ = gd.fig.suptitle(
-        " - ".join(filter(None, [t, "floats", txtadd])), y=1, fontsize=14
+        " - ".join(filter(None, [t, "floats", s, txtadd])), y=1, fontsize=14
     )
     _ = gd.fig.tight_layout(pad=0.9)
     return gd.fig
@@ -1000,7 +1005,8 @@ def plot_bootstrap_lr(
     df: pd.DataFrame,
     prm: str = "premium",
     clm: str = "claim",
-    clm_ct: str = "claim_ct",
+    clm_ct: str = None,
+    obs_unit: str = "policies",
     ftname_year: str = "incept_year",
     pol_summary: bool = True,
     lr_summary: bool = True,
@@ -1075,13 +1081,26 @@ def plot_bootstrap_lr(
         pmax = pmax.year
 
     summary = ""
+    if clm_ct is None:
+        n_clm = ""
+    else:
+        n_clm = f"{df[clm_ct].sum():,.0f}"
+
+    # get nicer units. There's almost certainly a better way of doing this
+    exp = int(np.floor(np.log10(df["prm_written"].sum())))
+    a = np.arange(0, 12 + 1, 3)
+    u = ["", "k", "M", "B", "T"]
+    a_idx = np.argwhere(a < exp)[-1][0]
+    unit_v = a[a_idx]
+    unit_nm = u[a_idx]
+
     if pol_summary:
         summary += (
             f"Inception {str(pmin)} - {str(pmax)} inclusive, "
-            + f"{len(df):,.0f} policies with "
-            + f"\\${df[prm].sum() / 1e6:.1f}M premium, "
-            + f"{df[clm_ct].sum():,.0f} claims totalling "
-            + f"\\${df[clm].sum() / 1e6:.1f}M"
+            + f"{len(df):,.0f} {obs_unit} with "
+            + f"\\${df[prm].sum() / 10**unit_v:.1f}{unit_nm} premium, "
+            + f"{n_clm}claims totalling "
+            + f"\\${df[clm].sum() / 10**unit_v:.1f}{unit_nm}"
         )
     if lr_summary:
         summary += (
@@ -1103,11 +1122,14 @@ def plot_bootstrap_lr_grp(
     grp: str = "grp",
     prm: str = "premium",
     clm: str = "claim",
-    clm_ct: str = "claim_ct",
+    clm_ct: str = None,
+    obs_unit: str = "policies",
     ftname_year: str = "incept_year",
     pol_summary: bool = True,
     force_xlim: list = None,
+    plot_grid: bool = True,
     annot_pest: bool = False,
+    pal: str = "viridis",
     orderby: Literal["ordinal", "count", "lr"] = "ordinal",
     **kwargs,
 ) -> figure.Figure:
@@ -1164,7 +1186,7 @@ def plot_bootstrap_lr_grp(
     ax1 = f.add_subplot(gs[1], sharey=ax0)
 
     # add violinplot
-    v_kws = dict(cut=0, density_norm="count", width=0.6, palette="cubehelix_r")
+    v_kws = dict(cut=0, density_norm="count", width=0.6, palette=pal)
     _ = sns.violinplot(
         x="lr", y=grp, data=dfboot, ax=ax0, order=order_idx.values, **v_kws
     )
@@ -1194,22 +1216,41 @@ def plot_bootstrap_lr_grp(
         _ = ax0.set(xlim=force_xlim)
 
     # add countplot
-    _ = sns.countplot(
-        y=grp, data=df, order=order_idx.values, ax=ax1, palette="cubehelix_r"
-    )
+    _ = sns.countplot(y=grp, data=df, order=order_idx.values, ax=ax1, palette=pal)
     _ = [
         ax1.annotate(f"{v}", xy=(v, i % len(ct)), **sty["count_txt_h_kws"])
         for i, v in enumerate(ct)
     ]
+    # make easier to read labels for the count axis..
+    # idea 1: shorten labels, doesnt work becase shared with ax0
+    # _ = ax1.set_yticks(ticks=ax1.get_yticks(), labels=[f"{lbl.get_text()[:8]}.." for lbl in ax1.get_yticklabels()])
+    # idea 2 just make invisible, and add grid lines to aid the eye
+    _ = ax1.get_yaxis().set_visible(False)
+    if plot_grid:
+        ax0.yaxis.grid(True)
+        ax1.yaxis.grid(True)
 
     summary = ""
+    if clm_ct is None:
+        n_clm = ""
+    else:
+        n_clm = f"{df[clm_ct].sum():,.0f}"
+
+    # get nicer units. There's almost certainly a better way of doing this
+    exp = int(np.floor(np.log10(df["prm_written"].sum())))
+    a = np.arange(0, 12 + 1, 3)
+    u = ["", "k", "M", "B", "T"]
+    a_idx = np.argwhere(a < exp)[-1][0]
+    unit_v = a[a_idx]
+    unit_nm = u[a_idx]
+
     if pol_summary:
         summary += (
             f"Inception {str(pmin)} - {str(pmax)} inclusive, "
-            + f"{len(df):,.0f} policies with "
-            + f"\\${df[prm].sum() / 1e6:.1f}M premium, "
-            + f"{df[clm_ct].sum():,.0f} claims totalling "
-            + f"\\${df[clm].sum() / 1e6:.1f}M"
+            + f"{len(df):,.0f} {obs_unit} with "
+            + f"\\${df[prm].sum() / 10**unit_v:.1f}{unit_nm} premium, "
+            + f"{n_clm}claims totalling "
+            + f"\\${df[clm].sum() / 10**unit_v:.1f}{unit_nm}"
         )
 
     txtadd = kwargs.pop("txtadd", None)

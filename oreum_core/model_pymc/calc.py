@@ -536,7 +536,7 @@ def compute_log_likelihood_for_potential(
             rv: rv.clone() if rv not in model.observed_RVs else value
             for rv, value in model.rvs_to_values.items()
         }
-        model.rvs_to_transforms = {rv: None for rv in model.basic_RVs}
+        model.rvs_to_transforms = dict.fromkeys(model.basic_RVs)
 
         elemwise_loglike_fn = model.compile_fn(
             inputs=model.value_vars,
