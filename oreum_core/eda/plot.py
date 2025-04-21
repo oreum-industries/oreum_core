@@ -1496,7 +1496,7 @@ def plot_smrystat_grp(
     if topn is not None:
         ct = ct[:topn].copy()
         dfp = dfp.loc[dfp[grp].isin(ct.index.values)].copy()
-        t += f" (top {topn} levels)"
+        t += f" (top {len(ct)} levels)"
 
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
@@ -1512,7 +1512,7 @@ def plot_smrystat_grp(
 
     ax0.set_title(f"Distribution of bootstrapped {smry}")
     ax1.set_title("Distribution of indiv. values")
-    ax2.set_title(f"Count {len(ct)} lvls")
+    ax2.set_title(f"Count ({len(ct)} lvls)")
 
     if pal is None:
         pal = "viridis"
@@ -1575,6 +1575,7 @@ def plot_smrystat_grp_year(
     plot_grid: bool = True,
     yorder_count: bool = True,
     pal: sns.palettes._ColorPalette = None,
+    topn: int = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
@@ -1584,6 +1585,7 @@ def plot_smrystat_grp_year(
     sty = _get_kws_styling()
     lvls = df.groupby(grp).size().index.tolist()
     yrs = df.groupby(year).size().index.tolist()
+    t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}"
 
     f = plt.figure(figsize=(16, len(yrs) * 2 + (len(lvls) * 0.25)))
     gs = gridspec.GridSpec(len(yrs), 3, width_ratios=[5, 5, 1], figure=f)
@@ -1615,14 +1617,26 @@ def plot_smrystat_grp_year(
             plt.setp(ax1d[i].get_yticklabels(), visible=False)
             plt.setp(ax2d[i].get_yticklabels(), visible=False)
 
+        if topn is not None:
+            ct = ct[:topn].copy()
+            dfs = dfs.loc[dfs[grp].isin(ct.index.values)].copy()
+
         ax0d[i].set_title(f'Distribution of bootstrapped {smry} [{yr:"%Y"}]')
         ax1d[i].set_title(f'Distribution of indiv. values [{yr:"%Y"}]')
-        ax2d[i].set_title(f'Count [{yr:"%Y"}]')
+        ax2d[i].set_title(f'Count [{yr:"%Y"}] ({len(ct)} lvls)')
 
         if pal is None:
             pal = "viridis"
         est = np.sum if smry == "sum" else np.mean
-        kws = dict(y=grp, data=dfs, order=ct.index.values, palette=pal)
+        kws = dict(
+            y=grp,
+            data=dfs,
+            order=ct.index.values,
+            palette=pal,
+            hue=grp,
+            hue_order=ct.index.values,
+            legend=False,
+        )
         kws_point = {**kws, **dict(estimator=est, errorbar=("ci", 94))}
         kws_box = {
             **kws,
@@ -1642,7 +1656,8 @@ def plot_smrystat_grp_year(
             ax1d[i].yaxis.grid(True)
             ax2d[i].yaxis.grid(True)
 
-    t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}"
+    if topn is not None:
+        t += f" (top {len(ct)} levels)"
     txtadd = kwargs.pop("txtadd", None)
     _ = f.suptitle("\n".join(filter(None, [t, txtadd])), y=1, fontsize=14)
     _ = plt.tight_layout()
