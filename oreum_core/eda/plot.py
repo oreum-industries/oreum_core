@@ -1757,20 +1757,47 @@ def plot_kj_summaries_for_linear_model(dfp, policy_id, title_add="psi"):
 
 
 def plot_grp_ct(
-    df: pd.DataFrame, grp: str = "grp", title_add: str = ""
+    df: pd.DataFrame,
+    grp: str = "grp",
+    orderby: Literal["ordinal", "count", None] = "count",
+    topn: int = None,
+    **kwargs,
 ) -> figure.Figure:
     """Simple countplot for factors in grp, label with percentages
     Works nicely with categorical too
     """
 
-    sty = _get_kws_styling()
     if df[grp].dtypes not in ["object", "category"]:
         raise TypeError("grp must be Object (string) or Categorical")
 
-    ct = df[grp].value_counts(dropna=False)
+    t = f"Countplot: {len(df)} obs, grouped by `{grp}`"
+    sty = _get_kws_styling()
+    ct = df.groupby(grp, observed=True).size()
+
+    # create order items / index
+    if orderby == "count":
+        ct = ct.sort_values()[::-1]
+    elif orderby == "ordinal":
+        pass  # ct == ct already
+    else:
+        pass  # accept the default ordering as passed into func
+
+    if topn is not None:
+        ct = ct[:topn].copy()
+        df = df.loc[df[grp].isin(ct.index.values)].copy()
+        t += f" (top {len(ct)} levels)"
 
     f, axs = plt.subplots(1, 1, figsize=(14, 2 + (len(ct) * 0.25)))
-    _ = sns.countplot(y=grp, data=df, order=ct.index, ax=axs, palette="viridis")
+    _ = sns.countplot(
+        data=df,
+        y=grp,
+        order=ct.index,
+        hue=grp,
+        hue_order=ct.index,
+        legend=False,
+        ax=axs,
+        palette="viridis",
+    )
     _ = [
         axs.annotate(
             f"{v:.0f} ({v / len(df):.0%})",
@@ -1781,14 +1808,9 @@ def plot_grp_ct(
     ]
 
     _ = axs.set(ylabel=None)
-
-    if title_add != "":
-        title_add = f"\n{title_add}"
-
-    title = f"Countplot: {len(df)} obs, grouped by {grp}"
-    _ = f.suptitle(f"{title}{title_add}")
-
-    _ = plt.tight_layout()
+    txtadd = kwargs.pop("txtadd", None)
+    _ = f.suptitle(" - ".join(filter(None, [t, txtadd])), y=1, fontsize=14)
+    _ = f.tight_layout(pad=0.9)
 
     return f
 
