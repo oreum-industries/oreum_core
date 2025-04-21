@@ -121,7 +121,8 @@ def plot_cat_ct(
     fts: list,
     topn: int = 10,
     vsize: float = 2,
-    cat_order=True,
+    cat_order: bool = True,
+    m: int = 2,
     **kwargs,
 ) -> figure.Figure:
     """Conv fn: plot group counts for cats"""
@@ -131,8 +132,8 @@ def plot_cat_ct(
     if len(fts) == 0:
         return None
 
-    vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, 0.5 + vert * vsize))
+    vert = int(np.ceil(len(fts) / m))
+    f, ax2d = plt.subplots(vert, m, squeeze=False, figsize=(14, 0.5 + vert * vsize))
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft, observed=False).size().sort_values(ascending=True)
@@ -145,7 +146,7 @@ def plot_cat_ct(
         counts = counts_all.iloc[-topn:]
         ax = counts.plot(
             kind="barh",
-            ax=ax2d[i // 2, i % 2],
+            ax=ax2d[i // m, i % m],
             title="{}: {} factor levels".format(ft, len(counts_all)),
             label="{} NaNs".format(pd.isnull(df[ft]).sum()),
         )
