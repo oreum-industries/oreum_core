@@ -1588,7 +1588,8 @@ def plot_smrystat_grp_year(
     yrs = df.groupby(year).size().index.tolist()
     t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}"
 
-    f = plt.figure(figsize=(16, len(yrs) * 2 + (len(lvls) * 0.25)))
+    vert = min(len(lvls), topn)
+    f = plt.figure(figsize=(16, len(yrs) * 2 + (vert * 0.25)))
     gs = gridspec.GridSpec(len(yrs), 3, width_ratios=[5, 5, 1], figure=f)
     ax0d, ax1d, ax2d = {}, {}, {}
 
