@@ -1133,6 +1133,7 @@ def plot_bootstrap_lr_grp(
     annot_pest: bool = False,
     pal: str = "viridis",
     orderby: Literal["ordinal", "count", "lr"] = "ordinal",
+    topn: int = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot bootstrapped loss ratio, grouped by grp"""
@@ -1140,6 +1141,7 @@ def plot_bootstrap_lr_grp(
     dfboot = dfboot.copy()
     df = df.copy()
     sty = _get_kws_styling()
+    t = f"Bootstrapped Population Loss Ratio, grouped by {grp}"
 
     # hacky way to deal with year as int or datetime
     pmin = df[ftname_year].min()
@@ -1169,18 +1171,22 @@ def plot_bootstrap_lr_grp(
 
     # create order items / index
     if orderby == "count":
-        order_idx = df.groupby(grp).size().sort_values()[::-1].index
+        ct = ct.sort_values()[::-1]
     elif orderby == "ordinal":
-        order_idx = mn.index
+        pass  # ct == ct already
     elif orderby == "lr":
-        order_idx = mn.sort_values()[::-1].index
+        ct = ct.reindex(mn.sort_values()[::-1].index)
     else:
-        return "choose better"
+        pass  # accept the default ordering as passed into func
 
     # reorder accordingly
-    ct = ct.reindex(order_idx).values
-    mn = mn.reindex(order_idx).values
-    pest_mn = pest_mn.reindex(order_idx).values
+    mn = mn.reindex(ct.index).values
+    pest_mn = pest_mn.reindex(ct.index).values
+
+    if topn is not None:
+        ct = ct[:topn].copy()
+        dfboot = dfboot.loc[dfboot[grp].isin(ct.index.values)].copy()
+        t += f" (top {len(ct)} levels)"
 
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.3)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
@@ -1193,10 +1199,10 @@ def plot_bootstrap_lr_grp(
     # common kws
     kws = dict(
         y=grp,
-        order=order_idx.values,
+        order=ct.index.values,
         palette=pal,
         hue=grp,
-        hue_order=order_idx.values,
+        hue_order=ct.index.values,
         legend=False,
     )
     # add violinplot
@@ -1266,7 +1272,6 @@ def plot_bootstrap_lr_grp(
         )
 
     txtadd = kwargs.pop("txtadd", None)
-    t = f"Bootstrapped Distributions of Population Loss Ratio, grouped by {grp}"
     t = " - ".join(filter(None, [t, txtadd]))
     _ = f.suptitle("\n".join(filter(None, [t, summary])), y=1, fontsize=14)
     _ = f.tight_layout()
