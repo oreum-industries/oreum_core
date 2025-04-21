@@ -95,20 +95,22 @@ def _get_kws_styling() -> dict:
         mn_txt_kws=dict(
             color="#555555",
             xycoords="data",
-            xytext=(9, 11),
+            xytext=(6, 6),
             textcoords="offset points",
             fontsize=8,
-            backgroundcolor="w",
             ha="left",
+            bbox=dict(boxstyle="round,pad=0.1,rounding_size=0.1", fc="w", ec="none"),
         ),
         pest_mn_txt_kws=dict(
             color="#555555",
             xycoords="data",
-            xytext=(-9, -12),
+            xytext=(-6, -12),
             textcoords="offset points",
-            fontsize=6,
-            backgroundcolor="#c8fdf9",
+            fontsize=7,
             ha="right",
+            bbox=dict(
+                boxstyle="round,pad=0.1,rounding_size=0.1", fc="#c8fdf9", ec="none"
+            ),
         ),
     )
     kws["count_txt_h_kws"] = dict(ha="left", xytext=(4, 0), **kws["count_txt_kws"])
@@ -1180,20 +1182,30 @@ def plot_bootstrap_lr_grp(
     mn = mn.reindex(order_idx).values
     pest_mn = pest_mn.reindex(order_idx).values
 
-    f = plt.figure(figsize=(14, 2.5 + (len(mn) * 0.25)))  # , constrained_layout=True)
+    f = plt.figure(figsize=(16, 2 + (len(ct) * 0.3)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
 
-    # add violinplot
-    v_kws = dict(cut=0, density_norm="count", width=0.6, palette=pal)
-    _ = sns.violinplot(
-        x="lr", y=grp, data=dfboot, ax=ax0, order=order_idx.values, **v_kws
+    ax0.set_title("Distribution of bootstrapped LR")
+    ax1.set_title(f"Count ({len(ct)} lvls)")
+
+    # common kws
+    kws = dict(
+        y=grp,
+        order=order_idx.values,
+        palette=pal,
+        hue=grp,
+        hue_order=order_idx.values,
+        legend=False,
     )
+    # add violinplot
+    kws_vio = {**kws, **dict(cut=0, density_norm="count", width=0.6)}
+    _ = sns.violinplot(**kws_vio, x="lr", data=dfboot, ax=ax0)
 
     _ = [ax0.plot(v, i % len(mn), **sty["mn_pt_kws"]) for i, v in enumerate(mn)]
     _ = [
-        ax0.annotate(f"{v:.1%}", xy=(v, i % len(mn)), **sty["mn_txt_kws"])
+        ax0.annotate(f"{v:.1%}", xy=(v, i % len(ct)), **sty["mn_txt_kws"])
         for i, v in enumerate(mn)
     ]
     _ = [
@@ -1216,7 +1228,7 @@ def plot_bootstrap_lr_grp(
         _ = ax0.set(xlim=force_xlim)
 
     # add countplot
-    _ = sns.countplot(y=grp, data=df, order=order_idx.values, ax=ax1, palette=pal)
+    _ = sns.countplot(**kws, data=df, ax=ax1)
     _ = [
         ax1.annotate(f"{v}", xy=(v, i % len(ct)), **sty["count_txt_h_kws"])
         for i, v in enumerate(ct)
