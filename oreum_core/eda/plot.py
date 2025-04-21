@@ -1462,6 +1462,7 @@ def plot_smrystat_grp(
     plot_grid: bool = True,
     pal: sns.palettes._ColorPalette = None,
     orderby: Literal["ordinal", "count", "smrystat", None] = "ordinal",
+    topn: int = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
@@ -1471,6 +1472,7 @@ def plot_smrystat_grp(
     est = np.sum if smry == "sum" else np.mean
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
+    t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}`"
 
     if grpkind == "year":
         dfp[grp] = dfp[grp].dt.year
@@ -1491,6 +1493,11 @@ def plot_smrystat_grp(
     else:
         pass  # accept the default ordering as passed into func
 
+    if topn is not None:
+        ct = ct[:topn].copy()
+        dfp = dfp.loc[dfp[grp].isin(ct.index.values)].copy()
+        t += f" (top {topn} levels)"
+
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
@@ -1505,7 +1512,7 @@ def plot_smrystat_grp(
 
     ax0.set_title(f"Distribution of bootstrapped {smry}")
     ax1.set_title("Distribution of indiv. values")
-    ax2.set_title("Count")
+    ax2.set_title(f"Count {len(ct)} lvls")
 
     if pal is None:
         pal = "viridis"
@@ -1540,7 +1547,6 @@ def plot_smrystat_grp(
         ax1.yaxis.grid(True)
         ax2.yaxis.grid(True)
 
-    t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}`"
     txtadd = kwargs.pop("txtadd", None)
     _ = f.suptitle("\n".join(filter(None, [t, txtadd])), y=1, fontsize=14)
 
