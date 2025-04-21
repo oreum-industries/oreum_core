@@ -16,7 +16,6 @@
 """EDA Plotting"""
 
 import logging
-import re
 from copy import copy
 from typing import Literal
 
@@ -1511,7 +1510,15 @@ def plot_smrystat_grp(
     if pal is None:
         pal = "viridis"
 
-    kws = dict(y=grp, order=ct.index.values, data=dfp, palette=pal)
+    kws = dict(
+        y=grp,
+        order=ct.index.values,
+        data=dfp,
+        palette=pal,
+        hue=grp,
+        hue_order=ct.index.values,
+        legend=False,
+    )
     kws_point = {**kws, **dict(estimator=est, errorbar=("ci", 94))}
     kws_box = {
         **kws,
@@ -1565,7 +1572,7 @@ def plot_smrystat_grp_year(
     **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
-    grouped by categorical value `grp`, grouped by `year`
+    grouped by categorical value `grp`, further grouped by `year`
     """
 
     sty = _get_kws_styling()
