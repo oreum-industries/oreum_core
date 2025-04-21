@@ -16,7 +16,6 @@
 """EDA Plotting"""
 
 import logging
-import re
 from copy import copy
 from typing import Literal
 
@@ -96,20 +95,22 @@ def _get_kws_styling() -> dict:
         mn_txt_kws=dict(
             color="#555555",
             xycoords="data",
-            xytext=(9, 11),
+            xytext=(6, 6),
             textcoords="offset points",
             fontsize=8,
-            backgroundcolor="w",
             ha="left",
+            bbox=dict(boxstyle="round,pad=0.1,rounding_size=0.1", fc="w", ec="none"),
         ),
         pest_mn_txt_kws=dict(
             color="#555555",
             xycoords="data",
-            xytext=(-9, -12),
+            xytext=(-6, -12),
             textcoords="offset points",
-            fontsize=6,
-            backgroundcolor="#c8fdf9",
+            fontsize=7,
             ha="right",
+            bbox=dict(
+                boxstyle="round,pad=0.1,rounding_size=0.1", fc="#c8fdf9", ec="none"
+            ),
         ),
     )
     kws["count_txt_h_kws"] = dict(ha="left", xytext=(4, 0), **kws["count_txt_kws"])
@@ -121,7 +122,8 @@ def plot_cat_ct(
     fts: list,
     topn: int = 10,
     vsize: float = 2,
-    cat_order=True,
+    cat_order: bool = True,
+    m: int = 2,
     **kwargs,
 ) -> figure.Figure:
     """Conv fn: plot group counts for cats"""
@@ -131,8 +133,8 @@ def plot_cat_ct(
     if len(fts) == 0:
         return None
 
-    vert = int(np.ceil(len(fts) / 2))
-    f, ax2d = plt.subplots(vert, 2, squeeze=False, figsize=(12, 0.5 + vert * vsize))
+    vert = int(np.ceil(len(fts) / m))
+    f, ax2d = plt.subplots(vert, m, squeeze=False, figsize=(14, 0.5 + vert * vsize))
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft, observed=False).size().sort_values(ascending=True)
@@ -145,7 +147,7 @@ def plot_cat_ct(
         counts = counts_all.iloc[-topn:]
         ax = counts.plot(
             kind="barh",
-            ax=ax2d[i // 2, i % 2],
+            ax=ax2d[i // m, i % m],
             title="{}: {} factor levels".format(ft, len(counts_all)),
             label="{} NaNs".format(pd.isnull(df[ft]).sum()),
         )
@@ -1131,6 +1133,7 @@ def plot_bootstrap_lr_grp(
     annot_pest: bool = False,
     pal: str = "viridis",
     orderby: Literal["ordinal", "count", "lr"] = "ordinal",
+    topn: int = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot bootstrapped loss ratio, grouped by grp"""
@@ -1138,6 +1141,7 @@ def plot_bootstrap_lr_grp(
     dfboot = dfboot.copy()
     df = df.copy()
     sty = _get_kws_styling()
+    t = f"Bootstrapped Population Loss Ratio, grouped by {grp}"
 
     # hacky way to deal with year as int or datetime
     pmin = df[ftname_year].min()
@@ -1167,33 +1171,47 @@ def plot_bootstrap_lr_grp(
 
     # create order items / index
     if orderby == "count":
-        order_idx = df.groupby(grp).size().sort_values()[::-1].index
+        ct = ct.sort_values()[::-1]
     elif orderby == "ordinal":
-        order_idx = mn.index
+        pass  # ct == ct already
     elif orderby == "lr":
-        order_idx = mn.sort_values()[::-1].index
+        ct = ct.reindex(mn.sort_values()[::-1].index)
     else:
-        return "choose better"
+        pass  # accept the default ordering as passed into func
 
     # reorder accordingly
-    ct = ct.reindex(order_idx).values
-    mn = mn.reindex(order_idx).values
-    pest_mn = pest_mn.reindex(order_idx).values
+    mn = mn.reindex(ct.index).values
+    pest_mn = pest_mn.reindex(ct.index).values
 
-    f = plt.figure(figsize=(14, 2.5 + (len(mn) * 0.25)))  # , constrained_layout=True)
+    if topn is not None:
+        ct = ct[:topn].copy()
+        dfboot = dfboot.loc[dfboot[grp].isin(ct.index.values)].copy()
+        t += f" (top {len(ct)} levels)"
+
+    f = plt.figure(figsize=(16, 2 + (len(ct) * 0.3)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
 
-    # add violinplot
-    v_kws = dict(cut=0, density_norm="count", width=0.6, palette=pal)
-    _ = sns.violinplot(
-        x="lr", y=grp, data=dfboot, ax=ax0, order=order_idx.values, **v_kws
+    ax0.set_title("Distribution of bootstrapped LR")
+    ax1.set_title(f"Count ({len(ct)} lvls)")
+
+    # common kws
+    kws = dict(
+        y=grp,
+        order=ct.index.values,
+        palette=pal,
+        hue=grp,
+        hue_order=ct.index.values,
+        legend=False,
     )
+    # add violinplot
+    kws_vio = {**kws, **dict(cut=0, density_norm="count", width=0.6)}
+    _ = sns.violinplot(**kws_vio, x="lr", data=dfboot, ax=ax0)
 
     _ = [ax0.plot(v, i % len(mn), **sty["mn_pt_kws"]) for i, v in enumerate(mn)]
     _ = [
-        ax0.annotate(f"{v:.1%}", xy=(v, i % len(mn)), **sty["mn_txt_kws"])
+        ax0.annotate(f"{v:.1%}", xy=(v, i % len(ct)), **sty["mn_txt_kws"])
         for i, v in enumerate(mn)
     ]
     _ = [
@@ -1216,7 +1234,7 @@ def plot_bootstrap_lr_grp(
         _ = ax0.set(xlim=force_xlim)
 
     # add countplot
-    _ = sns.countplot(y=grp, data=df, order=order_idx.values, ax=ax1, palette=pal)
+    _ = sns.countplot(**kws, data=df, ax=ax1)
     _ = [
         ax1.annotate(f"{v}", xy=(v, i % len(ct)), **sty["count_txt_h_kws"])
         for i, v in enumerate(ct)
@@ -1254,7 +1272,6 @@ def plot_bootstrap_lr_grp(
         )
 
     txtadd = kwargs.pop("txtadd", None)
-    t = f"Bootstrapped Distributions of Population Loss Ratio, grouped by {grp}"
     t = " - ".join(filter(None, [t, txtadd]))
     _ = f.suptitle("\n".join(filter(None, [t, summary])), y=1, fontsize=14)
     _ = f.tight_layout()
@@ -1462,6 +1479,7 @@ def plot_smrystat_grp(
     plot_grid: bool = True,
     pal: sns.palettes._ColorPalette = None,
     orderby: Literal["ordinal", "count", "smrystat", None] = "ordinal",
+    topn: int = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
@@ -1471,6 +1489,7 @@ def plot_smrystat_grp(
     est = np.sum if smry == "sum" else np.mean
     idx = df[val].notnull()
     dfp = df.loc[idx].copy()
+    t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}`"
 
     if grpkind == "year":
         dfp[grp] = dfp[grp].dt.year
@@ -1491,6 +1510,11 @@ def plot_smrystat_grp(
     else:
         pass  # accept the default ordering as passed into func
 
+    if topn is not None:
+        ct = ct[:topn].copy()
+        dfp = dfp.loc[dfp[grp].isin(ct.index.values)].copy()
+        t += f" (top {len(ct)} levels)"
+
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
@@ -1505,12 +1529,20 @@ def plot_smrystat_grp(
 
     ax0.set_title(f"Distribution of bootstrapped {smry}")
     ax1.set_title("Distribution of indiv. values")
-    ax2.set_title("Count")
+    ax2.set_title(f"Count ({len(ct)} lvls)")
 
     if pal is None:
         pal = "viridis"
 
-    kws = dict(y=grp, order=ct.index.values, data=dfp, palette=pal)
+    kws = dict(
+        y=grp,
+        order=ct.index.values,
+        data=dfp,
+        palette=pal,
+        hue=grp,
+        hue_order=ct.index.values,
+        legend=False,
+    )
     kws_point = {**kws, **dict(estimator=est, errorbar=("ci", 94))}
     kws_box = {
         **kws,
@@ -1532,7 +1564,6 @@ def plot_smrystat_grp(
         ax1.yaxis.grid(True)
         ax2.yaxis.grid(True)
 
-    t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}`"
     txtadd = kwargs.pop("txtadd", None)
     _ = f.suptitle("\n".join(filter(None, [t, txtadd])), y=1, fontsize=14)
 
@@ -1559,32 +1590,48 @@ def plot_smrystat_grp_year(
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
-    yorder_count: bool = True,
     pal: sns.palettes._ColorPalette = None,
+    orderby: Literal["ordinal", "count", "smrystat", None] = "ordinal",
+    topn: int = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
-    grouped by categorical value `grp`, grouped by `year`
+    grouped by categorical value `grp`, further grouped by `year`
     """
 
     sty = _get_kws_styling()
+    est = np.sum if smry == "sum" else np.mean
     lvls = df.groupby(grp).size().index.tolist()
     yrs = df.groupby(year).size().index.tolist()
+    t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}"
 
-    f = plt.figure(figsize=(16, len(yrs) * 2 + (len(lvls) * 0.25)))
+    vert = min(len(lvls), topn)
+    f = plt.figure(figsize=(16, len(yrs) * 2 + (vert * 0.25)))
     gs = gridspec.GridSpec(len(yrs), 3, width_ratios=[5, 5, 1], figure=f)
     ax0d, ax1d, ax2d = {}, {}, {}
 
     for i, yr in enumerate(yrs):  # ugly loop over years
         dfs = df.loc[df[year] == yr].copy()
-        grpsort = sorted(dfs[grp].unique())  # dont need to invert?? [::-1]
 
         if dfs[grp].dtypes not in ["object", "category", "string"]:
             dfs[grp] = dfs[grp].map(lambda x: f"s{x}")
-            grpsort = [f"s{x}" for x in grpsort]
 
-        sz = dfs.groupby(grp).size()
-        ct = sz.sort_values()[::-1] if yorder_count else sz.reindex(grpsort)
+        ct = dfs.groupby(grp, observed=True).size()
+        smrystat = dfs.groupby(grp, observed=True)[val].apply(est)
+
+        # create order items / index
+        if orderby == "count":
+            ct = ct.sort_values()[::-1]
+        elif orderby == "ordinal":
+            pass  # ct == ct already
+        elif orderby == "smrystat":
+            ct = ct.reindex(smrystat.sort_values()[::-1].index)
+        else:
+            pass  # accept the default ordering as passed into func
+
+        if topn is not None:
+            ct = ct[:topn].copy()
+            dfs = dfs.loc[dfs[grp].isin(ct.index.values)].copy()
 
         if i == 0:
             ax0d[i] = f.add_subplot(gs[i, 0])
@@ -1603,12 +1650,20 @@ def plot_smrystat_grp_year(
 
         ax0d[i].set_title(f'Distribution of bootstrapped {smry} [{yr:"%Y"}]')
         ax1d[i].set_title(f'Distribution of indiv. values [{yr:"%Y"}]')
-        ax2d[i].set_title(f'Count [{yr:"%Y"}]')
+        ax2d[i].set_title(f'Count [{yr:"%Y"}] ({len(ct)} lvls)')
 
         if pal is None:
             pal = "viridis"
         est = np.sum if smry == "sum" else np.mean
-        kws = dict(y=grp, data=dfs, order=ct.index.values, palette=pal)
+        kws = dict(
+            y=grp,
+            data=dfs,
+            order=ct.index.values,
+            palette=pal,
+            hue=grp,
+            hue_order=ct.index.values,
+            legend=False,
+        )
         kws_point = {**kws, **dict(estimator=est, errorbar=("ci", 94))}
         kws_box = {
             **kws,
@@ -1628,7 +1683,8 @@ def plot_smrystat_grp_year(
             ax1d[i].yaxis.grid(True)
             ax2d[i].yaxis.grid(True)
 
-    t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}"
+    if topn is not None:
+        t += f" (top {len(ct)} levels)"
     txtadd = kwargs.pop("txtadd", None)
     _ = f.suptitle("\n".join(filter(None, [t, txtadd])), y=1, fontsize=14)
     _ = plt.tight_layout()

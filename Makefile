@@ -9,8 +9,8 @@
 	    test-dev-env test-dl-ins uninstall-env uninstall-mamba
 MAMBADL := https://github.com/conda-forge/miniforge/releases/download/24.11.3-0
 MAMBAV := Miniforge3-MacOSX-arm64.sh
-MAMBARCMSG := Please create file $(MAMBARC), importantly set `platform: osx-arm64`
 MAMBARC := $(HOME)/.mambarc
+MAMBARCMSG := Please create file $(MAMBARC), importantly set \`platform: osx-arm64\`
 MAMBADIR := $(HOME)/miniforge
 PYTHON_DEFAULT = $(or $(shell which python3), $(shell which python))
 PYTHON_ENV = $(MAMBADIR)/envs/oreum_core/bin/python
