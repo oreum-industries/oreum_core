@@ -1573,8 +1573,8 @@ def plot_smrystat_grp_year(
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
-    yorder_count: bool = True,
     pal: sns.palettes._ColorPalette = None,
+    orderby: Literal["ordinal", "count", "smrystat", None] = "ordinal",
     topn: int = None,
     **kwargs,
 ) -> figure.Figure:
@@ -1583,6 +1583,7 @@ def plot_smrystat_grp_year(
     """
 
     sty = _get_kws_styling()
+    est = np.sum if smry == "sum" else np.mean
     lvls = df.groupby(grp).size().index.tolist()
     yrs = df.groupby(year).size().index.tolist()
     t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}"
@@ -1593,14 +1594,26 @@ def plot_smrystat_grp_year(
 
     for i, yr in enumerate(yrs):  # ugly loop over years
         dfs = df.loc[df[year] == yr].copy()
-        grpsort = sorted(dfs[grp].unique())  # dont need to invert?? [::-1]
 
         if dfs[grp].dtypes not in ["object", "category", "string"]:
             dfs[grp] = dfs[grp].map(lambda x: f"s{x}")
-            grpsort = [f"s{x}" for x in grpsort]
 
-        sz = dfs.groupby(grp).size()
-        ct = sz.sort_values()[::-1] if yorder_count else sz.reindex(grpsort)
+        ct = dfs.groupby(grp, observed=True).size()
+        smrystat = dfs.groupby(grp, observed=True)[val].apply(est)
+
+        # create order items / index
+        if orderby == "count":
+            ct = ct.sort_values()[::-1]
+        elif orderby == "ordinal":
+            pass  # ct == ct already
+        elif orderby == "smrystat":
+            ct = ct.reindex(smrystat.sort_values()[::-1].index)
+        else:
+            pass  # accept the default ordering as passed into func
+
+        if topn is not None:
+            ct = ct[:topn].copy()
+            dfs = dfs.loc[dfs[grp].isin(ct.index.values)].copy()
 
         if i == 0:
             ax0d[i] = f.add_subplot(gs[i, 0])
@@ -1616,10 +1629,6 @@ def plot_smrystat_grp_year(
             ax2d[i].yaxis.label.set_visible(False)
             plt.setp(ax1d[i].get_yticklabels(), visible=False)
             plt.setp(ax2d[i].get_yticklabels(), visible=False)
-
-        if topn is not None:
-            ct = ct[:topn].copy()
-            dfs = dfs.loc[dfs[grp].isin(ct.index.values)].copy()
 
         ax0d[i].set_title(f'Distribution of bootstrapped {smry} [{yr:"%Y"}]')
         ax1d[i].set_title(f'Distribution of indiv. values [{yr:"%Y"}]')
