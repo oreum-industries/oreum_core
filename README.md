@@ -52,6 +52,7 @@ This package **is not**:
 + See `LICENCE.md` for licensing and copyright details
 + See `pyproject.toml` for various package details
 + This uses a logger named `'oreum_core'`, feel free to incorporate or ignore
+  see `__init__.py` for details
 + Hosting:
   + Source code repo on [GitHub](https://github.com/oreum-industries/oreum_core)
   + Source code release on [GitHub](https://github.com/oreum-industries/oreum_core/releases)
@@ -74,11 +75,11 @@ For local development on MacOS
 ### 2.0 Pre-requisite installs via `homebrew`
 
 1. Install Homebrew, see instructions at [https://brew.sh](https://brew.sh)
-2. Install `direnv`, `git`, `git-lfs`, `graphviz`, `zsh`
+2. Install `direnv`, `git`, `git-lfs`, `graphviz`, `tad`, `zsh`
 
 ```zsh
 $> brew update && upgrade
-$> brew install direnv git git-lfs graphviz zsh
+$> brew install direnv git git-lfs graphviz tad zsh
 ```
 
 ### 2.1 Git clone the repo

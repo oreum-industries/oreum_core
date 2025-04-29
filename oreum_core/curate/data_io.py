@@ -21,14 +21,16 @@ import logging
 import subprocess
 from pathlib import Path
 
+import dask.dataframe as dd
 import pandas as pd
 
 from ..utils.file_io import BaseFileIO
 
 __all__ = [
-    "PandasParquetIO",
+    "DaskParquetIO",
     "PandasCSVIO",
     "PandasExcelIO",
+    "PandasParquetIO",
     "SimpleStringIO",
     "copy_csv2md",
 ]
@@ -36,28 +38,29 @@ __all__ = [
 _log = logging.getLogger(__name__)
 
 
-class PandasParquetIO(BaseFileIO):
-    """Simple helper class to read/write pandas to parquet, including path and
-    extension checking.
+class DaskParquetIO(BaseFileIO):
+    """Simple helper class to read/write dask dataframes to parquet, including
+    path and extension checking.
     """
 
     def __init__(self, *args, **kwargs):
         """Inherit super"""
         super().__init__(*args, **kwargs)
 
-    def read(self, fn: str, *args, **kwargs) -> pd.DataFrame:
-        """Read parquet fn from rootdir, pass args kwargs to pd.read_parquet"""
+    def read(self, fn: str, *args, **kwargs) -> dd.DataFrame:
+        """Read parquet fn from rootdir, pass args kwargs to dask.read_parquet"""
         fn = Path(fn).with_suffix(".parquet")
         fqn = self.get_path_read(fn)
         _log.info(f"Read from {str(fqn.resolve())}")
-        return pd.read_parquet(str(fqn), *args, **kwargs)
+        return dd.read_parquet(path=fqn, *args, **kwargs)
 
-    def write(self, df: pd.DataFrame, fn: str, *args, **kwargs) -> Path:
-        """Accept pandas DataFrame and fn e.g. `df.parquet`, write to fqn"""
-        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".parquet"))
-        df.to_parquet(str(fqn), *args, **kwargs)
-        _log.info(f"Written to {str(fqn.resolve())}")
-        return fqn
+    def write(self, ddf: dd.DataFrame, fn: str, *args, **kwargs) -> Path:
+        """Accept dask DataFrame and fn e.g. `df.parquet`, write to fqn"""
+        raise NotImplementedError
+        # fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".parquet"))
+        # ddf.to_parquet(path=fqn, *args, **kwargs)
+        # _log.info(f"Written to {str(fqn.resolve())}")
+        # return fqn
 
 
 class PandasCSVIO(BaseFileIO):
@@ -74,7 +77,7 @@ class PandasCSVIO(BaseFileIO):
         fn = Path(fn).with_suffix(".csv")
         fqn = self.get_path_read(fn)
         _log.info(f"Read from {str(fqn.resolve())}")
-        return pd.read_csv(str(fqn), *args, **kwargs)
+        return pd.read_csv(fqn, *args, **kwargs)
 
     def write(self, df: pd.DataFrame, fn: str, *args, **kwargs) -> str:
         """Accept pandas DataFrame and fn e.g. `df`, write to fn.csv
@@ -85,7 +88,7 @@ class PandasCSVIO(BaseFileIO):
         kws.update(quoting=csv.QUOTE_NONNUMERIC)
         if (len(df.index.names) == 1) & (df.index.names[0] is None):
             kws.update(index_label="rowid")
-        df.to_csv(str(fqn), *args, **kws)
+        df.to_csv(fqn, *args, **kws)
         _log.info(f"Written to {str(fqn.resolve())}")
         return fqn
 
@@ -106,12 +109,12 @@ class PandasExcelIO(BaseFileIO):
         fn = Path(fn).with_suffix(".xlsx")
         fqn = self.get_path_read(fn)
         _log.info(f"Read from {str(fqn.resolve())}")
-        return pd.read_excel(str(fqn), *args, **kwargs)
+        return pd.read_excel(fqn, *args, **kwargs)
 
     def write(self, df: pd.DataFrame, fn: str, *args, **kwargs) -> Path:
         """Accept pandas DataFrame and fn e.g. `df.xlsx`, write to fqn."""
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".xlsx"))
-        writer = pd.ExcelWriter(str(fqn), engine="xlsxwriter")
+        writer = pd.ExcelWriter(fqn, engine="xlsxwriter")
         df.to_excel(writer, *args, **kwargs)
         writer.close()
         _log.info(f"Written to {str(fqn.resolve())}")
@@ -140,6 +143,30 @@ class PandasExcelIO(BaseFileIO):
             del self.fqn
             del self.writer
             return fqn
+
+
+class PandasParquetIO(BaseFileIO):
+    """Simple helper class to read/write pandas to parquet, including path and
+    extension checking.
+    """
+
+    def __init__(self, *args, **kwargs):
+        """Inherit super"""
+        super().__init__(*args, **kwargs)
+
+    def read(self, fn: str, *args, **kwargs) -> pd.DataFrame:
+        """Read parquet fn from rootdir, pass args kwargs to pd.read_parquet"""
+        fn = Path(fn).with_suffix(".parquet")
+        fqn = self.get_path_read(fn)
+        _log.info(f"Read from {str(fqn.resolve())}")
+        return pd.read_parquet(path=fqn, *args, **kwargs)
+
+    def write(self, df: pd.DataFrame, fn: str, *args, **kwargs) -> Path:
+        """Accept pandas DataFrame and fn e.g. `df.parquet`, write to fqn"""
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".parquet"))
+        df.to_parquet(path=fqn, *args, **kwargs)
+        _log.info(f"Written to {str(fqn.resolve())}")
+        return fqn
 
 
 class SimpleStringIO(BaseFileIO):

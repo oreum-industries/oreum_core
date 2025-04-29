@@ -10,7 +10,8 @@
 		"editor.unusualLineTerminators": "off",
 		"cSpell.enabled": true,
 		"cSpell.enabledFileTypes": {
-			"jupyter": true
+			"jupyter": true,
+			"*": false,
 		}
 	}
 }
