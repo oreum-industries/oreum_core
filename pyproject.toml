@@ -27,6 +27,7 @@ classifiers = [
 ]
 dependencies = [
     "csv2md>=1.1.2",
+    "dask",
     "fastparquet",  # not available in pandas v2.0 optional deps
     "ftfy>=5.4.1",  # NOTE MacOS has 6.3.1
     "matplotlib>=3.10.0",  # v3.8.0
