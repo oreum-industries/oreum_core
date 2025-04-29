@@ -40,6 +40,7 @@ def describe(
     get_cr94: bool = False,
     reset_index: bool = True,
     return_df: bool = False,
+    subsample: bool = False,
     **kwargs,
 ) -> pd.DataFrame | None:
     """Concat transposed topN rows, numerical desc & dtypes
@@ -48,23 +49,30 @@ def describe(
     Assume df has index.
     """
 
+    df = df.copy()
     len_idx = df.index.nlevels
-    note = ""
-    if nfeats + len_idx < df.shape[1]:
-        note = "NOTE: nfeats + index shown {} < width {}".format(
-            nfeats + len_idx, df.shape[1]
-        )
     nbytes = df.values.nbytes
     _log.info(f"Shape: {df.shape}")
     _log.info(f"Memsize: {nbytes // 1e6:,.1f} MB")
     _log.info(f"Index levels: {df.index.names}")
-    _log.info(f"{note}")
+    if nfeats + len_idx < df.shape[1]:
+        _log.info(
+            f"NOTE: nfeats + index shown {nfeats + len_idx}" + f" < width {df.shape[1]}"
+        )
 
     limit *= 1e6
-    if df.values.nbytes > limit:
-        return f"Array memsize {nbytes // 1e6:,.1f} MB > {limit / 1e6:,.1f} MB limit"
+    if nbytes > limit:
+        txt = (
+            f"Array memsize {nbytes // 1e6:,.1f} MB >" + f" {limit / 1e6:,.1f} MB limit"
+        )
+        if subsample:
+            df = df.sample(frac=(limit * 0.99) / nbytes, random_state=42)
+            nobs = min(nobs, len(df))
+            _log.info(txt + f", taking a subsample of {len(df)} rows")
+        else:
+            _log.error(txt)
+            return None
 
-    df = df.copy()
     if reset_index:
         idx_new_names = [f"index: {c}" for c in list(df.index.names)]
         col_names = list(df.columns.values)
