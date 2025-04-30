@@ -16,7 +16,6 @@
 """Data Descriptions"""
 
 import logging
-from copy import copy
 
 import numpy as np
 import pandas as pd
@@ -57,11 +56,13 @@ def describe(
     _log.info(f"Shape: {shape}")
     _log.info(f"Memsize: {nbytes // 1e6:,.1f} MB")
     _log.info(f"Index levels: {df.index.names}")
+
     if nfeats + len_idx < shape[1]:
         _log.info(
             f"NOTE: nfeats + index shown {nfeats + len_idx}" + f" < width {shape[1]}"
         )
 
+    txtadd = kwargs.pop("txtadd", None)
     limit *= 1e6
     if nbytes > limit:
         txt = (
@@ -69,8 +70,8 @@ def describe(
         )
         if subsample:
             df = df.sample(frac=(limit * 0.99) / nbytes, random_state=42)
-            nbytes_pre = copy(nbytes)
-            shape_pre = copy(shape)
+            t = f"subsampled from Shape: {shape}, Memsize {nbytes / 1e6:,.1f} MB"
+            txtadd = ", ".join(filter(None, [t, txtadd]))
             nbytes = df.values.nbytes
             shape = df.shape
             nobs = min(nobs, len(df))
@@ -163,12 +164,7 @@ def describe(
     if return_df:
         return dfout
     else:
-        kws_out = dict(max_rows=nfeats, shape=shape, nbytes=nbytes)
-        if subsample:
-            kws_out["txtadd"] = (
-                f"subsampled from Shape: {shape_pre},"
-                + f" Memsize {nbytes_pre / 1e6:,.1f} MB"
-            )
+        kws_out = dict(max_rows=nfeats, shape=shape, nbytes=nbytes, txtadd=txtadd)
         display_fw(dfout.iloc[: nfeats + len_idx, :], **kws_out, **kwargs)
 
 
