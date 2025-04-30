@@ -16,6 +16,7 @@
 """Various classes & functions for data curation"""
 
 from .data_io import (
+    DaskParquetIO,
     PandasCSVIO,
     PandasExcelIO,
     PandasParquetIO,
