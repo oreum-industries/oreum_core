@@ -1179,14 +1179,14 @@ def plot_bootstrap_lr_grp(
     else:
         pass  # accept the default ordering as passed into func
 
-    # reorder accordingly
-    mn = mn.reindex(ct.index).values
-    pest_mn = pest_mn.reindex(ct.index).values
-
     if topn is not None:
         ct = ct[:topn].copy()
         dfboot = dfboot.loc[dfboot[grp].isin(ct.index.values)].copy()
         t += f" (top {len(ct)} levels)"
+
+    # reorder accordingly
+    mn = mn.reindex(ct.index).values
+    pest_mn = pest_mn.reindex(ct.index).values
 
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.3)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
@@ -1211,7 +1211,7 @@ def plot_bootstrap_lr_grp(
 
     _ = [ax0.plot(v, i % len(mn), **sty["mn_pt_kws"]) for i, v in enumerate(mn)]
     _ = [
-        ax0.annotate(f"{v:.1%}", xy=(v, i % len(ct)), **sty["mn_txt_kws"])
+        ax0.annotate(f"{v:.1%}", xy=(v, i % len(mn)), **sty["mn_txt_kws"])
         for i, v in enumerate(mn)
     ]
     _ = [
