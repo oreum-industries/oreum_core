@@ -359,9 +359,9 @@ def plot_float_dist(
 
     # hacky protect against massive datasets with a subsample
     ldf = len(df)
-    if ldf > 1e5:
-        df = df.sample(n=100000, random_state=42)
-        s = f"subsample 1e5 of {ldf:.0g} total ({1e5 / ldf:.1%})"
+    if ldf > 1e6:
+        df = df.sample(n=1000000, random_state=42)
+        s = f"subsample 1e6 of {ldf:.0g} total obs ({1e6 / ldf:.1%})"
 
     if sort:
         dfm = df[sorted(fts)].melt(var_name="variable")
@@ -1089,7 +1089,7 @@ def plot_bootstrap_lr(
         n_clm = f"{df[clm_ct].sum():,.0f}"
 
     # get nicer units. There's almost certainly a better way of doing this
-    exp = int(np.floor(np.log10(df["prm_written"].sum())))
+    exp = int(np.floor(np.log10(df[prm].sum())))
     a = np.arange(0, 12 + 1, 3)
     u = ["", "k", "M", "B", "T"]
     a_idx = np.argwhere(a < exp)[-1][0]
@@ -1255,7 +1255,7 @@ def plot_bootstrap_lr_grp(
         n_clm = f"{df[clm_ct].sum():,.0f}"
 
     # get nicer units. There's almost certainly a better way of doing this
-    exp = int(np.floor(np.log10(df["prm_written"].sum())))
+    exp = int(np.floor(np.log10(df[prm].sum())))
     a = np.arange(0, 12 + 1, 3)
     u = ["", "k", "M", "B", "T"]
     a_idx = np.argwhere(a < exp)[-1][0]

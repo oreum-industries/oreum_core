@@ -53,8 +53,6 @@ class DatatypeConverter:
                 fint = [],
                 ffloat = [],
                 fverbatim = [],        # maintain in current dtype)
-
-        Use ftsordlvl for ordinal categoricals
         """
         self.ftsd = dict(
             fcat=ftsd.get("fcat", []),
