@@ -48,8 +48,8 @@ class DatatypeConverter:
                 fstr = [],  # rarely used e.g. freetext strings / IDs
                 fbool = [],
                 fbool_nan_to_false = [],
-                fdate = [],
-                fyear = [],
+                fdate = [],  # transform dates as str into datetime
+                fyear = [],  # transform years as num/str into datetime
                 fint = [],
                 ffloat = [],
                 fverbatim = [],        # maintain in current dtype)
@@ -104,6 +104,7 @@ class DatatypeConverter:
             df.drop(ft, axis=1, inplace=True)
             df.loc[~idx, ft] = pd.NA
             df.loc[idx, ft] = vals
+            df.loc[df[ft].isin(self.strnans), ft] = pd.NA  # str reps of nulls
             if ft in self.ftsd["fcat"]:
                 df[ft] = pd.Categorical(df[ft].values, ordered=False)
             else:

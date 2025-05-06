@@ -46,10 +46,10 @@ class SnakeyLowercaser:
 
     def clean(self, s: str) -> str:
         """Clean strings essential"""
-        s0 = self.rx_to_underscore.sub(r"_", str(s))
+        s0 = self.rx_to_underscore.sub(r"_", str(s).strip().lower())
         s1 = self.rx_punct.sub("", s0)
         s2 = self.rx_splitter1.sub(r"\1_\2 ", s1)
-        s3 = "_".join(s2.lower().split())
+        s3 = "_".join(s2.split())
         s4 = self.rx_multi_underscore.sub(r"_", s3)
         s5 = self.rx_underscore_startend.sub(r"", s4)
         return s5
