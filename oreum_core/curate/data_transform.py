@@ -107,8 +107,6 @@ class DatatypeConverter:
             df.loc[df[ft].isin(self.strnans), ft] = pd.NA  # str reps of nulls
             if ft in self.ftsd["fcat"]:
                 df[ft] = pd.Categorical(df[ft].values, ordered=False)
-            else:
-                df[ft] = df[ft].astype(str)
 
         for ft, lvls in self.ftsd["ford"].items():
             df[ft] = pd.Categorical(df[ft].values, categories=lvls, ordered=True)
