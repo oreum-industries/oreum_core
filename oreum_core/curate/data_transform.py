@@ -113,7 +113,8 @@ class DatatypeConverter:
 
         for ft in self.ftsd["fbool"] + self.ftsd["fbool_nan_to_false"]:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
-            if not isinstance(df.dtypes[ft], bool):
+            # if not isinstance(df.dtypes[ft], bool):
+            if df.dtypes[ft].type != np.bool:
                 df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
                 df.loc[df[ft].isin(self.strnans), ft] = pd.NA
                 df[ft] = df[ft].apply(lambda x: self.bool_dict.get(x, x))
