@@ -66,7 +66,7 @@ This package **is not**:
   + Once installed (see section 2), see `LICENSES_THIRD_PARTY.md` for full
     details of all package licences
 + Environments: this project was originally developed on a Macbook Air M2
-  (Apple Silicon ARM64) running MacOS 15.2 (Sequoia) using `osx-arm64` Accelerate
+  (Apple Silicon ARM64) running MacOS 15.5 (Sequoia) using `osx-arm64` Accelerate
 
 ## 2. Instructions to Create Dev Environment
 

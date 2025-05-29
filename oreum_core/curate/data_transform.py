@@ -113,7 +113,7 @@ class DatatypeConverter:
 
         for ft in self.ftsd["fbool"] + self.ftsd["fbool_nan_to_false"]:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
-            if isinstance(df.dtypes[ft], object):
+            if not isinstance(df.dtypes[ft], bool):
                 df[ft] = df[ft].apply(lambda x: str(x).strip().lower())
                 df.loc[df[ft].isin(self.strnans), ft] = pd.NA
                 df[ft] = df[ft].apply(lambda x: self.bool_dict.get(x, x))
@@ -129,7 +129,7 @@ class DatatypeConverter:
                 else:
                     # ft not yet properly mapped,
                     raise ValueError(
-                        f"{ft} contains values incompatible with np.bool or pd.Boolean"
+                        f"{ft} contains values ({set_tf_only}) incompatible with np.bool or pd.Boolean"
                     )
 
         for ft in self.ftsd["fyear"]:
