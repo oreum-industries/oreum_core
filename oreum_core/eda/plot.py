@@ -1513,6 +1513,7 @@ def plot_smrystat_grp(
     if topn is not None:
         ct = ct[:topn].copy()
         dfp = dfp.loc[dfp[grp].isin(ct.index.values)].copy()
+        dfp[grp] = dfp[grp].cat.remove_unused_categories()
         t += f" (top {len(ct)} levels)"
 
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
@@ -1632,6 +1633,7 @@ def plot_smrystat_grp_year(
         if topn is not None:
             ct = ct[:topn].copy()
             dfs = dfs.loc[dfs[grp].isin(ct.index.values)].copy()
+            dfs[grp] = dfs[grp].cat.remove_unused_categories()
 
         if i == 0:
             ax0d[i] = f.add_subplot(gs[i, 0])
