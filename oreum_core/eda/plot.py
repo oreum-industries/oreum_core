@@ -1511,9 +1511,11 @@ def plot_smrystat_grp(
         pass  # accept the default ordering as passed into func
 
     if topn is not None:
+        orig_lvls = len(ct)
         ct = ct[:topn].copy()
         dfp = dfp.loc[dfp[grp].isin(ct.index.values)].copy()
-        t += f" (top {len(ct)} levels)"
+        dfp[grp] = dfp[grp].cat.remove_unused_categories()
+        t += f" (top {len(ct)} of {orig_lvls} levels)"
 
     f = plt.figure(figsize=(16, 2 + (len(ct) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 3, width_ratios=[5, 5, 1], figure=f)
@@ -1632,6 +1634,7 @@ def plot_smrystat_grp_year(
         if topn is not None:
             ct = ct[:topn].copy()
             dfs = dfs.loc[dfs[grp].isin(ct.index.values)].copy()
+            dfs[grp] = dfs[grp].cat.remove_unused_categories()
 
         if i == 0:
             ax0d[i] = f.add_subplot(gs[i, 0])

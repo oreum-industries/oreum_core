@@ -66,7 +66,7 @@ class BaseFileIO:
         return fqn
 
 
-def check_fqns_exist(fqns: dict[str:Path]) -> bool:
+def check_fqns_exist(fqns: dict[str, Path]) -> bool:
     """Basic checks files required are present"""
     for _, path in fqns.items():
         if not path.resolve().exists():

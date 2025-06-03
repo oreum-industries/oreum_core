@@ -12,6 +12,11 @@
 		"cSpell.enabledFileTypes": {
 			"jupyter": true,
 			"*": false,
-		}
+		},
+		"cSpell.words": [
+			"FZCO",
+			"IFZA",
+			"Oreum"
+		]
 	}
 }
