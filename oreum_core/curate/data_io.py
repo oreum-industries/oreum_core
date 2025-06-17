@@ -18,7 +18,7 @@
 import csv
 import json
 import logging
-import pickle
+import pickle  # nosec B403
 import subprocess
 from pathlib import Path
 
@@ -189,9 +189,9 @@ class PickleIO(BaseFileIO):
         fqn = self.get_path_read(Path(fn).with_suffix(".pickle"))
         with open(str(fqn.resolve()), f"r{self.k[0]}") as f:
             if self.k == "bytes":
-                obj = pickle.load(f)
+                obj = pickle.load(f)  # nosec B301
             else:
-                obj = pickle.loads(f)
+                obj = pickle.loads(f)  # nosec B301
         _log.info(f"Read pickled object as {self.k} from {str(fqn.resolve())}")
         return obj
 
