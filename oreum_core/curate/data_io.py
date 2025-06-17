@@ -184,7 +184,7 @@ class PickleIO(BaseFileIO):
         else:
             raise AttributeError("kind must be in {'bytes', 'str'}")
 
-    def read(self, fn: str, *args, **kwargs) -> object:
+    def read(self, fn: str) -> object:
         """Read pickle fn from rootdir, load pickle, return object"""
         fqn = self.get_path_read(Path(fn).with_suffix(".pickle"))
         with open(str(fqn.resolve()), f"r{self.k[0]}") as f:
@@ -195,11 +195,11 @@ class PickleIO(BaseFileIO):
         _log.info(f"Read pickled object as {self.k} from {str(fqn.resolve())}")
         return obj
 
-    def write(self, obj: object, fn: str, *args, **kwargs) -> Path:
+    def write(self, obj: object, fn: str) -> Path:
         """Write object to pickle, write to fqn"""
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".pickle"))
         with open(str(fqn.resolve()), f"w{self.k[0]}") as f:
-            if self.k == "b":
+            if self.k == "bytes":
                 pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
             else:
                 pickle.dumps(obj, f, pickle.HIGHEST_PROTOCOL)
