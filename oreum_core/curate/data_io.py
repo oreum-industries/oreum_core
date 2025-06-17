@@ -18,6 +18,7 @@
 import csv
 import json
 import logging
+import pickle
 import subprocess
 from pathlib import Path
 
@@ -31,6 +32,7 @@ __all__ = [
     "PandasCSVIO",
     "PandasExcelIO",
     "PandasParquetIO",
+    "PickleIO",
     "SimpleStringIO",
     "copy_csv2md",
 ]
@@ -169,6 +171,42 @@ class PandasParquetIO(BaseFileIO):
         return fqn
 
 
+class PickleIO(BaseFileIO):
+    """Simple helper class to read/write objects to pickle, including path and
+    extension checking.
+    """
+
+    def __init__(self, kind: str = "bytes", *args, **kwargs):
+        """Inherit super"""
+        super().__init__(*args, **kwargs)
+        if kind in ["bytes", "str"]:
+            self.k = kind
+        else:
+            raise AttributeError("kind must be in {'bytes', 'str'}")
+
+    def read(self, fn: str, *args, **kwargs) -> object:
+        """Read pickle fn from rootdir, load pickle, return object"""
+        fqn = self.get_path_read(Path(fn).with_suffix(".pickle"))
+        with open(str(fqn.resolve()), f"r{self.k[0]}") as f:
+            if self.k == "bytes":
+                obj = pickle.load(f)
+            else:
+                obj = pickle.loads(f)
+        _log.info(f"Read pickled object as {self.k} from {str(fqn.resolve())}")
+        return obj
+
+    def write(self, obj: object, fn: str, *args, **kwargs) -> Path:
+        """Write object to pickle, write to fqn"""
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".pickle"))
+        with open(str(fqn.resolve()), f"w{self.k[0]}") as f:
+            if self.k == "b":
+                pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+            else:
+                pickle.dumps(obj, f, pickle.HIGHEST_PROTOCOL)
+        _log.info(f"Pickled obj as {self.k} to {str(fqn.resolve())}")
+        return fqn
+
+
 class SimpleStringIO(BaseFileIO):
     """Helper class to read/write stringlike objects to txt or json files
     Set kind to
@@ -179,15 +217,16 @@ class SimpleStringIO(BaseFileIO):
     def __init__(self, kind: str = "txt", *args, **kwargs):
         """Init for txt and json only"""
         super().__init__(*args, **kwargs)
-        assert kind in set(["txt", "json"]), "kind must be in {'txt', 'json'}"
-        self.kind = kind
+        if kind in ["txt", "json"]:
+            self.kind = kind
+        else:
+            raise AttributeError("kind must be in {'txt', 'json'}")
 
     def read(self, fn: str) -> str:
         """Read a file from fn according to kind of this object"""
         fqn = self.get_path_read(fn)
         with open(str(fqn), "r") as f:
             s = f.read().rstrip("\n")
-            f.close()
         _log.info(f"Read text from {str(fqn.resolve())}")
         if self.kind == "json":
             s = json.loads(s)
@@ -199,7 +238,6 @@ class SimpleStringIO(BaseFileIO):
             s = json.dumps(s)
         with open(str(fqn), "w") as f:
             f.write(f"{s}\n")
-            f.close()
         _log.info(f"Written to {str(fqn.resolve())}")
         return fqn
 
