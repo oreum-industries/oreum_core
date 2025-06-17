@@ -38,7 +38,8 @@ class XGBIO(BaseFileIO):
 
     def read(self, fn: str) -> Booster:
         """Read XGB.core.Booster object from fn e.g. `bst.json`"""
-        fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix(".json"))
+        fn = Path(fn).with_suffix(".json")
+        fqn = self.get_path_read(fn)
         bst = Booster()
         bst.load_model(fname=str(fqn.resolve()))
         _log.info(f"Read Booster model data from {str(fqn.resolve())}")

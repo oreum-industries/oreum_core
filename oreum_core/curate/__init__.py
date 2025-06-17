@@ -20,6 +20,7 @@ from .data_io import (
     PandasCSVIO,
     PandasExcelIO,
     PandasParquetIO,
+    PickleIO,
     SimpleStringIO,
     copy_csv2md,
 )
