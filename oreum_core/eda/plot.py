@@ -273,6 +273,7 @@ def plot_int_dist(
     vsize: float = 1.5,
     bins: int = None,
     plot_zeros: bool = True,
+    ecdf: bool = False,
     **kwargs,
 ) -> figure.Figure:
     """Plot group counts as histogram (optional log)"""
@@ -292,14 +293,17 @@ def plot_int_dist(
         n_zeros = (df[ft] == 0).sum()
         if not plot_zeros:
             df = df.loc[df[ft] != 0].copy()
+        kws_hist = dict(stat="count")
+        if ecdf:
+            kws_hist = dict(stat="proportion", cumulative=True)
         ax = sns.histplot(
             df.loc[df[ft].notnull(), ft],
             kde=False,
-            stat="count",
             bins=bins,
             label=f"NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}, med: {med:.2f}",
             color=sns.color_palette()[i % 7],
             ax=ax1d[i][0],
+            **kws_hist,
         )
         if log:
             _ = ax.set(yscale="log", title=ft, ylabel="log(count)")
