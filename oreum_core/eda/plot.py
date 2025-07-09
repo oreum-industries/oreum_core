@@ -294,8 +294,12 @@ def plot_int_dist(
         if not plot_zeros:
             df = df.loc[df[ft] != 0].copy()
         kws_hist = dict(stat="count")
+        legpos = "upper right"
+        t = "Empirical distribution"
         if ecdf:
             kws_hist = dict(stat="proportion", cumulative=True)
+            legpos = "lower right"
+            t += " ECDF"
         ax = sns.histplot(
             df.loc[df[ft].notnull(), ft],
             kde=False,
@@ -306,10 +310,9 @@ def plot_int_dist(
             **kws_hist,
         )
         if log:
-            _ = ax.set(yscale="log", title=ft, ylabel="log(count)")
-        _ = ax.set(title=ft, ylabel="count", xlabel=None)  # 'value'
-        _ = ax.legend(loc="upper right")
-    t = "Empirical distribution"
+            _ = ax.set(yscale="log", title=ft, ylabel=f"log({kws_hist['stat']})")
+        _ = ax.set(title=ft, ylabel=kws_hist["stat"], xlabel=None)
+        _ = ax.legend(loc=legpos)
     txtadd = kwargs.pop("txtadd", None)
     _ = f.suptitle(" - ".join(filter(None, [t, "ints", txtadd])), y=1, fontsize=14)
     _ = f.tight_layout(pad=0.9)
