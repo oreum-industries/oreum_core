@@ -273,10 +273,19 @@ def plot_int_dist(
     vsize: float = 1.5,
     bins: int = None,
     plot_zeros: bool = True,
+    ecdf: bool = False,
     **kwargs,
 ) -> figure.Figure:
     """Plot group counts as histogram (optional log)"""
-    # handle under/over selecting fts
+    kws_hist = dict(stat="count")
+    legpos = "upper right"
+    t = "Empirical distribution"
+    if ecdf:
+        kws_hist = dict(stat="proportion", cumulative=True)
+        legpos = "lower right"
+        t += " ECDF"
+
+    # handles under/over selecting fts
     fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
@@ -295,17 +304,16 @@ def plot_int_dist(
         ax = sns.histplot(
             df.loc[df[ft].notnull(), ft],
             kde=False,
-            stat="count",
             bins=bins,
             label=f"NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}, med: {med:.2f}",
             color=sns.color_palette()[i % 7],
             ax=ax1d[i][0],
+            **kws_hist,
         )
         if log:
-            _ = ax.set(yscale="log", title=ft, ylabel="log(count)")
-        _ = ax.set(title=ft, ylabel="count", xlabel=None)  # 'value'
-        _ = ax.legend(loc="upper right")
-    t = "Empirical distribution"
+            _ = ax.set(yscale="log", title=ft, ylabel=f"log({kws_hist['stat']})")
+        _ = ax.set(title=ft, ylabel=kws_hist["stat"], xlabel=None)
+        _ = ax.legend(loc=legpos)
     txtadd = kwargs.pop("txtadd", None)
     _ = f.suptitle(" - ".join(filter(None, [t, "ints", txtadd])), y=1, fontsize=14)
     _ = f.tight_layout(pad=0.9)

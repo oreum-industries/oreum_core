@@ -9,7 +9,6 @@
 [![code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![code style: interrogate](https://raw.githubusercontent.com/oreum-industries/oreum_core/master/assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
 [![code security: bandit](https://img.shields.io/badge/code%20security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
-<!-- [![Conda Forge](https://img.shields.io/conda/vn/oreum-industries/oreum_core.svg)](https://anaconda.org/oreum-industries/oreum_core) -->
 
 ---
 

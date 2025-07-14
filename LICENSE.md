@@ -3,7 +3,7 @@
 This License pertains to `oreum_core` hosted on
 [Oreum Industries' GitHub](https://github.com/oreum-industries/oreum_core)
 
-Copyright 2024 Oreum FZCO t/a Oreum Industries. All rights reserved.
+Copyright 2025 Oreum FZCO t/a Oreum Industries. All rights reserved.
 Oreum FZCO, IFZA, Dubai Silicon Oasis, Dubai, UAE, reg. 25515
 [oreum.io](https://oreum.io)
 
