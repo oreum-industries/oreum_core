@@ -277,7 +277,15 @@ def plot_int_dist(
     **kwargs,
 ) -> figure.Figure:
     """Plot group counts as histogram (optional log)"""
-    # handle under/over selecting fts
+    kws_hist = dict(stat="count")
+    legpos = "upper right"
+    t = "Empirical distribution"
+    if ecdf:
+        kws_hist = dict(stat="proportion", cumulative=True)
+        legpos = "lower right"
+        t += " ECDF"
+
+    # handles under/over selecting fts
     fts = list(set.intersection(set(df.columns.tolist()), set(fts)))
     if len(fts) == 0:
         return None
@@ -293,13 +301,6 @@ def plot_int_dist(
         n_zeros = (df[ft] == 0).sum()
         if not plot_zeros:
             df = df.loc[df[ft] != 0].copy()
-        kws_hist = dict(stat="count")
-        legpos = "upper right"
-        t = "Empirical distribution"
-        if ecdf:
-            kws_hist = dict(stat="proportion", cumulative=True)
-            legpos = "lower right"
-            t += " ECDF"
         ax = sns.histplot(
             df.loc[df[ft].notnull(), ft],
             kde=False,
