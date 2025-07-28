@@ -35,7 +35,7 @@ dependencies = [
     "pandas[excel,parquet,plot]>=2.2.0",  # brings many deps see DEPS NOTE
     "patsy>=1.0.1",  # TODO consider using formulae instead  v0.5.6
     "scikit-learn>=1.6.0",
-    "scipy<=1.15.3",  # upper pin @2025-07-14 due to https://github.com/statsmodels/statsmodels/issues/9542
+    "scipy<=1.16.1",  # upper pin @2025-07-14 due to https://github.com/statsmodels/statsmodels/issues/9542
     "seaborn<0.14", # 0.14 likely to break many plots, approach with caution
     "statsmodels>=0.14.0",
     "umap-learn",
