@@ -57,7 +57,7 @@ dev = [
 ]
 pymc = [
     "graphviz<=0.18",  # NOTE capped https://stackoverflow.com/a/69997168/4473230
-    "pymc==5.20.*",  # latest as-at 2025-01-24, brings many deps see DEPS NOTE
+    "pymc>=5.20,<5.27",  # latest as-at 2025-01-24, brings many deps see DEPS NOTE
 ]
 tree = [
     "catboost",  # beats xgboost often, ref: https://arxiv.org/pdf/2305.02997.pdf
