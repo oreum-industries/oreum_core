@@ -121,7 +121,7 @@ def plot_cat_ct(
     df: pd.DataFrame,
     fts: list,
     topn: int = 10,
-    vsize: float = 2,
+    vsize: float = 1.8,
     cat_order: bool = True,
     m: int = 2,
     **kwargs,
@@ -180,7 +180,7 @@ def plot_cat_ct(
 
 
 def plot_bool_ct(
-    df: pd.DataFrame, fts: list, vsize: float = 1.5, **kwargs
+    df: pd.DataFrame, fts: list, vsize: float = 1.4, **kwargs
 ) -> figure.Figure:
     """Conv fn: plot group counts for bools"""
 
@@ -270,7 +270,7 @@ def plot_int_dist(
     df: pd.DataFrame,
     fts: list,
     log: bool = False,
-    vsize: float = 1.5,
+    vsize: float = 1.4,
     bins: int = None,
     plot_zeros: bool = True,
     ecdf: bool = False,
@@ -384,7 +384,7 @@ def plot_float_dist(
         row="variable",
         hue="variable",
         palette=sns.color_palette(),
-        height=2,
+        height=1.8,
         aspect=6,
         sharex=sharex,
     )
