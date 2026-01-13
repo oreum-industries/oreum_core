@@ -9,7 +9,7 @@ jobs:
     name: Rebase `deps` with `master`
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
           ref: deps
