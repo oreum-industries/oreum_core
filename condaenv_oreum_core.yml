@@ -20,4 +20,4 @@ dependencies:
 - conda-forge::libblas=*[build=*accelerate]  # see NOTES
 - conda-forge::libcblas=*[build=*accelerate]  # see NOTES
 - conda-forge::liblapack=*[build=*accelerate]  # see NOTES
-- conda-forge::python==3.12.*
+- conda-forge::python==3.13.*
