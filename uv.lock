@@ -1178,6 +1178,7 @@ wheels = [
 
 [[package]]
 name = "oreum-core"
+version = "0.11.2"
 source = { editable = "." }
 dependencies = [
     { name = "csv2md" },

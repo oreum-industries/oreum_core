@@ -2,14 +2,14 @@
 # NOTE:
 # + Intended for install on MacOS Apple Silicon arm64 using Accelerate
 # + Uses local sh: optionallay confirm shell create recipe w/ $(info $(SHELL))
-# + Defaults to PUBLISH_FROM_DEV (override for github actions in publish.yml)
-.PHONY: brew build cleanup dev dev-test dev-uninstall help lint lint-ci \
-	publish publish-test test-pkg-dl
-.SILENT: brew build cleanup dev dev-test dev-uninstall help lint lint-ci \
-	publish publish-test test-pkg-dl
+# + Defaults to CI=0 (override for github actions in publish.yml)
+.PHONY: brew build dev dev-test dev-uninstall help lint publish publish-test \
+	test-pkg-dl
+.SILENT: brew build dev dev-test dev-uninstall help lint publish publish-test \
+	test-pkg-dl
 PYTHON_NONVENV = $(or $(shell which python3), $(shell which python))
 VERSION := $(shell echo $(VVERSION) | sed 's/v//')
-PUBLISH_FROM_DEV?=1
+CI?=0
 
 brew:
 	@echo "Install system-level packages for local dev on MacOS using brew..."
@@ -19,8 +19,13 @@ brew:
 build:
 	@echo "Build package oreum_core..."
 	rm -rf dist
-	uv sync --extra pub;
-	. .venv/bin/activate; \
+	if [ $(CI) -eq 1 ]; then \
+		$(PYTHON_NONVENV) -m pip install uv; \
+	fi;
+	@uv venv .venv-temp; \
+	trap "rm -rf .venv-temp" EXIT; \
+	uv pip install --python .venv-temp flit keyring; \
+	. .venv-temp/bin/activate; \
 		export SOURCE_DATE_EPOCH=$(shell date +%s); \
 		python -m flit build;
 
@@ -53,14 +58,16 @@ help:
 	@echo "  dev            create local dev env"
 	@echo "  dev-test       test local dev env: numeric packages"
 	@echo "  dev-uninstall  uninstall dev env"
-	@echo "  lint           run lint & static checks on local dev machine"
-	@echo "  lint-ci        run lint & static checks on ci"
+	@echo "  lint           run lint & static checks"
 	@echo "  publish        all-in-one build and publish to pypi"
 	@echo "  publish-test   all-in-one build and publish to testpypi"
 	@echo "  test-pkg-dl    test dl & install from testpypi"
 
 lint:
 	@echo "Run lint & format and static checks..."
+	if [ $(CI) -eq 1 ]; then \
+		$(PYTHON_NONVENV) -m pip install uv; \
+	fi;
 	@uv venv .venv-temp; \
 	trap "rm -rf .venv-temp" EXIT; \
 	uv pip install --python .venv-temp bandit interrogate ruff; \
@@ -70,43 +77,48 @@ lint:
 		interrogate --config pyproject.toml oreum_core/; \
 		bandit --config pyproject.toml -r oreum_core/ -f json -o reports/bandit-report.json;
 
-lint-ci:
-	@echo "Run lint / format and static checks on CI/CD (installs uv)..."
-	$(PYTHON_NONVENV) -m pip install uv;
-	make lint;
-
 publish:
 	@echo "All-in-one build and publish to pypi..."
-	uv sync --extra pub;
-	source .venv/bin/activate; \
+	if [ $(CI) -eq 1 ]; then \
+		$(PYTHON_NONVENV) -m pip install uv; \
+	fi;
+	@uv venv .venv-temp; \
+	trap "rm -rf .venv-temp" EXIT; \
+	uv pip install --python .venv-temp flit keyring; \
+	source .venv-temp/bin/activate; \
 		export SOURCE_DATE_EPOCH="$(shell date +%s)"; \
 		export FLIT_INDEX_URL="https://upload.pypi.org/legacy/"; \
-		if [ $(PUBLISH_FROM_DEV) -eq 1 ]; then \
+		if [ $(CI) -eq 1 ]; then \
+			python -m flit publish; \
+		else \
 			set -a; \
 			. .env; \
 			set +a; \
 			export FLIT_USERNAME="$$FLIT_USERNAME"; \
 			export FLIT_PASSWORD="$$FLIT_PASSWORD_PYPI"; \
 			python -m flit publish; \
-		else \
-			python -m flit publish; \
 		fi;
 
 
 publish-test:
 	@echo "All-in-one build and publish to testpypi..."
-	uv sync --extra pub;
-	source .venv/bin/activate; \
+	if [ $(CI) -eq 1 ]; then \
+		$(PYTHON_NONVENV) -m pip install uv; \
+	fi;
+	@uv venv .venv-temp; \
+	trap "rm -rf .venv-temp" EXIT; \
+	uv pip install --python .venv-temp flit keyring; \
+	source .venv-temp/bin/activate; \
 		export SOURCE_DATE_EPOCH="$(shell date +%s)"; \
 		export FLIT_INDEX_URL="https://test.pypi.org/legacy/"; \
-		if [ $(PUBLISH_FROM_DEV) = 1 ]; then \
+		if [ $(CI) -eq 1 ]; then \
+			python -m flit publish; \
+		else \
 			set -a; \
 			. .env; \
 			set +a; \
 			export FLIT_USERNAME="$$FLIT_USERNAME"; \
 			export FLIT_PASSWORD="$$FLIT_PASSWORD_TESTPYPI"; \
-			python -m flit publish; \
-		else \
 			python -m flit publish; \
 		fi;
 

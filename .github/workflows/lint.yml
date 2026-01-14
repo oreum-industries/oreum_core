@@ -40,7 +40,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Run checks of code lint, format and static security
-        run: make lint-ci
+        run: make lint CI=1
 
       - name: Upload static security report
         uses: actions/upload-artifact@v6
