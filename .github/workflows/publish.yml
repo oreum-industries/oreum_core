@@ -53,7 +53,7 @@ jobs:
         env:
           FLIT_USERNAME: __token__
           FLIT_PASSWORD: ${{ secrets.TESTPYPI_TOKEN_OREUM_CORE_GITHUB }}
-        run: make publish-test
+        run: make publish-test PUBLISH_FROM_DEV=0
       - name: Test download and install package from TestPyPI
         env:
           VVERSION: '${{ github.ref_name }}'
@@ -77,7 +77,7 @@ jobs:
         env:
           FLIT_USERNAME: __token__
           FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN_OREUM_CORE_GITHUB }}
-        run: make publish
+        run: make publish PUBLISH_FROM_DEV=0
 
 
 # NOTE

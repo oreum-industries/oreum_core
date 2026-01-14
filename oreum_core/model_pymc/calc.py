@@ -259,7 +259,7 @@ def calc_rmse(
 def calc_r2(y: np.ndarray, yhat: np.ndarray) -> tuple[np.ndarray, pd.Series]:
     """Calculate R2 at mean and quantiles (summary stats)
     shapes: y (nobs), yhat (nobs, nsamples)
-    $$R^{2} = 1 - \frac{\sum e_{model}^{2}}{\sum e_{mean}^{2}}$$
+    $$R^{2} = 1 - \\frac{\\sum e_{model}^{2}}{\\sum e_{mean}^{2}}$$
     R2 normal range [0, 1]
     """
     sse_mean = np.sum((y - y.mean(axis=0)) ** 2)

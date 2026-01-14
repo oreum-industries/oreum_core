@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-Apache2.0-blue.svg)](https://choosealicense.com/licenses/apache-2.0/)
 [![GitHub Release](https://img.shields.io/github/v/release/oreum-industries/oreum_core?display_name=tag&sort=semver)](https://github.com/oreum-industries/oreum_core/releases)
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
-[![CI](https://github.com/oreum-industries/oreum_core/workflows/ci/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/ci.yml)
+[![CI](https://github.com/oreum-industries/oreum_core/workflows/lint/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/lint.yml)
 [![publish](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml)
 [![code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![code style: interrogate](https://raw.githubusercontent.com/oreum-industries/oreum_core/master/assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
@@ -197,6 +197,28 @@ oreum_core.code-workspace
 .vscode/extensions.json
 .vscode/settings.json
 ```
+
+### 2.6 Publishing to PyPi
+
+A note for maintainers (Oreum Industries only), publishing to pypi, ensure
+local dev machine presence of the following in a config file `~/.pypirc`
+
+```yaml
+[distutils]
+index-servers =
+   pypi
+   testpypi
+
+[pypi]
+repository = https://upload.pypi.org/legacy/
+username = __token__
+
+[testpypi]
+repository = https://test.pypi.org/legacy/
+username = __token__
+
+```
+
 ---
 
 ## 3. Code Standards

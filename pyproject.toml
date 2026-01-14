@@ -32,7 +32,7 @@ dependencies = [
     "ftfy",
     "matplotlib",
     "matplotlib-inline",
-    "pandas[excel,parquet,plot]",  # brings many deps see DEPS NOTE
+    "pandas[excel,parquet,plot]==2.3.*",  # conservative pin since 3.0 not stable
     "patsy",  # TODO consider using formulae instead
     "scikit-learn",
     "scipy",
