@@ -82,18 +82,20 @@ publish:
 	if [ $(CI) -eq 1 ]; then \
 		$(PYTHON_NONVENV) -m pip install uv; \
 	fi;
-	uv sync --extra pub;
-	source .venv/bin/activate; \
+	@uv venv .venv-temp; \
+	trap "rm -rf .venv-temp" EXIT; \
+	uv pip install --python .venv-temp flit keyring; \
+	source .venv-temp/bin/activate; \
 		export SOURCE_DATE_EPOCH="$(shell date +%s)"; \
 		export FLIT_INDEX_URL="https://upload.pypi.org/legacy/"; \
-		if [ $(CI) -eq 0 ]; then \
+		if [ $(CI) -eq 1 ]; then \
+			python -m flit publish; \
+		else \
 			set -a; \
 			. .env; \
 			set +a; \
 			export FLIT_USERNAME="$$FLIT_USERNAME"; \
 			export FLIT_PASSWORD="$$FLIT_PASSWORD_PYPI"; \
-			python -m flit publish; \
-		else \
 			python -m flit publish; \
 		fi;
 
@@ -103,8 +105,10 @@ publish-test:
 	if [ $(CI) -eq 1 ]; then \
 		$(PYTHON_NONVENV) -m pip install uv; \
 	fi;
-	uv sync --extra pub;
-	source .venv/bin/activate; \
+	@uv venv .venv-temp; \
+	trap "rm -rf .venv-temp" EXIT; \
+	uv pip install --python .venv-temp flit keyring; \
+	source .venv-temp/bin/activate; \
 		export SOURCE_DATE_EPOCH="$(shell date +%s)"; \
 		export FLIT_INDEX_URL="https://test.pypi.org/legacy/"; \
 		if [ $(CI) -eq 1 ]; then \
