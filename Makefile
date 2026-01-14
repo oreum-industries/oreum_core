@@ -1,13 +1,15 @@
 # Makefile
 # NOTE:
 # + Intended for install on MacOS Apple Silicon arm64 using Accelerate
-# + Uses local zsh, server sh: confirm shell create recipe w/ $(info $(SHELL))
+# + Uses local sh: optionallay confirm shell create recipe w/ $(info $(SHELL))
+# + Defaults to PUBLISH_FROM_DEV (override for github actions in publish.yml)
 .PHONY: brew build cleanup dev dev-test dev-uninstall help lint lint-ci \
 	publish publish-test test-pkg-dl
 .SILENT: brew build cleanup dev dev-test dev-uninstall help lint lint-ci \
 	publish publish-test test-pkg-dl
 PYTHON_NONVENV = $(or $(shell which python3), $(shell which python))
 VERSION := $(shell echo $(VVERSION) | sed 's/v//')
+PUBLISH_FROM_DEV?=1
 
 brew:
 	@echo "Install system-level packages for local dev on MacOS using brew..."
@@ -75,17 +77,37 @@ publish:
 	@echo "All-in-one build and publish to pypi..."
 	uv sync --extra pub;
 	source .venv/bin/activate; \
-		export SOURCE_DATE_EPOCH=$(shell date +%s); \
-		export FLIT_INDEX_URL=https://upload.pypi.org/legacy/; \
-		python -m flit publish
+		export SOURCE_DATE_EPOCH="$(shell date +%s)"; \
+		export FLIT_INDEX_URL="https://upload.pypi.org/legacy/"; \
+		if [ $(PUBLISH_FROM_DEV) -eq 1 ]; then \
+			set -a; \
+			. .env; \
+			set +a; \
+			export FLIT_USERNAME="$$FLIT_USERNAME"; \
+			export FLIT_PASSWORD="$$FLIT_PASSWORD_PYPI"; \
+			python -m flit publish; \
+		else \
+			python -m flit publish; \
+		fi;
+
 
 publish-test:
 	@echo "All-in-one build and publish to testpypi..."
 	uv sync --extra pub;
 	source .venv/bin/activate; \
-		export SOURCE_DATE_EPOCH=$(shell date +%s); \
-		export FLIT_INDEX_URL=https://test.pypi.org/legacy/; \
-		python -m flit publish
+		export SOURCE_DATE_EPOCH="$(shell date +%s)"; \
+		export FLIT_INDEX_URL="https://test.pypi.org/legacy/"; \
+		if [ $(PUBLISH_FROM_DEV) = 1 ]; then \
+			set -a; \
+			. .env; \
+			set +a; \
+			export FLIT_USERNAME="$$FLIT_USERNAME"; \
+			export FLIT_PASSWORD="$$FLIT_PASSWORD_TESTPYPI"; \
+			python -m flit publish; \
+		else \
+			python -m flit publish; \
+		fi;
+
 
 test-pkg-dl:
 	@echo "Test pkg dl&install from testpypi. Set $VERSION. Not using venv..."
@@ -94,3 +116,15 @@ test-pkg-dl:
 	$(PYTHON_NONVENV) -m pip index versions --pre -i https://test.pypi.org/simple/ oreum_core
 	$(PYTHON_NONVENV) -m pip install --pre -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple oreum_core==$(VERSION)
 	$(PYTHON_NONVENV) -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'"
+
+
+# # Source - https://stackoverflow.com/a
+# # Posted by MadScientist
+# # Retrieved 2026-01-14, License - CC BY-SA 4.0
+
+# mytarget:
+# 	@if [ "$(PUBLISH_FROM_DEV)" = "1" ]; then \
+# 		echo dev environment; \
+# 	else \
+# 		echo not dev environment; \
+# 	fi
