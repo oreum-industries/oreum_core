@@ -1,10 +1,10 @@
 # .pre-commit-config.yaml
 default_language_version:
-  python: python3.12
+  python: python3.13
 default_stages: [pre-commit, pre-push]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks  # general checks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
         args: ['--maxkb=1024']
@@ -31,13 +31,13 @@ repos:
       - id: no-print-statements
         files: ^oreum_core/
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.7
+    rev: v0.14.11
     hooks:
       - id: ruff   # lint
         args: [ --fix]
       - id: ruff-format  # formatter
   - repo: https://github.com/pycqa/bandit  # basic security checks for python code
-    rev: 1.8.3
+    rev: 1.9.2
     hooks:
       - id: bandit
         files: ^oreum_core/

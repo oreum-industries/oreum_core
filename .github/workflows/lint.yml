@@ -1,0 +1,51 @@
+name: lint
+
+# triger on PRs into master and pushes to master
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+# use lowest perms
+permissions:
+  actions: read
+  checks: write
+  contents: read
+  pull-requests: read
+
+# concurrency: cancel same job already in-progress, to be efficient
+concurrency:
+    group: ${{ github.workflow }}-${{  github.ref }}
+    cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint - Run checks of code lint, format and static security
+    timeout-minutes: 5
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: ["ubuntu-latest"]
+        python-version: ["3.13"]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup python env ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run checks of code lint, format and static security
+        run: make lint-ci
+
+      - name: Upload static security report
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: upload-security-report
+          path: reports/bandit-report.json
+          retention-days: 90

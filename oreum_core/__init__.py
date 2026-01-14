@@ -1,4 +1,4 @@
-# Copyright 2024 Oreum Industries
+# Copyright 2026 Oreum Industries
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 import logging
 
-__version__ = "0.10.15"
+__version__ = "0.11.0"
 
 # logger goes to null handler by default
 # packages that import oreum_core can override this and direct elsewhere

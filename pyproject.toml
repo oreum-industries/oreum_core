@@ -9,7 +9,7 @@ dynamic = ["version"]
 readme = "README.md"
 license = {file = "LICENSE.md"}
 authors = [{ name = "Oreum Industries", email = "info@oreum.io" },]
-requires-python = "==3.12.*"
+requires-python = "==3.13.*"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
@@ -20,34 +20,35 @@ classifiers = [
     "Operating System :: Unix",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Scientific/Engineering :: Visualization",
 ]
 dependencies = [
-    "csv2md>=1.1.2",
+    "csv2md",
     "dask",
     "fastparquet",  # not available in pandas v2.0 optional deps
-    "ftfy>=5.4.1",  # NOTE MacOS has 6.3.1
-    "matplotlib>=3.10.0",  # v3.8.0
-    "matplotlib-inline>=0.1.7",  # v0.1.7 seems okay
-    "pandas[excel,parquet,plot]>=2.2.0",  # brings many deps see DEPS NOTE
-    "patsy>=1.0.1",  # TODO consider using formulae instead  v0.5.6
-    "scikit-learn>=1.6.0",
-    "scipy<=1.15.3",  # upper pin @2025-07-14 due to https://github.com/statsmodels/statsmodels/issues/9542
+    "ftfy",
+    "matplotlib",
+    "matplotlib-inline",
+    "pandas[excel,parquet,plot]",  # brings many deps see DEPS NOTE
+    "patsy",  # TODO consider using formulae instead
+    "scikit-learn",
+    "scipy",
     "seaborn<0.14", # 0.14 likely to break many plots, approach with caution
-    "statsmodels>=0.14.0",
+    "statsmodels",
     "umap-learn",
 ]
 
 [project.optional-dependencies]
-all = ["oreum_core[dev,pymc,tree]"]
 dev = [
     "bandit",
     "hypothesis",
     "interrogate",
     "ipython",
+    "meson",  # used by numpy test (fortran)
+    "ninja",  # used by numpy test (fortran)
     "pipdeptree",
     "pip-licenses",
     "pooch",  # for scipy.test
@@ -55,24 +56,28 @@ dev = [
     "pytest",
     "ruff",
 ]
+pub = [
+    "flit",
+    "keyring",
+]
 pymc = [
-    "graphviz<=0.18",  # NOTE capped https://stackoverflow.com/a/69997168/4473230
-    "pymc==5.20.*",  # latest as-at 2025-01-24, brings many deps see DEPS NOTE
+    "graphviz",
+    "pymc",
 ]
 tree = [
-    "catboost",  # beats xgboost often, ref: https://arxiv.org/pdf/2305.02997.pdf
-    "category_encoders>=2.8.0",  # brings many deps see DEPS NOTE
-    "graphviz<=0.18",  # NOTE capped https://stackoverflow.com/a/69997168/4473230
-    "optuna>=4.2.0",  # brings many deps see DEPS NOTE
+    "catboost",
+    "category_encoders",  # brings many deps see DEPS NOTE
+    "graphviz",
+    "optuna",  # brings many deps see DEPS NOTE
     "optuna-integration",
     "nbformat",
-    "shap",  # plotting seems broken in >=0.45, to investigate and resolve
+    "shap",
     "xgboost",
 ]
 # DEPS NOTE
 # + category_encoders: brings packages incl. statsmodels and patsy
 # + pandas: added minimal optional deps. importing projects might also consider
-#     including pandas[performance,postgresql]>=2.0.0
+#     including pandas[performance,postgresql]
 # + pymc: brings packages incl.: arviz (xarray), numpy, pandas, pytensor, scipy, tables
 # + optuna:  brings latest numpy and sqlalchemy, optionally manually add plotly
 

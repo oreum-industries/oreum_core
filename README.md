@@ -1,6 +1,6 @@
 # Oreum Core Tools `oreum_core`
 
-[![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org)
 [![License](https://img.shields.io/badge/license-Apache2.0-blue.svg)](https://choosealicense.com/licenses/apache-2.0/)
 [![GitHub Release](https://img.shields.io/github/v/release/oreum-industries/oreum_core?display_name=tag&sort=semver)](https://github.com/oreum-industries/oreum_core/releases)
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
@@ -14,8 +14,8 @@
 
 ## 1. Description and Scope
 
-This is an ever-growing package of core tools for use on client projects by
-Oreum Industries.
+`oreum_core` is an ever-evolving package of core tools for use on client
+projects by Oreum Industries.
 
 + Provides an essential workflow for data curation, EDA, basic ML using the core
   scientific Python stack incl. `numpy`, `scipy`, `matplotlib`, `seaborn`,
@@ -62,10 +62,10 @@ This package **is not**:
   + Specifically we use an open-source Python-based suite of software packages,
     the core of which is often known as the Scientific Python stack, supported
     by [NumFOCUS](https://numfocus.org)
-  + Once installed (see section 2), see `LICENSES_THIRD_PARTY.md` for full
+  + Once installed (see section 2), see `LICENSES_3P.md` for full
     details of all package licences
 + Environments: this project was originally developed on a Macbook Air M2
-  (Apple Silicon ARM64) running MacOS 15.5 (Sequoia) using `osx-arm64` Accelerate
+  (Apple Silicon ARM64) running MacOS 15 (Sequoia) using `osx-arm64` Accelerate
 
 ## 2. Instructions to Create Dev Environment
 
@@ -74,16 +74,15 @@ For local development on MacOS
 ### 2.0 Pre-requisite installs via `homebrew`
 
 1. Install Homebrew, see instructions at [https://brew.sh](https://brew.sh)
-2. Install `direnv`, `git`, `git-lfs`, `graphviz`, `tad`, `zsh`
+2. Install system-level tools incl. `direnv`, `gcc`, `git`, `graphviz`, `uv`:
 
 ```zsh
-$> brew update && upgrade
-$> brew install direnv git git-lfs graphviz tad zsh
+$> make brew
 ```
 
 ### 2.1 Git clone the repo
 
-Assumes `direnv`, `git`, `git-lfs` and `zsh` installed as above
+Assumes system-level tools installed as above:
 
 ```zsh
 $> git clone https://github.com/oreum-industries/oreum_core
@@ -96,15 +95,9 @@ Then allow `direnv` on MacOS to autorun file `.envrc` upon directory open
 
 Notes:
 
-+ We use `conda` virtual envs controlled by `mamba` (quicker than `conda`)
-+ We install packages using `miniforge` (sourced from the `conda-forge` repo)
-  wherever possible and only use `pip` for packages that are handled better by
-  `pip` and/or more up-to-date on [pypi](https://pypi.org)
-+ Packages might not be the very latest because we want stability for `pymc`
-  which is usually in a state of development flux
-+ See [cheat sheet of conda commands](https://conda.io/docs/_downloads/conda-cheatsheet.pdf)
-+ The `Makefile` creates a dev env and will also download and preinstall
-  `miniforge` if not yet installed on your system
++ We use local `.venv/` virtual env via [`uv`](https://github.com/astral-sh/uv)
++ Packages are technically articulated in `pyproject.toml` and might not be the
+  latest - to aid stability for `pymc` (usually in a state of development flux)
 
 
 #### 2.2.1 Create the dev environment
@@ -118,28 +111,27 @@ $> make -C oreum_core/ dev
 This will also create some files to help confirm / diagnose successful installation:
 
 + `dev/install_log/blas_info.txt` for the `BLAS MKL` installation for `numpy`
-+ `dev/install_log/pipdeptree[_rev].txt` lists installed package deps (and reversed)
-+ `LICENSES_THIRD_PARTY.md` details the license for each package used
++ `LICENSES_3P.md` details the license for each third-party package used
 
 
-#### 2.2.2 (Optional best practice) Test successful installation of dev environment
+#### 2.2.2 (Optional best practice) Test successful installation of dev env
 
 From the dir above `oreum_core/` project dir:
 
 ```zsh
-$> make -C oreum_core/ test-dev-env
+$> make -C oreum_core/ dev-test
 ```
 
-This will also add files `dev/install_log/[numpy|scipy].txt` which detail
+This will also add files `dev/install_log/tests_[numpy|scipy].txt` which detail
 successful installation (or not) for `numpy`, `scipy`
 
 
-#### 2.2.3 (Useful during env install experimentation): To remove the dev environment
+#### 2.2.3 (Useful during env install experimentation): To remove the dev env
 
 From the dir above `oreum_core/` project dir:
 
 ```zsh
-$> make -C oreum_core/ uninstall-env
+$> make -C oreum_core/ dev-uninstall
 ```
 
 ### 2.3 Code Linting & Repo Control
