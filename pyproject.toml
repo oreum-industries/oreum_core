@@ -47,6 +47,8 @@ dev = [
     "hypothesis",
     "interrogate",
     "ipython",
+    "meson",  # used by numpy test (fortran)
+    "ninja",  # used by numpy test (fortran)
     "pipdeptree",
     "pip-licenses",
     "pooch",  # for scipy.test

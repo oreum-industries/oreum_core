@@ -12,10 +12,10 @@ VERSION := $(shell echo $(VVERSION) | sed 's/v//')
 brew:
 	@echo "Install system-level packages for local dev on MacOS using brew..."
 	brew update && brew upgrade && brew cleanup -s;
-	brew install direnv git uv zsh;
+	brew install direnv gcc git graphviz uv zsh;
 
 build:
-	@echo "Build package oreum_core"
+	@echo "Build package oreum_core..."
 	rm -rf dist
 	uv sync --extra pub;
 	. .venv/bin/activate; \
@@ -23,24 +23,24 @@ build:
 		python -m flit build;
 
 dev:
-	@echo "Install dev env on local machine using uv..."
+	@echo "Install project dev env on local machine using uv..."
 	git init;
 	uv sync --all-extras;
 	uv export --no-hashes --format requirements-txt -o requirements.txt;
 	source .venv/bin/activate; \
+	 	python -c "import numpy as np; np.__config__.show()" > dev/install_log/blas_info.txt; \
 		pip-licenses -saud -f markdown -i csv2md --output-file LICENSES_3P.md; \
 		pre-commit install; \
 		pre-commit autoupdate;
 
 dev-test:
-	@echo "Test dev machine installation of numpy and scipy"
+	@echo "Test dev machine installation of numpy and scipy..."
 	. .venv/bin/activate; \
 		python -c "import numpy as np; np.test()" > dev/install_log/tests_numpy.txt;
-
-# 		python -c "import scipy as sp; sp.test()" > dev/install_log/tests_scipy.txt;
+		python -c "import scipy as sp; sp.test()" > dev/install_log/tests_scipy.txt;
 
 dev-uninstall:
-	@echo "Remove / uninstall dev env from local machine..."
+	@echo "Uninstall project dev venv from local machine..."
 	rm -rf .venv;
 	rm -f uv.lock
 
@@ -72,7 +72,7 @@ lint-ci:
 	make lint;
 
 publish:
-	@echo "All-in-one build and publish to pypi"
+	@echo "All-in-one build and publish to pypi..."
 	uv sync --extra pub;
 	source .venv/bin/activate; \
 		export SOURCE_DATE_EPOCH=$(shell date +%s); \
@@ -80,7 +80,7 @@ publish:
 		python -m flit publish
 
 publish-test:
-	@echo "All-in-one build and publish to testpypi"
+	@echo "All-in-one build and publish to testpypi..."
 	uv sync --extra pub;
 	source .venv/bin/activate; \
 		export SOURCE_DATE_EPOCH=$(shell date +%s); \
@@ -88,7 +88,7 @@ publish-test:
 		python -m flit publish
 
 test-pkg-dl:
-	@echo "Test pkg dl&install from testpypi. Set $VERSION. Not using venv"
+	@echo "Test pkg dl&install from testpypi. Set $VERSION. Not using venv..."
 	uv install pip;
 	$(PYTHON_NONVENV) -m pip uninstall -y oreum_core;
 	$(PYTHON_NONVENV) -m pip index versions --pre -i https://test.pypi.org/simple/ oreum_core
