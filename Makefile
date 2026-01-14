@@ -34,7 +34,7 @@ dev:
 	git init;
 	uv sync --all-extras;
 	uv export --no-hashes --format requirements-txt -o requirements.txt;
-	source .venv/bin/activate; \
+	. .venv/bin/activate; \
 	 	python -c "import numpy as np; np.__config__.show()" > dev/install_log/blas_info.txt; \
 		pip-licenses -saud -f markdown -i csv2md --output-file LICENSES_3P.md; \
 		pre-commit install; \
@@ -85,7 +85,7 @@ publish:
 	@uv venv .venv-temp; \
 	trap "rm -rf .venv-temp" EXIT; \
 	uv pip install --python .venv-temp flit keyring; \
-	source .venv-temp/bin/activate; \
+	. .venv-temp/bin/activate; \
 		export SOURCE_DATE_EPOCH="$(shell date +%s)"; \
 		export FLIT_INDEX_URL="https://upload.pypi.org/legacy/"; \
 		if [ $(CI) -eq 1 ]; then \
@@ -108,7 +108,7 @@ publish-test:
 	@uv venv .venv-temp; \
 	trap "rm -rf .venv-temp" EXIT; \
 	uv pip install --python .venv-temp flit keyring; \
-	source .venv-temp/bin/activate; \
+	. .venv-temp/bin/activate; \
 		export SOURCE_DATE_EPOCH="$(shell date +%s)"; \
 		export FLIT_INDEX_URL="https://test.pypi.org/legacy/"; \
 		if [ $(CI) -eq 1 ]; then \
