@@ -60,17 +60,19 @@ help:
 	@echo "  test-pkg-dl    test dl & install from testpypi"
 
 lint:
-	@echo "Run lint / format and static checks..."
-	. .venv/bin/activate; \
+	@echo "Run lint & format and static checks..."
+	@uv venv .venv-temp; \
+	trap "rm -rf .venv-temp" EXIT; \
+	uv pip install --python .venv-temp bandit interrogate ruff; \
+	. .venv-temp/bin/activate; \
 		ruff check --config pyproject.toml --output-format=github; \
 		ruff format --config pyproject.toml --diff --no-cache; \
 		interrogate --config pyproject.toml oreum_core/; \
 		bandit --config pyproject.toml -r oreum_core/ -f json -o reports/bandit-report.json;
 
 lint-ci:
-	@echo "Run lint / format and static checks on CI/CD (installs venv)..."
+	@echo "Run lint / format and static checks on CI/CD (installs uv)..."
 	$(PYTHON_NONVENV) -m pip install uv;
-	uv sync --extra dev;
 	make lint;
 
 publish:
@@ -110,21 +112,10 @@ publish-test:
 
 
 test-pkg-dl:
-	@echo "Test pkg dl&install from testpypi. Set $VERSION. Not using venv..."
-	uv install pip;
-	$(PYTHON_NONVENV) -m pip uninstall -y oreum_core;
-	$(PYTHON_NONVENV) -m pip index versions --pre -i https://test.pypi.org/simple/ oreum_core
-	$(PYTHON_NONVENV) -m pip install --pre -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple oreum_core==$(VERSION)
-	$(PYTHON_NONVENV) -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'"
-
-
-# # Source - https://stackoverflow.com/a
-# # Posted by MadScientist
-# # Retrieved 2026-01-14, License - CC BY-SA 4.0
-
-# mytarget:
-# 	@if [ "$(PUBLISH_FROM_DEV)" = "1" ]; then \
-# 		echo dev environment; \
-# 	else \
-# 		echo not dev environment; \
-# 	fi
+	@echo "Test dl & install from testpypi using venv-temp. Pass VERSION=x.x.x"
+	@uv venv .venv-temp; \
+	trap "rm -rf .venv-temp" EXIT; \
+	uv pip install --python .venv-temp pip; \
+	.venv_temp/bin/pip index versions --pre -i https://test.pypi.org/simple/ oreum_core; \
+	uv pip install --python .venv-temp --pre -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple oreum_core==$(VERSION); \
+	.venv_temp/bin/python -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'";
