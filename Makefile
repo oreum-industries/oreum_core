@@ -131,4 +131,4 @@ test-pkg-dl:
 	. .venv-temp/bin/activate; \
 		python -m pip index versions --pre -i https://test.pypi.org/simple/ oreum_core; \
 		python -m pip install --pre -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple oreum_core==$(VERSION); \
-		python -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'";
+		python -c "from importlib.metadata import version; assert version('oreum_core') == '$(VERSION)'";
