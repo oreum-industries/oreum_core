@@ -1252,7 +1252,7 @@ requires-dist = [
     { name = "ninja", marker = "extra == 'dev'" },
     { name = "optuna", marker = "extra == 'tree'" },
     { name = "optuna-integration", marker = "extra == 'tree'" },
-    { name = "pandas", extras = ["excel", "parquet", "plot"] },
+    { name = "pandas", extras = ["excel", "parquet", "plot"], specifier = "==2.3.*" },
     { name = "patsy" },
     { name = "pip-licenses", marker = "extra == 'dev'" },
     { name = "pipdeptree", marker = "extra == 'dev'" },

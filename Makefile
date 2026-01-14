@@ -116,6 +116,7 @@ test-pkg-dl:
 	@uv venv .venv-temp; \
 	trap "rm -rf .venv-temp" EXIT; \
 	uv pip install --python .venv-temp pip; \
-	.venv_temp/bin/pip index versions --pre -i https://test.pypi.org/simple/ oreum_core; \
-	uv pip install --python .venv-temp --pre -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple oreum_core==$(VERSION); \
-	.venv_temp/bin/python -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'";
+	. .venv-temp/bin/activate; \
+		python -m pip index versions --pre -i https://test.pypi.org/simple/ oreum_core; \
+		python -m pip install --pre -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple oreum_core==$(VERSION); \
+		python -c "import oreum_core; assert oreum_core.__version__ == '$(VERSION)'";
