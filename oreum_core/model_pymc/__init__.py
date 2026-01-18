@@ -24,7 +24,7 @@ from .calc import (
     calc_ppc_coverage,
     calc_r2,
     calc_rmse,
-    compute_log_likelihood_for_potential,
+    # compute_log_likelihood_for_potential,
     get_log_jcd_scalar,
     get_log_jcd_scan,
     numpy_invlogit,
