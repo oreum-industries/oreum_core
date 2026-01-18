@@ -49,6 +49,7 @@ dev-test:
 dev-uninstall:
 	@echo "Uninstall project dev venv from local machine..."
 	rm -rf .venv;
+	rm -f requirements.txt
 	rm -f uv.lock
 
 help:

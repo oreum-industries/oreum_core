@@ -23,7 +23,7 @@ import pymc as pm
 import xarray as xr
 from pymc.testing import assert_no_rvs
 
-from .calc import compute_log_likelihood_for_potential
+# from .calc import compute_log_likelihood_for_potential
 from ..utils.snakey_lowercaser import SnakeyLowercaser
 
 __all__ = ["BasePYMCModel"]
@@ -223,26 +223,30 @@ class BasePYMCModel:
 
                 _log.info(f"Sampled posterior for {self.mdl_id}")
 
-                # optional manually calculate log_likelihood for potentials
-                if self.calc_loglike_of_potential:
-                    self.idata.add_groups(
-                        dict(
-                            log_likelihood=compute_log_likelihood_for_potential(
-                                idata=self.idata,
-                                model=self.model,
-                                var_names=self.rvs_potential_loglike,
-                                extend_inferencedata=False,
-                            )
-                        )
-                    )
-                    # rename to have exact same name as observedRVs
-                    for nm in self.rvs_potential_loglike:
-                        rx_pot = re.compile(r"^pot_")
-                        nm0 = rx_pot.sub(r"", nm)
-                        self.idata["log_likelihood"][nm0] = self.idata[
-                            "log_likelihood"
-                        ][nm]
-                        del self.idata["log_likelihood"][nm]
+                # # optional manually calculate log_likelihood for potentials
+                # IMPORTANT NOTE 2026-01-18 dataset_to_point_list no longer
+                # available in pymc v5.20, so remove this function for now,
+                # may need to return as/when we need this
+
+                # if self.calc_loglike_of_potential:
+                #     self.idata.add_groups(
+                #         dict(
+                #             log_likelihood=compute_log_likelihood_for_potential(
+                #                 idata=self.idata,
+                #                 model=self.model,
+                #                 var_names=self.rvs_potential_loglike,
+                #                 extend_inferencedata=False,
+                #             )
+                #         )
+                #     )
+                #     # rename to have exact same name as observedRVs
+                #     for nm in self.rvs_potential_loglike:
+                #         rx_pot = re.compile(r"^pot_")
+                #         nm0 = rx_pot.sub(r"", nm)
+                #         self.idata["log_likelihood"][nm0] = self.idata[
+                #             "log_likelihood"
+                #         ][nm]
+                #         del self.idata["log_likelihood"][nm]
 
         return None
 
