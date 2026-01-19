@@ -26,7 +26,6 @@ from matplotlib import figure
 from scipy import stats
 from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import StandardScaler
-from umap.umap_ import UMAP
 
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
@@ -44,7 +43,6 @@ __all__ = [
     "month_diff",
     "tril_nan",
     "calc_svd",
-    "calc_umap",
 ]
 
 
@@ -320,20 +318,3 @@ def calc_svd(df: pd.DataFrame, k: int = 10) -> tuple[pd.DataFrame, TruncatedSVD]
     dfx = svd_fit.transform(dfs)
 
     return dfx, svd_fit
-
-
-def calc_umap(df: pd.DataFrame) -> tuple[pd.DataFrame, UMAP]:
-    """Calc 2D UMAP (and preprocess to remove nulls and zscore), return
-    transformed df and fitted UMAP object"""
-
-    # protect UMAP from nulls
-    idx_nulls = df.isnull().sum(axis=1) > 0
-    if sum(idx_nulls) > 0:
-        df = df.loc[~idx_nulls].copy()
-        _log.info(f"Excluding {sum(idx_nulls)} rows containing a null, prior to UMAP")
-
-    umapper = UMAP(n_neighbors=5)
-    umap_fit = umapper.fit(df)
-    dfx = pd.DataFrame(umap_fit.transform(df), columns=["c0", "c1"], index=df.index)
-
-    return dfx, umap_fit
