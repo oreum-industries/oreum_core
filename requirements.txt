@@ -93,7 +93,7 @@ patsy==1.0.2
     #   statsmodels
 pillow==12.1.0
     # via matplotlib
-pyarrow==22.0.0
+pyarrow==23.0.0
     # via pandas
 pynndescent==0.6.0
     # via umap-learn
