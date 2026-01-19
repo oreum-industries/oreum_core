@@ -22,7 +22,6 @@ from .calc import (
     calc_geometric_cv,
     calc_location_in_ecdf,
     calc_svd,
-    calc_umap,
     fit_and_plot_fn,
     get_gini,
     month_diff,
@@ -30,7 +29,7 @@ from .calc import (
 )
 from .describe import describe, display_fw, display_ht, get_fts_by_dtype
 from .eda_io import FigureIO, output_data_dict
-from .plot import (  # plot_umap,; plot_r2_range,; plot_r2_range_pair,
+from .plot import (
     plot_accuracy,
     plot_binary_performance,
     plot_bool_ct,

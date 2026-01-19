@@ -31,13 +31,13 @@ repos:
       - id: no-print-statements
         files: ^oreum_core/
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.11
+    rev: v0.14.13
     hooks:
       - id: ruff   # lint
         args: [ --fix]
       - id: ruff-format  # formatter
   - repo: https://github.com/pycqa/bandit  # basic security checks for python code
-    rev: 1.9.2
+    rev: 1.9.3
     hooks:
       - id: bandit
         files: ^oreum_core/

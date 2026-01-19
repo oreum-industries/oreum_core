@@ -102,7 +102,7 @@ def facetplot_krushke(
     txtadd = kwargs.pop("txtadd", None)
     transform = kwargs.pop("transform", None)
     n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
-    f, axs = plt.subplots(n, m, figsize=(2.6 * m, 0.8 + 1.5 * n))
+    f, axs = plt.subplots(n, m, figsize=(3 * m, 0.8 + 1.5 * n))
     _ = az.plot_posterior(
         mdl.idata,
         group=group,
