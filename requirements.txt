@@ -17,7 +17,7 @@ csv2md==1.5.0
     # via oreum-core
 cycler==0.12.1
     # via matplotlib
-dask==2025.12.0
+dask==2026.1.1
     # via oreum-core
 defusedxml==0.7.1
     # via odfpy
