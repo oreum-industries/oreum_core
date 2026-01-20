@@ -201,7 +201,7 @@ def forestplot_multiple(
     desc = None
 
     hs = [0.22 * (np.prod(data.shape[2:])) for data in datasets.values()]
-    f = plt.figure(figsize=(12, 1.4 + 0.2 * sum(hs)))
+    f = plt.figure(figsize=(12, 20 + (0.5 * len(datasets)) + (0.2 * sum(hs))))
     gs = gridspec.GridSpec(len(hs), 1, height_ratios=hs, figure=f)
 
     for i, (txt, data) in enumerate(datasets.items()):
