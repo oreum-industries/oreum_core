@@ -122,11 +122,11 @@ def facetplot_krushke(
 
 def forestplot_single(
     mdl: BasePYMCModel,
-    var_names: list[str],
+    rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
     **kwargs,
 ) -> figure.Figure:
-    """Plot forestplot for list of var_names RV (optionally with factor sublevels)"""
+    """Plot forestplot for list of rvs (optionally with factor sublevels)"""
     txtadd = kwargs.pop("txtadd", None)
     dp = kwargs.pop("dp", 2)
     plot_mn = kwargs.pop("plot_mn", True)
@@ -141,12 +141,12 @@ def forestplot_single(
     )
 
     # get overall stats
-    df = az.extract(mdl.idata, group=group, var_names=var_names).to_dataframe()
+    df = az.extract(mdl.idata, group=group, var_names=rvs).to_dataframe()
     if transform is not None:
         df = df.apply(transform)
-    if len(var_names) == 1:
-        mn = df[var_names[0]].mean(axis=0)
-        qs = df[var_names[0]].quantile(q=[0.03, 0.97]).values
+    if len(rvs) == 1:
+        mn = df[rvs[0]].mean(axis=0)
+        qs = df[rvs[0]].quantile(q=[0.03, 0.97]).values
         desc = (
             f"Overall: $Mean =$ {mn:.{dp}f}"
             + ", $HDI_{94}$ = ["
@@ -156,14 +156,14 @@ def forestplot_single(
     nms = [nm for nm in df.index.names if nm not in ["chain", "draw"]]
     n = sum([len(df.index.get_level_values(nm).unique()) for nm in nms])
 
-    f = plt.figure(figsize=(12, 1.2 + 0.3 * n))
+    f = plt.figure(figsize=(12, 1.5 + 0.2 * n))
     ax0 = f.add_subplot()
     _ = az.plot_forest(
-        mdl.idata[group], var_names=var_names, **kws, transform=transform, ax=ax0
+        mdl.idata[group], var_names=rvs, **kws, transform=transform, ax=ax0
     )
     _ = ax0.set_title("")
 
-    if plot_mn & (len(var_names) == 1):
+    if plot_mn & (len(rvs) == 1):
         _ = ax0.axvline(mn, color="#ADD8E6", ls="--", lw=3, zorder=-1)
     else:
         _ = ax0.axvline(0, color="#ADD8E6", ls="--", lw=3, zorder=-1)
@@ -172,9 +172,7 @@ def forestplot_single(
             filter(
                 None,
                 [
-                    " - ".join(
-                        filter(None, [f"Forestplot of {var_names}", group, txtadd])
-                    ),
+                    " - ".join(filter(None, [f"Forestplot of {rvs}", group, txtadd])),
                     mdl.mdl_id,
                     desc,
                 ],
