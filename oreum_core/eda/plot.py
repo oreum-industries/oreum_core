@@ -1301,8 +1301,8 @@ def plot_bootstrap_grp(
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f"s{x}")
 
-    mn = dfboot.groupby(grp)[val].mean().tolist()
-    pest_mn = df.groupby(grp)[val].mean().values
+    mn = dfboot.groupby(grp, observed=True)[val].mean().tolist()
+    pest_mn = df.groupby(grp, observed=True)[val].mean().values
 
     f = plt.figure(figsize=(14, 1.5 + (len(mn) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
@@ -1345,7 +1345,7 @@ def plot_bootstrap_grp(
         _ = ax0.set(xlim=force_xlim)
 
     _ = sns.countplot(y=grp, data=df, ax=ax1, palette="cubehelix_r")
-    ct = df.groupby(grp).size().tolist()
+    ct = df.groupby(grp, observed=True).size().tolist()
     _ = [
         ax1.annotate(f"{v}", xy=(v, i % len(ct)), **sty["count_txt_h_kws"])
         for i, v in enumerate(ct)
@@ -1370,7 +1370,7 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f"s{x}")
 
-    mn = dfboot.groupby(grp).size()
+    mn = dfboot.groupby(grp, observed=True).size()
 
     f = plt.figure(figsize=(14, 2 + (len(mn) * 0.2)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
@@ -1394,7 +1394,7 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
         _ = ax0.set(xlim=force_xlim)
 
     _ = sns.countplot(y=grp, data=df, ax=ax1, palette="cubehelix_r")
-    ct = df.groupby(grp).size().tolist()
+    ct = df.groupby(grp, observed=True).size().tolist()
     _ = [
         ax1.annotate(f"{v}", xy=(v, i % len(ct)), **sty["count_txt_h_kws"])
         for i, v in enumerate(ct)
@@ -1611,8 +1611,8 @@ def plot_smrystat_grp_year(
 
     sty = _get_kws_styling()
     est = np.sum if smry == "sum" else np.mean
-    lvls = df.groupby(grp).size().index.tolist()
-    yrs = df.groupby(year).size().index.tolist()
+    lvls = df.groupby(grp, observed=True).size().index.tolist()
+    yrs = df.groupby(year, observed=True).size().index.tolist()
     t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}"
 
     vert = min(len(lvls), topn)
