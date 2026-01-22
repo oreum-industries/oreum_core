@@ -261,15 +261,14 @@ def month_diff(
     a: pd.Series, b: pd.Series, series_name: str = "month_diff"
 ) -> pd.Series:
     """Integer month count between dates a to b
-
     https://stackoverflow.com/a/40924041/1165112
-
     In recent pandas can equally use to_period(), though it's unwieldy
     e.g
     [x.n for x in (df['obs_date'].dt.to_period('M') -
                     df['reported_date'].dt.to_period('M'))]
     """
     s = 12 * (b.dt.year - a.dt.year) + (b.dt.month - a.dt.month)
+    s = s.astype(int)
     s.name = series_name
     return s
 
