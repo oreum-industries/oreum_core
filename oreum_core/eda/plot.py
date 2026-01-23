@@ -1487,7 +1487,7 @@ def plot_smrystat_grp(
     plot_grid: bool = True,
     pal: sns.palettes._ColorPalette = None,
     orderby: Literal["ordinal", "count", "smrystat", None] = "ordinal",
-    topn: int = None,
+    topn: int = 10,
     **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
@@ -1602,7 +1602,7 @@ def plot_smrystat_grp_year(
     plot_grid: bool = True,
     pal: sns.palettes._ColorPalette = None,
     orderby: Literal["ordinal", "count", "smrystat", None] = "ordinal",
-    topn: int = None,
+    topn: int = 10,
     **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist, count) of numeric value `val`
