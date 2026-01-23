@@ -44,7 +44,7 @@ matplotlib==3.10.8
     #   seaborn
 matplotlib-inline==0.2.1
     # via oreum-core
-numpy==2.3.5
+numpy==2.4.1
     # via
     #   contourpy
     #   fastparquet
