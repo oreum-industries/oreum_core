@@ -101,7 +101,7 @@ class BasePYMCModel:
     def mdl_id_fn(self) -> str:
         """Get model id (name, version, obs name) safe for filename"""
         snl = SnakeyLowercaser()
-        return snl.clean(re.sub(r"\.", "", self.mdl_id))
+        return snl.clean(re.sub(r"\.", "-", self.mdl_id))
 
     @property
     def posterior(self) -> xr.Dataset:
