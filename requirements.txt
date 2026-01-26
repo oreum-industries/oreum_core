@@ -81,7 +81,7 @@ pillow==12.1.0
     # via matplotlib
 pyarrow==23.0.0
     # via pandas
-pyparsing==3.3.1
+pyparsing==3.3.2
     # via matplotlib
 python-calamine==0.6.1
     # via pandas
