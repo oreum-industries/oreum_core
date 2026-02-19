@@ -59,7 +59,7 @@ def plot_trace(mdl: BasePYMCModel, rvs: list, **kwargs) -> figure.Figure:
     kind = kwargs.pop("kind", "rank_vlines")
     txtadd = kwargs.pop("txtadd", None)
     _ = az.plot_trace(
-        mdl.idata, var_names=rvs, kind=kind, figsize=(12, 0.8 + 1.5 * len(rvs))
+        mdl.idata, var_names=rvs, kind=kind, figsize=(12, 0.8 + 1.8 * len(rvs))
     )
     f = plt.gcf()
     _ = f.suptitle(
@@ -282,8 +282,8 @@ def pairplot_corr(
     i, j = np.tril_indices(n=len(corr), k=-1)
     for ij in zip(i, j, strict=False):
         axs[ij].set_title(f"rho: {corr.iloc[ij]:.2f}", fontsize=8, loc="right", pad=2)
-    vh_y = dict(rotation=0, va="center", ha="right")
-    vh_x = dict(rotation=40, va="top", ha="right")
+    vh_y = dict(rotation=0, va="center", ha="right", fontsize=6)
+    vh_x = dict(rotation=40, va="top", ha="right", fontsize=6)
     _ = [a.set_ylabel(a.get_ylabel(), **vh_y) for ax in axs for a in ax]
     _ = [a.set_xlabel(a.get_xlabel(), **vh_x) for ax in axs for a in ax]
 
@@ -344,7 +344,7 @@ def plot_ppc(
     # wild hack to get the size of observed
     i = list(dict(_idata.observed_data.sizes).values())[0]
     num_pp_samples = None if i < 500 else 200
-    f, axs = plt.subplots(n, 1, figsize=(12, 1 + 2 * n), sharex=sharex, squeeze=False)
+    f, axs = plt.subplots(n, 1, figsize=(12, 3 + 2 * n), sharex=sharex, squeeze=False)
     _ = az.plot_ppc(
         _idata,
         group=group,
@@ -367,7 +367,7 @@ def plot_ppc(
         for ax, t in zip(axs.flatten(), var_names, strict=False)
     ]
     t = f"{'In' if insamp else 'Out-of'}-sample {group.title()} Retrodictive {kindnm}"
-    _ = f.suptitle(" - ".join(filter(None, [t, txtadd, ls])) + f"\n{mdl.mdl_id}")
+    _ = f.suptitle(" --- ".join(filter(None, [t, txtadd, ls])) + f"\n{mdl.mdl_id}")
     _ = f.tight_layout()
     return f
 

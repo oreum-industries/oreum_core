@@ -134,7 +134,7 @@ def plot_cat_ct(
         return None
 
     vert = int(np.ceil(len(fts) / m))
-    f, ax2d = plt.subplots(vert, m, squeeze=False, figsize=(14, 0.5 + vert * vsize))
+    f, ax2d = plt.subplots(vert, m, squeeze=False, figsize=(12, 0.5 + vert * vsize))
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft, observed=False).size().sort_values(ascending=True)
@@ -544,7 +544,7 @@ def plot_mincovdet(df: pd.DataFrame, mcd, thresh: float = 0.99):
     cutoff = np.percentile(dfp["mcd_delta"], thresh * 100)
     dfp["mcd_outlier"] = dfp["mcd_delta"] > cutoff
 
-    f = plt.figure(figsize=(14, 8))
+    f = plt.figure(figsize=(12, 8))
     f.suptitle(
         "Distribution of outliers"
         + "\n(thresh @ {:.1%}, cutoff @ {:.1f}, identified {} outliers)".format(
@@ -851,7 +851,7 @@ def plot_rmse_range(
     min_rmse_qs_q = rmse_qs.idxmin()
     j = max(-int(np.ceil(np.log10(rmse))) + 2, 1)
 
-    f, axs = plt.subplots(1, 1, figsize=(10, 4))
+    f, axs = plt.subplots(1, 1, figsize=(12, 4))
     ax = sns.lineplot(x="q", y="rmse", data=dfp, lw=2, ax=axs)
     _ = ax.axhline(rmse, c="r", ls="-.", label=f"rmse @ mean {rmse:,.{j}f}")
     _ = ax.axhline(
@@ -1304,7 +1304,7 @@ def plot_bootstrap_grp(
     mn = dfboot.groupby(grp, observed=True)[val].mean().tolist()
     pest_mn = df.groupby(grp, observed=True)[val].mean().values
 
-    f = plt.figure(figsize=(14, 1.5 + (len(mn) * 0.25)))  # , constrained_layout=True)
+    f = plt.figure(figsize=(12, 1.5 + (len(mn) * 0.25)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
@@ -1372,7 +1372,7 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
 
     mn = dfboot.groupby(grp, observed=True).size()
 
-    f = plt.figure(figsize=(14, 2 + (len(mn) * 0.2)))  # , constrained_layout=True)
+    f = plt.figure(figsize=(12, 2 + (len(mn) * 0.2)))  # , constrained_layout=True)
     gs = gridspec.GridSpec(1, 2, width_ratios=[11, 1], figure=f)
     ax0 = f.add_subplot(gs[0])
     ax1 = f.add_subplot(gs[1], sharey=ax0)
@@ -1798,7 +1798,7 @@ def plot_grp_ct(
         df = df.loc[df[grp].isin(ct.index.values)].copy()
         t += f" (top {len(ct)} levels)"
 
-    f, axs = plt.subplots(1, 1, figsize=(14, 2 + (len(ct) * 0.25)))
+    f, axs = plt.subplots(1, 1, figsize=(12, 2 + (len(ct) * 0.25)))
     _ = sns.countplot(
         data=df,
         y=grp,
@@ -1839,7 +1839,7 @@ def plot_cdf_ppc_vs_obs(
         np.percentile(yhat, ps, axis=1).T, columns=[f"q{p / 100}" for p in ps]
     )
 
-    f, axs = plt.subplots(1, 1, figsize=(14, 5), sharey=True, sharex=True)
+    f, axs = plt.subplots(1, 1, figsize=(12, 5), sharey=True, sharex=True)
     _ = sns.kdeplot(
         y, cumulative=True, lw=2, c="g", ax=axs, common_norm=False, common_grid=True
     )
