@@ -280,7 +280,7 @@ def pairplot_corr(
             contour_kwargs=dict(colors=None, cmap="Blues"),
             hdi_probs=[0.5, 0.94, 0.99],
         ),
-        figsize=(2 + 1.5 * nvars, 2 + 1.5 * nvars),
+        figsize=(2 + 1.4 * nvars, 2 + 1.4 * nvars),
     )
     axs = az.plot_pair(mdl.idata, **pair_kws)
     corr = pd.DataFrame(
