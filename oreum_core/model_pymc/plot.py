@@ -469,7 +469,6 @@ def plot_lkjcc_corr(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
         rvs=["lkjcc_corr"],
         coords=coords,
         m=2,
-        rvs_hack=0,
         **kwargs,
     )
 
