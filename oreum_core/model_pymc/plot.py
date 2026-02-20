@@ -283,7 +283,7 @@ def pairplot_corr(
     ).corr()
     i, j = np.tril_indices(n=len(corr), k=-1)
     for ij in zip(i, j, strict=False):
-        axs[ij].set_title(f"rho: {corr.iloc[ij]:.2f}", fontsize=6, loc="right", pad=2)
+        axs[ij].set_title(f"rho: {corr.iloc[ij]:.2f}", fontsize=6, loc="right", pad=0)
     vh_y = dict(rotation=0, va="center", ha="right", fontsize=6)
     vh_x = dict(rotation=40, va="top", ha="right", fontsize=6)
     _ = [a.set_ylabel(a.get_ylabel(), **vh_y) for ax in axs for a in ax]
@@ -295,6 +295,7 @@ def pairplot_corr(
     _ = f.suptitle(
         " - ".join(filter(None, ["Pairplot", mdl.name, group, "selected RVs", txtadd]))
     )
+    _ = f.subplots_adjust(hspace=0.1, wspace=0.1)
     _ = f.tight_layout()
     return f
 
