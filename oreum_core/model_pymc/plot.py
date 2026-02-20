@@ -90,7 +90,6 @@ def facetplot_krushke(
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
     m: int = 1,
-    rvs_hack: int = 0,
     ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
@@ -100,10 +99,12 @@ def facetplot_krushke(
         e.g. ref_vals = { 'beta_sigma' : [ {'ref_val':2} ] }
     + Optional Pass kwargs like hdi_prob = 0.5, coords = {'oid', oids}
     """
-    # TODO unpack the compressed rvs from the idata
+    _, flt = az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)
+    nvars = flt.shape[0]
+
     txtadd = kwargs.pop("txtadd", None)
     transform = kwargs.pop("transform", None)
-    n = 1 + ((len(rvs) + rvs_hack - m) // m) + ((len(rvs) + rvs_hack - m) % m)
+    n = 1 + ((nvars - m) // m) + ((nvars - m) % m)
     f, axs = plt.subplots(n, m, figsize=(3 * m, 0.8 + 1.5 * n))
     _ = az.plot_posterior(
         mdl.idata,
@@ -118,6 +119,8 @@ def facetplot_krushke(
         " - ".join(filter(None, [f"Distribution of {rvs}", group, txtadd]))
         + f"\n{mdl.mdl_id}"
     )
+    p = f.subplotpars
+    _ = f.subplots_adjust(hspace=max(0.1, p.hspace), wspace=max(0.1, p.wspace))
     _ = f.tight_layout()
     return f
 
@@ -262,6 +265,9 @@ def pairplot_corr(
     txtadd = kwargs.pop("txtadd", None)
     kind = kwargs.pop("kind", "kde")
 
+    _, flt = az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)
+    nvars = flt.shape[0]
+
     pair_kws = dict(
         group=group,
         var_names=rvs,
@@ -274,9 +280,8 @@ def pairplot_corr(
             contour_kwargs=dict(colors=None, cmap="Blues"),
             hdi_probs=[0.5, 0.94, 0.99],
         ),
-        figsize=(2 + 1.8 * len(rvs), 2 + 1.8 * len(rvs)),
+        figsize=(2 + 1.6 * nvars, 2 + 1.6 * nvars),
     )
-    # idata[group][rvs].stack(dims=('chain', 'draw')).values.T,
     axs = az.plot_pair(mdl.idata, **pair_kws)
     corr = pd.DataFrame(
         az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)[1].T
