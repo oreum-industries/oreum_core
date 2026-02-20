@@ -89,7 +89,6 @@ def facetplot_krushke(
     mdl: BasePYMCModel,
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
-    m: int = 1,
     ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
@@ -99,12 +98,13 @@ def facetplot_krushke(
         e.g. ref_vals = { 'beta_sigma' : [ {'ref_val':2} ] }
     + Optional Pass kwargs like hdi_prob = 0.5, coords = {'oid', oids}
     """
-    _, flt = az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)
-    nvars = flt.shape[0]
-
     txtadd = kwargs.pop("txtadd", None)
     transform = kwargs.pop("transform", None)
-    n = 1 + ((nvars - m) // m) + ((nvars - m) % m)
+
+    _, flt = az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)
+    nvars = flt.shape[0]
+    m = min(nvars, 4)
+    n = (nvars + m - 1) // m
     f, axs = plt.subplots(n, m, figsize=(3 * m, 0.8 + 1.5 * n))
     _ = az.plot_posterior(
         mdl.idata,
@@ -468,7 +468,6 @@ def plot_lkjcc_corr(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
         txtadd="lkjcc_corr, diagonals only",
         rvs=["lkjcc_corr"],
         coords=coords,
-        m=2,
         **kwargs,
     )
 
