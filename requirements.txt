@@ -118,7 +118,7 @@ traitlets==5.14.3
     # via matplotlib-inline
 tzdata==2025.3
     # via pandas
-wcwidth==0.2.14
+wcwidth==0.4.0
     # via ftfy
 xlrd==2.0.2
     # via pandas
