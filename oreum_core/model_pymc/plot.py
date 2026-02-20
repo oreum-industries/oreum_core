@@ -27,6 +27,8 @@ from matplotlib import figure, gridspec
 
 from ..model_pymc import BasePYMCModel
 
+az.rcParams["plot.max_subplots"] = 200
+
 __all__ = [
     "plot_trace",
     "plot_energy",
@@ -281,11 +283,13 @@ def pairplot_corr(
     ).corr()
     i, j = np.tril_indices(n=len(corr), k=-1)
     for ij in zip(i, j, strict=False):
-        axs[ij].set_title(f"rho: {corr.iloc[ij]:.2f}", fontsize=8, loc="right", pad=2)
+        axs[ij].set_title(f"rho: {corr.iloc[ij]:.2f}", fontsize=6, loc="right", pad=2)
     vh_y = dict(rotation=0, va="center", ha="right", fontsize=6)
     vh_x = dict(rotation=40, va="top", ha="right", fontsize=6)
     _ = [a.set_ylabel(a.get_ylabel(), **vh_y) for ax in axs for a in ax]
     _ = [a.set_xlabel(a.get_xlabel(), **vh_x) for ax in axs for a in ax]
+    for ax in axs.flat:
+        ax.tick_params(axis="both", labelsize=6)
 
     f = plt.gcf()
     _ = f.suptitle(
