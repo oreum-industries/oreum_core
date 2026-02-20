@@ -59,7 +59,7 @@ odfpy==1.4.1
     # via pandas
 openpyxl==3.1.5
     # via pandas
-packaging==25.0
+packaging==26.0
     # via
     #   dask
     #   fastparquet
