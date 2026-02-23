@@ -93,7 +93,7 @@ class PYMCIO(BaseFileIO):
         if write == False:
             return gv
         if fmt == "png":
-            gv.attr(dpi="300")
+            gv.attr(dpi="200")  # 200 is plenty! 300 maybe one day
         elif fmt == "svg":
             pass
         else:
