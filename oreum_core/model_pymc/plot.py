@@ -15,6 +15,7 @@
 # model.plot.py
 """Model Plotting"""
 
+from copy import deepcopy
 from enum import Enum
 
 import arviz as az
@@ -89,7 +90,6 @@ def facetplot_krushke(
     mdl: BasePYMCModel,
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
-    m: int = 1,
     ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
@@ -99,12 +99,13 @@ def facetplot_krushke(
         e.g. ref_vals = { 'beta_sigma' : [ {'ref_val':2} ] }
     + Optional Pass kwargs like hdi_prob = 0.5, coords = {'oid', oids}
     """
-    _, flt = az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)
-    nvars = flt.shape[0]
-
     txtadd = kwargs.pop("txtadd", None)
     transform = kwargs.pop("transform", None)
-    n = 1 + ((nvars - m) // m) + ((nvars - m) % m)
+
+    _, flt = az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)
+    nvars = flt.shape[0]
+    m = min(nvars, 4)
+    n = (nvars + m - 1) // m
     f, axs = plt.subplots(n, m, figsize=(3 * m, 0.8 + 1.5 * n))
     _ = az.plot_posterior(
         mdl.idata,
@@ -129,9 +130,16 @@ def forestplot_single(
     mdl: BasePYMCModel,
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
+    kind: str = "forestplot",
+    d_rebase_coords: dict = None,
     **kwargs,
 ) -> figure.Figure:
-    """Plot forestplot for list of rvs (optionally with factor sublevels)"""
+    """Plot forestplot or ridgeplot for list of rvs (optional factor sublevels)
+    Pass d_rebase_coords with a dict (single pair only) of coords to rebase upon
+    e.g. {"oid": "t"} to replace "oid" with "t" (in a copied version of idata)
+    and thus allow plotting e.g. a deterministic rv vs t (rather than oid)
+    NOTE the dict value e.g. "t" must be present in mdl.idata.constant_data
+    """
     txtadd = kwargs.pop("txtadd", None)
     dp = kwargs.pop("dp", 2)
     plot_mn = kwargs.pop("plot_mn", True)
@@ -143,10 +151,25 @@ def forestplot_single(
         ][0],
         ess=False,
         combined=kwargs.pop("combined", True),
+        ridgeplot_overlap=4,
+        ridgeplot_alpha=0.8,
     )
 
+    if d_rebase_coords is None:
+        idata0 = mdl.idata
+    else:
+        if len(d_rebase_coords) > 1:
+            raise NotImplementedError("Only accepting one dict pair for now")
+        xa_dataset = deepcopy(mdl.idata[group])
+        old_coord_nm = list(d_rebase_coords.keys())[0]
+        new_coord_nm = list(d_rebase_coords.values())[0]
+        new_coord_vals = mdl.idata.constant_data[new_coord_nm].values
+        xa_dataset0 = xa_dataset.assign_coords(**{old_coord_nm: new_coord_vals})
+        xa_dataset1 = xa_dataset0.sortby(old_coord_nm)
+        idata0 = az.InferenceData(**{group: xa_dataset1})
+
     # get overall stats
-    df = az.extract(mdl.idata, group=group, var_names=rvs).to_dataframe()
+    df = az.extract(idata0, group=group, var_names=rvs).to_dataframe()
     if transform is not None:
         df = df.apply(transform)
     if len(rvs) == 1:
@@ -164,7 +187,7 @@ def forestplot_single(
     f = plt.figure(figsize=(12, 1.5 + 0.2 * n))
     ax0 = f.add_subplot()
     _ = az.plot_forest(
-        mdl.idata[group], var_names=rvs, **kws, transform=transform, ax=ax0
+        idata0[group], var_names=rvs, transform=transform, kind=kind, ax=ax0, **kws
     )
     _ = ax0.set_title("")
 
@@ -177,7 +200,9 @@ def forestplot_single(
             filter(
                 None,
                 [
-                    " - ".join(filter(None, [f"Forestplot of {rvs}", group, txtadd])),
+                    " - ".join(
+                        filter(None, [f"{kind.title()} of {rvs}", group, txtadd])
+                    ),
                     mdl.mdl_id,
                     desc,
                 ],
@@ -468,7 +493,6 @@ def plot_lkjcc_corr(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
         txtadd="lkjcc_corr, diagonals only",
         rvs=["lkjcc_corr"],
         coords=coords,
-        m=2,
         **kwargs,
     )
 
