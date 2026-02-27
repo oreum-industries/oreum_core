@@ -290,8 +290,15 @@ def pairplot_corr(
     """
     txtadd = kwargs.pop("txtadd", None)
     kind = kwargs.pop("kind", "kde")
+    coords = kwargs.pop("coords", None)
+    # ignore hsize, wsize
+    kwargs.pop("hsize", None)
+    kwargs.pop("wsize", None)
 
-    _, flt = az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)
+    data = mdl.idata.get(group)
+    if coords:
+        data = data.sel(**coords)
+    _, flt = az.sel_utils.xarray_to_ndarray(data, var_names=rvs)
     nvars = flt.shape[0]
 
     pair_kws = dict(
@@ -307,13 +314,15 @@ def pairplot_corr(
             hdi_probs=[0.5, 0.94, 0.99],
         ),
         figsize=(2 + 1.4 * nvars, 2 + 1.4 * nvars),
-        coords=kwargs.pop("coords", None),
     )
+    if coords is not None:
+        pair_kws["coords"] = coords
+    pair_kws.update(kwargs)
     axs = az.plot_pair(mdl.idata, **pair_kws)
-    corr = pd.DataFrame(
-        az.sel_utils.xarray_to_ndarray(mdl.idata.get(group), var_names=rvs)[1].T
-    ).corr()
-    i, j = np.tril_indices(n=len(corr), k=-1)
+    corr = pd.DataFrame(az.sel_utils.xarray_to_ndarray(data, var_names=rvs)[1].T).corr()
+    n_corr = len(corr)
+    n_ax = axs.shape[0] if hasattr(axs, "shape") else int(np.sqrt(axs.size))
+    i, j = np.tril_indices(n=min(n_corr, n_ax), k=-1)
     for ij in zip(i, j, strict=False):
         axs[ij].set_title(f"rho: {corr.iloc[ij]:.2f}", fontsize=6, loc="right", pad=0)
     vh_y = dict(rotation=20, va="center", ha="right", fontsize=7)
