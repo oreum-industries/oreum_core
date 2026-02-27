@@ -153,6 +153,7 @@ def forestplot_single(
         combined=kwargs.pop("combined", True),
         ridgeplot_overlap=4,
         ridgeplot_alpha=0.8,
+        coords=kwargs.pop("coords", None),
     )
 
     if d_rebase_coords is None:
