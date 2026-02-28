@@ -203,7 +203,7 @@ class BasePYMCModel:
             try:
                 posterior = pm.sample(**{**kws, **kwargs})
                 if kws["nuts_sampler"] == "nutpie":
-                    pm.compute_likelihood(posterior)
+                    pm.compute_log_likelihood(posterior)
             except UserWarning as e:
                 _log.warning("Warning in mdl.sample()", exc_info=e)
                 pass
