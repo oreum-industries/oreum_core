@@ -15,7 +15,7 @@ csv2md==1.5.0
     # via oreum-core
 cycler==0.12.1
     # via matplotlib
-dask==2026.1.1
+dask==2026.1.2
     # via oreum-core
 defusedxml==0.7.1
     # via odfpy
@@ -25,7 +25,7 @@ fastparquet==2025.12.0
     # via oreum-core
 fonttools==4.61.1
     # via matplotlib
-fsspec==2026.1.0
+fsspec==2026.2.0
     # via
     #   dask
     #   fastparquet
@@ -44,7 +44,7 @@ matplotlib==3.10.8
     #   seaborn
 matplotlib-inline==0.2.1
     # via oreum-core
-numpy==2.3.5
+numpy==2.4.2
     # via
     #   contourpy
     #   fastparquet
@@ -59,7 +59,7 @@ odfpy==1.4.1
     # via pandas
 openpyxl==3.1.5
     # via pandas
-packaging==25.0
+packaging==26.0
     # via
     #   dask
     #   fastparquet
@@ -77,13 +77,13 @@ patsy==1.0.2
     # via
     #   oreum-core
     #   statsmodels
-pillow==12.1.0
+pillow==12.1.1
     # via matplotlib
-pyarrow==23.0.0
+pyarrow==23.0.1
     # via pandas
-pyparsing==3.3.1
+pyparsing==3.3.2
     # via matplotlib
-python-calamine==0.6.1
+python-calamine==0.6.2
     # via pandas
 python-dateutil==2.9.0.post0
     # via
@@ -97,7 +97,7 @@ pyyaml==6.0.3
     # via dask
 scikit-learn==1.8.0
     # via oreum-core
-scipy==1.17.0
+scipy==1.17.1
     # via
     #   oreum-core
     #   scikit-learn
@@ -118,7 +118,7 @@ traitlets==5.14.3
     # via matplotlib-inline
 tzdata==2025.3
     # via pandas
-wcwidth==0.2.14
+wcwidth==0.6.0
     # via ftfy
 xlrd==2.0.2
     # via pandas
