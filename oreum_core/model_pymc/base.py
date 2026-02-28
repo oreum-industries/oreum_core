@@ -17,6 +17,7 @@
 
 import logging
 import re
+from copy import copy
 
 import arviz as az
 import pymc as pm
@@ -48,10 +49,10 @@ class BasePYMCModel:
         """Expect obs as dfx pd.DataFrame(mx_en, mx_exs)
         Options for init are often very important!
         https://github.com/pymc-devs/pymc/blob/ed74406735b2faf721e7ebfa156cc6828a5ae16e/pymc/sampling.py#L277
-        Usage note: override kwargs directly on downstream instance e.g.
+        Usage note: override kwargs directly on downstream model instance e.g.
         def __init__(self, **kwargs):
             super().__init__(*args, **kwargs)
-            self.sample_kws.update(dict(tune=1000, draws=500, target_accept=0.85))
+            self.sample_kws.update(dict(tune=1000, draws=500))
         Issue encountered 2025-01-26 in ParallelSampler, details here
         https://discourse.pymc.io/t/dataset-size-dependent-eoferror/11977/13
         solution is to undo the mp_ctx set by pymc to use spawn instead
@@ -71,16 +72,21 @@ class BasePYMCModel:
             progressbar=True,
             mp_ctx=None,  # default 'fork' (thanks to pymc) alternative 'spawn'
             nuts_sampler="pymc",  # alternative “nutpie”
-            nuts_sampler_kwargs=dict(
-                target_accept=0.8,  # default, this is a reminder
-                max_treedepth=10,  # default, this is a reminder
-                early_max_treedepth=8,  # default, this is a reminder
-                step_scale=0.25,  # default, this is a reminder
+        )
+        self.sampler_kws = dict(
+            pymc=dict(
+                nuts_sampler_kwargs=dict(
+                    target_accept=0.8,  # default, this is a reminder
+                    max_treedepth=10,  # default, this is a reminder
+                    early_max_treedepth=8,  # default, this is a reminder
+                    step_scale=0.25,  # default, this is a reminder
+                ),
+                idata_kwargs=dict(
+                    log_likelihood=True,  # usually useful
+                    log_prior=True,  # possibly useful?
+                ),
             ),
-            idata_kwargs=dict(
-                log_likelihood=True,  # usually useful
-                log_prior=True,  # possibly useful?
-            ),
+            nutpie=dict(nuts=dict(target_accept=0.8)),
         )
         self.rvs_for_posterior_plots = []
         self.calc_loglike_of_potential = False
@@ -184,31 +190,20 @@ class BasePYMCModel:
         return None
 
     def sample(self, **kwargs):
-        """Sample posterior: use base class defaults self.sample_kws
-        or passed kwargs for pm.sample()
-        """
-        kws = dict(
-            init=kwargs.pop("init", self.sample_kws["init"]),
-            random_seed=kwargs.pop("random_seed", self.rsd),
-            tune=kwargs.pop("tune", self.sample_kws["tune"]),
-            draws=kwargs.pop("draws", self.sample_kws["draws"]),
-            chains=kwargs.pop("chains", self.sample_kws["chains"]),
-            cores=kwargs.pop("cores", self.sample_kws["cores"]),
-            progressbar=kwargs.pop("progressbar", self.sample_kws["progressbar"]),
-            nuts_sampler=kwargs.pop("nuts_sampler", self.sample_kws["nuts_sampler"]),
-            mp_ctx=kwargs.pop("mp_ctx", self.sample_kws["mp_ctx"]),
-        )
-        # these kwargs are dicts, so need to carefully update
-        idata_kwargs = self.sample_kws["idata_kwargs"]
-        idata_kwargs.update(kwargs.pop("idata_kwargs", {}))
-        kws.update({"idata_kwargs": idata_kwargs})
-        nuts_sampler_kwargs = self.sample_kws["nuts_sampler_kwargs"]
-        nuts_sampler_kwargs.update(kwargs.pop("nuts_sampler_kwargs", {}))
-        kws.update({"nuts_sampler_kwargs": nuts_sampler_kwargs})
+        """Sample posterior: use self.sample_kws for pm.sample()"""
+        if self.sample_kws.get("nuts_sampler") not in ("pymc", "nutpie"):
+            raise NotImplementedError(
+                "BasePYMCModel only tested with (pymc, nutpie) samplers"
+            )
+        kws = copy(self.sample_kws)
+        kws["random_seed"] = self.rsd
+        kws.update(self.sampler_kws.get(kws["nuts_sampler"]))
 
         with self.model:
             try:
                 posterior = pm.sample(**{**kws, **kwargs})
+                if kws["nuts_sampler"] == "nutpie":
+                    pm.compute_likelihood(posterior)
             except UserWarning as e:
                 _log.warning("Warning in mdl.sample()", exc_info=e)
                 pass
