@@ -65,7 +65,7 @@ packaging==26.0
     #   fastparquet
     #   matplotlib
     #   statsmodels
-pandas==2.3.3
+pandas==3.0.1
     # via
     #   fastparquet
     #   oreum-core
