@@ -44,8 +44,7 @@ class BaseFileIO:
                 )
             else:
                 self.rootdir = rootdir
-        allow_hyphen = kwargs.get("allow_hyphen", False)
-        self.snl = SnakeyLowercaser(allow_hyphen=allow_hyphen)
+        self.snl = SnakeyLowercaser(allowed_punct="-")
 
     def get_path_read(self, fn: str) -> Path:
         """Create and test fqn file existence for read"""
