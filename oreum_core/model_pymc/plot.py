@@ -366,6 +366,7 @@ def plot_ppc(
     """
     txtadd = kwargs.pop("txtadd", None)
     sharex = kwargs.pop("sharex", True)
+    xlim = kwargs.pop("xlim", None)
     kind = "kde"
     kindnm = kind.upper()
     ynm = "density"
@@ -404,14 +405,15 @@ def plot_ppc(
         num_pp_samples=num_pp_samples,
         **kwargs,
     )
-    _ = [ax.legend(fontsize=8, loc=loc) for ax in axs.flatten()]  # fix legend
+    _ = [ax.legend(fontsize=8, loc=loc) for ax in axs.flat]  # fix legend
     ls = None
     if logx:
-        _ = [ax.set_xscale("log") for ax in axs.flatten()]
+        _ = [ax.set_xscale("log") for ax in axs.flat]
         ls = "(logscale)"
+    if xlim is not None:
+        _ = [ax.set_xlim(xlim) for ax in axs.flat]
     _ = [
-        ax.set(title=t, ylabel=ynm)
-        for ax, t in zip(axs.flatten(), var_names, strict=False)
+        ax.set(title=t, ylabel=ynm) for ax, t in zip(axs.flat, var_names, strict=False)
     ]
     t = f"{'In' if insamp else 'Out-of'}-sample {group.title()} Retrodictive {kindnm}"
     _ = f.suptitle(" --- ".join(filter(None, [t, txtadd, ls])) + f"\n{mdl.mdl_id}")

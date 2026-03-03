@@ -28,15 +28,27 @@ class SnakeyLowercaser:
     Useful for the often messy column names present in Excel tables
     """
 
-    def __init__(self, allow_hyphen: bool = False):
-        """Init and setup lots of regexes"""
-        if allow_hyphen:
-            punct_to_remove = re.sub(r"[_-]", "", string.punctuation)
-            self.rx_to_underscore = re.compile(r"[/.]")
-        else:
-            punct_to_remove = re.sub(r"[_]", "", string.punctuation)
-            self.rx_to_underscore = re.compile(r"[-/.]")
-        self.rx_punct = re.compile("[{}]".format(re.escape(punct_to_remove)))
+    def __init__(self, force_to_underscore: str = None, allowed_punct: str = None):
+        """Init and setup lots of regexes
+        force_to_underscore: include these strings in the force to underscore.
+            By default already includes "/." because we never want these to make
+            it through strong cleaning. You might want to include force hyphens,
+            em dashes etc etc to underscores too
+        allowed_punct: include these punctuation strings.
+            By default already includes "_" because we want to preserve
+            underscores (although only 1 in a row)
+        """
+        force_to_underscore = "".join(filter(None, ["/.", force_to_underscore]))
+        self.rx_to_underscore = re.compile(
+            "[{}]".format(re.escape(force_to_underscore))
+        )
+
+        allowed_punct = "".join(filter(None, ["_", allowed_punct]))
+        remove_punct = re.sub(
+            "{}".format(re.escape(allowed_punct)), "", string.punctuation
+        )
+        self.rx_punct = re.compile("[{}]".format(re.escape(remove_punct)))
+
         self.rx_splitter1 = re.compile(r"([A-Za-z0-9])([A-Z][a-z]+)")
         self.rx_patsy_factor = re.compile(r"^(.*)(\[T\.|\[)(.*)(\])(.*)$")
         self.rx_patsy_numpy = re.compile(r"^np\.(.*)\((.*)\)$")
