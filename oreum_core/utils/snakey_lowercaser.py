@@ -45,7 +45,7 @@ class SnakeyLowercaser:
 
         allowed_punct = "".join(filter(None, ["_", allowed_punct]))
         remove_punct = re.sub(
-            "{}".format(re.escape(allowed_punct)), "", string.punctuation
+            "[{}]".format(re.escape(allowed_punct)), "", string.punctuation
         )
         self.rx_punct = re.compile("[{}]".format(re.escape(remove_punct)))
 

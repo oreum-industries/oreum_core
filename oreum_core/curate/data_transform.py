@@ -38,8 +38,9 @@ _log = logging.getLogger(__name__)
 class DatatypeConverter:
     """Force correct datatypes according to what model expects"""
 
-    def __init__(self, ftsd: dict, date_format: str = "%Y-%m-%d"):
-        """Initialise with fts and optionally specify factors with specific levels
+    def __init__(self, ftsd: dict, date_format: str = "%Y-%m-%d", **kwargs):
+        """Initialise with fts. Optionally specify factors with specific levels.
+        Optionally pass snl SnakeyLowercaser.
 
         Use with a fts dict of form:
             ftsd = dict(
@@ -84,14 +85,13 @@ class DatatypeConverter:
             "empty",
             "",
         ]
+        self.snl = kwargs.pop("snl", SnakeyLowercaser())
 
     def convert_dtypes(self, dfraw: pd.DataFrame) -> pd.DataFrame:
         """Select fts and convert dtypes. Return cleaned df
         TODO keep up to date with pandas missing value handling
              https://pandas.pydata.org/docs/user_guide/missing_data.html
         """
-        snl = SnakeyLowercaser()
-
         # subselect desired fts
         # TODO make this optional
         fts_all = [w for _, v in self.ftsd.items() for w in v]
@@ -100,7 +100,7 @@ class DatatypeConverter:
         for ft in self.ftsd["fcat"] + self.ftsd["fstr"]:
             # tame string, clean, handle nulls
             idx = df[ft].notnull()
-            vals = df.loc[idx, ft].astype(str, errors="ignore").apply(snl.clean)
+            vals = df.loc[idx, ft].astype(str, errors="ignore").apply(self.snl.clean)
             df.drop(ft, axis=1, inplace=True)
             df.loc[~idx, ft] = pd.NA
             df.loc[idx, ft] = vals
@@ -299,12 +299,14 @@ class Transformer:
           appropriate to the full data domain. This will feed
           pd.Categorical.cat.codes (ints) representation into patsy
         + Booleans must already be np.bool (not pd.BooleanDtype, no NaNs)
+        + downstream usage of snl to clean_patsy names
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        """Optionally pass snl SnakeyLowercaser"""
         self.design_info = None
         self.factor_map = {}
-        self.snl = SnakeyLowercaser()
+        self.snl = kwargs.pop("snl", SnakeyLowercaser())
 
     def _get_fts_to_force_to_int(self, dfraw: pd.DataFrame) -> list[str]:
         """Get list of ffts to force to int post patsy conversion"""
