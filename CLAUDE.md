@@ -10,7 +10,8 @@ Built and published to PyPI using `flit`, managed with `uv`.
 
 ## Development Environment
 
-Uses `uv` for virtual environment management with a local `.venv/`.
++ **Machine**: Developed on a Macbook Air M2 24GB RAM
++ **Python Env**: Uses `uv` for virtual environment management with a local `.venv/`.
 
 ```zsh
 # Create dev environment (also installs pre-commit hooks)
