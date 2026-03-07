@@ -93,13 +93,12 @@ def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
     idx = pd.isnull(obs) | np.isinf(obs)
     obs = obs.loc[~idx]
 
-    obs_is_discrete = sum(obs == (obs // 1)) == len(obs)
+    obs_is_discrete = (obs == obs // 1).all()
     n_zeros = (obs == 0).sum()
     n_negs = (obs < 0).sum()
 
     def _annotate_facets(n_nans, n_infs, n_zeros):
         """Convenience to annotate, based on eda.plots.plot_float_dist"""
-        n_zeros = (obs == 0).sum()
         mean = obs.mean()
         med = obs.median()
         ax = plt.gca()
@@ -135,7 +134,7 @@ def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
 
             # rmse not necessarily good for discrete count models
             # https://stats.stackexchange.com/questions/48811/cost-function-for-validating-poisson-regression-models
-            rmse = np.sqrt(np.sum(np.power(obs_count - pmf, 2.0)) / len(obs))
+            rmse = np.sqrt(np.sum(np.square(obs_count - pmf)) / len(obs))
             _ = sns.lineplot(
                 x=bin_centers_int, y=pmf, label=f"{d}: {rmse:#.2g}", **line_kws
             )
@@ -159,7 +158,7 @@ def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
             shape, loc, scale = ps[:-2], ps[-2], ps[-1]
             params[d] = dict(shape=shape, loc=loc, scale=scale)
             pdf = dist.pdf(bin_centers, loc=loc, scale=scale, *shape)
-            rmse = np.sqrt(np.sum(np.power(obs_density - pdf, 2.0)) / len(obs))
+            rmse = np.sqrt(np.sum(np.square(obs_density - pdf)) / len(obs))
             _ = sns.lineplot(
                 x=bin_centers, y=pdf, label=f"{d}: {rmse:#.2g}", **line_kws
             )
@@ -176,7 +175,7 @@ def get_gini(r: np.ndarray, n: np.ndarray) -> np.ndarray:
     """For array r, return estimate of gini co-efficient over n
     g = A / (A+B)
     """
-    return 1 - sum(r.sort_values().cumsum() * (2 / n))
+    return 1 - (r.sort_values().cumsum() * (2 / n)).sum()
 
 
 def bootstrap_index_only(a: np.ndarray, nboot: int = None) -> np.ndarray:
@@ -201,8 +200,7 @@ def bootstrap(a: np.ndarray, nboot: int = None, summary_fn=None) -> np.ndarray:
     samples = a[sample_idx]
     if summary_fn is not None:
         return np.apply_along_axis(summary_fn, 0, samples)
-    else:
-        return samples
+    return samples
 
 
 def bootstrap_lr(
