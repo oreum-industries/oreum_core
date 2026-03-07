@@ -444,7 +444,7 @@ def calc_2_sample_delta_prop(a, aref, a_index=None, fully_vectorised=False):
                 np.quantile(delta, rope, axis=1) > 0
             )  # (len(rope), len(aref))
             n_intersects[i] = np.sum(delta_gt0, axis=0)  # (len(aref))
-        n_intersects = n_intersects.astype(np.int)
+        n_intersects = n_intersects.astype(int)
 
     prop_intersects_across_aref = np.apply_along_axis(
         lambda r: _bincount_pad(r, len(rope)), 1, n_intersects

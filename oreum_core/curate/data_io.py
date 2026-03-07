@@ -88,7 +88,7 @@ class PandasCSVIO(BaseFileIO):
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".csv"))
         kws = kwargs.copy()
         kws.update(quoting=csv.QUOTE_NONNUMERIC)
-        if (len(df.index.names) == 1) & (df.index.names[0] is None):
+        if len(df.index.names) == 1 and df.index.names[0] is None:
             kws.update(index_label="rowid")
         df.to_csv(fqn, *args, **kws)
         _log.info(f"Written to {str(fqn.resolve())}")
@@ -247,10 +247,9 @@ def copy_csv2md(fn: str) -> str:
     fileio = BaseFileIO()
     fqn = fileio.get_path_read(fn)
     r = subprocess.run(["csv2md", f"{fqn}"], capture_output=True)
-    fn_out = f"{fn[:-3] + 'md'}"
+    fn_out = fn[:-3] + "md"
     fqn_out = fileio.get_path_write(fn_out)
     with open(fqn_out, "wb") as f:
         f.write(r.stdout)
-        f.close()
     _log.info(f"Written to {str(fqn_out.resolve())}")
     return fqn_out

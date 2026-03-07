@@ -148,7 +148,7 @@ def output_data_dict(
 
     # write overview
     excelio = PandasExcelIO(rootdir=fqp)
-    fn = f"_{fn}" if fn != "" else fn
+    fn = f"_{fn}" if fn else fn
     fn = f"datadict{fn}"
     excelio.writer_open(fn)
     excelio.writer_write(dfd, sheet_name="overview", index=True)

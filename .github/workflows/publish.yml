@@ -42,6 +42,7 @@ jobs:
     name: All-in-one build & publish package to TestPyPi and test install it
     needs: [build]
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6

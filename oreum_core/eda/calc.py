@@ -119,7 +119,7 @@ def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
 
     if obs_is_discrete:
         dist_kind = "Discrete"
-        nbins = np.int(obs.max())
+        nbins = int(obs.max())
         obs_count, bin_edges = np.histogram(obs, bins=nbins, density=False)
         bin_centers = (bin_edges + np.roll(bin_edges, -1))[:-1] / 2.0
         bin_centers_int = np.round(bin_centers)

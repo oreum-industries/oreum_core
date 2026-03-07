@@ -37,13 +37,12 @@ class BaseFileIO:
         """
         if rootdir is None:
             self.rootdir = Path().cwd()
+        elif not rootdir.is_dir():
+            raise FileNotFoundError(
+                f"Required dir does not exist {str(rootdir.resolve())}"
+            )
         else:
-            if not rootdir.is_dir():
-                raise FileNotFoundError(
-                    f"Required dir does not exist {str(self.rootdir.resolve())}"
-                )
-            else:
-                self.rootdir = rootdir
+            self.rootdir = rootdir
         self.snl = SnakeyLowercaser(allowed_punct="-")
 
     def get_path_read(self, fn: str) -> Path:

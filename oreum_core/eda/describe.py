@@ -114,13 +114,13 @@ def describe(
     # add sum for numeric cols
     dfout["sum"] = np.nan
     idxs = (dfout["dtype"] == "float64") | (dfout["dtype"] == "int64")
-    if np.sum(idxs.values) > 0:
+    if idxs.any():
         for ft in dfout.loc[idxs].index.values:
             dfout.loc[ft, "sum"] = df[ft].sum()
 
     # add min, max for string cols (note the not very clever overwrite of count)
     idxs = (dfout["dtype"] == "object") | (dfout["dtype"] == "string[python]")
-    if np.sum(idxs.values) > 0:
+    if idxs.any():
         for ft in dfout.loc[idxs].index.values:
             dfout.loc[ft, "min"] = df[ft].value_counts().index.min()
             dfout.loc[ft, "max"] = df[ft].value_counts().index.max()
@@ -216,9 +216,7 @@ def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:
         int=[k for k, v in dtypes if v.name[:3] == "int"],
         float=[k for k, v in dtypes if v.name[:3] == "flo"],
     )
-    w = []
-    for _, v in fts.items():
-        w += v
+    w = [ft for v in fts.values() for ft in v]
 
     mismatch = list(set(df.columns) - set(w))
     if len(mismatch) > 0:

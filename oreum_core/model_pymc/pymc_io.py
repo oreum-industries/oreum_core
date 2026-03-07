@@ -90,7 +90,7 @@ class PYMCIO(BaseFileIO):
             fn = "_".join(filter(None, ["graph", mdl.mdl_id_fn, txtadd]))
         fqn = self.get_path_write(f"{fn}.{fmt}")
         gv = model_to_graphviz(mdl.model, formatting="plain")
-        if write == False:
+        if not write:
             return gv
         if fmt == "png":
             gv.attr(dpi="200")  # 200 is plenty! 300 maybe one day

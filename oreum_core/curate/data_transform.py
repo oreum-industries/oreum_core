@@ -123,7 +123,7 @@ class DatatypeConverter:
                     df.loc[df[ft].isnull(), ft] = False
 
                 set_tf_only = set(df[ft].unique())
-                if len(set_tf_only - set([True, False])) == 0:  # most common
+                if not (set_tf_only - {True, False}):  # most common
                     df[ft] = df[ft].astype(bool)
                 elif pd.isnull(df[ft]).sum() > 0:  # contains NaNs, use pd.boolean
                     df[ft] = df[ft].convert_dtypes(convert_boolean=True)
@@ -231,7 +231,7 @@ class DatasetReshaper:
         dfcmb = pd.DataFrame(index=[0])
         sdtypes = df.dtypes
 
-        if (sum(sdtypes == "object") > 0) | (sum(sdtypes == "boolean") > 0):
+        if (sum(sdtypes == "object") > 0) or (sum(sdtypes == "boolean") > 0):
             return (
                 ValueError,
                 "Valid dtypes are `category`, `bool`, `int`, `float` only",
@@ -415,8 +415,7 @@ class Standardizer:
 
         # col_mask is True where we want to exclude the col from standardization
         self.col_mask = [
-            True if i in col_num_excl else False
-            for i in np.arange(len(self.design_info.column_names))
+            i in col_num_excl for i in range(len(self.design_info.column_names))
         ]
 
         self.means = None  # will become np.ndarray
@@ -427,7 +426,7 @@ class Standardizer:
         """Standardize input df to mean-centered, 2sd unit variance,
         Retain the fitted means and sdevs for later use in standardize()
         """
-        if any([v is None for v in [self.means, self.sdevs, self.scale]]):
+        if any(v is None for v in (self.means, self.sdevs, self.scale)):
             raise AttributeError(
                 "No mns, sdevs or scale, "
                 + "run `fit_standardize()` on training set first"
@@ -453,7 +452,7 @@ class Standardizer:
         """Standardize input mx to mean-centered, 2sd unit variance,
         Retain the fitted means and sdevs for later use in standardize()
         """
-        if any([v is None for v in [self.means, self.sdevs, self.scale]]):
+        if any(v is None for v in (self.means, self.sdevs, self.scale)):
             raise AttributeError(
                 "No mns, sdevs or scale, "
                 + "run `fit_standardize()` on training set first"
