@@ -4,7 +4,8 @@
 [![License](https://img.shields.io/badge/license-Apache2.0-blue.svg)](https://choosealicense.com/licenses/apache-2.0/)
 [![GitHub Release](https://img.shields.io/github/v/release/oreum-industries/oreum_core?display_name=tag&sort=semver)](https://github.com/oreum-industries/oreum_core/releases)
 [![PyPI](https://img.shields.io/pypi/v/oreum_core)](https://pypi.org/project/oreum_core)
-[![CI](https://github.com/oreum-industries/oreum_core/workflows/lint/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/lint.yml)
+[![lint](https://github.com/oreum-industries/oreum_core/workflows/lint/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/lint.yml)
+[![test](https://github.com/oreum-industries/oreum_core/workflows/test/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/test.yml)
 [![publish](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml)
 [![code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![code style: interrogate](https://raw.githubusercontent.com/oreum-industries/oreum_core/master/assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
@@ -19,7 +20,7 @@ projects by Oreum Industries.
 
 + Provides an essential workflow for data curation, EDA, basic ML using the core
   scientific Python stack incl. `numpy`, `scipy`, `matplotlib`, `seaborn`,
-  `pandas`, `scikit-learn`, `umap-learn`
+  `pandas`, `scikit-learn`
 + Optionally provides an advanced Bayesian modeling workflow in R&D and
   Production using a leading probabilistic programming stack incl. `pymc`,
   `pytensor`, `arviz`
@@ -50,6 +51,7 @@ This package **is not**:
 + The `README.md` is MacOS and POSIX oriented
 + See `LICENCE.md` for licensing and copyright details
 + See `pyproject.toml` for various package details
++ See `CLAUDE.md` for Claude Code rules
 + This uses a logger named `'oreum_core'`, feel free to incorporate or ignore
   see `__init__.py` for details
 + Hosting:
@@ -66,6 +68,21 @@ This package **is not**:
     details of all package licences
 + Environments: this project was originally developed on a Macbook Air M2
   (Apple Silicon ARM64) running MacOS 15 (Sequoia) using `osx-arm64` Accelerate
+
+
+
+### Package Structure
+
+Top-level:
+```
+oreum_core/
+├── curate/      # Data ingestion & transformation
+├── eda/         # Exploratory data analysis
+├── model_pymc/  # Bayesian modeling (optional dep: pip install oreum_core[pymc])
+├── model_tree/  # Gradient-boosted trees (optional dep: pip install oreum_core[tree])
+└── utils/       # BaseFileIO base class for all I/O handlers, also string sanitization
+```
+
 
 ## 2. Instructions to Create Dev Environment
 

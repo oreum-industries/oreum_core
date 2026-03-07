@@ -1,0 +1,42 @@
+name: test
+
+# trigger only when a PR is opened, reopened, or marked ready for review
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, reopened, ready_for_review]
+
+# use lowest perms
+permissions:
+  actions: read
+  checks: write
+  contents: read
+  pull-requests: read
+
+# concurrency: cancel same job already in-progress, to be efficient
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+  test:
+    name: test - Run pytest suite
+    timeout-minutes: 5
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: ["ubuntu-latest"]
+        python-version: ["3.13"]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup python env ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run pytest suite
+        run: make test CI=1

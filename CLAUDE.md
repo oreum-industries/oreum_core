@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working in this repository.
 
 ## Project Overview
 
@@ -10,8 +10,8 @@ Built and published to PyPI using `flit`, managed with `uv`.
 
 ## Development Environment
 
-+ **Machine**: Developed on a Macbook Air M2 24GB RAM
-+ **Python Env**: Uses `uv` for virtual environment management with a local `.venv/`.
++ **Machine**: Developed on a Macbook Air M2, with 24GB RAM
++ **Python Env**: Uses `uv` for virtual environment management with a local `.venv/`
 
 ```zsh
 # Create dev environment (also installs pre-commit hooks)
@@ -20,8 +20,8 @@ make dev
 # Lint (ruff, interrogate, bandit)
 make lint
 
-# Test the numeric stack installation
-make dev-test
+# Unit tests
+make test
 
 # Remove dev environment
 make dev-uninstall
