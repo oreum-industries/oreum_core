@@ -30,6 +30,7 @@ from .calc import calc_svd
 from .describe import get_fts_by_dtype
 
 __all__ = [
+    "set_plot_theme",
     "plot_cat_ct",
     "plot_bool_ct",
     "plot_date_ct",
@@ -65,12 +66,20 @@ _log = logging.getLogger(__name__)
 RSD = 42
 rng = np.random.default_rng(seed=RSD)
 
-sns.set_theme(
-    style="darkgrid",
-    palette="muted",
-    context="notebook",
-    rc={"figure.dpi": 72, "savefig.dpi": 144, "figure.figsize": (12, 4)},
-)
+
+def set_plot_theme(
+    style: str = "darkgrid",
+    palette: str = "muted",
+    context: str = "notebook",
+    rc: dict = None,
+):
+    """Apply the oreum seaborn/matplotlib plot theme globally.
+    Call once at the top of a notebook or script before plotting.
+    Defaults match the oreum house style.
+    """
+    if rc is None:
+        rc = {"figure.dpi": 72, "savefig.dpi": 144, "figure.figsize": (12, 4)}
+    sns.set_theme(style=style, palette=palette, context=context, rc=rc)
 
 
 def _get_kws_styling() -> dict:

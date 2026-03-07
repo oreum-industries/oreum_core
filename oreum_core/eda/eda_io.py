@@ -33,13 +33,6 @@ __all__ = ["FigureIO", "output_data_dict"]
 
 _log = logging.getLogger(__name__)
 
-sns.set_theme(
-    style="darkgrid",
-    palette="muted",
-    context="notebook",
-    rc={"figure.dpi": 72, "savefig.dpi": 144, "figure.figsize": (12, 4)},
-)
-
 
 class FigureIO(BaseFileIO):
     """Helper class to save matplotlib.figure.Figure objects to image file"""
