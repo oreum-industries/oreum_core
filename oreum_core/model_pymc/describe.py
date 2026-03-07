@@ -42,7 +42,7 @@ def model_desc(fml: str) -> str:
         case that it's present. check and add if needed
     """
     fmls = fml.split(" ~ ")
-    add_intercept = False if re.match(r"1 \+", fml) is None else True
+    add_intercept = re.match(r"1 \+", fml) is not None
     r = pat.ModelDesc.from_formula(fml).describe()
     if len(fmls) == 2:
         rs = r.split(" ~ ")
@@ -62,7 +62,7 @@ def extract_yobs_yhat(
     """Convenience: extract y_obs, y_hat from idata
     get yhat in the shape (nsamples, nobs)
     """
-    nsamp = np.product(idata.posterior_predictive[pred].shape[:-1])
+    nsamp = np.prod(idata.posterior_predictive[pred].shape[:-1])
     yobs = idata.constant_data[obs].values  # (nobs,)
     yhat = idata.posterior_predictive[pred].values.reshape(nsamp, -1)  # (nsamp, nobs)
     return yobs, yhat
