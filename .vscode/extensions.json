@@ -6,5 +6,6 @@
         "tal7aouy.theme",
         "github.vscode-github-actions",
         "marimo-team.vscode-marimo",
+        "anthropic.claude-code",
     ]
 }

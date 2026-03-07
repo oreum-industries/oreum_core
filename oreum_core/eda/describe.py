@@ -19,7 +19,6 @@ import logging
 
 import numpy as np
 import pandas as pd
-from IPython.display import display
 from scipy import stats
 
 __all__ = ["describe", "display_fw", "display_ht", "get_fts_by_dtype"]
@@ -102,8 +101,9 @@ def describe(
 
     # add counts for all
     if get_counts:
-        dfout["count_notnull"] = df.shape[0] - df.isnull().sum()
-        dfout["count_null"] = df.isnull().sum(axis=0)
+        null_counts = df.isnull().sum()
+        dfout["count_notnull"] = df.shape[0] - null_counts
+        dfout["count_null"] = null_counts
         dfout["count_inf"] = (
             np.isinf(df.select_dtypes(np.number)).sum().reindex(df.columns)
         )
@@ -115,15 +115,15 @@ def describe(
     dfout["sum"] = np.nan
     idxs = (dfout["dtype"] == "float64") | (dfout["dtype"] == "int64")
     if idxs.any():
-        for ft in dfout.loc[idxs].index.values:
-            dfout.loc[ft, "sum"] = df[ft].sum()
+        num_fts = dfout.loc[idxs].index.tolist()
+        dfout.loc[idxs, "sum"] = df[num_fts].sum()
 
     # add min, max for string cols (note the not very clever overwrite of count)
     idxs = (dfout["dtype"] == "object") | (dfout["dtype"] == "string[python]")
     if idxs.any():
-        for ft in dfout.loc[idxs].index.values:
-            dfout.loc[ft, "min"] = df[ft].value_counts().index.min()
-            dfout.loc[ft, "max"] = df[ft].value_counts().index.max()
+        str_fts = dfout.loc[idxs].index.tolist()
+        dfout.loc[idxs, "min"] = df[str_fts].min()
+        dfout.loc[idxs, "max"] = df[str_fts].max()
 
     fts_out_all = (
         [
@@ -152,7 +152,7 @@ def describe(
             {"mode": r[0][0], "mode_count": r[1][0]}, index=dfnn.columns
         )
         dfout = dfout.join(dfmode, how="left", left_index=True, right_index=True)
-        fts_out.append(["mode", "mode_count"])
+        fts_out += ["mode", "mode_count"]
 
     # select summary states and prepend random rows for example cases
     rndidx = RNG.choice(np.arange(0, len(df)), size=nobs, replace=False)
@@ -185,6 +185,8 @@ def display_fw(df: pd.DataFrame, **kwargs) -> None:
     if kwargs.pop("latex", False):
         options["styler.render.repr"] = "latex"
         options["styler.latex.environment"] = "longtable"
+
+    from IPython.display import display
 
     with pd.option_context(*[i for tup in options.items() for i in tup]):
         display(df)
