@@ -69,3 +69,39 @@ class TestDatatypeConverterConvertDtypes:
         df = pd.DataFrame({"label": ["alpha", None, "beta"]})
         out = DatatypeConverter({"fcat": ["label"]}).convert_dtypes(df)
         assert pd.isna(out["label"].iloc[1])
+
+
+class TestDatatypeConverterConvertDtypesSadPath:
+    """Sad-path tests for DatatypeConverter.convert_dtypes()"""
+
+    def test_missing_feature_raises_keyerror(self):
+        """Sad: feature listed in ftsd but absent from DataFrame → KeyError"""
+        df = pd.DataFrame({"colour": ["red"]})
+        with pytest.raises(KeyError):
+            DatatypeConverter({"fcat": ["nonexistent"]}).convert_dtypes(df)
+
+    def test_fbool_unmappable_value_raises_valueerror(self):
+        """Sad: fbool value that can't map to True/False with no NaNs → ValueError"""
+        df = pd.DataFrame({"flag": ["yes", "maybe"]})
+        with pytest.raises(ValueError, match="incompatible with np.bool or pd.Boolean"):
+            DatatypeConverter({"fbool": ["flag"]}).convert_dtypes(df)
+
+    def test_fint_non_numeric_raises_exception(self):
+        """Sad: non-numeric string in fint → Exception wrapping the conversion error"""
+        df = pd.DataFrame({"count": ["10", "abc"]})
+        with pytest.raises(Exception, match="in ft: count"):
+            DatatypeConverter({"fint": ["count"]}).convert_dtypes(df)
+
+    def test_fdate_wrong_format_raises_valueerror(self):
+        """Sad: date string in wrong format (dd/mm/yyyy vs default %Y-%m-%d) → ValueError"""
+        df = pd.DataFrame({"dt": ["01/01/2024"]})
+        with pytest.raises(ValueError):
+            DatatypeConverter({"fdate": ["dt"]}).convert_dtypes(df)
+
+    def test_ford_unknown_level_silently_becomes_nan(self):
+        """Edge: ford value not in specified levels → NaN (pd.Categorical behaviour)"""
+        df = pd.DataFrame({"size": ["small", "unknown"]})
+        out = DatatypeConverter(
+            {"ford": {"size": ["small", "medium", "large"]}}
+        ).convert_dtypes(df)
+        assert pd.isna(out["size"].iloc[1])
