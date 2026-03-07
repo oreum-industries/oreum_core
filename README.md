@@ -20,7 +20,7 @@ projects by Oreum Industries.
 
 + Provides an essential workflow for data curation, EDA, basic ML using the core
   scientific Python stack incl. `numpy`, `scipy`, `matplotlib`, `seaborn`,
-  `pandas`, `scikit-learn`, `umap-learn`
+  `pandas`, `scikit-learn`
 + Optionally provides an advanced Bayesian modeling workflow in R&D and
   Production using a leading probabilistic programming stack incl. `pymc`,
   `pytensor`, `arviz`
