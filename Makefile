@@ -4,9 +4,9 @@
 # + Uses local sh: optionallay confirm shell create recipe w/ $(info $(SHELL))
 # + Defaults to CI=0 (override for github actions in publish.yml)
 .PHONY: brew build dev dev-test dev-uninstall help lint publish publish-test \
-	test-pkg-dl
+	test test-pkg-dl
 .SILENT: brew build dev dev-test dev-uninstall help lint publish publish-test \
-	test-pkg-dl
+	test test-pkg-dl
 PYTHON_NONVENV = $(or $(shell which python3), $(shell which python))
 VERSION := $(shell echo $(VVERSION) | sed 's/v//')
 CI?=0
@@ -62,6 +62,7 @@ help:
 	@echo "  lint           run lint & static checks"
 	@echo "  publish        all-in-one build and publish to pypi"
 	@echo "  publish-test   all-in-one build and publish to testpypi"
+	@echo "  test           run pytest suite"
 	@echo "  test-pkg-dl    test dl & install from testpypi"
 
 lint:
@@ -123,6 +124,18 @@ publish-test:
 			python -m flit publish; \
 		fi;
 
+
+test:
+	@echo "Run pytest suite..."
+	if [ $(CI) -eq 1 ]; then \
+		$(PYTHON_NONVENV) -m pip install uv; \
+	fi;
+	@uv venv .venv-temp; \
+	trap "rm -rf .venv-temp" EXIT; \
+	uv pip install --python .venv-temp pytest; \
+	uv pip install --python .venv-temp --no-deps .; \
+	. .venv-temp/bin/activate; \
+		pytest tests/ -v;
 
 test-pkg-dl:
 	@echo "Test dl & install from testpypi using venv-temp. Pass VERSION=x.x.x"

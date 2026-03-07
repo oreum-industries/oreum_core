@@ -10,7 +10,8 @@ Built and published to PyPI using `flit`, managed with `uv`.
 
 ## Development Environment
 
-+ **Machine**: Developed on a Macbook Air M2 24GB RAM
++ **Machine**: Developed on a Macbook Air M2, with 24GB RAM (Apple Silicon arm64
+  using Accelerate and Metal Performance Shaders MPS)
 + **Python Env**: Uses `uv` for virtual environment management with a local `.venv/`.
 
 ```zsh
