@@ -147,7 +147,7 @@ def plot_cat_ct(
 
     for i, ft in enumerate(fts):
         counts_all = df.groupby(ft, observed=False).size().sort_values(ascending=True)
-        if (df[ft].dtype == "category") & cat_order:
+        if (df[ft].dtype == "category") and cat_order:
             counts_all = df.groupby(ft, observed=False).size()[::-1]  # need to invert
 
         if df[ft].dtype == bool:
@@ -242,7 +242,7 @@ def plot_date_ct(
     if len(fts) == 0:
         return None
 
-    vert = int(np.ceil(len(fts)))
+    vert = len(fts)
     f, ax1d = plt.subplots(vert, 1, figsize=(12, 0.5 + vert * vsize), squeeze=True)
 
     if vert > 1:
@@ -301,7 +301,7 @@ def plot_int_dist(
     if bins is None:
         bins = "auto"
 
-    vert = int(np.ceil(len(fts)))
+    vert = len(fts)
     f, ax1d = plt.subplots(len(fts), 1, figsize=(12, 0.5 + vert * vsize), squeeze=False)
     for i, ft in enumerate(fts):
         n_nans = pd.isnull(df[ft]).sum()
@@ -930,7 +930,7 @@ def plot_estimate(
         "linestyle": "none",
         "orient": "h",
         "color": "C1",
-    }  # , "dodge":True}
+    }
     mn_pt_kws = copy(sty["mn_pt_kws"])
     mn_pt_kws.update(
         markerfacecolor="C1", markeredgecolor="C1", c="C1", marker="o", markersize=8
@@ -1043,16 +1043,8 @@ def plot_bootstrap_lr(
     hdi = dfboot["lr"].quantile(q=[0.03, 0.25, 0.75, 0.97]).values
 
     clr = color if color is not None else sns.color_palette()[0]
-    elems = [
-        lines.Line2D(
-            [0], [0], label="population LR (bootstrap $\\mu$)", **sty["mn_pt_kws"]
-        ),
-        lines.Line2D(
-            [0], [0], label="sample LR (point est. $\\mu$)", **sty["pest_mn_pt_kws"]
-        ),
-    ]
 
-    if not pretty_plot:  # default violin plots, mre technical
+    if not pretty_plot:  # default violin plots, more technical
         gd = sns.catplot(
             x="lr", data=dfboot, kind="violin", cut=0, color=clr, height=3, aspect=4
         )
@@ -1306,7 +1298,7 @@ def plot_bootstrap_grp(
     """Plot bootstrapped value, grouped by grp"""
     sty = _get_kws_styling()
 
-    if dfboot[grp].dtypes not in ["object", "category"]:
+    if dfboot[grp].dtype not in ["object", "category"]:
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f"s{x}")
 
@@ -1367,7 +1359,7 @@ def plot_bootstrap_grp(
         + f" - grouped by {grp}"
     )
     _ = f.suptitle(f"{title}{title_add}")
-    _ = plt.tight_layout()
+    _ = f.tight_layout()
     return f
 
 
@@ -1375,7 +1367,7 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
     """Plot delta between boostrap results, grouped"""
 
     sty = _get_kws_styling()
-    if dfboot[grp].dtypes != "object":
+    if dfboot[grp].dtype != "object":
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f"s{x}")
 
@@ -1415,7 +1407,7 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
     title = f"2-sample bootstrap test - grouped by {grp}"
     _ = f.suptitle(f"{title}{title_add}")
 
-    _ = plt.tight_layout()  # prefer over constrained_layout
+    _ = f.tight_layout()
     return gs
 
 
@@ -1470,7 +1462,7 @@ def plot_smrystat(
     t = f"Diagnostic 1D plots of `{val}`"
     _ = f.suptitle("\n".join(filter(None, [t, txtadd])), y=1, fontsize=14)
 
-    if sum(idx) > 0:
+    if idx.any():
         t = (
             f"Note: {sum(~idx):,.0f} NaNs found in value,"
             f"\nplotted non-NaN dataset of {sum(idx):,.0f}"
@@ -1481,7 +1473,7 @@ def plot_smrystat(
 
     ax0.xaxis.label.set_visible(False)
     ax1.xaxis.label.set_visible(False)
-    _ = plt.tight_layout()
+    _ = f.tight_layout()
     return f
 
 
@@ -1511,7 +1503,7 @@ def plot_smrystat_grp(
     if grpkind == "year":
         dfp[grp] = dfp[grp].dt.year
 
-    if dfp[grp].dtypes not in ["object", "category", "string"]:
+    if dfp[grp].dtype not in ["object", "category", "string"]:
         dfp[grp] = dfp[grp].map(lambda x: f"s{x}")
 
     ct = dfp.groupby(grp, observed=True).size()
@@ -1586,7 +1578,7 @@ def plot_smrystat_grp(
     txtadd = kwargs.pop("txtadd", None)
     _ = f.suptitle("\n".join(filter(None, [t, txtadd])), y=1, fontsize=14)
 
-    if sum(idx) > 0:
+    if idx.any():
         t = (
             f"Note: {sum(~idx):,.0f} NaNs found in value,"
             f"\nplotted non-NaN dataset of {sum(idx):,.0f}"
@@ -1595,7 +1587,6 @@ def plot_smrystat_grp(
             t, xy=(0.96, 0.96), xycoords="figure fraction", ha="right", fontsize=8
         )
 
-    f = plt.gcf()
     _ = f.tight_layout()
     return f
 
@@ -1620,6 +1611,8 @@ def plot_smrystat_grp_year(
 
     sty = _get_kws_styling()
     est = np.sum if smry == "sum" else np.mean
+    if pal is None:
+        pal = "viridis"
     lvls = df.groupby(grp, observed=True).size().index.tolist()
     yrs = df.groupby(year, observed=True).size().index.tolist()
     t = f"Diagnostic 1D plots of `{val}` grouped by `{grp}` split by {year}"
@@ -1632,7 +1625,7 @@ def plot_smrystat_grp_year(
     for i, yr in enumerate(yrs):  # ugly loop over years
         dfs = df.loc[df[year] == yr].copy()
 
-        if dfs[grp].dtypes not in ["object", "category", "string"]:
+        if dfs[grp].dtype not in ["object", "category", "string"]:
             dfs[grp] = dfs[grp].map(lambda x: f"s{x}")
 
         ct = dfs.groupby(grp, observed=True).size()
@@ -1672,9 +1665,6 @@ def plot_smrystat_grp_year(
         ax1d[i].set_title(f'Distribution of indiv. values [{yr:"%Y"}]')
         ax2d[i].set_title(f'Count [{yr:"%Y"}] ({len(ct)} lvls)')
 
-        if pal is None:
-            pal = "viridis"
-        est = np.sum if smry == "sum" else np.mean
         kws = dict(
             y=grp,
             data=dfs,
@@ -1707,8 +1697,7 @@ def plot_smrystat_grp_year(
         t += f" (top {len(ct)} levels)"
     txtadd = kwargs.pop("txtadd", None)
     _ = f.suptitle("\n".join(filter(None, [t, txtadd])), y=1, fontsize=14)
-    _ = plt.tight_layout()
-    f = plt.gcf()
+    _ = f.tight_layout()
     return f
 
 
@@ -1787,7 +1776,7 @@ def plot_grp_ct(
     Works nicely with categorical too
     """
 
-    if df[grp].dtypes not in ["object", "category"]:
+    if df[grp].dtype not in ["object", "category"]:
         raise TypeError("grp must be Object (string) or Categorical")
 
     t = f"Countplot: {len(df)} obs, grouped by `{grp}`"
