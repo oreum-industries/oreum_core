@@ -468,7 +468,7 @@ class Standardizer:
         self.means = np.where(self.col_mask, np.nan, np.nanmean(mx, axis=0))
         self.sdevs = np.where(self.col_mask, np.nan, np.nanstd(mx, axis=0))
         self.scale = scale
-        return self.standardize(mx)
+        return self.standardize_mx(mx)
 
     def get_scale(self) -> tuple[pd.DataFrame, float]:
         """Get values followuing fit_standardize. Persist values over time."""
