@@ -50,6 +50,7 @@ This package **is not**:
 + The `README.md` is MacOS and POSIX oriented
 + See `LICENCE.md` for licensing and copyright details
 + See `pyproject.toml` for various package details
++ See `CLAUDE.md` for Claude Code rules
 + This uses a logger named `'oreum_core'`, feel free to incorporate or ignore
   see `__init__.py` for details
 + Hosting:
@@ -66,6 +67,21 @@ This package **is not**:
     details of all package licences
 + Environments: this project was originally developed on a Macbook Air M2
   (Apple Silicon ARM64) running MacOS 15 (Sequoia) using `osx-arm64` Accelerate
+
+
+
+### Package Structure
+
+Top-level:
+```
+oreum_core/
+├── curate/      # Data ingestion & transformation
+├── eda/         # Exploratory data analysis
+├── model_pymc/  # Bayesian modeling (optional dep: pip install oreum_core[pymc])
+├── model_tree/  # Gradient-boosted trees (optional dep: pip install oreum_core[tree])
+└── utils/       # BaseFileIO base class for all I/O handlers, also string sanitization
+```
+
 
 ## 2. Instructions to Create Dev Environment
 
