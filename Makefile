@@ -132,8 +132,7 @@ test:
 	fi;
 	@uv venv .venv-temp; \
 	trap "rm -rf .venv-temp" EXIT; \
-	uv pip install --python .venv-temp pytest; \
-	uv pip install --python .venv-temp --no-deps .; \
+	uv pip install --python .venv-temp pytest .; \
 	. .venv-temp/bin/activate; \
 		pytest tests/ -v;
 
