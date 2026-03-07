@@ -1,11 +1,10 @@
 name: test
 
-# trigger on PRs into master and pushes to master
+# trigger only when a PR is opened, reopened, or marked ready for review
 on:
   pull_request:
     branches: [master]
-  push:
-    branches: [master]
+    types: [opened, reopened, ready_for_review]
 
 # use lowest perms
 permissions:
