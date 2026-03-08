@@ -1,11 +1,12 @@
 name: lint
 
-# triger on PRs into master and pushes to master
+# triger on PRs into master and pushes to master, or on manual request
 on:
   pull_request:
     branches: [master]
   push:
     branches: [master]
+  workflow_dispatch:
 
 # use lowest perms
 permissions:

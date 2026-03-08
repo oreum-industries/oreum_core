@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "oreum_core"
 description = "Core tools for use on projects by Oreum Industries"
-version = "0.12.2"
+version = "0.12.3"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 authors = [{ name = "Oreum Industries", email = "info@oreum.io" },]
@@ -32,7 +32,6 @@ dependencies = [
     "ftfy",
     "matplotlib",
     "matplotlib-inline",
-    "nutpie",
     "pandas[excel,parquet,plot]>=2.3,<3",  # conservative pin since 3.0 not stable
     "patsy",  # TODO consider using formulae instead
     "scikit-learn",

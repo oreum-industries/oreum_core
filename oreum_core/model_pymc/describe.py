@@ -32,9 +32,6 @@ __all__ = [
     "print_rvs",
 ]
 
-RSD = 42
-rng = np.random.default_rng(seed=RSD)
-
 
 def model_desc(fml: str) -> str:
     """Convenience: return patsy modeldesc

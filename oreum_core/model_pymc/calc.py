@@ -16,20 +16,12 @@
 """Common Calculations for Model Evaluation"""
 
 import sys
-from typing import Any, Dict, Optional, Sequence, Tuple, cast
 
 import numpy as np
 import pandas as pd
-import pymc
 import pytensor
 import pytensor.gradient as tg
 import pytensor.tensor as pt
-from arviz import InferenceData, dict_to_dataset
-
-# from fastprogress import progress_bar
-from pymc.backends.arviz import _DefaultTrace, coords_and_dims_for_inferencedata
-from pymc.model import Model, modelcontext
-from pymc.pytensorf import PointFunc
 
 __all__ = [
     "get_log_jcd_scalar",
@@ -133,14 +125,16 @@ def get_log_jcd_scan(
     return log_jcd
 
 
-def calc_f_beta(precision: np.array, recall: np.array, beta: float = 1.0) -> np.array:
+def calc_f_beta(
+    precision: np.ndarray, recall: np.ndarray, beta: float = 1.0
+) -> np.ndarray:
     """Set beta such that recall is beta times more important than precision"""
     with np.errstate(divide="ignore", invalid="ignore"):
         fb = (1 + beta**2) * (precision * recall) / ((beta**2 * precision) + recall)
     return np.nan_to_num(fb, nan=0, posinf=0, neginf=0)
 
 
-def calc_binary_performance_measures(y: np.array, yhat: np.array) -> pd.DataFrame:
+def calc_binary_performance_measures(y: np.ndarray, yhat: np.ndarray) -> pd.DataFrame:
     """Calculate tpr (recall), fpr, precision, accuracy for binary target,
     using quantiles of all samples from PPC, use vectorised calcs
     shapes y: (nsamples,), yhat: (nsamples, nobservations)
@@ -250,8 +244,7 @@ def calc_rmse(
         if mse_only:
             return mse_at_mn, mse_at_qs
         else:
-            rmse_at_qs = mse_at_qs.map(np.sqrt)
-            rmse_at_qs._set_name("rmse", inplace=True)
+            rmse_at_qs = mse_at_qs.map(np.sqrt).rename("rmse")
             return np.sqrt(mse_at_mn), rmse_at_qs
 
 

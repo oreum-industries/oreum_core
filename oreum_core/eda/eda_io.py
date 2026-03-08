@@ -82,6 +82,8 @@ class FigureIO(BaseFileIO):
         """
         if fn is not None:
             fqn = self.get_path_read(Path(fn).with_suffix(extension))
+        if fqn is None:
+            raise ValueError("Provide either fqn or fn")
         _log.info(f"Read image from {str(fqn.resolve())}")
         img = mpimg.imread(fqn)
         with plt.ioff():
@@ -154,7 +156,7 @@ def output_data_dict(
             dfg.index.name = "value"
             excelio.writer_write(
                 dfg,
-                sheet_name=f"cat_{ft[:24]}..." if len(ft) >= 27 else f"cat_{ft}",
+                sheet_name=f"cat_{ft[:24]}..." if len(ft) > 27 else f"cat_{ft}",
                 index=True,
                 float_format="%.3f",
                 na_rep="NULL",
