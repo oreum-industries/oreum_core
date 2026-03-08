@@ -903,7 +903,6 @@ def plot_bootstrap_grp(
         x=val,
         y=grp,
         data=dfboot,
-        kind="violin",
         cut=0,
         density_norm="count",
         width=0.6,

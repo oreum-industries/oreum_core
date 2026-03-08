@@ -54,7 +54,7 @@ jobs:
         with:
           coverageFile: reports/coverage-report.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          thresholdAll: 0.5   # overall floor; raise as coverage improves
+          thresholdAll: 0.6   # overall floor; raise as coverage improves
           thresholdNew: 0.8   # new files added in a PR must be well-tested
           thresholdModified: 0.7  # modified files must maintain coverage
 
