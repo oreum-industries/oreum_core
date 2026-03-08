@@ -17,5 +17,6 @@
 		},
 		"cSpell.words": [],
 		"explorer.autoReveal": "focusNoScroll",
+		"claudeCode.useCtrlEnterToSend": false,
 	}
 }
