@@ -185,7 +185,7 @@ def forestplot_single(
     )
     _ = ax0.set_title("")
 
-    if plot_mn & (len(rvs) == 1):
+    if plot_mn and len(rvs) == 1:
         _ = ax0.axvline(mn, color="#ADD8E6", ls="--", lw=3, zorder=-1)
     else:
         _ = ax0.axvline(0, color="#ADD8E6", ls="--", lw=3, zorder=-1)

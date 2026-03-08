@@ -115,7 +115,7 @@ class BasePYMCModel:
         try:
             s = self.idata.posterior
         except AttributeError as e:
-            raise e("Run sample() first") from e
+            raise AttributeError("Run sample() first") from e
         return s
 
     @property
@@ -206,7 +206,6 @@ class BasePYMCModel:
                     pm.compute_log_likelihood(posterior)
             except UserWarning as e:
                 _log.warning("Warning in mdl.sample()", exc_info=e)
-                pass
             except NotImplementedError as e:
                 _log.error("NotImplementedError in mdl.sample()", exc_info=e)
                 raise e
