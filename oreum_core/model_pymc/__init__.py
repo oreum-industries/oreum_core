@@ -43,10 +43,13 @@ from .plot import (
     forestplot_single,
     pairplot_corr,
     plot_compare,
+    plot_coverage,
     plot_energy,
+    plot_estimate,
     plot_lkjcc_corr,
     plot_loo_pit,
     plot_ppc,
+    plot_rmse_range,
     plot_trace,
     plot_yhat_vs_y,
 )

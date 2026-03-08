@@ -36,11 +36,13 @@ import seaborn as sns
 from matplotlib import figure
 
 from oreum_core.eda.plot import (
+    plot_accuracy,
     plot_bool_ct,
     plot_cat_ct,
     plot_cdf_ppc_vs_obs,
     plot_date_ct,
     plot_explained_variance,
+    plot_f_measure,
     plot_float_dist,
     plot_grp_ct,
     plot_heatmap_corr,
@@ -566,3 +568,53 @@ class TestPlotCdfPpcVsObs:
         yhat = np.ones((N, 50)) * 2.5  # constant predictions
         f = plot_cdf_ppc_vs_obs(y, yhat)
         assert isinstance(f, figure.Figure)
+
+
+# --- fixtures for remaining plot functions ---
+
+
+@pytest.fixture(scope="module")
+def df_perf() -> pd.DataFrame:
+    """Performance metrics DataFrame with integer index named 'pct'.
+    Integer index required so argmax() position == label for df.loc[] calls.
+    Columns mirror those produced by calc_binary_performance_measures.
+    """
+    n = 20
+    idx = pd.Index(range(n), name="pct")
+    return pd.DataFrame(
+        {
+            "accuracy": np.linspace(0.5, 0.85, n),
+            "f0.5": np.linspace(0.1, 0.75, n),
+            "f1": np.linspace(0.1, 0.75, n),
+            "f2": np.linspace(0.1, 0.75, n),
+        },
+        index=idx,
+    )
+
+
+class TestPlotFMeasure:
+    """Tests for plot_f_measure()"""
+
+    def test_returns_figure(self, df_perf):
+        """Happy: returns a Figure for a valid perf DataFrame"""
+        f = plot_f_measure(df_perf)
+        assert isinstance(f, figure.Figure)
+
+    def test_suptitle_contains_f_scores(self, df_perf):
+        """Happy: suptitle mentions 'F-scores'"""
+        f = plot_f_measure(df_perf)
+        assert "F-scores" in f._suptitle.get_text()
+
+
+class TestPlotAccuracy:
+    """Tests for plot_accuracy()"""
+
+    def test_returns_figure(self, df_perf):
+        """Happy: returns a Figure for a valid perf DataFrame"""
+        f = plot_accuracy(df_perf)
+        assert isinstance(f, figure.Figure)
+
+    def test_suptitle_contains_accuracy(self, df_perf):
+        """Happy: suptitle mentions 'Accuracy'"""
+        f = plot_accuracy(df_perf)
+        assert "Accuracy" in f._suptitle.get_text()
