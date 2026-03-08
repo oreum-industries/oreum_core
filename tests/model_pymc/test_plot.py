@@ -24,7 +24,15 @@ import pytest
 from matplotlib import figure
 
 try:
-    from oreum_core.model_pymc.plot import plot_coverage, plot_estimate, plot_rmse_range
+    from oreum_core.model_pymc.plot import (
+        plot_accuracy,
+        plot_binary_performance,
+        plot_coverage,
+        plot_estimate,
+        plot_f_measure,
+        plot_rmse_range,
+        plot_roc_precrec,
+    )
 
     HAS_PYMC = True
 except Exception:
@@ -124,3 +132,126 @@ class TestPlotEstimate:
         yhat = RNG.standard_normal(500) + 5.0
         f = plot_estimate(yhat, nobs=N)
         assert "Boxplot" in f._suptitle.get_text()
+
+
+@pytest.fixture(scope="module")
+def df_roc() -> pd.DataFrame:
+    """DataFrame with ROC/PrecRec curve columns"""
+    thresholds = np.linspace(0, 1, 20)
+    return pd.DataFrame(
+        {
+            "fpr": np.linspace(0, 1, 20),
+            "tpr": np.clip(np.linspace(0, 1, 20) ** 0.5, 0, 1),
+            "recall": np.linspace(0, 1, 20),
+            "precision": np.linspace(1.0, 0.5, 20),
+        },
+        index=thresholds,
+    )
+
+
+@pytest.fixture(scope="module")
+def df_perf() -> pd.DataFrame:
+    """Performance metrics DataFrame with integer index named 'pct'.
+    Integer index required so argmax() position == label for df.loc[] calls.
+    Columns mirror those produced by calc_binary_performance_measures.
+    """
+    n = 20
+    idx = pd.Index(range(n), name="pct")
+    return pd.DataFrame(
+        {
+            "accuracy": np.linspace(0.5, 0.85, n),
+            "f0.5": np.linspace(0.1, 0.75, n),
+            "f1": np.linspace(0.1, 0.75, n),
+            "f2": np.linspace(0.1, 0.75, n),
+        },
+        index=idx,
+    )
+
+
+@pytest.fixture(scope="module")
+def df_binary_perf() -> pd.DataFrame:
+    """DataFrame as produced by calc_binary_performance_measures.
+    101-row float q-index (0.00..1.00) so np.round(argmax()/100, 2) gives a valid .loc[] label.
+    """
+    qs = np.round(np.linspace(0, 1, 101), 2)
+    idx = pd.Index(qs, name="q")
+    n = len(qs)
+    return pd.DataFrame(
+        {
+            "fpr": np.linspace(1, 0, n),
+            "tpr": np.linspace(0, 1, n),
+            "precision": np.linspace(0.5, 1, n),
+            "recall": np.linspace(1, 0, n),
+            "f0.5": np.linspace(0.1, 0.8, n),
+            "f1": np.linspace(0.1, 0.8, n),
+            "f2": np.linspace(0.1, 0.8, n),
+            "accuracy": np.linspace(0.5, 0.9, n),
+        },
+        index=idx,
+    )
+
+
+class TestPlotRocPrecrec:
+    """Tests for plot_roc_precrec()"""
+
+    def test_returns_figure_and_aucs(self, df_roc):
+        """Happy: returns (Figure, float, float) for a valid metrics DataFrame"""
+        result = plot_roc_precrec(df_roc)
+        assert isinstance(result, tuple)
+        assert len(result) == 3
+        f, roc_auc, pr_auc = result
+        assert isinstance(f, figure.Figure)
+        assert 0.0 <= roc_auc <= 1.0
+        assert 0.0 <= pr_auc <= 1.0
+
+    def test_two_axes(self, df_roc):
+        """Happy: figure has 2 axes (ROC + PrecRec)"""
+        f, _, _ = plot_roc_precrec(df_roc)
+        assert len(f.axes) == 2
+
+    def test_suptitle_contains_roc(self, df_roc):
+        """Happy: suptitle mentions 'ROC'"""
+        f, _, _ = plot_roc_precrec(df_roc)
+        assert "ROC" in f._suptitle.get_text()
+
+
+class TestPlotFMeasure:
+    """Tests for plot_f_measure()"""
+
+    def test_returns_figure(self, df_perf):
+        """Happy: returns a Figure for a valid perf DataFrame"""
+        f = plot_f_measure(df_perf)
+        assert isinstance(f, figure.Figure)
+
+    def test_suptitle_contains_f_scores(self, df_perf):
+        """Happy: suptitle mentions 'F-scores'"""
+        f = plot_f_measure(df_perf)
+        assert "F-scores" in f._suptitle.get_text()
+
+
+class TestPlotAccuracy:
+    """Tests for plot_accuracy()"""
+
+    def test_returns_figure(self, df_perf):
+        """Happy: returns a Figure for a valid perf DataFrame"""
+        f = plot_accuracy(df_perf)
+        assert isinstance(f, figure.Figure)
+
+    def test_suptitle_contains_accuracy(self, df_perf):
+        """Happy: suptitle mentions 'Accuracy'"""
+        f = plot_accuracy(df_perf)
+        assert "Accuracy" in f._suptitle.get_text()
+
+
+class TestPlotBinaryPerformance:
+    """Tests for plot_binary_performance()"""
+
+    def test_returns_figure(self, df_binary_perf):
+        """Happy: returns a Figure for a valid binary performance DataFrame"""
+        f = plot_binary_performance(df_binary_perf, nobs=100)
+        assert isinstance(f, figure.Figure)
+
+    def test_suptitle_contains_binary(self, df_binary_perf):
+        """Happy: suptitle mentions 'Binary'"""
+        f = plot_binary_performance(df_binary_perf, nobs=100)
+        assert "Binary" in f._suptitle.get_text()

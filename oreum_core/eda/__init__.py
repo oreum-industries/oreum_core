@@ -30,8 +30,6 @@ from .calc import (
 from .describe import describe, display_fw, display_ht, get_fts_by_dtype
 from .eda_io import FigureIO, output_data_dict
 from .plot import (
-    plot_accuracy,
-    plot_binary_performance,
     plot_bool_ct,
     plot_bootstrap_delta_grp,
     plot_bootstrap_grp,
@@ -41,7 +39,6 @@ from .plot import (
     plot_cdf_ppc_vs_obs,
     plot_date_ct,
     plot_explained_variance,
-    plot_f_measure,
     plot_float_dist,
     plot_grp_ct,
     plot_heatmap_corr,
@@ -49,7 +46,6 @@ from .plot import (
     plot_joint_numeric,
     plot_kj_summaries_for_linear_model,
     plot_mincovdet,
-    plot_roc_precrec,
     plot_smrystat,
     plot_smrystat_grp,
     plot_smrystat_grp_year,

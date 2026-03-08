@@ -36,19 +36,16 @@ import seaborn as sns
 from matplotlib import figure
 
 from oreum_core.eda.plot import (
-    plot_accuracy,
     plot_bool_ct,
     plot_cat_ct,
     plot_cdf_ppc_vs_obs,
     plot_date_ct,
     plot_explained_variance,
-    plot_f_measure,
     plot_float_dist,
     plot_grp_ct,
     plot_heatmap_corr,
     plot_int_dist,
     plot_joint_numeric,
-    plot_roc_precrec,
     set_plot_theme,
 )
 
@@ -117,21 +114,6 @@ def df_corr(df_numeric) -> pd.DataFrame:
 def df_grp() -> pd.DataFrame:
     """DataFrame with a single categorical group column"""
     return pd.DataFrame({"grp": pd.Categorical(RNG.choice(["A", "B", "C"], N))})
-
-
-@pytest.fixture(scope="module")
-def df_roc() -> pd.DataFrame:
-    """DataFrame with ROC/PrecRec curve columns"""
-    thresholds = np.linspace(0, 1, 20)
-    return pd.DataFrame(
-        {
-            "fpr": np.linspace(0, 1, 20),
-            "tpr": np.clip(np.linspace(0, 1, 20) ** 0.5, 0, 1),
-            "recall": np.linspace(0, 1, 20),
-            "precision": np.linspace(1.0, 0.5, 20),
-        },
-        index=thresholds,
-    )
 
 
 class TestSetPlotTheme:
@@ -524,34 +506,6 @@ class TestPlotExplainedVariance:
         assert isinstance(f, figure.Figure)
 
 
-class TestPlotRocPrecrec:
-    """Tests for plot_roc_precrec()"""
-
-    def test_returns_figure_and_aucs(self, df_roc):
-        """Happy: returns (Figure, float, float) for a valid metrics DataFrame"""
-        result = plot_roc_precrec(df_roc)
-        assert isinstance(result, tuple)
-        assert len(result) == 3
-        f, roc_auc, pr_auc = result
-        assert isinstance(f, figure.Figure)
-        assert 0.0 <= roc_auc <= 1.0
-        assert 0.0 <= pr_auc <= 1.0
-
-    def test_two_axes(self, df_roc):
-        """Happy: figure has 2 axes (ROC + PrecRec)"""
-        f, _, _ = plot_roc_precrec(df_roc)
-        assert len(f.axes) == 2
-
-    def test_trapezoid_api(self, df_roc):
-        """Happy: scipy.integrate.trapezoid works with Series inputs.
-        Tests scipy API: was numpy.trapz before scipy 1.11.
-        """
-        from scipy import integrate
-
-        result = integrate.trapezoid(y=df_roc["tpr"], x=df_roc["fpr"])
-        assert isinstance(result, float)
-
-
 class TestPlotCdfPpcVsObs:
     """Tests for plot_cdf_ppc_vs_obs()"""
 
@@ -568,53 +522,3 @@ class TestPlotCdfPpcVsObs:
         yhat = np.ones((N, 50)) * 2.5  # constant predictions
         f = plot_cdf_ppc_vs_obs(y, yhat)
         assert isinstance(f, figure.Figure)
-
-
-# --- fixtures for remaining plot functions ---
-
-
-@pytest.fixture(scope="module")
-def df_perf() -> pd.DataFrame:
-    """Performance metrics DataFrame with integer index named 'pct'.
-    Integer index required so argmax() position == label for df.loc[] calls.
-    Columns mirror those produced by calc_binary_performance_measures.
-    """
-    n = 20
-    idx = pd.Index(range(n), name="pct")
-    return pd.DataFrame(
-        {
-            "accuracy": np.linspace(0.5, 0.85, n),
-            "f0.5": np.linspace(0.1, 0.75, n),
-            "f1": np.linspace(0.1, 0.75, n),
-            "f2": np.linspace(0.1, 0.75, n),
-        },
-        index=idx,
-    )
-
-
-class TestPlotFMeasure:
-    """Tests for plot_f_measure()"""
-
-    def test_returns_figure(self, df_perf):
-        """Happy: returns a Figure for a valid perf DataFrame"""
-        f = plot_f_measure(df_perf)
-        assert isinstance(f, figure.Figure)
-
-    def test_suptitle_contains_f_scores(self, df_perf):
-        """Happy: suptitle mentions 'F-scores'"""
-        f = plot_f_measure(df_perf)
-        assert "F-scores" in f._suptitle.get_text()
-
-
-class TestPlotAccuracy:
-    """Tests for plot_accuracy()"""
-
-    def test_returns_figure(self, df_perf):
-        """Happy: returns a Figure for a valid perf DataFrame"""
-        f = plot_accuracy(df_perf)
-        assert isinstance(f, figure.Figure)
-
-    def test_suptitle_contains_accuracy(self, df_perf):
-        """Happy: suptitle mentions 'Accuracy'"""
-        f = plot_accuracy(df_perf)
-        assert "Accuracy" in f._suptitle.get_text()
