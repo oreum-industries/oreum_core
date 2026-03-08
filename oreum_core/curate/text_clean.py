@@ -42,25 +42,22 @@ class TextCleaner:
         )  # regular punctuation
         # https://en.wikipedia.org/wiki/Wikipedia:List_of_English_contractions
         self.rx_neg_apostrophe = re.compile(
-            r"""\b(ai|are|ca|could|did|do|does|is|had|has|hav|may|might|must|
-                    shall|should|was|were|wo|would)(n)(?:\')(t)\b""",
+            r"\b(ai|are|ca|could|did|do|does|is|had|has|hav|may|might|must|shall|should|was|were|wo|would)(n)(?:')(t)\b",
             re.I,
         )
         self.rx_hex = re.compile(r"=[a-f0-9]{2}", re.I)  # stray hexadecimal
-        self.rx_arrows = re.compile("(>)+")  # sequences of ">" at start of line
+        self.rx_arrows = re.compile(
+            r"^>+", re.MULTILINE
+        )  # sequences of ">" at start of line
         self.rx_repeatgt3 = re.compile(r"(.)\1{3,}")  # any char repeating more than 3x
         self.rx_htmlcom = re.compile(
             re.escape("<!--") + "(.*?)" + re.escape("-->"), re.DOTALL
         )  # HTML comments (usually embedded CSS)
         self.rx_email = re.compile(
-            r"""\b[a-z0-9\'._%+-]+@[a-z0-9.-]+
-                                    \.[a-z]{2,4}\b""",
-            re.I,
+            r"\b[a-z0-9\'._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}\b", re.I
         )  # email addresses
         self.rx_web = re.compile(
-            r"""((http[s]?\:\/\/)?(www\.)+
-                                    [a-z0-9\-%\/.]+)""",
-            re.I,
+            r"((http[s]?\:\/\/)?(www\.)+[a-z0-9\-%\/.]+)", re.I
         )  # web addresses
         self.postcode = re.compile(
             r"""(GIR ?0AA|[A-PR-UWYZ]([0-9]{1,2}|([A-HK-Y][0-9]([0-9ABEHMNPRV-Y])?)
@@ -143,20 +140,14 @@ class TextCleaner:
         gn = self.rx_num.match(s0)
 
         if gm is not None:
-            mill = gm.capturesdict()["mill"]
-            mill = mill[0] if len(mill) > 0 else "0"
-            r = np.float64(f"{mill}") * 1e6
+            r = np.float64(gm.group("mill") or "0") * 1e6
 
         elif gk is not None:
-            thou = gk.capturesdict()["thou"]
-            thou = thou[0] if len(thou) > 0 else "0"
-            r = np.float64(f"{thou}") * 1e3
+            r = np.float64(gk.group("thou") or "0") * 1e3
 
         elif gn is not None:
-            whol = gn.capturesdict()["whol"]
-            whol = whol[0] if len(whol) > 0 else ""
-            frac = gn.capturesdict()["frac"]
-            frac = frac[0] if len(frac) > 0 else ".0"
-            r = np.float64(f"{whol}") + np.float64(f"{frac}")
+            whol = gn.group("whol") or ""
+            frac = gn.group("frac") or ".0"
+            r = np.float64(whol) + np.float64(frac)
 
         return r

@@ -134,7 +134,7 @@ test:
 	trap "rm -rf .venv-temp" EXIT; \
 	uv pip install --python .venv-temp pytest .; \
 	. .venv-temp/bin/activate; \
-		pytest tests/ -v;
+		pytest tests/ -v --junit-xml=reports/test-report.xml;
 
 test-pkg-dl:
 	@echo "Test dl & install from testpypi using venv-temp. Pass VERSION=x.x.x"

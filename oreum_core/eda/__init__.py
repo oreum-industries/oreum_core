@@ -56,4 +56,5 @@ from .plot import (
     plot_smrystat,
     plot_smrystat_grp,
     plot_smrystat_grp_year,
+    set_plot_theme,
 )

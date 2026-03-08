@@ -1146,7 +1146,7 @@ wheels = [
 
 [[package]]
 name = "oreum-core"
-version = "0.11.16"
+version = "0.12.2"
 source = { editable = "." }
 dependencies = [
     { name = "csv2md" },
@@ -1155,6 +1155,7 @@ dependencies = [
     { name = "ftfy" },
     { name = "matplotlib" },
     { name = "matplotlib-inline" },
+    { name = "nutpie" },
     { name = "pandas", extra = ["excel", "parquet", "plot"] },
     { name = "patsy" },
     { name = "scikit-learn" },
@@ -1213,10 +1214,11 @@ requires-dist = [
     { name = "meson", marker = "extra == 'dev'" },
     { name = "nbformat", marker = "extra == 'tree'" },
     { name = "ninja", marker = "extra == 'dev'" },
+    { name = "nutpie" },
     { name = "nutpie", marker = "extra == 'pymc'" },
     { name = "optuna", marker = "extra == 'tree'" },
     { name = "optuna-integration", marker = "extra == 'tree'" },
-    { name = "pandas", extras = ["excel", "parquet", "plot"], specifier = "==2.3.*" },
+    { name = "pandas", extras = ["excel", "parquet", "plot"], specifier = ">=2.3,<3" },
     { name = "patsy" },
     { name = "pip-licenses", marker = "extra == 'dev'" },
     { name = "pipdeptree", marker = "extra == 'dev'" },

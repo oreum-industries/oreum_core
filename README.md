@@ -70,7 +70,6 @@ This package **is not**:
   (Apple Silicon ARM64) running MacOS 15 (Sequoia) using `osx-arm64` Accelerate
 
 
-
 ### Package Structure
 
 Top-level:
@@ -82,6 +81,8 @@ oreum_core/
 ├── model_tree/  # Gradient-boosted trees (optional dep: pip install oreum_core[tree])
 └── utils/       # BaseFileIO base class for all I/O handlers, also string sanitization
 ```
+
+---
 
 
 ## 2. Instructions to Create Dev Environment
@@ -264,12 +265,22 @@ We also run a suite of general tests pre-packaged in
 [`precommit`](https://pre-commit.com).
 
 
+---
+
+## 4. Usage
+
+### 4.1 Plot theming
+
+```python
+from oreum_core.eda import set_plot_theme
+set_plot_theme()  # or pass overrides: set_plot_theme(context="paper")
+```
 
 ---
 
-Copyright 2025 Oreum FZCO t/a Oreum Industries. All rights reserved.
+Copyright 2026 Oreum FZCO t/a Oreum Industries. All rights reserved.
 Oreum FZCO, IFZA, Dubai Silicon Oasis, Dubai, UAE, reg. 25515
 [oreum.io](https://oreum.io)
 
 ---
-Oreum Industries &copy; 2025
+Oreum Industries &copy; 2026

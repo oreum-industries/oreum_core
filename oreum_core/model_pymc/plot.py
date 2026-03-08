@@ -43,13 +43,6 @@ __all__ = [
     "plot_lkjcc_corr",
 ]
 
-sns.set_theme(
-    style="darkgrid",
-    palette="muted",
-    context="notebook",
-    rc={"figure.dpi": 72, "savefig.dpi": 144, "figure.figsize": (12, 4)},
-)
-
 
 class IDataGroupName(str, Enum):
     prior = "prior"

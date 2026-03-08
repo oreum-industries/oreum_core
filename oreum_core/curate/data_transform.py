@@ -232,10 +232,7 @@ class DatasetReshaper:
         sdtypes = df.dtypes
 
         if (sum(sdtypes == "object") > 0) or (sum(sdtypes == "boolean") > 0):
-            return (
-                ValueError,
-                "Valid dtypes are `category`, `bool`, `int`, `float` only",
-            )
+            raise ValueError("Valid dtypes are `category`, `bool`, `int`, `float` only")
         cats = list(sdtypes.loc[sdtypes == "category"].index.values)
         bools = list(sdtypes.loc[sdtypes == "bool"].index.values)
         ints = list(sdtypes.loc[sdtypes == "int"].index.values)
@@ -471,7 +468,7 @@ class Standardizer:
         self.means = np.where(self.col_mask, np.nan, np.nanmean(mx, axis=0))
         self.sdevs = np.where(self.col_mask, np.nan, np.nanstd(mx, axis=0))
         self.scale = scale
-        return self.standardize(mx)
+        return self.standardize_mx(mx)
 
     def get_scale(self) -> tuple[pd.DataFrame, float]:
         """Get values followuing fit_standardize. Persist values over time."""
