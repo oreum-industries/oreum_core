@@ -8,6 +8,7 @@ from oreum_core.curate.data_transform import DatasetReshaper
 
 @pytest.fixture
 def reshaper():
+    """Default DatasetReshaper instance"""
     return DatasetReshaper()
 
 

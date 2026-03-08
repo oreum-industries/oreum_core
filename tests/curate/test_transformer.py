@@ -9,6 +9,7 @@ from oreum_core.curate.data_transform import Transformer
 
 @pytest.fixture
 def tfmr():
+    """Default Transformer instance"""
     return Transformer()
 
 

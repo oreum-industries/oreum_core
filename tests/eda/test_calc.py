@@ -34,11 +34,13 @@ RNG = np.random.default_rng(seed=42)
 
 @pytest.fixture
 def arr():
+    """1D array of 50 standard-normal values"""
     return RNG.standard_normal(50)
 
 
 @pytest.fixture
 def df_lr():
+    """DataFrame with premium and claim columns for loss-ratio bootstrap tests"""
     return pd.DataFrame(
         {"premium": [100.0, 200.0, 150.0, 250.0], "claim": [50.0, 0.0, np.nan, 200.0]}
     )
@@ -46,11 +48,14 @@ def df_lr():
 
 @pytest.fixture
 def df_numeric():
+    """30×5 DataFrame of standard-normal values"""
     rng = np.random.default_rng(seed=42)
     return pd.DataFrame(rng.standard_normal((30, 5)), columns=list("abcde"))
 
 
 class TestBootstrapIndexOnly:
+    """Tests for bootstrap_index_only()"""
+
     def test_shape(self, arr):
         """Happy: output shape is (len(a), len(a)) when nboot is None"""
         idx = bootstrap_index_only(arr)
@@ -68,6 +73,8 @@ class TestBootstrapIndexOnly:
 
 
 class TestBootstrap:
+    """Tests for bootstrap()"""
+
     def test_no_summary_fn_shape(self, arr):
         """Happy: without summary_fn returns 2D array of shape (len(a), nboot)"""
         result = bootstrap(arr, nboot=200)
@@ -85,6 +92,8 @@ class TestBootstrap:
 
 
 class TestBootstrapLR:
+    """Tests for bootstrap_lr()"""
+
     def test_output_columns(self, df_lr):
         """Happy: output DataFrame has premium_sum, claim_sum, lr columns"""
         result = bootstrap_lr(df_lr, prm="premium", clm="claim", nboot=100)
@@ -102,6 +111,8 @@ class TestBootstrapLR:
 
 
 class TestCalcGeometricCV:
+    """Tests for calc_geometric_cv()"""
+
     def test_output_shape(self):
         """Happy: output shape matches number of observations (rows)"""
         yhat = np.exp(RNG.standard_normal((20, 100)))
@@ -116,6 +127,8 @@ class TestCalcGeometricCV:
 
 
 class TestCalcLocationInEcdf:
+    """Tests for calc_location_in_ecdf()"""
+
     def test_output_values_in_unit_interval(self):
         """Happy: all outputs lie in (0, 1]"""
         baseline = RNG.standard_normal(100)
@@ -132,6 +145,8 @@ class TestCalcLocationInEcdf:
 
 
 class TestMonthDiff:
+    """Tests for month_diff()"""
+
     def test_positive_diff(self):
         """Happy: 3 months forward → 3"""
         a = pd.Series(pd.to_datetime(["2024-01-15"]))
@@ -155,6 +170,8 @@ class TestMonthDiff:
 
 
 class TestTrilNan:
+    """Tests for tril_nan()"""
+
     def test_upper_triangle_is_nan(self):
         """Happy: elements above diagonal are NaN"""
         m = np.ones((4, 4))
@@ -171,6 +188,8 @@ class TestTrilNan:
 
 
 class TestCalcSvd:
+    """Tests for calc_svd()"""
+
     def test_output_shapes(self, df_numeric):
         """Happy: transformed array has shape (nrows, k) and svd has k components"""
         k = 3
