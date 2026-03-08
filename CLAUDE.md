@@ -5,7 +5,7 @@ Guidance for Claude Code when working in this repository.
 ## Project Overview
 
 `oreum_core` is a Python 3.13 package of core data science tools for Oreum Industries projects. It provides workflows
-for data curation, EDA, Bayesian modeling (via PyMC), and gradient-boosted tree modeling (via XGBoost/CatBoost).
+for data curation, EDA, Bayesian modeling (via PyMC), and gradient-boosted tree modeling (via XGBoost).
 Built and published to PyPI using `flit`, managed with `uv`.
 
 ## Development Environment
@@ -102,7 +102,7 @@ Model persistence via `PYMCIO`: saves/loads ArviZ `InferenceData` as NetCDF (`.n
 ### Optional Dependency Groups
 
 + `[pymc]`: adds `pymc`, `nutpie`, `graphviz` — required for `model_pymc/`
-+ `[tree]`: adds `catboost`, `xgboost`, `optuna`, `shap`, `category_encoders` — required for `model_tree/`
++ `[tree]`: adds `xgboost` — required for `model_tree/`
 + `[dev]`: dev tooling (`ruff`, `pytest`, `bandit`, `interrogate`, `pre-commit`, etc.)
 
 ### Build & Publish

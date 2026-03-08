@@ -1,20 +1,22 @@
 # Makefile
 # NOTE:
 # + Intended for install on MacOS Apple Silicon arm64 using Accelerate
-# + Uses local sh: optionallay confirm shell create recipe w/ $(info $(SHELL))
+# + Uses local sh: optionally confirm shell create recipe w/ $(info $(SHELL))
 # + Defaults to CI=0 (override for github actions in publish.yml)
 .PHONY: brew build dev dev-test dev-uninstall help lint publish publish-test \
-	test test-pkg-dl
+	report test test-pkg-dl
 .SILENT: brew build dev dev-test dev-uninstall help lint publish publish-test \
-	test test-pkg-dl
+	report test test-pkg-dl
 PYTHON_NONVENV = $(or $(shell which python3), $(shell which python))
 VERSION := $(shell echo $(VVERSION) | sed 's/v//')
 CI?=0
+
 
 brew:
 	@echo "Install system-level packages for local dev on MacOS using brew..."
 	brew update && brew upgrade && brew cleanup -s;
 	brew install direnv gcc git graphviz libomp uv zsh;
+
 
 build:
 	@echo "Build package oreum_core..."
@@ -29,6 +31,7 @@ build:
 		export SOURCE_DATE_EPOCH=$(shell date +%s); \
 		python -m flit build;
 
+
 dev:
 	@echo "Install project dev env on local machine using uv..."
 	git init;
@@ -40,17 +43,20 @@ dev:
 		pre-commit install; \
 		pre-commit autoupdate;
 
+
 dev-test:
 	@echo "Test dev machine installation of numpy and scipy..."
 	. .venv/bin/activate; \
 		python -c "import numpy as np; np.test()" > dev/install_log/tests_numpy.txt;
 		python -c "import scipy as sp; sp.test()" > dev/install_log/tests_scipy.txt;
 
+
 dev-uninstall:
 	@echo "Uninstall project dev venv from local machine..."
 	rm -rf .venv;
 	rm -f requirements.txt
 	rm -f uv.lock
+
 
 help:
 	@echo "Use \make <target> where <target> is:"
@@ -62,8 +68,10 @@ help:
 	@echo "  lint           run lint & static checks"
 	@echo "  publish        all-in-one build and publish to pypi"
 	@echo "  publish-test   all-in-one build and publish to testpypi"
+	@echo "  report         show test and coverage reports as markdown"
 	@echo "  test           run pytest suite"
 	@echo "  test-pkg-dl    test dl & install from testpypi"
+
 
 lint:
 	@echo "Run lint & format and static checks..."
@@ -74,6 +82,7 @@ lint:
 	uv run --extra dev ruff format --config pyproject.toml --diff --no-cache;
 	uv run --extra dev interrogate --config pyproject.toml oreum_core/;
 	uv run --extra dev bandit --config pyproject.toml -r oreum_core/ -f json -o reports/bandit-report.json;
+
 
 publish:
 	@echo "All-in-one build and publish to pypi..."
@@ -119,6 +128,21 @@ publish-test:
 			export FLIT_PASSWORD="$$FLIT_PASSWORD_TESTPYPI"; \
 			python -m flit publish; \
 		fi;
+
+
+report:
+	@echo "Show test and coverage reports as markdown (not committed)..."
+	@echo "## Test Report"
+	@uv run --extra dev python3 -c "\
+import xml.etree.ElementTree as ET; \
+r = ET.parse('reports/test-report.xml').getroot(); \
+s = r if r.tag == 'testsuite' else r.find('testsuite'); \
+print('| Tests | Failures | Errors | Skipped | Time (s) |'); \
+print('|------:|---------:|-------:|--------:|---------:|'); \
+print(f'| {s.get(\"tests\",0)} | {s.get(\"failures\",0)} | {s.get(\"errors\",0)} | {s.get(\"skipped\",0)} | {float(s.get(\"time\",0)):.2f} |')"
+	@echo ""
+	@echo "## Coverage Report"
+	@uv run --extra dev coverage report --format=markdown --data-file=reports/.coverage
 
 
 test:

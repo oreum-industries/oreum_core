@@ -25,7 +25,7 @@ __all__ = ["TextCleaner"]
 
 
 class TextCleaner:
-    """Potentially useful text cleaing - strips lots of crud.
+    """Potentially useful text cleaning - strips lots of crud.
     Originally developed a number of years ago, so may need revision
     """
 
@@ -120,7 +120,7 @@ class TextCleaner:
                 Currently limited to k and M.
                 Hard to catch all usecases so returns nan on fail
                 Yields % 100 too high
-        Corrects a multitide of sins e.g:
+        Corrects a multitude of sins e.g:
             '1M' -> 1000000.
             '1.4m' -> 1400000.
             '25K' -> 25000.

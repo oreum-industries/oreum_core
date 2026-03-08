@@ -1,5 +1,6 @@
 """Shared fixtures for model_pymc tests"""
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -24,6 +25,13 @@ try:
     HAS_PYMC = True
 except Exception:
     HAS_PYMC = False
+
+
+@pytest.fixture(autouse=True)
+def close_figures():
+    """Close all matplotlib figures after every test to prevent memory accumulation"""
+    yield
+    plt.close("all")
 
 
 @pytest.fixture

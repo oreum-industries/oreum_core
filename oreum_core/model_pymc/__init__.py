@@ -38,15 +38,22 @@ from .describe import (
 )
 from .distributions import lognormal_icdf, mv_dist, normal_icdf, sanity_check_lognorm
 from .plot import (
-    facetplot_krushke,
+    facetplot_kruschke,
     forestplot_multiple,
     forestplot_single,
     pairplot_corr,
+    plot_accuracy,
+    plot_binary_performance,
     plot_compare,
+    plot_coverage,
     plot_energy,
+    plot_estimate,
+    plot_f_measure,
     plot_lkjcc_corr,
     plot_loo_pit,
     plot_ppc,
+    plot_rmse_range,
+    plot_roc_precrec,
     plot_trace,
     plot_yhat_vs_y,
 )

@@ -105,14 +105,3 @@ def print_rvs(mdl: BasePYMCModel) -> list[str]:
                 except AssertionError:
                     pass
     return r
-
-
-# def print_rvs(rvs: list[pt.TensorVariable]) -> None:
-#     """Display rvs to Notebook using latex, post sub underscores
-#     Hack to replace print(mdl.model) see https://github.com/pymc-devs/pymc/issues/6869
-#     """
-#     rx_name_usc = re.compile(r"(?:text\{[^\_\}]+?)(\_+)(?:[^\_\}]+?)(?:(\_+)(?:[^\_\}]+?))*?(?:\})", re.I)
-#     for rv in rvs:
-#         s = rv.str_repr(formatting='latex', include_params=True)
-#         t = rx_name_usc.sub(r"\\_", s)
-#         display(Markdown(t))

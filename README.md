@@ -27,7 +27,7 @@ projects by Oreum Industries.
   `pytensor`, `arviz`
   (do `pip install oreum_core[pymc]`)
 + Optionally enables a generalist black-box ML workflow in R&D using a leading
-  Gradient Boosted Trees stack incl. `catboost`, `xgboost`, `optuna`, `shap`
+  Gradient Boosted Trees stack using `xgboost`
   (do `pip install oreum_core[tree]`)
 + Also includes several utilities for text cleaning, sql scripting, file handling
 

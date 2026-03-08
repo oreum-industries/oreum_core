@@ -209,7 +209,7 @@ class DatasetReshaper:
         Datatypes must be understood by patsy: factor-values as
         pd.Categoricals, or bools, or ints or floats. No dates or strings
 
-        Output `dfcmb` is NOT a big groupby (i.e cartesian join) of factor
+        Output `dfcmb` is NOT a big groupby (i.e. Cartesian join) of factor
         values. Instead, it's a compact concat of unique factor values
         (which can be horizontally ragged so we fill NaNs) and filler values
         for ints a floats
@@ -397,7 +397,7 @@ class Standardizer:
     def __init__(self, tfmr: Transformer, fts_exclude: list = None):
         """Automatically exclude fts in list(tfmr.factor_map.keys()) and
         any named in `fts_exclude` that are numeric and would otherwise get
-        standardardized"""
+        standardized"""
 
         if fts_exclude is None:
             fts_exclude = []
@@ -432,7 +432,7 @@ class Standardizer:
         df_s = (df - self.means) / (self.sdevs * self.scale)
         mask = np.tile(self.col_mask, (len(df), 1))
 
-        # fill original df w/ standardized to more easily preseve dtype of ints
+        # fill original df w/ standardized to more easily preserve dtype of ints
         df_exs = df.mask(~mask, df_s)  # replace values where condition is True
         return df_exs
 
@@ -471,7 +471,7 @@ class Standardizer:
         return self.standardize_mx(mx)
 
     def get_scale(self) -> tuple[pd.DataFrame, float]:
-        """Get values followuing fit_standardize. Persist values over time."""
+        """Get values following fit_standardize. Persist values over time."""
         means_sdevs = pd.DataFrame(
             {"means": self.means, "sdevs": self.sdevs},
             index=self.design_info.column_names,
