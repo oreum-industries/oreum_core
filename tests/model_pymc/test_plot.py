@@ -63,6 +63,11 @@ class TestPlotCoverage:
         f = plot_coverage(df_coverage)
         assert isinstance(f, figure.Figure)
 
+    def test_two_axes(self, df_coverage):
+        """Happy: lmplot creates one axes per method column (2 methods in fixture)"""
+        f = plot_coverage(df_coverage)
+        assert len(f.axes) == 2
+
     def test_suptitle_contains_coverage(self, df_coverage):
         """Happy: suptitle mentions 'Coverage'"""
         f = plot_coverage(df_coverage)
@@ -91,6 +96,12 @@ class TestPlotRmseRange:
         rmse, rmse_qs = rmse_data
         f = plot_rmse_range(rmse, rmse_qs)
         assert isinstance(f, figure.Figure)
+
+    def test_single_axis(self, rmse_data):
+        """Happy: figure has exactly one axes"""
+        rmse, rmse_qs = rmse_data
+        f = plot_rmse_range(rmse, rmse_qs)
+        assert len(f.axes) == 1
 
     def test_suptitle_contains_rmse(self, rmse_data):
         """Happy: suptitle mentions 'RMSE'"""
@@ -132,6 +143,24 @@ class TestPlotEstimate:
         yhat = RNG.standard_normal(500) + 5.0
         f = plot_estimate(yhat, nobs=N)
         assert "Boxplot" in f._suptitle.get_text()
+
+    def test_suptitle_contains_exceedance(self):
+        """Happy: exceedance=True suptitle contains 'Exceedance Curve'"""
+        yhat = RNG.standard_normal(500) + 5.0
+        f = plot_estimate(yhat, nobs=N, exceedance=True)
+        assert "Exceedance Curve" in f._suptitle.get_text()
+
+    def test_txtadd_in_suptitle(self):
+        """Happy: txtadd kwarg appears in suptitle"""
+        yhat = RNG.standard_normal(500) + 5.0
+        f = plot_estimate(yhat, nobs=N, txtadd="v2")
+        assert "v2" in f._suptitle.get_text()
+
+    def test_force_xlim(self):
+        """Happy: force_xlim restricts x axis without error"""
+        yhat = RNG.standard_normal(500) + 5.0
+        f = plot_estimate(yhat, nobs=N, force_xlim=[0, 15])
+        assert isinstance(f, figure.Figure)
 
 
 @pytest.fixture(scope="module")
@@ -223,6 +252,11 @@ class TestPlotFMeasure:
         f = plot_f_measure(df_perf)
         assert isinstance(f, figure.Figure)
 
+    def test_single_axis(self, df_perf):
+        """Happy: figure has exactly one axes"""
+        f = plot_f_measure(df_perf)
+        assert len(f.axes) == 1
+
     def test_suptitle_contains_f_scores(self, df_perf):
         """Happy: suptitle mentions 'F-scores'"""
         f = plot_f_measure(df_perf)
@@ -236,6 +270,11 @@ class TestPlotAccuracy:
         """Happy: returns a Figure for a valid perf DataFrame"""
         f = plot_accuracy(df_perf)
         assert isinstance(f, figure.Figure)
+
+    def test_single_axis(self, df_perf):
+        """Happy: figure has exactly one axes"""
+        f = plot_accuracy(df_perf)
+        assert len(f.axes) == 1
 
     def test_suptitle_contains_accuracy(self, df_perf):
         """Happy: suptitle mentions 'Accuracy'"""
@@ -251,7 +290,17 @@ class TestPlotBinaryPerformance:
         f = plot_binary_performance(df_binary_perf, nobs=100)
         assert isinstance(f, figure.Figure)
 
+    def test_four_axes(self, df_binary_perf):
+        """Happy: figure has 4 axes (ROC, PrecRec, F-measure, Accuracy)"""
+        f = plot_binary_performance(df_binary_perf, nobs=100)
+        assert len(f.axes) == 4
+
     def test_suptitle_contains_binary(self, df_binary_perf):
         """Happy: suptitle mentions 'Binary'"""
         f = plot_binary_performance(df_binary_perf, nobs=100)
         assert "Binary" in f._suptitle.get_text()
+
+    def test_txtadd_in_suptitle(self, df_binary_perf):
+        """Happy: txtadd kwarg appears in suptitle"""
+        f = plot_binary_performance(df_binary_perf, nobs=100, txtadd="run1")
+        assert "run1" in f._suptitle.get_text()

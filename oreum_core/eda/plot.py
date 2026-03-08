@@ -764,7 +764,7 @@ def plot_bootstrap_lr_grp(
     ct = df.groupby(grp, observed=True).size()
     mn = dfboot.groupby(grp, observed=True)["lr"].mean()
     pest_mn = df.groupby(grp, observed=True).apply(
-        lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum()
+        lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum(), include_groups=False
     )
 
     # create order items / index
@@ -902,11 +902,13 @@ def plot_bootstrap_grp(
     _ = sns.violinplot(
         x=val,
         y=grp,
+        hue=grp,
         data=dfboot,
         cut=0,
         density_norm="count",
         width=0.6,
         palette="cubehelix_r",
+        legend=False,
         ax=ax0,
     )
 
@@ -933,7 +935,9 @@ def plot_bootstrap_grp(
     if force_xlim is not None:
         _ = ax0.set(xlim=force_xlim)
 
-    _ = sns.countplot(y=grp, data=df, ax=ax1, palette="cubehelix_r")
+    _ = sns.countplot(
+        y=grp, hue=grp, data=df, ax=ax1, palette="cubehelix_r", legend=False
+    )
     ct = df.groupby(grp, observed=True).size().tolist()
     _ = [
         ax1.annotate(f"{v}", xy=(v, i % len(ct)), **sty["count_txt_h_kws"])
@@ -969,12 +973,14 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
     _ = sns.boxplot(
         x="lr_delta",
         y=grp,
+        hue=grp,
         data=dfboot,
         palette="cubehelix_r",
         showfliers=False,
         whis=[3, 97],
         showmeans=True,
         notch=True,
+        legend=False,
         ax=ax0,
     )
     _ = ax0.axvline(0, ls="--", lw=2, c="#555555", zorder=-1)
@@ -982,7 +988,9 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
     if force_xlim is not None:
         _ = ax0.set(xlim=force_xlim)
 
-    _ = sns.countplot(y=grp, data=df, ax=ax1, palette="cubehelix_r")
+    _ = sns.countplot(
+        y=grp, hue=grp, data=df, ax=ax1, palette="cubehelix_r", legend=False
+    )
     ct = df.groupby(grp, observed=True).size().tolist()
     _ = [
         ax1.annotate(f"{v}", xy=(v, i % len(ct)), **sty["count_txt_h_kws"])
