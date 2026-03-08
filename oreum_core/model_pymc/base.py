@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# model.base.py
+# model_pymc.base.py
 """Base Model Class"""
 
 import logging
@@ -169,19 +169,12 @@ class BasePYMCModel:
           that illustrates the issue.
         + See https://github.com/pymc-devs/pymc/issues/4598
         """
-        kws = dict(
-            random_seed=kwargs.pop("random_seed", self.rsd),
-            samples=kwargs.pop("samples", self.sample_prior_pred_kws["samples"]),
-            return_inferencedata=kwargs.pop(
-                "return_inferencedata",
-                self.sample_prior_pred_kws["return_inferencedata"],
-            ),
-        )
         replace = kwargs.pop("replace", self.replace_idata)
+        kws = {**self.sample_prior_pred_kws, "random_seed": self.rsd, **kwargs}
 
         with self.model:
             try:
-                prior_pred = pm.sample_prior_predictive(**{**kws, **kwargs})
+                prior_pred = pm.sample_prior_predictive(**kws)
             except UserWarning as e:
                 _log.warning("Warning in mdl.sample_prior_predictive()", exc_info=e)
             finally:
@@ -216,31 +209,6 @@ class BasePYMCModel:
                 _ = self.update_idata(posterior)
 
                 _log.info(f"Sampled posterior for {self.mdl_id}")
-
-                # # optional manually calculate log_likelihood for potentials
-                # IMPORTANT NOTE 2026-01-18 dataset_to_point_list no longer
-                # available in pymc v5.20, so remove this function for now,
-                # may need to return as/when we need this
-
-                # if self.calc_loglike_of_potential:
-                #     self.idata.add_groups(
-                #         dict(
-                #             log_likelihood=compute_log_likelihood_for_potential(
-                #                 idata=self.idata,
-                #                 model=self.model,
-                #                 var_names=self.rvs_potential_loglike,
-                #                 extend_inferencedata=False,
-                #             )
-                #         )
-                #     )
-                #     # rename to have exact same name as observedRVs
-                #     for nm in self.rvs_potential_loglike:
-                #         rx_pot = re.compile(r"^pot_")
-                #         nm0 = rx_pot.sub(r"", nm)
-                #         self.idata["log_likelihood"][nm0] = self.idata[
-                #             "log_likelihood"
-                #         ][nm]
-                #         del self.idata["log_likelihood"][nm]
 
         return None
 
@@ -310,4 +278,4 @@ class BasePYMCModel:
                 #     "Model contains Potentials, debug logp not compatible",
                 #     exc_info=True,
                 # )
-        return f"Ran {len(msg)} checks: [" + ", ".join(msg) + "]"
+        return f"Ran {len(msg)} checks: [{', '.join(msg)}]"
