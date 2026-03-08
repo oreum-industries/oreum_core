@@ -33,7 +33,6 @@ blas_info.txt
 *.tax2010
 *.vcf
 *.xml
-!reports/test-report.xml
 
 ### Database ###
 *.accdb

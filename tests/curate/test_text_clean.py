@@ -8,6 +8,7 @@ from oreum_core.curate.text_clean import TextCleaner
 
 @pytest.fixture
 def tc():
+    """Default TextCleaner instance"""
     return TextCleaner()
 
 

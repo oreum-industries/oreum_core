@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "oreum_core"
 description = "Core tools for use on projects by Oreum Industries"
-version = "0.12.3"
+version = "0.12.4"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 authors = [{ name = "Oreum Industries", email = "info@oreum.io" },]
@@ -43,6 +43,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "bandit",
+    "genbadge[coverage]",
     "hypothesis",
     "interrogate",
     "ipython",
@@ -53,6 +54,7 @@ dev = [
     "pooch",  # for scipy.test
     "pre-commit",
     "pytest",
+    "pytest-cov",
     "ruff",
 ]
 pymc = [
@@ -179,6 +181,20 @@ extra-standard-library = ["typing"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 known-first-party = []
 split-on-trailing-comma=false
+
+[tool.coverage.run]
+source = ["oreum_core"]
+omit = ["*/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+precision = 1
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
 
 [tool.setuptools.dynamic]
 version = {attr = "oreum_core.__version__"}
