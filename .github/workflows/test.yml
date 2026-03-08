@@ -12,7 +12,7 @@ permissions:
   actions: read
   checks: write
   contents: read
-  pull-requests: read
+  pull-requests: write
 
 # concurrency: cancel same job already in-progress, to be efficient
 concurrency:
@@ -40,4 +40,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Run pytest suite
-        run: make test CI=1
+        run: mkdir -p reports && make test CI=1
+
+      - name: Publish test results to PR
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: reports/test-report.xml
