@@ -11,7 +11,7 @@ on:
 permissions:
   actions: read
   checks: write
-  contents: read
+  contents: write
   pull-requests: write
 
 # concurrency: cancel same job already in-progress, to be efficient
@@ -39,7 +39,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run pytest suite with coverage
+      - name: Run pytest suite with coverage and generate badge
         run: mkdir -p reports && make test CI=1
 
       - name: Publish test results to PR
@@ -65,3 +65,10 @@ jobs:
           name: coverage-report
           path: reports/coverage-report.xml
           retention-days: 30
+
+      - name: Commit coverage badge to branch
+        uses: stefanzweifel/git-auto-commit-action@v5
+        if: always()
+        with:
+          commit_message: "ci: update coverage badge [skip ci]"
+          file_pattern: assets/img/coverage_badge.svg

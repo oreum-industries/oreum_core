@@ -43,6 +43,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "bandit",
+    "genbadge[coverage]",
     "hypothesis",
     "interrogate",
     "ipython",
