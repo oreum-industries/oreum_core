@@ -30,7 +30,7 @@ class BaseFileIO:
     + Allows a rootdir / rootpath as we often use in R&D Notebooks
     """
 
-    def __init__(self, rootdir: Path = None, **kwargs):
+    def __init__(self, rootdir: Path | None = None, **kwargs):
         """Allow set a root path for convenience in Notebooks
         e.g. rootdir = DIR_MODELS_A = ['data', 'models', 'a']
         If used, then read/write will prepend this root to their input fqns
@@ -58,7 +58,7 @@ class BaseFileIO:
         """Create and test dir existence for write, return fqn
         Ensure the passed fn is snl.cleaned"""
         fqn = self.rootdir.joinpath(fn)
-        dr = Path(*fqn.parts[:-1])
+        dr = fqn.parent
         if not dr.is_dir():
             raise FileNotFoundError(f"Required dir does not exist {str(dr.resolve())}")
         return fqn
@@ -66,7 +66,7 @@ class BaseFileIO:
 
 def check_fqns_exist(fqns: dict[str, Path]) -> bool:
     """Basic checks files required are present"""
-    for _, path in fqns.items():
+    for path in fqns.values():
         if not path.resolve().exists():
             raise FileNotFoundError(
                 f"Required file does not exist {str(path.resolve())}"

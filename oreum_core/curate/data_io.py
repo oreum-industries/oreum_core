@@ -81,7 +81,7 @@ class PandasCSVIO(BaseFileIO):
         _log.info(f"Read from {str(fqn.resolve())}")
         return pd.read_csv(fqn, *args, **kwargs)
 
-    def write(self, df: pd.DataFrame, fn: str, *args, **kwargs) -> str:
+    def write(self, df: pd.DataFrame, fn: str, *args, **kwargs) -> Path:
         """Accept pandas DataFrame and fn e.g. `df`, write to fn.csv
         Consider using kwarg: float_format='%.3f'
         """
@@ -130,21 +130,21 @@ class PandasExcelIO(BaseFileIO):
 
     def writer_write(self, df: pd.DataFrame, *args, **kwargs) -> None:
         """Write pandas DataFrame to existing writer object"""
-        if hasattr(self, "writer"):
-            df.to_excel(self.writer, *args, **kwargs)
-            _log.info(
-                f"Written as part of writer workflow to {str(self.fqn.resolve())}"
-            )
+        if not hasattr(self, "writer"):
+            raise RuntimeError("Call writer_open() before writer_write()")
+        df.to_excel(self.writer, *args, **kwargs)
+        _log.info(f"Written as part of writer workflow to {str(self.fqn.resolve())}")
 
     def writer_close(self) -> Path:
         """Close existing writer object"""
-        if hasattr(self, "writer"):
-            self.writer.close()
-            _log.info(f"Closed writer workflow {str(self.fqn.resolve())}")
-            fqn = self.fqn
-            del self.fqn
-            del self.writer
-            return fqn
+        if not hasattr(self, "writer"):
+            raise RuntimeError("Call writer_open() before writer_close()")
+        self.writer.close()
+        _log.info(f"Closed writer workflow {str(self.fqn.resolve())}")
+        fqn = self.fqn
+        del self.fqn
+        del self.writer
+        return fqn
 
 
 class PandasParquetIO(BaseFileIO):
@@ -177,33 +177,27 @@ class PickleIO(BaseFileIO):
     """
 
     def __init__(self, kind: str = "bytes", *args, **kwargs):
-        """Inherit super"""
+        """Inherit super. Only kind='bytes' is supported."""
         super().__init__(*args, **kwargs)
-        if kind in ["bytes", "str"]:
+        if kind == "bytes":
             self.k = kind
         else:
-            raise AttributeError("kind must be in {'bytes', 'str'}")
+            raise ValueError("kind must be 'bytes' (pickle is a binary format)")
 
     def read(self, fn: str) -> object:
         """Read pickle fn from rootdir, load pickle, return object"""
         fqn = self.get_path_read(Path(fn).with_suffix(".pickle"))
-        with open(str(fqn.resolve()), f"r{self.k[0]}") as f:
-            if self.k == "bytes":
-                obj = pickle.load(f)  # nosec B301
-            else:
-                obj = pickle.loads(f)  # nosec B301
-        _log.info(f"Read pickled object as {self.k} from {str(fqn.resolve())}")
+        with open(str(fqn.resolve()), "rb") as f:
+            obj = pickle.load(f)  # nosec B301
+        _log.info(f"Read pickled object from {str(fqn.resolve())}")
         return obj
 
     def write(self, obj: object, fn: str) -> Path:
         """Write object to pickle, write to fqn"""
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".pickle"))
-        with open(str(fqn.resolve()), f"w{self.k[0]}") as f:
-            if self.k == "bytes":
-                pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
-            else:
-                pickle.dumps(obj, f, pickle.HIGHEST_PROTOCOL)
-        _log.info(f"Pickled obj as {self.k} to {str(fqn.resolve())}")
+        with open(str(fqn.resolve()), "wb") as f:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+        _log.info(f"Pickled obj to {str(fqn.resolve())}")
         return fqn
 
 
@@ -220,9 +214,9 @@ class SimpleStringIO(BaseFileIO):
         if kind in ["txt", "json"]:
             self.kind = kind
         else:
-            raise AttributeError("kind must be in {'txt', 'json'}")
+            raise ValueError("kind must be in {'txt', 'json'}")
 
-    def read(self, fn: str) -> str:
+    def read(self, fn: str) -> str | dict:
         """Read a file from fn according to kind of this object"""
         fqn = self.get_path_read(fn)
         with open(str(fqn), "r") as f:
@@ -232,7 +226,7 @@ class SimpleStringIO(BaseFileIO):
             s = json.loads(s)
         return s
 
-    def write(self, s: str, fn: str) -> str:
+    def write(self, s: str, fn: str) -> Path:
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(f".{self.kind}"))
         if self.kind == "json":
             s = json.dumps(s)
@@ -247,7 +241,7 @@ def copy_csv2md(fn: str) -> str:
     fileio = BaseFileIO()
     fqn = fileio.get_path_read(fn)
     r = subprocess.run(["csv2md", f"{fqn}"], capture_output=True)
-    fn_out = fn[:-3] + "md"
+    fn_out = Path(fn).with_suffix(".md")
     fqn_out = fileio.get_path_write(fn_out)
     with open(fqn_out, "wb") as f:
         f.write(r.stdout)

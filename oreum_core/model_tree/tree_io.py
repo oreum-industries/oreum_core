@@ -47,7 +47,7 @@ class XGBIO(BaseFileIO):
 
     def write(self, bst: Booster, fn: str = "") -> Path:
         """Accept XGB.core.Booster object and fn e.g. `bst.json`, write to file"""
-        fn = fn or "bst.json"
+        fn = fn or "bst"
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".json"))
         bst.save_model(str(fqn.resolve()))
         _log.info(f"Written to {str(fqn.resolve())}")
@@ -55,6 +55,6 @@ class XGBIO(BaseFileIO):
 
     def get_sqlite_uri_for_optuna_study(self, fn: str = "") -> str:
         """Get URI of local SQLite DB to pass to optuna.create_study(storage=)"""
-        fn = fn or "optuna_study.sqlite"
+        fn = fn or "optuna_study"
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".sqlite"))
         return f"sqlite:////{str(fqn.resolve())}"
