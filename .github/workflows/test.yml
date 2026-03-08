@@ -11,7 +11,7 @@ on:
 permissions:
   actions: read
   checks: write
-  contents: write
+  contents: read
   pull-requests: write
 
 # concurrency: cancel same job already in-progress, to be efficient
@@ -65,10 +65,3 @@ jobs:
           name: coverage-report
           path: reports/coverage-report.xml
           retention-days: 30
-
-      - name: Commit coverage badge to branch
-        uses: stefanzweifel/git-auto-commit-action@v5
-        if: always()
-        with:
-          commit_message: "ci: update coverage badge [skip ci]"
-          file_pattern: assets/img/coverage_badge.svg
