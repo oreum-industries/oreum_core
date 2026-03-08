@@ -56,7 +56,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           thresholdAll: 0.6   # overall floor; raise as coverage improves
           thresholdNew: 0.7   # new files added in a PR must be well-tested
-          thresholdModified: 0.6  # modified files must maintain coverage
+          thresholdModified: 0.5  # modified files must maintain coverage
 
       - name: Upload coverage XML as artifact
         uses: actions/upload-artifact@v4

@@ -63,21 +63,12 @@ pymc = [
     "nutpie",
 ]
 tree = [
-    "catboost",
-    "category_encoders",  # brings many deps see DEPS NOTE
-    "graphviz",
-    "optuna",  # brings many deps see DEPS NOTE
-    "optuna-integration",
-    "nbformat",
-    "shap",
     "xgboost",
 ]
 # DEPS NOTE
-# + category_encoders: brings packages incl. statsmodels and patsy
 # + pandas: added minimal optional deps. importing projects might also consider
 #     including pandas[performance,postgresql]
 # + pymc: brings packages incl.: arviz (xarray), numpy, pandas, pytensor, scipy, tables
-# + optuna:  brings latest numpy and sqlalchemy, optionally manually add plotly
 
 [project.urls]
 "Homepage" = "https://github.com/oreum-industries/oreum_core"
