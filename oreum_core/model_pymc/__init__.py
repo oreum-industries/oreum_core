@@ -38,7 +38,7 @@ from .describe import (
 )
 from .distributions import lognormal_icdf, mv_dist, normal_icdf, sanity_check_lognorm
 from .plot import (
-    facetplot_krushke,
+    facetplot_kruschke,
     forestplot_multiple,
     forestplot_single,
     pairplot_corr,

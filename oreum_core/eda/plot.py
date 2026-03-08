@@ -838,7 +838,7 @@ def plot_bootstrap_lr_grp(
         for i, v in enumerate(ct)
     ]
     # make easier to read labels for the count axis..
-    # idea 1: shorten labels, doesnt work becase shared with ax0
+    # idea 1: shorten labels, doesnt work because shared with ax0
     # _ = ax1.set_yticks(ticks=ax1.get_yticks(), labels=[f"{lbl.get_text()[:8]}.." for lbl in ax1.get_yticklabels()])
     # idea 2 just make invisible, and add grid lines to aid the eye
     _ = ax1.get_yaxis().set_visible(False)
@@ -956,7 +956,7 @@ def plot_bootstrap_grp(
 
 
 def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
-    """Plot delta between boostrap results, grouped"""
+    """Plot delta between bootstrap results, grouped"""
 
     sty = _get_kws_styling()
     if dfboot[grp].dtype != "object":

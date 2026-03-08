@@ -34,7 +34,7 @@ az.rcParams["plot.max_subplots"] = 200
 __all__ = [
     "plot_trace",
     "plot_energy",
-    "facetplot_krushke",
+    "facetplot_kruschke",
     "pairplot_corr",
     "forestplot_single",
     "forestplot_multiple",
@@ -87,14 +87,14 @@ def plot_energy(mdl: BasePYMCModel) -> figure.Figure:
     return f
 
 
-def facetplot_krushke(
+def facetplot_kruschke(
     mdl: BasePYMCModel,
     rvs: list[str],
     group: IDataGroupName = IDataGroupName.posterior.value,
     ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
-    """Create Krushke-style plots using Arviz, univariate RVs, control faceting
+    """Create Kruschke-style plots using Arviz, univariate RVs, control faceting
     NOTE
     + ref_vals should look like a dict of list of dict with a key "ref_val"
         e.g. ref_vals = { 'beta_sigma' : [ {'ref_val':2} ] }
@@ -285,7 +285,7 @@ def pairplot_corr(
     ref_vals: dict = None,
     **kwargs,
 ) -> figure.Figure:
-    """Create posterior pair / correlation plots using Arviz, corrrlated RVs,
+    """Create posterior pair / correlation plots using Arviz, correlated RVs,
     Pass-through kwargs to az.plot_pair, e.g. ref_vals
     Default to posterior, allow for override to prior
     """
@@ -502,7 +502,7 @@ def plot_lkjcc_corr(mdl: BasePYMCModel, **kwargs) -> figure.Figure:
         "lkjcc_corr_dim_1": xr.DataArray([1, 0], dims=["asdf"]),
     }
 
-    return facetplot_krushke(
+    return facetplot_kruschke(
         mdl=mdl,
         txtadd="lkjcc_corr, diagonals only",
         rvs=["lkjcc_corr"],

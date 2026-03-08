@@ -1,6 +1,6 @@
 name: lint
 
-# triger on PRs into master and pushes to master, or on manual request
+# trigger on PRs into master and pushes to master, or on manual request
 on:
   pull_request:
     branches: [master]
