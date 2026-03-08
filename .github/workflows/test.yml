@@ -1,10 +1,11 @@
 name: test
 
-# trigger only when a PR is opened, reopened, or marked ready for review
+# trigger only when a PR is opened, reopened, or marked ready for review, or on manual request
 on:
   pull_request:
     branches: [master]
     types: [opened, reopened, ready_for_review]
+  workflow_dispatch:
 
 # use lowest perms
 permissions:
