@@ -126,7 +126,11 @@ test:
 	if [ $(CI) -eq 1 ]; then \
 		$(PYTHON_NONVENV) -m pip install uv; \
 	fi;
-	uv run --extra dev --extra pymc --extra tree pytest tests/ -v --junit-xml=reports/test-report.xml;
+	uv run --extra dev --extra pymc --extra tree pytest tests/ -v \
+		--junit-xml=reports/test-report.xml \
+		--cov=oreum_core \
+		--cov-report=term-missing \
+		--cov-report=xml:reports/coverage-report.xml;
 
 
 test-pkg-dl:
