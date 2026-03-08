@@ -58,14 +58,10 @@ def df_coverage() -> pd.DataFrame:
 class TestPlotCoverage:
     """Tests for plot_coverage()"""
 
-    def test_returns_figure(self, df_coverage):
-        """Happy: returns a Figure for a valid coverage DataFrame"""
+    def test_returns_figure_with_two_axes(self, df_coverage):
+        """Happy: returns a Figure with one axes per method column (2 methods in fixture)"""
         f = plot_coverage(df_coverage)
         assert isinstance(f, figure.Figure)
-
-    def test_two_axes(self, df_coverage):
-        """Happy: lmplot creates one axes per method column (2 methods in fixture)"""
-        f = plot_coverage(df_coverage)
         assert len(f.axes) == 2
 
     def test_suptitle_contains_coverage(self, df_coverage):
@@ -91,16 +87,11 @@ def rmse_data() -> tuple:
 class TestPlotRmseRange:
     """Tests for plot_rmse_range()"""
 
-    def test_returns_figure(self, rmse_data):
-        """Happy: returns a Figure for valid rmse scalar and qs Series"""
+    def test_returns_figure_with_one_axis(self, rmse_data):
+        """Happy: returns a Figure with exactly one axes"""
         rmse, rmse_qs = rmse_data
         f = plot_rmse_range(rmse, rmse_qs)
         assert isinstance(f, figure.Figure)
-
-    def test_single_axis(self, rmse_data):
-        """Happy: figure has exactly one axes"""
-        rmse, rmse_qs = rmse_data
-        f = plot_rmse_range(rmse, rmse_qs)
         assert len(f.axes) == 1
 
     def test_suptitle_contains_rmse(self, rmse_data):
@@ -119,48 +110,34 @@ class TestPlotRmseRange:
 class TestPlotEstimate:
     """Tests for plot_estimate()"""
 
-    def test_returns_figure_boxplot(self):
-        """Happy: default boxplot mode returns a Figure"""
+    def test_boxplot_mode(self):
+        """Happy: default boxplot mode returns a Figure with correct suptitle"""
         yhat = RNG.standard_normal(500) + 5.0  # ensure positive mean for log10
         f = plot_estimate(yhat, nobs=N)
         assert isinstance(f, figure.Figure)
-
-    def test_returns_figure_exceedance(self):
-        """Happy: exceedance=True returns a Figure"""
-        yhat = RNG.standard_normal(500) + 5.0
-        f = plot_estimate(yhat, nobs=N, exceedance=True)
-        assert isinstance(f, figure.Figure)
-
-    def test_with_overplot_y(self):
-        """Happy: passing y overlays observed values without error"""
-        yhat = RNG.standard_normal(500) + 5.0
-        y = RNG.standard_normal(N) + 5.0
-        f = plot_estimate(yhat, nobs=N, y=y)
-        assert isinstance(f, figure.Figure)
-
-    def test_suptitle_contains_boxplot(self):
-        """Happy: suptitle contains 'Boxplot' in default mode"""
-        yhat = RNG.standard_normal(500) + 5.0
-        f = plot_estimate(yhat, nobs=N)
         assert "Boxplot" in f._suptitle.get_text()
 
-    def test_suptitle_contains_exceedance(self):
-        """Happy: exceedance=True suptitle contains 'Exceedance Curve'"""
+    def test_exceedance_mode(self):
+        """Happy: exceedance=True returns a Figure with correct suptitle"""
         yhat = RNG.standard_normal(500) + 5.0
         f = plot_estimate(yhat, nobs=N, exceedance=True)
+        assert isinstance(f, figure.Figure)
         assert "Exceedance Curve" in f._suptitle.get_text()
+
+    def test_overplot_y_and_force_xlim(self):
+        """Happy: y overlay and force_xlim both return a Figure without error"""
+        yhat = RNG.standard_normal(500) + 5.0
+        y = RNG.standard_normal(N) + 5.0
+        assert isinstance(plot_estimate(yhat, nobs=N, y=y), figure.Figure)
+        assert isinstance(
+            plot_estimate(yhat, nobs=N, force_xlim=[0, 15]), figure.Figure
+        )
 
     def test_txtadd_in_suptitle(self):
         """Happy: txtadd kwarg appears in suptitle"""
         yhat = RNG.standard_normal(500) + 5.0
         f = plot_estimate(yhat, nobs=N, txtadd="v2")
         assert "v2" in f._suptitle.get_text()
-
-    def test_force_xlim(self):
-        """Happy: force_xlim restricts x axis without error"""
-        yhat = RNG.standard_normal(500) + 5.0
-        f = plot_estimate(yhat, nobs=N, force_xlim=[0, 15])
-        assert isinstance(f, figure.Figure)
 
 
 @pytest.fixture(scope="module")
@@ -224,19 +201,14 @@ class TestPlotRocPrecrec:
     """Tests for plot_roc_precrec()"""
 
     def test_returns_figure_and_aucs(self, df_roc):
-        """Happy: returns (Figure, float, float) for a valid metrics DataFrame"""
+        """Happy: returns (Figure, float, float) with 2 axes for a valid metrics DataFrame"""
         result = plot_roc_precrec(df_roc)
-        assert isinstance(result, tuple)
-        assert len(result) == 3
+        assert isinstance(result, tuple) and len(result) == 3
         f, roc_auc, pr_auc = result
         assert isinstance(f, figure.Figure)
+        assert len(f.axes) == 2
         assert 0.0 <= roc_auc <= 1.0
         assert 0.0 <= pr_auc <= 1.0
-
-    def test_two_axes(self, df_roc):
-        """Happy: figure has 2 axes (ROC + PrecRec)"""
-        f, _, _ = plot_roc_precrec(df_roc)
-        assert len(f.axes) == 2
 
     def test_suptitle_contains_roc(self, df_roc):
         """Happy: suptitle mentions 'ROC'"""
@@ -247,14 +219,10 @@ class TestPlotRocPrecrec:
 class TestPlotFMeasure:
     """Tests for plot_f_measure()"""
 
-    def test_returns_figure(self, df_perf):
-        """Happy: returns a Figure for a valid perf DataFrame"""
+    def test_returns_figure_with_one_axis(self, df_perf):
+        """Happy: returns a Figure with exactly one axes"""
         f = plot_f_measure(df_perf)
         assert isinstance(f, figure.Figure)
-
-    def test_single_axis(self, df_perf):
-        """Happy: figure has exactly one axes"""
-        f = plot_f_measure(df_perf)
         assert len(f.axes) == 1
 
     def test_suptitle_contains_f_scores(self, df_perf):
@@ -266,14 +234,10 @@ class TestPlotFMeasure:
 class TestPlotAccuracy:
     """Tests for plot_accuracy()"""
 
-    def test_returns_figure(self, df_perf):
-        """Happy: returns a Figure for a valid perf DataFrame"""
+    def test_returns_figure_with_one_axis(self, df_perf):
+        """Happy: returns a Figure with exactly one axes"""
         f = plot_accuracy(df_perf)
         assert isinstance(f, figure.Figure)
-
-    def test_single_axis(self, df_perf):
-        """Happy: figure has exactly one axes"""
-        f = plot_accuracy(df_perf)
         assert len(f.axes) == 1
 
     def test_suptitle_contains_accuracy(self, df_perf):
@@ -285,14 +249,10 @@ class TestPlotAccuracy:
 class TestPlotBinaryPerformance:
     """Tests for plot_binary_performance()"""
 
-    def test_returns_figure(self, df_binary_perf):
-        """Happy: returns a Figure for a valid binary performance DataFrame"""
+    def test_returns_figure_with_four_axes(self, df_binary_perf):
+        """Happy: returns a Figure with 4 axes (ROC, PrecRec, F-measure, Accuracy)"""
         f = plot_binary_performance(df_binary_perf, nobs=100)
         assert isinstance(f, figure.Figure)
-
-    def test_four_axes(self, df_binary_perf):
-        """Happy: figure has 4 axes (ROC, PrecRec, F-measure, Accuracy)"""
-        f = plot_binary_performance(df_binary_perf, nobs=100)
         assert len(f.axes) == 4
 
     def test_suptitle_contains_binary(self, df_binary_perf):

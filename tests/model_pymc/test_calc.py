@@ -116,21 +116,15 @@ class TestCalcBayesianR2:
     """Tests for calc_bayesian_r2()"""
 
     def test_returns_dataframe_with_r2_column(self):
-        """Happy: output is DataFrame with 'r2' column"""
-        rng = np.random.default_rng(0)
-        y = rng.normal(size=20)
-        yhat = y.reshape(-1, 1) + rng.normal(scale=0.1, size=(20, 100))
-        result = calc_bayesian_r2(y, yhat)
-        assert isinstance(result, pd.DataFrame)
-        assert "r2" in result.columns
-
-    def test_output_length_equals_nsamples(self):
-        """Happy: one r2 value per posterior sample"""
+        """Happy: output is DataFrame with 'r2' column, one row per posterior sample"""
         rng = np.random.default_rng(0)
         nsamples = 50
         y = rng.normal(size=10)
         yhat = y.reshape(-1, 1) + rng.normal(scale=0.1, size=(10, nsamples))
-        assert len(calc_bayesian_r2(y, yhat)) == nsamples
+        result = calc_bayesian_r2(y, yhat)
+        assert isinstance(result, pd.DataFrame)
+        assert "r2" in result.columns
+        assert len(result) == nsamples
 
     def test_good_fit_r2_near_one(self):
         """Happy: near-perfect predictions → mean r2 > 0.9"""
@@ -144,20 +138,13 @@ class TestCalcR2:
     """Tests for calc_r2()"""
 
     def test_returns_scalar_and_series(self):
-        """Happy: returns (numpy scalar, pd.Series)"""
+        """Happy: returns (numpy scalar, pd.Series) with index named 'pct'"""
         rng = np.random.default_rng(0)
         y = rng.normal(size=20)
         yhat = y.reshape(-1, 1) + rng.normal(scale=0.1, size=(20, 100))
         r2_mean, r2_pct = calc_r2(y, yhat)
         assert isinstance(r2_pct, pd.Series)
         assert np.ndim(r2_mean) == 0
-
-    def test_series_index_named_pct(self):
-        """Happy: quantile series index name is 'pct'"""
-        rng = np.random.default_rng(0)
-        y = rng.normal(size=20)
-        yhat = y.reshape(-1, 1) + rng.normal(scale=0.1, size=(20, 100))
-        _, r2_pct = calc_r2(y, yhat)
         assert r2_pct.index.name == "pct"
 
     def test_good_fit_r2_mean_near_one(self):

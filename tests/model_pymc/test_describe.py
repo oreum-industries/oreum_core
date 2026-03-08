@@ -46,20 +46,11 @@ def idata_ppc() -> az.InferenceData:
 class TestModelDesc:
     """Tests for model_desc()"""
 
-    def test_returns_string(self):
-        """Happy: returns a string for a valid formula"""
+    def test_returns_string_with_patsy_header(self):
+        """Happy: returns a string containing the patsy header"""
         result = model_desc("y ~ x")
         assert isinstance(result, str)
-
-    def test_contains_patsy_header(self):
-        """Happy: output always starts with the patsy header line"""
-        result = model_desc("y ~ x")
         assert "patsy linear model desc" in result
-
-    def test_standard_formula(self):
-        """Happy: two-sided formula (len==2) processed without error"""
-        result = model_desc("y ~ x + z")
-        assert isinstance(result, str)
 
     def test_rhs_only_no_intercept(self):
         """Happy: RHS-only formula (no tilde, no '1 +') processed without error"""
