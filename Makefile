@@ -14,7 +14,7 @@ CI?=0
 brew:
 	@echo "Install system-level packages for local dev on MacOS using brew..."
 	brew update && brew upgrade && brew cleanup -s;
-	brew install direnv gcc git graphviz uv zsh;
+	brew install direnv gcc git graphviz libomp uv zsh;
 
 build:
 	@echo "Build package oreum_core..."
@@ -70,14 +70,10 @@ lint:
 	if [ $(CI) -eq 1 ]; then \
 		$(PYTHON_NONVENV) -m pip install uv; \
 	fi;
-	@uv venv .venv-temp; \
-	trap "rm -rf .venv-temp" EXIT; \
-	uv pip install --python .venv-temp bandit interrogate ruff; \
-	. .venv-temp/bin/activate; \
-		ruff check --config pyproject.toml --output-format=github; \
-		ruff format --config pyproject.toml --diff --no-cache; \
-		interrogate --config pyproject.toml oreum_core/; \
-		bandit --config pyproject.toml -r oreum_core/ -f json -o reports/bandit-report.json;
+	uv run --extra dev ruff check --config pyproject.toml --output-format=github;
+	uv run --extra dev ruff format --config pyproject.toml --diff --no-cache;
+	uv run --extra dev interrogate --config pyproject.toml oreum_core/;
+	uv run --extra dev bandit --config pyproject.toml -r oreum_core/ -f json -o reports/bandit-report.json;
 
 publish:
 	@echo "All-in-one build and publish to pypi..."
@@ -130,11 +126,7 @@ test:
 	if [ $(CI) -eq 1 ]; then \
 		$(PYTHON_NONVENV) -m pip install uv; \
 	fi;
-	@uv venv .venv-temp; \
-	trap "rm -rf .venv-temp" EXIT; \
-	uv pip install --python .venv-temp pytest .; \
-	. .venv-temp/bin/activate; \
-		pytest tests/ -v --junit-xml=reports/test-report.xml;
+	uv run --extra dev --extra pymc --extra tree pytest tests/ -v --junit-xml=reports/test-report.xml;
 
 
 test-pkg-dl:
