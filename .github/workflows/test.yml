@@ -1,19 +1,17 @@
 name: test
 
-# trigger on PRs, pushes to master, or on manual request
+# trigger only when a PR is opened, reopened, or marked ready for review, or on manual request
 on:
   pull_request:
     branches: [master]
     types: [opened, reopened, ready_for_review]
-  push:
-    branches: [master]
   workflow_dispatch:
 
 # use lowest perms
 permissions:
   actions: read
   checks: write
-  contents: write
+  contents: read
   pull-requests: write
 
 # concurrency: cancel same job already in-progress, to be efficient
@@ -41,33 +39,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run pytest suite with coverage
-        run: mkdir -p reports assets/img && make test CI=1
-
-      - name: Generate coverage badge
-        run: |
-          pip install genbadge[coverage]
-          genbadge coverage -i reports/coverage-report.xml -o assets/img/coverage_badge.svg
-
-      - name: Push coverage badge to badges branch
-        if: github.ref == 'refs/heads/master'
-        run: |
-          cp assets/img/coverage_badge.svg /tmp/coverage_badge.svg
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git ls-remote --exit-code --heads origin badges; then
-            git fetch origin badges
-            git checkout -B badges origin/badges
-          else
-            git checkout --orphan badges
-            git rm -rf . --quiet
-          fi
-          mkdir -p assets/img
-          cp /tmp/coverage_badge.svg assets/img/
-          git add assets/img/coverage_badge.svg
-          git diff --staged --quiet || git commit -m "ci: update coverage badge [skip ci]"
-          git push origin badges
-          git checkout -
+      - name: Run pytest suite with coverage and generate badge
+        run: mkdir -p reports && make test CI=1
 
       - name: Publish test results to PR
         uses: EnricoMi/publish-unit-test-result-action@v2
