@@ -84,11 +84,9 @@ class BasePYMCModel:
             ),
             nutpie=dict(nuts=dict(target_accept=0.8)),
         )
-        self.idata_kwargs = (
-            dict(
-                log_likelihood=True,  # usually useful
-                log_prior=True,  # possibly useful?
-            ),
+        self.idata_kwargs = dict(
+            log_likelihood=True,  # usually useful
+            log_prior=True,  # possibly useful?
         )
         self.rvs_for_posterior_plots = []
         self.calc_loglike_of_potential = False
