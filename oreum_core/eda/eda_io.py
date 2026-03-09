@@ -88,10 +88,7 @@ class FigureIO(BaseFileIO):
         img = mpimg.imread(fqn)
         with plt.ioff():
             f, axs = plt.subplots(1, 1, figsize=figsize)
-            # f = plt.figure(figsize=figsize)  # comment out
-            # ax = f.add_axes([0, 0, 1, 1])  # creates ax non-tight_layout-able
             _ = axs.imshow(img)
-            # ax = plt.gca()  # comment out, not needed
             _ = axs.grid(False)
             _ = axs.set_frame_on(False)
             _ = plt.tick_params(
@@ -105,8 +102,6 @@ class FigureIO(BaseFileIO):
             if title is not None:
                 _ = f.suptitle(f"{title}", fontsize=fontsize, y=1.0)
             f.tight_layout()
-        plt.close()
-        # plt.show()  #  comment out because causes double plotting in NBs!
         return f
 
 
