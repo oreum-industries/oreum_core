@@ -19,7 +19,6 @@ import csv
 import json
 import logging
 import pickle  # nosec B403
-import subprocess
 from pathlib import Path
 
 import dask.dataframe as dd
@@ -34,7 +33,6 @@ __all__ = [
     "PandasParquetIO",
     "PickleIO",
     "SimpleStringIO",
-    "copy_csv2md",
 ]
 
 _log = logging.getLogger(__name__)
@@ -234,16 +232,3 @@ class SimpleStringIO(BaseFileIO):
             f.write(f"{s}\n")
         _log.info(f"Written to {str(fqn.resolve())}")
         return fqn
-
-
-def copy_csv2md(fn: str) -> str:
-    """Convenience to copy csv 'path/x.csv' to markdown 'path/x.md'"""
-    fileio = BaseFileIO()
-    fqn = fileio.get_path_read(fn)
-    r = subprocess.run(["csv2md", f"{fqn}"], capture_output=True)
-    fn_out = Path(fn).with_suffix(".md")
-    fqn_out = fileio.get_path_write(fn_out)
-    with open(fqn_out, "wb") as f:
-        f.write(r.stdout)
-    _log.info(f"Written to {str(fqn_out.resolve())}")
-    return fqn_out

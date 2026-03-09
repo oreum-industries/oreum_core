@@ -15,11 +15,15 @@
 # utils.file_io.py
 """Common File IO utils"""
 
+import logging
+import subprocess
 from pathlib import Path
 
 from .snakey_lowercaser import SnakeyLowercaser
 
-__all__ = ["BaseFileIO", "check_fqns_exist"]
+__all__ = ["BaseFileIO", "check_fqns_exist", "copy_csv2md"]
+
+_log = logging.getLogger(__name__)
 
 
 class BaseFileIO:
@@ -62,6 +66,25 @@ class BaseFileIO:
         if not dr.is_dir():
             raise FileNotFoundError(f"Required dir does not exist {str(dr.resolve())}")
         return fqn
+
+
+def copy_csv2md(fn: str) -> Path:
+    """Convenience to copy csv 'path/x.csv' to markdown 'path/x.md'
+    Requires optional dependency: pip install csv2md
+    """
+    try:
+        import csv2md  # noqa: F401
+    except ImportError as e:
+        raise ImportError("copy_csv2md requires csv2md: pip install csv2md") from e
+    fileio = BaseFileIO()
+    fqn = fileio.get_path_read(fn)
+    r = subprocess.run(["csv2md", f"{fqn}"], capture_output=True)
+    fn_out = Path(fn).with_suffix(".md")
+    fqn_out = fileio.get_path_write(fn_out)
+    with open(fqn_out, "wb") as f:
+        f.write(r.stdout)
+    _log.info(f"Written to {str(fqn_out.resolve())}")
+    return fqn_out
 
 
 def check_fqns_exist(fqns: dict[str, Path]) -> bool:
