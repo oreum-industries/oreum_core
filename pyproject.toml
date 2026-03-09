@@ -55,8 +55,9 @@ dev = [
 ]
 pymc = [
     "graphviz",
-    "pymc",
     "nutpie",
+    "pymc",
+    "pytensor-distributions @ https://github.com/pymc-devs/pytensor-distributions.git",
 ]
 tree = [
     "xgboost",
