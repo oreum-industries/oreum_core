@@ -64,6 +64,20 @@ class TestDatatypeConverterConvertDtypes:
             pd.Timestamp("2024-12-31"),
         ]
 
+    def test_fyear_converts_string_year_to_datetime(self):
+        """Happy: string year column → datetime with year-only precision"""
+        df = pd.DataFrame({"yr": ["2022", "2023", "2024"]})
+        out = DatatypeConverter({"fyear": ["yr"]}).convert_dtypes(df)
+        assert out["yr"].dtype.kind == "M"
+        assert out["yr"].iloc[0] == pd.Timestamp("2022-01-01")
+
+    def test_fyear_already_numeric_passes_through(self):
+        """Edge: fyear column already int → skips string cleaning, no crash"""
+        df = pd.DataFrame({"yr": pd.array([2022, 2023, 2024], dtype="int64")})
+        out = DatatypeConverter({"fyear": ["yr"]}).convert_dtypes(df)
+        assert out["yr"].dtype.kind == "M"
+        assert out["yr"].iloc[1] == pd.Timestamp("2023-01-01")
+
     def test_fcat_null_becomes_na(self):
         """Edge: null values in fcat column → pd.NA, not dropped"""
         df = pd.DataFrame({"label": ["alpha", None, "beta"]})
@@ -97,6 +111,21 @@ class TestDatatypeConverterConvertDtypesSadPath:
         df = pd.DataFrame({"dt": ["01/01/2024"]})
         with pytest.raises(ValueError):
             DatatypeConverter({"fdate": ["dt"]}).convert_dtypes(df)
+
+    def test_ffloat_already_numeric_with_nans_passes_through(self):
+        """Edge: ffloat column already float64 with NaN → skips string cleaning, no crash"""
+        import numpy as np
+
+        df = pd.DataFrame({"price": pd.array([1.5, np.nan, 3.0], dtype="float64")})
+        out = DatatypeConverter({"ffloat": ["price"]}).convert_dtypes(df)
+        assert out["price"].dtype == float
+        assert pd.isna(out["price"].iloc[1])
+
+    def test_ffloat_non_numeric_raises_exception_with_colname(self):
+        """Sad: non-numeric string in ffloat → Exception wrapping includes column name"""
+        df = pd.DataFrame({"price": ["1.5", "not_a_number"]})
+        with pytest.raises(Exception, match="in ft: price"):
+            DatatypeConverter({"ffloat": ["price"]}).convert_dtypes(df)
 
     def test_ford_unknown_level_silently_becomes_nan(self):
         """Edge: ford value not in specified levels → NaN (pd.Categorical behaviour)"""

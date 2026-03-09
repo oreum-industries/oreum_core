@@ -82,9 +82,7 @@ def fit_and_plot_fn(obs: pd.Series) -> tuple[figure.Figure, dict]:
     dist_kind = "Continuous"
     params = {}
     f, ax1d = plt.subplots(1, 1, figsize=(12, 6))
-    hist_kws = dict(
-        kde=False, label="data", ax=ax1d, alpha=0.5, color="#aaaaaa", zorder=-1
-    )
+    hist_kws = dict(label="data", ax=ax1d, alpha=0.5, color="#aaaaaa", zorder=-1)
     line_kws = dict(lw=2, ls="--", ax=ax1d)
 
     # handle nans and infs

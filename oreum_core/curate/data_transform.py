@@ -109,7 +109,8 @@ class DatatypeConverter:
                 df[ft] = pd.Categorical(df[ft].values, ordered=False)
 
         for ft, lvls in self.ftsd["ford"].items():
-            df[ft] = pd.Categorical(df[ft].values, categories=lvls, ordered=True)
+            df[ft] = df[ft].where(df[ft].isin(lvls))  # unknown values → NaN explicitly
+            df[ft] = pd.Categorical(df[ft], categories=lvls, ordered=True)
 
         for ft in self.ftsd["fbool"] + self.ftsd["fbool_nan_to_false"]:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
@@ -134,7 +135,7 @@ class DatatypeConverter:
                     )
 
         for ft in self.ftsd["fyear"]:
-            if isinstance(df.dtypes[ft], object):
+            if not pd.api.types.is_numeric_dtype(df.dtypes[ft]):
                 df[ft] = (
                     df[ft]
                     .astype(str)
@@ -153,7 +154,7 @@ class DatatypeConverter:
 
         for ft in self.ftsd["fint"]:
             try:
-                if isinstance(df.dtypes[ft], object):
+                if not pd.api.types.is_numeric_dtype(df.dtypes[ft]):
                     df[ft] = (
                         df[ft]
                         .astype(str)
@@ -172,7 +173,7 @@ class DatatypeConverter:
 
         for ft in self.ftsd["ffloat"]:
             try:
-                if isinstance(df.dtypes[ft], object):
+                if not pd.api.types.is_numeric_dtype(df.dtypes[ft]):
                     df[ft] = (
                         df[ft]
                         .astype(str)
@@ -183,7 +184,9 @@ class DatatypeConverter:
                     df.loc[df[ft].isin(self.strnans), ft] = np.nan
                 df[ft] = df[ft].astype(float, errors="raise")
             except Exception as e:
-                raise e(ft) from e
+                raise Exception(f"{str(e)} in ft: {ft}").with_traceback(
+                    e.__traceback__
+                ) from e
 
         for ft in self.ftsd["fverbatim"]:
             # just force missing to pd.NA
