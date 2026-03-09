@@ -59,7 +59,7 @@ jobs:
           thresholdModified: 0.4  # modified files must maintain coverage
 
       - name: Upload coverage XML as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-report
