@@ -80,13 +80,15 @@ class BasePYMCModel:
                     max_treedepth=10,  # default, this is a reminder
                     early_max_treedepth=8,  # default, this is a reminder
                     step_scale=0.25,  # default, this is a reminder
-                ),
-                idata_kwargs=dict(
-                    log_likelihood=True,  # usually useful
-                    log_prior=True,  # possibly useful?
-                ),
+                )
             ),
             nutpie=dict(nuts=dict(target_accept=0.8)),
+        )
+        self.idata_kwargs = (
+            dict(
+                log_likelihood=True,  # usually useful
+                log_prior=True,  # possibly useful?
+            ),
         )
         self.rvs_for_posterior_plots = []
         self.calc_loglike_of_potential = False
@@ -191,11 +193,14 @@ class BasePYMCModel:
         kws = copy(self.sample_kws)
         kws["random_seed"] = self.rsd
         kws.update(self.sampler_kws.get(kws["nuts_sampler"]))
+        if kws["nuts_sampler"] == "pymc":
+            kws.setdefault("idata_kwargs", {}).update(self.idata_kwargs)
 
         with self.model:
             try:
                 posterior = pm.sample(**{**kws, **kwargs})
                 if kws["nuts_sampler"] == "nutpie":
+                    pm.compute_log_prior(posterior)
                     pm.compute_log_likelihood(posterior)
             except UserWarning as e:
                 _log.warning("Warning in mdl.sample()", exc_info=e)
