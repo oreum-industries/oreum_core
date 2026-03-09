@@ -303,7 +303,6 @@ def plot_int_dist(
             df = df.loc[df[ft] != 0].copy()
         ax = sns.histplot(
             df.loc[df[ft].notnull(), ft],
-            kde=False,
             bins=bins,
             label=f"NaNs: {n_nans}, zeros: {n_zeros}, mean: {mean:.2f}, med: {med:.2f}",
             color=sns.color_palette()[i % 7],
@@ -890,7 +889,10 @@ def plot_bootstrap_grp(
     """Plot bootstrapped value, grouped by grp"""
     sty = _get_kws_styling()
 
-    if dfboot[grp].dtype not in ["object", "category"]:
+    if not (
+        dfboot[grp].dtype == "category"
+        or pd.api.types.is_string_dtype(dfboot[grp].dtype)
+    ):
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f"s{x}")
 
@@ -962,7 +964,10 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
     """Plot delta between bootstrap results, grouped"""
 
     sty = _get_kws_styling()
-    if dfboot[grp].dtype != "object":
+    if not (
+        dfboot[grp].dtype == "category"
+        or pd.api.types.is_string_dtype(dfboot[grp].dtype)
+    ):
         dfboot = dfboot.copy()
         dfboot[grp] = dfboot[grp].map(lambda x: f"s{x}")
 
@@ -1015,7 +1020,7 @@ def plot_smrystat(
     val: str = "y_eloss",
     smry: Literal["sum", "mean"] = "sum",
     plot_outliers: bool = False,
-    pal: sns.palettes._ColorPalette = None,
+    pal: str | list | None = None,
     **kwargs,
 ) -> figure.Figure:
     """Plot diagnostics (smrystat, dist) of numeric value `val`"""
@@ -1085,7 +1090,7 @@ def plot_smrystat_grp(
     plot_outliers: bool = False,
     plot_compact: bool = True,
     plot_grid: bool = True,
-    pal: sns.palettes._ColorPalette = None,
+    pal: str | list | None = None,
     orderby: Literal["ordinal", "count", "smrystat", None] = "ordinal",
     topn: int = 10,
     **kwargs,
@@ -1102,7 +1107,9 @@ def plot_smrystat_grp(
     if grpkind == "year":
         dfp[grp] = dfp[grp].dt.year
 
-    if dfp[grp].dtype not in ["object", "category", "string"]:
+    if not (
+        dfp[grp].dtype == "category" or pd.api.types.is_string_dtype(dfp[grp].dtype)
+    ):
         dfp[grp] = dfp[grp].map(lambda x: f"s{x}")
 
     ct = dfp.groupby(grp, observed=True).size()
@@ -1199,7 +1206,7 @@ def plot_smrystat_grp_year(
     plot_outliers: bool = True,
     plot_compact: bool = True,
     plot_grid: bool = True,
-    pal: sns.palettes._ColorPalette = None,
+    pal: str | list | None = None,
     orderby: Literal["ordinal", "count", "smrystat", None] = "ordinal",
     topn: int = 10,
     **kwargs,

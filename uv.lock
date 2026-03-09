@@ -985,7 +985,7 @@ wheels = [
 
 [[package]]
 name = "oreum-core"
-version = "0.12.6"
+version = "0.12.7"
 source = { editable = "." }
 dependencies = [
     { name = "csv2md" },
@@ -1059,7 +1059,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "scikit-learn", specifier = ">=1.0" },
     { name = "scipy", specifier = ">=1.9" },
-    { name = "seaborn", specifier = "<0.14" },
+    { name = "seaborn", specifier = ">=0.13" },
     { name = "statsmodels" },
     { name = "xgboost", marker = "extra == 'tree'" },
 ]

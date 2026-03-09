@@ -109,7 +109,8 @@ class DatatypeConverter:
                 df[ft] = pd.Categorical(df[ft].values, ordered=False)
 
         for ft, lvls in self.ftsd["ford"].items():
-            df[ft] = pd.Categorical(df[ft].values, categories=lvls, ordered=True)
+            df[ft] = df[ft].where(df[ft].isin(lvls))  # unknown values → NaN explicitly
+            df[ft] = pd.Categorical(df[ft], categories=lvls, ordered=True)
 
         for ft in self.ftsd["fbool"] + self.ftsd["fbool_nan_to_false"]:
             # tame string, strip, lower, use self.bool_dict, use pd.NA
