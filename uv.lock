@@ -930,7 +930,7 @@ wheels = [
 
 [[package]]
 name = "oreum-core"
-version = "0.12.9"
+version = "0.12.11"
 source = { editable = "." }
 dependencies = [
     { name = "dask" },
@@ -965,7 +965,6 @@ pymc = [
     { name = "graphviz" },
     { name = "nutpie" },
     { name = "pymc" },
-    { name = "pytensor-distributions" },
 ]
 tree = [
     { name = "xgboost" },
@@ -993,7 +992,6 @@ requires-dist = [
     { name = "pooch", marker = "extra == 'dev'" },
     { name = "pre-commit", marker = "extra == 'dev'" },
     { name = "pymc", marker = "extra == 'pymc'" },
-    { name = "pytensor-distributions", marker = "extra == 'pymc'", git = "https://github.com/pymc-devs/pytensor-distributions.git" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pytest-cov", marker = "extra == 'dev'" },
     { name = "ruff", marker = "extra == 'dev'" },
@@ -1352,15 +1350,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4f/52/e4a39c0377c435d4532bce95cb2ba8e161ee383b51e425bd08cadc780d79/pytensor-2.38.2-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:bd0e71d7e543df920a297601a1dc01441711b311d9e6cfb3c5cd1a5a10ab87a3", size = 2195311, upload-time = "2026-03-06T13:36:46.213Z" },
     { url = "https://files.pythonhosted.org/packages/97/4a/fb34aefd1a144708fe454004deab4393c45f94f5d2ba7bbe2610994d7699/pytensor-2.38.2-cp313-cp313-win_amd64.whl", hash = "sha256:3174e506c105a260c041c00e019e5ef2b2561a0fe1e51ddcefb6bc8f7baf7c17", size = 1691597, upload-time = "2026-03-06T13:36:47.719Z" },
     { url = "https://files.pythonhosted.org/packages/4c/12/4b91d7ec085f35f6e0afbf57c9d4a13a45d48d9bef37ed6123d147255ecf/pytensor-2.38.2-py2.py3-none-any.whl", hash = "sha256:ae994b6e96d0d536e38c175a9b68df39fce4685a71dc8bb40acfbb779e755a34", size = 1399422, upload-time = "2026-03-06T13:36:58.363Z" },
-]
-
-[[package]]
-name = "pytensor-distributions"
-version = "0.1.3"
-source = { git = "https://github.com/pymc-devs/pytensor-distributions.git#ba828776b9dafb2eafd9403adc955d54463fdd49" }
-dependencies = [
-    { name = "numpy" },
-    { name = "pytensor" },
 ]
 
 [[package]]
