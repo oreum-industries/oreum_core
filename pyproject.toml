@@ -40,7 +40,6 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "bandit",
-    "genbadge[coverage]",
     "hypothesis",
     "interrogate",
     "ipython",
@@ -100,9 +99,6 @@ quiet = false
 whitelist-regex = []
 color = true
 omit-covered-files = false
-generate-badge = "assets/img/"
-badge-format = "svg"
-badge-style = "flat"
 
 [tool.flit.module]
 name = "oreum_core"
