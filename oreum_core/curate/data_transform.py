@@ -231,7 +231,9 @@ class DatasetReshaper:
         dfcmb = pd.DataFrame(index=[0])
         sdtypes = df.dtypes
 
-        if (sum(sdtypes == "object") > 0) or (sum(sdtypes == "boolean") > 0):
+        if any(pd.api.types.is_string_dtype(dt) for dt in sdtypes) or (
+            sum(sdtypes == "boolean") > 0
+        ):
             raise ValueError("Valid dtypes are `category`, `bool`, `int`, `float` only")
         cats = list(sdtypes.loc[sdtypes == "category"].index.values)
         bools = list(sdtypes.loc[sdtypes == "bool"].index.values)

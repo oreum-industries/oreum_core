@@ -637,7 +637,9 @@ def plot_bootstrap_lr(
         gd = sns.catplot(
             x="lr", data=dfboot, kind="violin", cut=0, color=clr, height=3, aspect=4
         )
-        pest_mn = np.nan_to_num(df[clm], 0).sum() / df[prm].sum()  # point est mean
+        pest_mn = (
+            np.nan_to_num(df[clm].to_numpy(copy=True), 0).sum() / df[prm].sum()
+        )  # point est mean
         _ = gd.ax.plot(pest_mn, 0, **sty["pest_mn_pt_kws"])
         _ = gd.ax.annotate(f"{pest_mn:.1%}", xy=(pest_mn, 0), **sty["pest_mn_txt_kws"])
         elems = [
@@ -764,7 +766,8 @@ def plot_bootstrap_lr_grp(
     ct = df.groupby(grp, observed=True).size()
     mn = dfboot.groupby(grp, observed=True)["lr"].mean()
     pest_mn = df.groupby(grp, observed=True).apply(
-        lambda g: np.nan_to_num(g[clm], 0).sum() / g[prm].sum(), include_groups=False
+        lambda g: np.nan_to_num(g[clm].to_numpy(copy=True), 0).sum() / g[prm].sum(),
+        include_groups=False,
     )
 
     # create order items / index
@@ -1372,7 +1375,7 @@ def plot_grp_ct(
     Works nicely with categorical too
     """
 
-    if df[grp].dtype not in ["object", "category"]:
+    if not (df[grp].dtype == "category" or pd.api.types.is_string_dtype(df[grp].dtype)):
         raise TypeError("grp must be Object (string) or Categorical")
 
     t = f"Countplot: {len(df)} obs, grouped by `{grp}`"
