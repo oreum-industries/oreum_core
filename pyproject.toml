@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "oreum_core"
 description = "Core tools for use on projects by Oreum Industries"
-version = "0.12.5"
+version = "0.12.6"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 authors = [{ name = "Oreum Industries", email = "info@oreum.io" },]
@@ -32,10 +32,11 @@ dependencies = [
     "ftfy",
     "matplotlib",
     "matplotlib-inline",
-    "pandas[excel,parquet,plot]>=2.3,<3",  # conservative pin since 3.0 not stable
+    "numpy>=2.0",
+    "pandas[excel,parquet,plot]>=3.0,<4",
     "patsy",  # TODO consider using formulae instead
-    "scikit-learn",
-    "scipy",
+    "scikit-learn>=1.0",
+    "scipy>=1.9",
     "seaborn<0.14", # 0.14 likely to break many plots, approach with caution
     "statsmodels",
 ]
@@ -113,7 +114,7 @@ name = "oreum_core"
 [tool.ruff]  # settings: https://docs.astral.sh/ruff/settings/
 indent-width = 4
 line-length = 88
-target-version = "py312"
+target-version = "py313"
 extend-exclude = [
     "__pycache__",
     "build",

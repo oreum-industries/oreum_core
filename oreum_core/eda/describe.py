@@ -19,7 +19,6 @@ import logging
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 __all__ = ["describe", "display_fw", "display_ht", "get_fts_by_dtype"]
 
@@ -48,9 +47,8 @@ def describe(
     Assume df has index.
     """
 
-    df = df.copy()
     len_idx = df.index.nlevels
-    nbytes = df.values.nbytes
+    nbytes = df.memory_usage(deep=False).sum()
     shape = df.shape
     _log.info(f"Shape: {shape}")
     _log.info(f"Memsize: {nbytes // 1e6:,.1f} MB")
@@ -71,7 +69,7 @@ def describe(
             df = df.sample(frac=(limit * 0.99) / nbytes, random_state=42)
             t = f"subsampled from Shape: {shape}, Memsize {nbytes / 1e6:,.1f} MB"
             txtadd = ", ".join(filter(None, [t, txtadd]))
-            nbytes = df.values.nbytes
+            nbytes = df.memory_usage(deep=False).sum()
             shape = df.shape
             nobs = min(nobs, len(df))
             _log.info(txt + f", taking a subsample of {len(df)} rows")
@@ -93,10 +91,9 @@ def describe(
         quantiles = [0.03] + quantiles + [0.97]
         percentile_names = ["3%"] + percentile_names + ["97%"]
     dfdesc = df.describe(include="all", percentiles=quantiles).T
-
-    dfout = pd.concat((dfdesc, df.dtypes), axis=1, join="outer", sort=False)
-    dfout = dfout.loc[df.columns.values]
-    dfout.rename(columns={0: "dtype", "unique": "count_unique"}, inplace=True)
+    dfdesc["dtype"] = df.dtypes
+    dfout = dfdesc.loc[df.columns.values]
+    dfout.rename(columns={"unique": "count_unique"}, inplace=True)
     dfout.index.name = "ft"
 
     # add counts for all
@@ -104,12 +101,9 @@ def describe(
         null_counts = df.isnull().sum()
         dfout["count_notnull"] = df.shape[0] - null_counts
         dfout["count_null"] = null_counts
-        dfout["count_inf"] = (
-            np.isinf(df.select_dtypes(np.number)).sum().reindex(df.columns)
-        )
-        dfout["count_zero"] = (
-            (df.select_dtypes(np.number) == 0).sum(axis=0).reindex(df.columns)
-        )
+        df_num = df.select_dtypes(np.number)
+        dfout["count_inf"] = np.isinf(df_num).sum().reindex(df.columns)
+        dfout["count_zero"] = (df_num == 0).sum(axis=0).reindex(df.columns)
 
     # add sum for numeric cols
     dfout["sum"] = np.nan
@@ -118,12 +112,14 @@ def describe(
         num_fts = dfout.loc[idxs].index.tolist()
         dfout.loc[idxs, "sum"] = df[num_fts].sum()
 
-    # add min, max for string cols (note the not very clever overwrite of count)
-    idxs = (dfout["dtype"] == "object") | (dfout["dtype"] == "string[python]")
-    if idxs.any():
-        str_fts = dfout.loc[idxs].index.tolist()
-        dfout.loc[idxs, "min"] = df[str_fts].min()
-        dfout.loc[idxs, "max"] = df[str_fts].max()
+    # add min, max for string-like cols; compute per-column to safely handle
+    # np.nan (float) mixed into object-dtype columns and all-null columns
+    str_mask = dfout["dtype"].apply(pd.api.types.is_string_dtype)
+    if str_mask.any():
+        for ft in str_mask[str_mask].index:
+            col = df[ft].dropna()
+            dfout.loc[ft, "min"] = col.min() if len(col) > 0 else pd.NA
+            dfout.loc[ft, "max"] = col.max() if len(col) > 0 else pd.NA
 
     fts_out_all = (
         [
@@ -146,12 +142,17 @@ def describe(
 
     # add mode and mode count WARNING takes forever for large arrays (>10k row)
     if get_mode:
-        dfnn = df.select_dtypes(exclude=np.number).copy()
-        r = stats.mode(dfnn, axis=0, nan_policy="omit")
-        dfmode = pd.DataFrame(
-            {"mode": r[0][0], "mode_count": r[1][0]}, index=dfnn.columns
-        )
-        dfout = dfout.join(dfmode, how="left", left_index=True, right_index=True)
+        dfnn = df.select_dtypes(exclude=np.number)
+        rows = {}
+        for ft in dfnn.columns:
+            clean = dfnn[ft].dropna()
+            if len(clean) == 0:
+                rows[ft] = {"mode": pd.NA, "mode_count": 0}
+            else:
+                m = clean.mode().iloc[0]  # first mode (lowest value for ties)
+                rows[ft] = {"mode": m, "mode_count": int((clean == m).sum())}
+        dfmode = pd.DataFrame.from_dict(rows, orient="index")
+        dfout = dfout.join(dfmode, how="left")
         fts_out += ["mode", "mode_count"]
 
     # select summary states and prepend random rows for example cases
@@ -172,7 +173,7 @@ def display_fw(df: pd.DataFrame, **kwargs) -> None:
     """Conv fn: contextually display max cols"""
 
     shape = kwargs.pop("shape", df.shape)
-    nbytes = kwargs.pop("nbytes", df.values.nbytes)
+    nbytes = kwargs.pop("nbytes", df.memory_usage(deep=False).sum())
     txtadd = kwargs.pop("txtadd", None)
 
     options = {
@@ -199,7 +200,7 @@ def display_ht(df: pd.DataFrame, nrows=3, **kwargs) -> None:
 
     nrows = min(nrows, len(df))
     dfd = df.iloc[np.r_[0:nrows, -nrows:0]].copy()
-    display_fw(dfd, shape=df.shape, nbytes=df.values.nbytes, **kwargs)
+    display_fw(dfd, shape=df.shape, nbytes=df.memory_usage(deep=False).sum(), **kwargs)
 
 
 def get_fts_by_dtype(df: pd.DataFrame, as_dataframe: bool = False) -> dict:
