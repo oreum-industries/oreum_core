@@ -9,8 +9,8 @@
 [![publish](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml/badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/publish.yml)
 [![code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![code security: bandit](https://img.shields.io/badge/code%20security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
-[![code style: interrogate](https://raw.githubusercontent.com/oreum-industries/oreum_core/badges/assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
-[![test coverage](https://raw.githubusercontent.com/oreum-industries/oreum_core/badges/assets/img/coverage_badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/test.yml)
+[![code style: interrogate](https://raw.githubusercontent.com/oreum-industries/oreum_core/master/assets/img/interrogate_badge.svg)](https://pypi.org/project/interrogate/)
+[![test coverage](https://raw.githubusercontent.com/oreum-industries/oreum_core/master/assets/img/coverage_badge.svg)](https://github.com/oreum-industries/oreum_core/actions/workflows/test.yml)
 
 ---
 

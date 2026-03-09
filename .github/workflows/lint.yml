@@ -12,7 +12,7 @@ on:
 permissions:
   actions: read
   checks: write
-  contents: write
+  contents: read
   pull-requests: read
 
 # concurrency: cancel same job already in-progress, to be efficient
@@ -42,26 +42,6 @@ jobs:
 
       - name: Run checks of code lint, format and static security
         run: mkdir -p reports assets/img && make lint CI=1
-
-      - name: Push interrogate badge to badges branch
-        if: github.ref == 'refs/heads/master'
-        run: |
-          cp assets/img/interrogate_badge.svg /tmp/interrogate_badge.svg
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git ls-remote --exit-code --heads origin badges; then
-            git fetch origin badges
-            git checkout -B badges origin/badges
-          else
-            git checkout --orphan badges
-            git rm -rf . --quiet
-          fi
-          mkdir -p assets/img
-          cp /tmp/interrogate_badge.svg assets/img/
-          git add assets/img/interrogate_badge.svg
-          git diff --staged --quiet || git commit -m "ci: update interrogate badge [skip ci]"
-          git push origin badges
-          git checkout -
 
       - name: Upload static security report
         uses: actions/upload-artifact@v7

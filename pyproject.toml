@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "oreum_core"
 description = "Core tools for use on projects by Oreum Industries"
-version = "0.12.8"
+version = "0.12.9"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 authors = [{ name = "Oreum Industries", email = "info@oreum.io" },]
@@ -40,6 +40,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "bandit",
+    "genbadge[coverage]",
     "hypothesis",
     "interrogate",
     "ipython",
@@ -57,7 +58,6 @@ pymc = [
     "graphviz",
     "nutpie",
     "pymc",
-    "pytensor-distributions @ https://github.com/pymc-devs/pytensor-distributions.git",
 ]
 tree = [
     "xgboost",
