@@ -78,7 +78,7 @@ def copy_csv2md(fn: str) -> Path:
         raise ImportError("copy_csv2md requires csv2md: pip install csv2md") from e
     fileio = BaseFileIO()
     fqn = fileio.get_path_read(fn)
-    r = subprocess.run(["csv2md", f"{fqn}"], capture_output=True)
+    r = subprocess.run(["csv2md", f"{fqn}"], capture_output=True, check=True)
     fn_out = Path(fn).with_suffix(".md")
     fqn_out = fileio.get_path_write(fn_out)
     with open(fqn_out, "wb") as f:

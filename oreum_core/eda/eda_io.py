@@ -54,10 +54,10 @@ class FigureIO(BaseFileIO):
 
     def read(
         self,
-        fqn: Path = None,
-        fn: str = None,
+        fqn: Path | None = None,
+        fn: str | None = None,
         extension: str = ".png",
-        title: str = None,
+        title: str | None = None,
         figsize: tuple = (12, 4),
         fontsize=12,
     ) -> figure.Figure:

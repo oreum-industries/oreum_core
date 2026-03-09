@@ -114,9 +114,8 @@ class PandasExcelIO(BaseFileIO):
     def write(self, df: pd.DataFrame, fn: str, *args, **kwargs) -> Path:
         """Accept pandas DataFrame and fn e.g. `df.xlsx`, write to fqn."""
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".xlsx"))
-        writer = pd.ExcelWriter(fqn, engine="xlsxwriter")
-        df.to_excel(writer, *args, **kwargs)
-        writer.close()
+        with pd.ExcelWriter(fqn, engine="xlsxwriter") as writer:
+            df.to_excel(writer, *args, **kwargs)
         _log.info(f"Written to {str(fqn.resolve())}")
         return fqn
 
