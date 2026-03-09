@@ -118,12 +118,14 @@ def describe(
         num_fts = dfout.loc[idxs].index.tolist()
         dfout.loc[idxs, "sum"] = df[num_fts].sum()
 
-    # add min, max for string cols (note the not very clever overwrite of count)
-    idxs = (dfout["dtype"] == "object") | (dfout["dtype"] == "string[python]")
-    if idxs.any():
-        str_fts = dfout.loc[idxs].index.tolist()
-        dfout.loc[idxs, "min"] = df[str_fts].min()
-        dfout.loc[idxs, "max"] = df[str_fts].max()
+    # add min, max for string-like cols; compute per-column to safely handle
+    # np.nan (float) mixed into object-dtype columns and all-null columns
+    str_mask = dfout["dtype"].apply(pd.api.types.is_string_dtype)
+    if str_mask.any():
+        for ft in str_mask[str_mask].index:
+            col = df[ft].dropna()
+            dfout.loc[ft, "min"] = col.min() if len(col) > 0 else pd.NA
+            dfout.loc[ft, "max"] = col.max() if len(col) > 0 else pd.NA
 
     fts_out_all = (
         [

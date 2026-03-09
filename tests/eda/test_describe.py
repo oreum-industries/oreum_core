@@ -69,6 +69,32 @@ class TestDescribe:
         assert "index: uid" in out.index
 
 
+class TestDescribeStringMinMax:
+    """Tests for the string-like min/max section of describe()"""
+
+    def test_string_col_min_max_populated(self, df):
+        """Happy: string column gets correct min and max"""
+        out = describe(df, nobs=0, return_df=True, reset_index=False)
+        assert out.loc["label", "min"] == "a"
+        assert out.loc["label", "max"] == "c"
+
+    def test_numpy_nan_in_object_col_excluded(self):
+        """Happy: np.nan mixed into object-dtype column is excluded from min/max"""
+        df = pd.DataFrame(
+            {"label": pd.array(["z", np.nan, "a", np.nan, "m"], dtype=object)}
+        )
+        out = describe(df, nobs=0, return_df=True, reset_index=False)
+        assert out.loc["label", "min"] == "a"
+        assert out.loc["label", "max"] == "z"
+
+    def test_all_null_string_col_returns_na(self):
+        """Edge: all-null object-dtype column → pd.NA for min and max"""
+        df = pd.DataFrame({"label": pd.array([None, None, None], dtype=object)})
+        out = describe(df, nobs=0, return_df=True, reset_index=False)
+        assert pd.isna(out.loc["label", "min"])
+        assert pd.isna(out.loc["label", "max"])
+
+
 class TestDescribeSadPath:
     """Sad-path tests for describe()"""
 
