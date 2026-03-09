@@ -19,7 +19,6 @@ import logging
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 __all__ = ["describe", "display_fw", "display_ht", "get_fts_by_dtype"]
 
@@ -144,11 +143,16 @@ def describe(
     # add mode and mode count WARNING takes forever for large arrays (>10k row)
     if get_mode:
         dfnn = df.select_dtypes(exclude=np.number)
-        r = stats.mode(dfnn, axis=0, nan_policy="omit")
-        dfmode = pd.DataFrame(
-            {"mode": r[0][0], "mode_count": r[1][0]}, index=dfnn.columns
-        )
-        dfout = dfout.join(dfmode, how="left", left_index=True, right_index=True)
+        rows = {}
+        for ft in dfnn.columns:
+            clean = dfnn[ft].dropna()
+            if len(clean) == 0:
+                rows[ft] = {"mode": pd.NA, "mode_count": 0}
+            else:
+                m = clean.mode().iloc[0]  # first mode (lowest value for ties)
+                rows[ft] = {"mode": m, "mode_count": int((clean == m).sum())}
+        dfmode = pd.DataFrame.from_dict(rows, orient="index")
+        dfout = dfout.join(dfmode, how="left")
         fts_out += ["mode", "mode_count"]
 
     # select summary states and prepend random rows for example cases

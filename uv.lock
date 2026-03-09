@@ -1058,7 +1058,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "scikit-learn" },
-    { name = "scipy" },
+    { name = "scipy", specifier = ">=1.9" },
     { name = "seaborn", specifier = "<0.14" },
     { name = "statsmodels" },
     { name = "xgboost", marker = "extra == 'tree'" },

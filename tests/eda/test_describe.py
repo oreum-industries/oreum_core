@@ -95,6 +95,30 @@ class TestDescribeStringMinMax:
         assert pd.isna(out.loc["label", "max"])
 
 
+class TestDescribeGetMode:
+    """Tests for the get_mode=True branch of describe()"""
+
+    def test_mode_columns_present_with_correct_values(self, df):
+        """Happy: get_mode=True → 'mode' and 'mode_count' present; label mode is 'a' (count=2)"""
+        out = describe(df, get_mode=True, nobs=0, return_df=True, reset_index=False)
+        assert "mode" in out.columns
+        assert "mode_count" in out.columns
+        assert out.loc["label", "mode"] == "a"  # "a" and "b" tie; mode() returns lowest
+        assert out.loc["label", "mode_count"] == 2
+
+    def test_numeric_col_has_no_mode(self, df):
+        """Happy: numeric column is excluded from mode computation → NaN mode"""
+        out = describe(df, get_mode=True, nobs=0, return_df=True, reset_index=False)
+        assert pd.isna(out.loc["score", "mode"])
+
+    def test_all_null_col_returns_na_mode(self):
+        """Edge: all-null non-numeric column → pd.NA mode, count=0"""
+        df = pd.DataFrame({"label": pd.array([None, None, None], dtype=object)})
+        out = describe(df, get_mode=True, nobs=0, return_df=True, reset_index=False)
+        assert pd.isna(out.loc["label", "mode"])
+        assert out.loc["label", "mode_count"] == 0
+
+
 class TestDescribeSadPath:
     """Sad-path tests for describe()"""
 
