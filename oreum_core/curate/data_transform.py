@@ -135,7 +135,7 @@ class DatatypeConverter:
                     )
 
         for ft in self.ftsd["fyear"]:
-            if isinstance(df.dtypes[ft], object):
+            if not pd.api.types.is_numeric_dtype(df.dtypes[ft]):
                 df[ft] = (
                     df[ft]
                     .astype(str)

@@ -64,6 +64,20 @@ class TestDatatypeConverterConvertDtypes:
             pd.Timestamp("2024-12-31"),
         ]
 
+    def test_fyear_converts_string_year_to_datetime(self):
+        """Happy: string year column → datetime with year-only precision"""
+        df = pd.DataFrame({"yr": ["2022", "2023", "2024"]})
+        out = DatatypeConverter({"fyear": ["yr"]}).convert_dtypes(df)
+        assert out["yr"].dtype.kind == "M"
+        assert out["yr"].iloc[0] == pd.Timestamp("2022-01-01")
+
+    def test_fyear_already_numeric_passes_through(self):
+        """Edge: fyear column already int → skips string cleaning, no crash"""
+        df = pd.DataFrame({"yr": pd.array([2022, 2023, 2024], dtype="int64")})
+        out = DatatypeConverter({"fyear": ["yr"]}).convert_dtypes(df)
+        assert out["yr"].dtype.kind == "M"
+        assert out["yr"].iloc[1] == pd.Timestamp("2023-01-01")
+
     def test_fcat_null_becomes_na(self):
         """Edge: null values in fcat column → pd.NA, not dropped"""
         df = pd.DataFrame({"label": ["alpha", None, "beta"]})
