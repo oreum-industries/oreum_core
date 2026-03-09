@@ -22,7 +22,6 @@ from .data_io import (
     PandasParquetIO,
     PickleIO,
     SimpleStringIO,
-    copy_csv2md,
 )
 from .data_transform import (
     DatasetReshaper,

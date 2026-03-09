@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "oreum_core"
 description = "Core tools for use on projects by Oreum Industries"
-version = "0.12.7"
+version = "0.12.8"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 authors = [{ name = "Oreum Industries", email = "info@oreum.io" },]
@@ -26,19 +26,15 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Visualization",
 ]
 dependencies = [
-    "csv2md",
     "dask",
-    "fastparquet",  # not available in pandas v2.0 optional deps
     "ftfy",
     "matplotlib",
-    "matplotlib-inline",
     "numpy>=2.0",
     "pandas[excel,parquet,plot]>=3.0,<4",
     "patsy",  # TODO consider using formulae instead
     "scikit-learn>=1.0",
     "scipy>=1.9",
     "seaborn>=0.13",
-    "statsmodels",
 ]
 
 [project.optional-dependencies]
