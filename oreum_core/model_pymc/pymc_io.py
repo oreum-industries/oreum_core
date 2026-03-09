@@ -41,7 +41,7 @@ class PYMCIO(BaseFileIO):
         super().__init__(*args, **kwargs)
 
     def read_idata(
-        self, mdl: BasePYMCModel = None, fn: str = "", **kwargs
+        self, mdl: BasePYMCModel | None = None, fn: str = "", **kwargs
     ) -> az.InferenceData:
         """Read InferenceData appropriate to a built model using
         mdl.mdl_id_fn + txtadd, or from fn"""
@@ -54,7 +54,11 @@ class PYMCIO(BaseFileIO):
         return idata
 
     def write_idata(
-        self, mdl: BasePYMCModel, idata: az.InferenceData = None, fn: str = "", **kwargs
+        self,
+        mdl: BasePYMCModel,
+        idata: az.InferenceData | None = None,
+        fn: str = "",
+        **kwargs,
     ) -> Path:
         """Accept BasePYMCModel object with attached in-sample idata, and write
         to netcdf file with name mdl.mdl_id_fn + txtadd. Optionally use this to

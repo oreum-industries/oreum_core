@@ -57,4 +57,4 @@ class XGBIO(BaseFileIO):
         """Get URI of local SQLite DB to pass to optuna.create_study(storage=)"""
         fn = fn or "optuna_study"
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".sqlite"))
-        return f"sqlite:////{str(fqn.resolve())}"
+        return f"sqlite:///{str(fqn.resolve())}"
