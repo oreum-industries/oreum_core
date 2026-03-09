@@ -35,7 +35,7 @@ dependencies = [
     "numpy>=2.0",
     "pandas[excel,parquet,plot]>=3.0,<4",
     "patsy",  # TODO consider using formulae instead
-    "scikit-learn",
+    "scikit-learn>=1.0",
     "scipy>=1.9",
     "seaborn<0.14", # 0.14 likely to break many plots, approach with caution
     "statsmodels",
