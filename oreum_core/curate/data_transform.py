@@ -154,7 +154,7 @@ class DatatypeConverter:
 
         for ft in self.ftsd["fint"]:
             try:
-                if isinstance(df.dtypes[ft], object):
+                if not pd.api.types.is_numeric_dtype(df.dtypes[ft]):
                     df[ft] = (
                         df[ft]
                         .astype(str)
@@ -173,7 +173,7 @@ class DatatypeConverter:
 
         for ft in self.ftsd["ffloat"]:
             try:
-                if isinstance(df.dtypes[ft], object):
+                if not pd.api.types.is_numeric_dtype(df.dtypes[ft]):
                     df[ft] = (
                         df[ft]
                         .astype(str)
@@ -184,7 +184,9 @@ class DatatypeConverter:
                     df.loc[df[ft].isin(self.strnans), ft] = np.nan
                 df[ft] = df[ft].astype(float, errors="raise")
             except Exception as e:
-                raise e(ft) from e
+                raise Exception(f"{str(e)} in ft: {ft}").with_traceback(
+                    e.__traceback__
+                ) from e
 
         for ft in self.ftsd["fverbatim"]:
             # just force missing to pd.NA

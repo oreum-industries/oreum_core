@@ -3,7 +3,7 @@
 *.netcdf
 
 # Additional local dirs
-local/*
+dev/notes/*
 dev/install_log/*.txt
 dev/*.md
 dev/*.py

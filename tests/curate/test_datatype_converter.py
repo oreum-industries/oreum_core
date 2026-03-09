@@ -98,6 +98,21 @@ class TestDatatypeConverterConvertDtypesSadPath:
         with pytest.raises(ValueError):
             DatatypeConverter({"fdate": ["dt"]}).convert_dtypes(df)
 
+    def test_ffloat_already_numeric_with_nans_passes_through(self):
+        """Edge: ffloat column already float64 with NaN → skips string cleaning, no crash"""
+        import numpy as np
+
+        df = pd.DataFrame({"price": pd.array([1.5, np.nan, 3.0], dtype="float64")})
+        out = DatatypeConverter({"ffloat": ["price"]}).convert_dtypes(df)
+        assert out["price"].dtype == float
+        assert pd.isna(out["price"].iloc[1])
+
+    def test_ffloat_non_numeric_raises_exception_with_colname(self):
+        """Sad: non-numeric string in ffloat → Exception wrapping includes column name"""
+        df = pd.DataFrame({"price": ["1.5", "not_a_number"]})
+        with pytest.raises(Exception, match="in ft: price"):
+            DatatypeConverter({"ffloat": ["price"]}).convert_dtypes(df)
+
     def test_ford_unknown_level_silently_becomes_nan(self):
         """Edge: ford value not in specified levels → NaN (pd.Categorical behaviour)"""
         df = pd.DataFrame({"size": ["small", "unknown"]})
