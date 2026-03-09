@@ -477,7 +477,7 @@ def plot_joint_numeric(
     scatter_kws = kws | dict(
         alpha=0.6, marker="o", linewidths=0.05, edgecolor="#dddddd", s=50
     )
-    reg_kws = kws | dict(scatter_kws=scatter_kws, robust=True)
+    reg_kws = kws | dict(scatter_kws=scatter_kws)
     rug_kws = kws | dict(height=0.1, legend=False)
 
     if kind == "kde":
