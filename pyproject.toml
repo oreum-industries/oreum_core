@@ -32,6 +32,7 @@ dependencies = [
     "ftfy",
     "matplotlib",
     "matplotlib-inline",
+    "numpy>=2.0",
     "pandas[excel,parquet,plot]>=3.0,<4",
     "patsy",  # TODO consider using formulae instead
     "scikit-learn",
@@ -113,7 +114,7 @@ name = "oreum_core"
 [tool.ruff]  # settings: https://docs.astral.sh/ruff/settings/
 indent-width = 4
 line-length = 88
-target-version = "py312"
+target-version = "py313"
 extend-exclude = [
     "__pycache__",
     "build",
