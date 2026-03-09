@@ -102,6 +102,7 @@ class FigureIO(BaseFileIO):
             if title is not None:
                 _ = f.suptitle(f"{title}", fontsize=fontsize, y=1.0)
             f.tight_layout()
+        plt.close()  # to avoid memory leaks in pyplot manager
         return f
 
 
