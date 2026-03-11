@@ -22,10 +22,10 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from matplotlib import figure
 
 from .describe import describe, get_fts_by_dtype
+from .plot import set_plot_theme
 from ..curate.data_io import PandasExcelIO
 from ..utils.file_io import BaseFileIO
 
@@ -35,10 +35,13 @@ _log = logging.getLogger(__name__)
 
 
 class FigureIO(BaseFileIO):
-    """Helper class to save matplotlib.figure.Figure objects to image file"""
+    """Helper class to save matplotlib.figure.Figure objects to image file.
+    Applies set_plot_theme() on init to ensure consistent rcParams (incl. savefig.dpi).
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        set_plot_theme()
 
     def write(self, f: figure.Figure, fn: str, *args, **kwargs) -> Path:
         """Accept figure.Figure & fn str incl. dots e.g. `plots/plot.2.png`,
@@ -46,9 +49,7 @@ class FigureIO(BaseFileIO):
         if Path(fn).suffix != ".png":  # either no suffix or there's dots in fn
             fn = Path(self.snl.clean(fn)).with_suffix(".png")
         fqn = self.get_path_write(fn)
-        f.savefig(
-            fname=fqn, format="png", bbox_inches="tight", dpi=300, *args, **kwargs
-        )
+        f.savefig(fname=fqn, format="png", bbox_inches="tight", *args, **kwargs)
         _log.info(f"Written to {str(fqn.resolve())}")
         return fqn
 
