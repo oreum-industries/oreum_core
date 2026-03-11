@@ -22,8 +22,11 @@ try:
     from oreum_core.model_pymc.calc import (
         calc_2_sample_delta_prop,
         calc_bayesian_r2,
+        calc_binary_performance_measures,
         calc_f_beta,
+        calc_ppc_coverage,
         calc_r2,
+        calc_rmse,
         expand_packed_triangular,
         numpy_invlogit,
     )
@@ -83,6 +86,27 @@ class TestCalcFBeta:
         assert result.shape == p.shape
 
 
+@pytest.fixture
+def dfhat_simple():
+    """Long-format PPC DataFrame (nobs=4, ndraws=20) for calc_rmse tests.
+    yhat ≈ y so errors are small but non-zero.
+    """
+    rng_local = np.random.default_rng(42)
+    nobs, ndraws = 4, 20
+    rows = [
+        {
+            "oid": f"o{i}",
+            "chain": 0,
+            "draw": d,
+            "yhat": float(i) + rng_local.normal(scale=0.05),
+            "y": float(i),
+        }
+        for i in range(nobs)
+        for d in range(ndraws)
+    ]
+    return pd.DataFrame(rows).set_index(["oid", "chain", "draw"])
+
+
 class TestExpandPackedTriangular:
     """Tests for expand_packed_triangular()"""
 
@@ -110,6 +134,18 @@ class TestExpandPackedTriangular:
         packed = np.arange(6, dtype=float)
         result = expand_packed_triangular(3, packed, lower=False, diagonal_only=True)
         np.testing.assert_array_equal(result, [0.0, 3.0, 5.0])
+
+    def test_lower_full_matrix_is_2d(self):
+        """Happy: full lower triangular → 2D tensor of shape (n, n)"""
+        packed = np.ones(6, dtype=float)
+        result = expand_packed_triangular(3, packed, lower=True, diagonal_only=False)
+        assert result.ndim == 2
+
+    def test_upper_full_matrix_is_2d(self):
+        """Happy: full upper triangular → 2D tensor of shape (n, n)"""
+        packed = np.ones(6, dtype=float)
+        result = expand_packed_triangular(3, packed, lower=False, diagonal_only=False)
+        assert result.ndim == 2
 
 
 class TestCalcBayesianR2:
@@ -192,3 +228,65 @@ class TestCalc2SampleDeltaProp:
         r_loop = calc_2_sample_delta_prop(a, aref, fully_vectorised=False)
         r_vec = calc_2_sample_delta_prop(a, aref, fully_vectorised=True)
         np.testing.assert_array_almost_equal(r_loop, r_vec)
+
+
+class TestCalcRmse:
+    """Tests for calc_rmse()"""
+
+    def test_method_a_returns_nonneg_scalar(self, dfhat_simple):
+        """Happy: method='a' returns a non-negative scalar RMSE"""
+        result = calc_rmse(dfhat_simple, method="a")
+        assert np.ndim(result) == 0
+        assert result >= 0
+
+    def test_invalid_method_raises(self, dfhat_simple):
+        """Sad: invalid method → AttributeError"""
+        with pytest.raises(AttributeError):
+            calc_rmse(dfhat_simple, method="c")
+
+    def test_qs_true_returns_scalar_and_series(self, dfhat_simple):
+        """Happy: qs=True returns (scalar, Series) with index named 'q'"""
+        rmse, rmse_at_qs = calc_rmse(dfhat_simple, qs=True)
+        assert np.ndim(rmse) == 0
+        assert isinstance(rmse_at_qs, pd.Series)
+        assert rmse_at_qs.index.name == "q"
+        assert rmse_at_qs.name == "rmse"
+
+    def test_mse_only_less_than_rmse(self, dfhat_simple):
+        """Happy: mse_only=True returns MSE which is <= RMSE squared"""
+        rmse = calc_rmse(dfhat_simple, method="a")
+        mse = calc_rmse(dfhat_simple, method="a", mse_only=True)
+        assert abs(mse - rmse**2) < 1e-10
+
+
+class TestCalcPpcCoverage:
+    """Tests for calc_ppc_coverage()"""
+
+    def test_returns_correct_shape_columns_and_range(self):
+        """Happy: returns DataFrame with 102 rows, correct columns, coverage in [0, 1]"""
+        rng = np.random.default_rng(0)
+        y = rng.normal(size=30)
+        yhat = y.reshape(-1, 1) + rng.normal(scale=0.1, size=(30, 50))
+        result = calc_ppc_coverage(y, yhat)
+        assert isinstance(result, pd.DataFrame)
+        assert list(result.columns) == ["method", "cr", "coverage"]
+        assert len(result) == 102  # 2 methods x 51 cr values
+        assert (result["coverage"] >= 0).all()
+        assert (result["coverage"] <= 1).all()
+
+
+class TestCalcBinaryPerformanceMeasures:
+    """Tests for calc_binary_performance_measures()"""
+
+    def test_returns_correct_shape_and_columns(self):
+        """Happy: returns DataFrame with 101 rows (q=0..1), expected columns"""
+        rng = np.random.default_rng(0)
+        nsamples, nobs = 100, 40
+        y = rng.integers(0, 2, size=nobs).astype(float)
+        yhat = rng.integers(0, 2, size=(nsamples, nobs)).astype(float)
+        result = calc_binary_performance_measures(y, yhat)
+        assert isinstance(result, pd.DataFrame)
+        assert result.index.name == "q"
+        assert len(result) == 101
+        expected_cols = {"accuracy", "tpr", "fpr", "recall", "precision", "f1"}
+        assert expected_cols.issubset(set(result.columns))
