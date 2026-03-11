@@ -55,7 +55,6 @@ dev = [
     "ruff",
 ]
 pymc = [
-    "arviz",
     "graphviz",
     "nutpie",
     "preliz",
