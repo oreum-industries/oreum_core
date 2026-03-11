@@ -94,19 +94,11 @@ class TestBootstrap:
 class TestBootstrapLR:
     """Tests for bootstrap_lr()"""
 
-    def test_output_columns(self, df_lr):
-        """Happy: output DataFrame has premium_sum, claim_sum, lr columns"""
+    def test_output_structure_and_values(self, df_lr):
+        """Happy: output has correct columns, nboot rows, and positive premium_sum"""
         result = bootstrap_lr(df_lr, prm="premium", clm="claim", nboot=100)
         assert set(result.columns) == {"premium_sum", "claim_sum", "lr"}
-
-    def test_output_length(self, df_lr):
-        """Happy: output has nboot rows"""
-        result = bootstrap_lr(df_lr, prm="premium", clm="claim", nboot=100)
         assert len(result) == 100
-
-    def test_premium_sum_positive(self, df_lr):
-        """Happy: resampled premium_sum always positive"""
-        result = bootstrap_lr(df_lr, prm="premium", clm="claim", nboot=100)
         assert (result["premium_sum"] > 0).all()
 
 

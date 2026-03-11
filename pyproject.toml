@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "oreum_core"
 description = "Core tools for use on projects by Oreum Industries"
-version = "0.12.12"
+version = "0.12.13"
 readme = "README.md"
 license = {file = "LICENSE.md"}
 authors = [{ name = "Oreum Industries", email = "info@oreum.io" },]
@@ -57,15 +57,18 @@ dev = [
 pymc = [
     "graphviz",
     "nutpie",
+    "preliz",
     "pymc",
 ]
 tree = [
     "xgboost",
 ]
 # DEPS NOTE
-# + pandas: added minimal optional deps. importing projects might also consider
-#     including pandas[performance,postgresql]
-# + pymc: brings packages incl.: arviz (xarray), numpy, pandas, pytensor, scipy, tables
+# + pandas: added minimal optional deps.
+#   -> Importing projects might want to incl. pandas[performance,postgresql]
+# + pymc: brings incl.: arviz (xarray), numpy, pandas, pytensor, scipy, tables.
+#   -> Importing projects might want to incl. pytensor-distributions from git
+#   pytensor-distributions @ git+https://github.com/pymc-devs/pytensor-distributions
 
 [project.urls]
 "Homepage" = "https://github.com/oreum-industries/oreum_core"
@@ -169,7 +172,7 @@ split-on-trailing-comma=false
 
 [tool.coverage.run]
 source = ["oreum_core"]
-omit = ["*/__init__.py"]
+omit = ["*/__init__.py", "oreum_core/model_pymc/distributions.py"]
 data_file = "reports/.coverage"
 
 [tool.coverage.report]

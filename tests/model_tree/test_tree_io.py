@@ -16,18 +16,14 @@ pytestmark = pytest.mark.skipif(not HAS_XGB, reason="xgboost not loadable")
 class TestXGBIOPaths:
     """Tests for XGBIO path helpers"""
 
-    def test_get_sqlite_uri_default_fn(self, tmp_path):
-        """Happy: default fn → sqlite URI containing 'optuna_study'"""
+    def test_get_sqlite_uri_default_and_custom_fn(self, tmp_path):
+        """Happy: default fn → sqlite URI with 'optuna_study'; custom fn → URI with sanitized name"""
         io = XGBIO(rootdir=tmp_path)
-        result = io.get_sqlite_uri_for_optuna_study()
-        assert result.startswith("sqlite:////")
-        assert "optuna_study" in result
-
-    def test_get_sqlite_uri_custom_fn(self, tmp_path):
-        """Happy: custom fn → URI contains sanitized name"""
-        io = XGBIO(rootdir=tmp_path)
-        result = io.get_sqlite_uri_for_optuna_study("my study")
-        assert "my_study" in result
+        result_default = io.get_sqlite_uri_for_optuna_study()
+        assert result_default.startswith("sqlite:////")
+        assert "optuna_study" in result_default
+        result_custom = io.get_sqlite_uri_for_optuna_study("my study")
+        assert "my_study" in result_custom
 
     def test_read_missing_file_raises(self, tmp_path):
         """Sad: file not found → FileNotFoundError"""

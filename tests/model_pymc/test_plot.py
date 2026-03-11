@@ -32,6 +32,8 @@ try:
         plot_f_measure,
         plot_rmse_range,
         plot_roc_precrec,
+        plot_trace,
+        plot_yhat_vs_y,
     )
 
     HAS_PYMC = True
@@ -124,14 +126,15 @@ class TestPlotEstimate:
         assert isinstance(f, figure.Figure)
         assert "Exceedance Curve" in f._suptitle.get_text()
 
-    def test_overplot_y_and_force_xlim(self):
-        """Happy: y overlay and force_xlim both return a Figure without error"""
+    def test_overplot_y_and_force_xlim_and_ispercent(self):
+        """Happy: y overlay, force_xlim, and ispercent=True all return a Figure"""
         yhat = RNG.standard_normal(500) + 5.0
         y = RNG.standard_normal(N) + 5.0
         assert isinstance(plot_estimate(yhat, nobs=N, y=y), figure.Figure)
         assert isinstance(
             plot_estimate(yhat, nobs=N, force_xlim=[0, 15]), figure.Figure
         )
+        assert isinstance(plot_estimate(yhat, nobs=N, ispercent=True), figure.Figure)
 
     def test_txtadd_in_suptitle(self):
         """Happy: txtadd kwarg appears in suptitle"""
@@ -264,3 +267,32 @@ class TestPlotBinaryPerformance:
         """Happy: txtadd kwarg appears in suptitle"""
         f = plot_binary_performance(df_binary_perf, nobs=100, txtadd="run1")
         assert "run1" in f._suptitle.get_text()
+
+
+class TestPlotTrace:
+    """Tests for plot_trace()"""
+
+    def test_returns_figure_with_suptitle(self, built_model, fake_idata):
+        """Happy: attaching fake idata and calling plot_trace returns a Figure"""
+        built_model._idata = fake_idata
+        f = plot_trace(built_model, ["mu"])
+        assert isinstance(f, figure.Figure)
+        assert "mu" in f._suptitle.get_text()
+
+
+class TestPlotYhatVsY:
+    """Tests for plot_yhat_vs_y()"""
+
+    def test_returns_figure(self, simple_model):
+        """Happy: valid dfhat with yhat/y/oid columns returns a Figure"""
+        rng = np.random.default_rng(0)
+        nobs, ndraws = 3, 20
+        dfhat = pd.DataFrame(
+            {
+                "oid": [f"o{i}" for i in range(nobs)] * ndraws,
+                "yhat": rng.normal(loc=2.0, size=nobs * ndraws),
+                "y": rng.normal(loc=2.0, size=nobs * ndraws),
+            }
+        )
+        f = plot_yhat_vs_y(simple_model, dfhat)
+        assert isinstance(f, figure.Figure)

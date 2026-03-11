@@ -16,14 +16,12 @@ pytestmark = pytest.mark.skipif(not HAS_PYMC, reason="pymc not installed")
 class TestUpdateIdata:
     """Tests for update_idata()"""
 
-    def test_first_call_sets_idata(self, simple_model, fake_idata):
-        """Happy: first update_idata() assigns _idata directly"""
+    def test_first_call_sets_then_second_call_extends_idata(
+        self, simple_model, fake_idata
+    ):
+        """Happy: first update_idata() assigns _idata directly; second extends rather than replaces"""
         simple_model.update_idata(fake_idata)
         assert simple_model._idata is fake_idata
-
-    def test_second_call_extends_idata(self, simple_model, fake_idata):
-        """Happy: second update_idata() extends rather than replaces"""
-        simple_model.update_idata(fake_idata)
         simple_model.update_idata(fake_idata)
         assert simple_model._idata is not None
 

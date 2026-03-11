@@ -10,15 +10,12 @@ from oreum_core.utils.file_io import BaseFileIO, check_fqns_exist
 class TestBaseFileIOInit:
     """Tests for BaseFileIO.__init__()"""
 
-    def test_init_default_rootdir_is_cwd(self):
-        """Happy: no rootdir → rootdir set to cwd"""
-        bio = BaseFileIO()
-        assert bio.rootdir == Path.cwd()
-
-    def test_init_valid_rootdir(self, tmp_path):
-        """Happy: valid existing dir → rootdir set correctly"""
-        bio = BaseFileIO(rootdir=tmp_path)
-        assert bio.rootdir == tmp_path
+    def test_init_default_and_valid_rootdir(self, tmp_path):
+        """Happy: no rootdir → rootdir set to cwd; valid existing dir → rootdir set correctly"""
+        bio_default = BaseFileIO()
+        assert bio_default.rootdir == Path.cwd()
+        bio_explicit = BaseFileIO(rootdir=tmp_path)
+        assert bio_explicit.rootdir == tmp_path
 
     def test_init_nonexistent_rootdir_raises(self, tmp_path):
         """Sad: nonexistent dir → FileNotFoundError"""
