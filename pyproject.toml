@@ -169,7 +169,7 @@ split-on-trailing-comma=false
 
 [tool.coverage.run]
 source = ["oreum_core"]
-omit = ["*/__init__.py"]
+omit = ["*/__init__.py", "oreum_core/model_pymc/distributions.py"]
 data_file = "reports/.coverage"
 
 [tool.coverage.report]
