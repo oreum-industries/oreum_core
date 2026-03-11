@@ -57,6 +57,7 @@ dev = [
 pymc = [
     "graphviz",
     "nutpie",
+    "preliz",
     "pymc",
 ]
 tree = [
@@ -65,7 +66,7 @@ tree = [
 # DEPS NOTE
 # + pandas: added minimal optional deps. importing projects might also consider
 #     including pandas[performance,postgresql]
-# + pymc: brings packages incl.: arviz (xarray), numpy, pandas, pytensor, scipy, tables
+# + pymc: brings incl.: arviz (xarray), numpy, pandas, pytensor, scipy, tables
 
 [project.urls]
 "Homepage" = "https://github.com/oreum-industries/oreum_core"
