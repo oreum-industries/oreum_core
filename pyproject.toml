@@ -69,7 +69,6 @@ tree = [
 # DEPS NOTE
 # + pandas: added minimal optional deps.
 #   -> Importing projects might want to incl. pandas[performance,postgresql]
-# + pymc: brings: arviz (xarray, numba), numpy, pandas, pytensor, scipy, tables
 
 [project.urls]
 "Homepage" = "https://github.com/oreum-industries/oreum_core"
