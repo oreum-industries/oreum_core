@@ -22,22 +22,12 @@ def simple_fig():
 class TestFigureIOWrite:
     """Tests for FigureIO.write()"""
 
-    def test_write_returns_path(self, tmp_path, simple_fig):
-        """Happy: write returns a Path"""
+    def test_write_returns_valid_path_and_creates_file(self, tmp_path, simple_fig):
+        """Happy: write returns Path with .png suffix and creates the file on disk"""
         io = FigureIO(rootdir=tmp_path)
         result = io.write(simple_fig, "myplot")
         assert isinstance(result, Path)
-
-    def test_write_suffix_is_png(self, tmp_path, simple_fig):
-        """Happy: written file has .png suffix"""
-        io = FigureIO(rootdir=tmp_path)
-        result = io.write(simple_fig, "myplot")
         assert result.suffix == ".png"
-
-    def test_write_file_exists_on_disk(self, tmp_path, simple_fig):
-        """Happy: written file actually exists"""
-        io = FigureIO(rootdir=tmp_path)
-        result = io.write(simple_fig, "myplot")
         assert result.exists()
 
     def test_write_fn_with_dots_gets_png_suffix(self, tmp_path, simple_fig):

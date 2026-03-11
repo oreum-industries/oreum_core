@@ -22,28 +22,13 @@ def fitted():
 class TestStandardizerFitStandardize:
     """Happy-path tests for Standardizer.fit_standardize()"""
 
-    def test_fit_standardize_returns_dataframe(self, fitted):
-        """Happy: fit_standardize → returns pd.DataFrame"""
+    def test_fit_standardize_output_properties(self, fitted):
+        """Happy: fit_standardize → DataFrame; Intercept unchanged; numeric col mean≈0; default scale=2"""
         _, df_ex, stdz = fitted
         out = stdz.fit_standardize(df_ex)
         assert isinstance(out, pd.DataFrame)
-
-    def test_fit_standardize_intercept_column_unchanged(self, fitted):
-        """Happy: Intercept is excluded from standardization → remains all 1.0"""
-        _, df_ex, stdz = fitted
-        out = stdz.fit_standardize(df_ex)
         assert list(out["Intercept"]) == pytest.approx([1.0] * len(df_ex))
-
-    def test_fit_standardize_numeric_col_is_mean_zero(self, fitted):
-        """Happy: standardized numeric column has mean ≈ 0"""
-        _, df_ex, stdz = fitted
-        out = stdz.fit_standardize(df_ex)
         assert out["score"].mean() == pytest.approx(0.0, abs=1e-10)
-
-    def test_fit_standardize_default_scale_is_2(self, fitted):
-        """Happy: default scale=2 → get_scale returns scale 2"""
-        _, df_ex, stdz = fitted
-        stdz.fit_standardize(df_ex)
         _, scale = stdz.get_scale()
         assert scale == 2
 

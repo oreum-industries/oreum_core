@@ -41,16 +41,10 @@ pytestmark = pytest.mark.skipif(not HAS_PYMC, reason="pymc not loadable")
 class TestNumpyInvlogit:
     """Tests for numpy_invlogit()"""
 
-    def test_zero_returns_near_half(self):
-        """Happy: invlogit(0) ≈ 0.5"""
+    def test_scalar_boundary_values(self):
+        """Happy: known values at midpoint and saturation boundaries"""
         assert abs(numpy_invlogit(0.0) - 0.5) < 1e-6
-
-    def test_large_positive_approaches_one(self):
-        """Happy: invlogit(large positive) → close to 1"""
         assert numpy_invlogit(100.0) > 0.999
-
-    def test_large_negative_approaches_zero(self):
-        """Happy: invlogit(large negative) → close to 0"""
         assert numpy_invlogit(-100.0) < 0.001
 
     def test_array_input_monotone(self):
@@ -64,12 +58,16 @@ class TestNumpyInvlogit:
 class TestCalcFBeta:
     """Tests for calc_f_beta()"""
 
-    def test_f1_equal_precision_recall(self):
-        """Happy: when precision==recall==p, f1==p"""
-        assert abs(calc_f_beta(0.6, 0.6, beta=1.0) - 0.6) < 1e-9
+    def test_array_f1_value_and_shape(self):
+        """Happy: equal precision==recall==p → f1==p; result same shape as input"""
+        p = np.array([0.6, 0.5])
+        r = np.array([0.6, 0.5])
+        result = calc_f_beta(p, r, beta=1.0)
+        assert result.shape == p.shape
+        np.testing.assert_allclose(result, p)
 
     def test_zero_inputs_return_zero(self):
-        """Edge: zero precision and recall (as arrays) → 0 (not nan)"""
+        """Edge: zero precision and recall → 0 (not nan)"""
         result = calc_f_beta(np.array([0.0]), np.array([0.0]))
         assert result[0] == 0.0
 
@@ -77,13 +75,6 @@ class TestCalcFBeta:
         """Happy: beta=2 weights recall → f2 > f1 when recall > precision"""
         p, r = 0.4, 0.8
         assert calc_f_beta(p, r, beta=2.0) > calc_f_beta(p, r, beta=1.0)
-
-    def test_array_inputs(self):
-        """Happy: array inputs return array of same shape"""
-        p = np.array([0.5, 0.8])
-        r = np.array([0.5, 0.6])
-        result = calc_f_beta(p, r, beta=1.0)
-        assert result.shape == p.shape
 
 
 @pytest.fixture
@@ -110,85 +101,68 @@ def dfhat_simple():
 class TestExpandPackedTriangular:
     """Tests for expand_packed_triangular()"""
 
-    def test_non_integer_n_raises(self):
-        """Sad: float n → TypeError"""
+    def test_invalid_inputs_raise(self):
+        """Sad: float n → TypeError; 2D packed → ValueError"""
         with pytest.raises(TypeError, match="n must be an integer"):
             expand_packed_triangular(3.0, np.ones(6))
-
-    def test_non_1d_packed_raises(self):
-        """Sad: 2D packed → ValueError"""
         with pytest.raises(ValueError):
             expand_packed_triangular(3, np.ones((3, 2)))
 
-    def test_diagonal_only_lower(self):
-        """Happy: lower diagonal indices extracted correctly for n=3"""
-        # lower triangular n=3: packed positions [0,1,2,3,4,5]
-        # diagonal at cumsum([1,2,3])-1 = [0,2,5]
+    def test_diagonal_only(self):
+        """Happy: lower and upper diagonal indices extracted correctly for n=3"""
         packed = np.arange(6, dtype=float)
-        result = expand_packed_triangular(3, packed, lower=True, diagonal_only=True)
-        np.testing.assert_array_equal(result, [0.0, 2.0, 5.0])
-
-    def test_diagonal_only_upper(self):
-        """Happy: upper diagonal indices extracted correctly for n=3"""
+        # lower triangular n=3: diagonal at cumsum([1,2,3])-1 = [0,2,5]
+        np.testing.assert_array_equal(
+            expand_packed_triangular(3, packed, lower=True, diagonal_only=True),
+            [0.0, 2.0, 5.0],
+        )
         # upper triangular n=3: diagonal at positions [0,3,5]
-        packed = np.arange(6, dtype=float)
-        result = expand_packed_triangular(3, packed, lower=False, diagonal_only=True)
-        np.testing.assert_array_equal(result, [0.0, 3.0, 5.0])
+        np.testing.assert_array_equal(
+            expand_packed_triangular(3, packed, lower=False, diagonal_only=True),
+            [0.0, 3.0, 5.0],
+        )
 
-    def test_lower_full_matrix_is_2d(self):
-        """Happy: full lower triangular → 2D tensor of shape (n, n)"""
+    def test_full_matrix_is_2d(self):
+        """Happy: full lower and upper triangular → 2D tensor"""
         packed = np.ones(6, dtype=float)
-        result = expand_packed_triangular(3, packed, lower=True, diagonal_only=False)
-        assert result.ndim == 2
-
-    def test_upper_full_matrix_is_2d(self):
-        """Happy: full upper triangular → 2D tensor of shape (n, n)"""
-        packed = np.ones(6, dtype=float)
-        result = expand_packed_triangular(3, packed, lower=False, diagonal_only=False)
-        assert result.ndim == 2
+        assert (
+            expand_packed_triangular(3, packed, lower=True, diagonal_only=False).ndim
+            == 2
+        )
+        assert (
+            expand_packed_triangular(3, packed, lower=False, diagonal_only=False).ndim
+            == 2
+        )
 
 
 class TestCalcBayesianR2:
     """Tests for calc_bayesian_r2()"""
 
-    def test_returns_dataframe_with_r2_column(self):
-        """Happy: output is DataFrame with 'r2' column, one row per posterior sample"""
+    def test_structure_and_good_fit(self):
+        """Happy: DataFrame with 'r2' col, one row per sample; near-perfect fit → mean r2 > 0.9"""
         rng = np.random.default_rng(0)
-        nsamples = 50
-        y = rng.normal(size=10)
-        yhat = y.reshape(-1, 1) + rng.normal(scale=0.1, size=(10, nsamples))
+        nsamples = 500
+        y = rng.normal(size=20)
+        yhat = y.reshape(-1, 1) + rng.normal(scale=0.01, size=(20, nsamples))
         result = calc_bayesian_r2(y, yhat)
         assert isinstance(result, pd.DataFrame)
         assert "r2" in result.columns
         assert len(result) == nsamples
-
-    def test_good_fit_r2_near_one(self):
-        """Happy: near-perfect predictions → mean r2 > 0.9"""
-        rng = np.random.default_rng(0)
-        y = rng.normal(size=20)
-        yhat = y.reshape(-1, 1) + rng.normal(scale=0.01, size=(20, 500))
-        assert calc_bayesian_r2(y, yhat)["r2"].mean() > 0.9
+        assert result["r2"].mean() > 0.9
 
 
 class TestCalcR2:
     """Tests for calc_r2()"""
 
-    def test_returns_scalar_and_series(self):
-        """Happy: returns (numpy scalar, pd.Series) with index named 'pct'"""
-        rng = np.random.default_rng(0)
-        y = rng.normal(size=20)
-        yhat = y.reshape(-1, 1) + rng.normal(scale=0.1, size=(20, 100))
-        r2_mean, r2_pct = calc_r2(y, yhat)
-        assert isinstance(r2_pct, pd.Series)
-        assert np.ndim(r2_mean) == 0
-        assert r2_pct.index.name == "pct"
-
-    def test_good_fit_r2_mean_near_one(self):
-        """Happy: near-perfect predictions → r2_mean > 0.9"""
+    def test_structure_and_good_fit(self):
+        """Happy: returns (scalar, Series) with index 'pct'; near-perfect fit → r2_mean > 0.9"""
         rng = np.random.default_rng(0)
         y = rng.normal(size=20)
         yhat = y.reshape(-1, 1) + rng.normal(scale=0.01, size=(20, 500))
-        r2_mean, _ = calc_r2(y, yhat)
+        r2_mean, r2_pct = calc_r2(y, yhat)
+        assert np.ndim(r2_mean) == 0
+        assert isinstance(r2_pct, pd.Series)
+        assert r2_pct.index.name == "pct"
         assert r2_mean > 0.9
 
 
@@ -233,11 +207,13 @@ class TestCalc2SampleDeltaProp:
 class TestCalcRmse:
     """Tests for calc_rmse()"""
 
-    def test_method_a_returns_nonneg_scalar(self, dfhat_simple):
-        """Happy: method='a' returns a non-negative scalar RMSE"""
-        result = calc_rmse(dfhat_simple, method="a")
-        assert np.ndim(result) == 0
-        assert result >= 0
+    def test_method_a_scalar_and_mse_identity(self, dfhat_simple):
+        """Happy: method='a' → non-negative scalar RMSE; mse_only=True → RMSE²"""
+        rmse = calc_rmse(dfhat_simple, method="a")
+        assert np.ndim(rmse) == 0
+        assert rmse >= 0
+        mse = calc_rmse(dfhat_simple, method="a", mse_only=True)
+        assert abs(mse - rmse**2) < 1e-10
 
     def test_invalid_method_raises(self, dfhat_simple):
         """Sad: invalid method → AttributeError"""
@@ -251,12 +227,6 @@ class TestCalcRmse:
         assert isinstance(rmse_at_qs, pd.Series)
         assert rmse_at_qs.index.name == "q"
         assert rmse_at_qs.name == "rmse"
-
-    def test_mse_only_less_than_rmse(self, dfhat_simple):
-        """Happy: mse_only=True returns MSE which is <= RMSE squared"""
-        rmse = calc_rmse(dfhat_simple, method="a")
-        mse = calc_rmse(dfhat_simple, method="a", mse_only=True)
-        assert abs(mse - rmse**2) < 1e-10
 
 
 class TestCalcPpcCoverage:

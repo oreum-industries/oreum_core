@@ -29,17 +29,14 @@ class TestDatasetReshaperCreateDfcmb:
         out = reshaper.create_dfcmb(df)
         assert list(out["flag"]) == [False, True]
 
-    def test_int_column_filled_with_one(self, reshaper):
-        """Happy: int column → dfcmb filled with 1"""
-        df = pd.DataFrame({"count": pd.array([10, 20, 30], dtype=int)})
-        out = reshaper.create_dfcmb(df)
-        assert out["count"].iloc[0] == 1
-
-    def test_float_column_filled_with_one(self, reshaper):
-        """Happy: float column → dfcmb filled with 1.0"""
-        df = pd.DataFrame({"score": pd.array([1.5, 2.5, 3.5], dtype=float)})
-        out = reshaper.create_dfcmb(df)
-        assert out["score"].iloc[0] == pytest.approx(1.0)
+    def test_numeric_columns_filled_with_one(self, reshaper):
+        """Happy: int and float columns → dfcmb filled with 1"""
+        df_int = pd.DataFrame({"count": pd.array([10, 20, 30], dtype=int)})
+        out_int = reshaper.create_dfcmb(df_int)
+        assert out_int["count"].iloc[0] == 1
+        df_float = pd.DataFrame({"score": pd.array([1.5, 2.5, 3.5], dtype=float)})
+        out_float = reshaper.create_dfcmb(df_float)
+        assert out_float["score"].iloc[0] == pytest.approx(1.0)
 
     def test_ragged_output_for_unequal_category_counts(self, reshaper):
         """Edge: two cat cols with different numbers of levels → NaN padding"""

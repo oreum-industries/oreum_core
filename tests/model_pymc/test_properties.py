@@ -32,12 +32,9 @@ class TestProperties:
         """Happy: mdl_id_fn contains no dots (replaced with hyphens)"""
         assert "." not in simple_model.mdl_id_fn
 
-    def test_idata_raises_before_update(self, simple_model):
-        """Sad: idata accessed before update_idata → AssertionError"""
+    def test_idata_and_posterior_raise_before_init(self, simple_model):
+        """Sad: idata and posterior accessed before update/sampling → AssertionError or AttributeError"""
         with pytest.raises(AssertionError):
             _ = simple_model.idata
-
-    def test_posterior_raises_before_sampling(self, simple_model):
-        """Sad: posterior accessed before sampling → AssertionError or AttributeError"""
         with pytest.raises((AssertionError, AttributeError)):
             _ = simple_model.posterior

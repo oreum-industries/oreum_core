@@ -43,15 +43,13 @@ def mock_mdl():
 class TestPYMCIOWriteIdata:
     """Tests for PYMCIO.write_idata()"""
 
-    def test_write_returns_path(self, tmp_pymcio, mock_mdl, simple_idata):
-        """Happy: write_idata with explicit fn → returns Path"""
+    def test_write_returns_path_and_file_exists(
+        self, tmp_pymcio, mock_mdl, simple_idata
+    ):
+        """Happy: write_idata with explicit fn → returns Path with .netcdf suffix and file exists on disk"""
         result = tmp_pymcio.write_idata(mock_mdl, idata=simple_idata, fn="myout")
         assert isinstance(result, Path)
         assert result.suffix == ".netcdf"
-
-    def test_write_file_exists(self, tmp_pymcio, mock_mdl, simple_idata):
-        """Happy: written NetCDF file exists on disk"""
-        result = tmp_pymcio.write_idata(mock_mdl, idata=simple_idata, fn="myout")
         assert result.exists()
 
     def test_write_uses_mdl_id_fn_when_no_fn(self, tmp_pymcio, mock_mdl, simple_idata):

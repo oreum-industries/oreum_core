@@ -78,15 +78,11 @@ class TestExtractYobsYhat:
         assert isinstance(result, tuple)
         assert len(result) == 2
 
-    def test_yobs_shape(self, idata_ppc):
-        """Happy: yobs is 1D with length nobs"""
-        yobs, _ = extract_yobs_yhat(idata_ppc, obs="y", pred="yhat")
+    def test_yobs_and_yhat_shapes(self, idata_ppc):
+        """Happy: yobs is 1D with length nobs; yhat is 2D with shape (nchains*ndraws, nobs)"""
+        yobs, yhat = extract_yobs_yhat(idata_ppc, obs="y", pred="yhat")
         assert yobs.ndim == 1
         assert yobs.shape[0] == NOBS
-
-    def test_yhat_shape(self, idata_ppc):
-        """Happy: yhat is 2D with shape (nchains*ndraws, nobs)"""
-        _, yhat = extract_yobs_yhat(idata_ppc, obs="y", pred="yhat")
         assert yhat.ndim == 2
         assert yhat.shape == (NCHAINS * NDRAWS, NOBS)
 

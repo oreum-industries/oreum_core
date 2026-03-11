@@ -19,24 +19,12 @@ def df():
 class TestDescribe:
     """Happy-path tests for describe()"""
 
-    def test_returns_dataframe(self, df):
-        """Happy: return_df=True → pd.DataFrame"""
+    def test_basic_structure(self, df):
+        """Happy: return_df=True → DataFrame with index named 'ft', one row per feature, 'dtype' column"""
         out = describe(df, return_df=True, reset_index=False)
         assert isinstance(out, pd.DataFrame)
-
-    def test_index_name_is_ft(self, df):
-        """Happy: output index is named 'ft'"""
-        out = describe(df, return_df=True, reset_index=False)
         assert out.index.name == "ft"
-
-    def test_one_row_per_feature(self, df):
-        """Happy: one output row per input column (reset_index=False)"""
-        out = describe(df, return_df=True, reset_index=False)
         assert set(out.index) == {"score", "label"}
-
-    def test_dtype_column_present(self, df):
-        """Happy: 'dtype' column always present"""
-        out = describe(df, return_df=True, reset_index=False)
         assert "dtype" in out.columns
 
     def test_count_columns_present_by_default(self, df):

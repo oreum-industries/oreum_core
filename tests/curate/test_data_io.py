@@ -25,17 +25,12 @@ def simple_df():
 class TestPandasCSVIO:
     """Tests for PandasCSVIO read/write"""
 
-    def test_write_returns_path(self, tmp_path, simple_df):
-        """Happy: write returns a Path with .csv suffix"""
+    def test_write_returns_path_and_file_exists(self, tmp_path, simple_df):
+        """Happy: write returns Path with .csv suffix and file exists on disk"""
         io = PandasCSVIO(rootdir=tmp_path)
         result = io.write(simple_df, "test")
         assert isinstance(result, Path)
         assert result.suffix == ".csv"
-
-    def test_write_file_exists(self, tmp_path, simple_df):
-        """Happy: written file actually exists on disk"""
-        io = PandasCSVIO(rootdir=tmp_path)
-        result = io.write(simple_df, "test")
         assert result.exists()
 
     def test_roundtrip(self, tmp_path, simple_df):
@@ -62,12 +57,13 @@ class TestPandasCSVIO:
 class TestPandasParquetIO:
     """Tests for PandasParquetIO read/write"""
 
-    def test_write_returns_path(self, tmp_path, simple_df):
-        """Happy: write returns a Path with .parquet suffix"""
+    def test_write_returns_path_and_file_exists(self, tmp_path, simple_df):
+        """Happy: write returns Path with .parquet suffix and file exists on disk"""
         io = PandasParquetIO(rootdir=tmp_path)
         result = io.write(simple_df, "test")
         assert isinstance(result, Path)
         assert result.suffix == ".parquet"
+        assert result.exists()
 
     def test_roundtrip(self, tmp_path, simple_df):
         """Happy: write then read returns equivalent DataFrame"""
@@ -172,12 +168,13 @@ class TestDaskParquetIO:
 class TestPandasExcelIO:
     """Tests for PandasExcelIO read/write and writer workflow"""
 
-    def test_write_returns_path(self, tmp_path, simple_df):
-        """Happy: write returns a Path with .xlsx suffix"""
+    def test_write_returns_path_and_file_exists(self, tmp_path, simple_df):
+        """Happy: write returns Path with .xlsx suffix and file exists on disk"""
         io = PandasExcelIO(rootdir=tmp_path)
         result = io.write(simple_df, "report", index=False)
         assert isinstance(result, Path)
         assert result.suffix == ".xlsx"
+        assert result.exists()
 
     def test_write_roundtrip(self, tmp_path, simple_df):
         """Happy: write then read returns equivalent DataFrame"""

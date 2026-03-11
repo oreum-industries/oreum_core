@@ -16,23 +16,13 @@ def tfmr():
 class TestTransformerFitTransform:
     """Happy-path tests for Transformer.fit_transform()"""
 
-    def test_fit_transform_returns_dataframe(self, tfmr):
-        """Happy: float column + formula → returns pd.DataFrame"""
-        df = pd.DataFrame({"score": [1.0, 2.0, 3.0]})
-        out = tfmr.fit_transform("score", df)
-        assert isinstance(out, pd.DataFrame)
-
-    def test_fit_transform_includes_intercept_by_default(self, tfmr):
-        """Happy: patsy default formula includes Intercept column"""
-        df = pd.DataFrame({"score": [1.0, 2.0, 3.0]})
-        out = tfmr.fit_transform("score", df)
-        assert "Intercept" in out.columns
-
-    def test_fit_transform_sets_design_info(self, tfmr):
-        """Happy: design_info attribute is populated after fit_transform"""
+    def test_fit_transform_basic_properties(self, tfmr):
+        """Happy: float column → returns DataFrame with Intercept; populates design_info"""
         df = pd.DataFrame({"score": [1.0, 2.0, 3.0]})
         assert tfmr.design_info is None
-        tfmr.fit_transform("score", df)
+        out = tfmr.fit_transform("score", df)
+        assert isinstance(out, pd.DataFrame)
+        assert "Intercept" in out.columns
         assert tfmr.design_info is not None
 
     def test_fit_transform_categorical_populates_factor_map(self, tfmr):
