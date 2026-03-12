@@ -48,7 +48,11 @@ class PYMCIO(BaseFileIO):
         txtadd = kwargs.pop("txtadd", None)
         if mdl is not None:
             fn = "_".join(filter(None, ["idata", mdl.mdl_id_fn, txtadd]))
-        fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix(".netcdf"))
+            fqn = self.get_path_read(
+                Path(mdl.mdl_id_fn).joinpath(self.snl.clean(fn)).with_suffix(".netcdf")
+            )
+        else:
+            fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix(".netcdf"))
         idata = az.from_netcdf(str(fqn.resolve()))
         _log.info(f"Read model idata from {str(fqn.resolve())}")
         return idata
@@ -67,7 +71,9 @@ class PYMCIO(BaseFileIO):
         txtadd = kwargs.pop("txtadd", None)
         if fn == "":
             fn = "_".join(filter(None, ["idata", mdl.mdl_id_fn, txtadd]))
-        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".netcdf"))
+        fqn = self.get_path_write(
+            Path(mdl.mdl_id_fn).joinpath(self.snl.clean(fn)).with_suffix(".netcdf")
+        )
 
         if idata is not None:
             idata.to_netcdf(str(fqn.resolve()))
@@ -92,7 +98,9 @@ class PYMCIO(BaseFileIO):
         txtadd = kwargs.pop("txtadd", None)
         if fn == "":
             fn = "_".join(filter(None, ["graph", mdl.mdl_id_fn, txtadd]))
-        fqn = self.get_path_write(f"{fn}.{fmt}")
+        fqn = self.get_path_write(
+            Path(mdl.mdl_id_fn).joinpath(f"{self.snl.clean(fn)}.{fmt}")
+        )
         gv = model_to_graphviz(mdl.model, formatting="plain")
         if not write:
             return gv

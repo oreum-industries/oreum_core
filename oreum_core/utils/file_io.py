@@ -49,7 +49,7 @@ class BaseFileIO:
             self.rootdir = rootdir
         self.snl = SnakeyLowercaser(allowed_punct="-")
 
-    def get_path_read(self, fn: str) -> Path:
+    def get_path_read(self, fn: str | Path) -> Path:
         """Create and test fqn file existence for read"""
         fqn = self.rootdir.joinpath(fn)
         if not fqn.exists():
@@ -58,13 +58,11 @@ class BaseFileIO:
             )
         return fqn
 
-    def get_path_write(self, fn: str) -> Path:
-        """Create and test dir existence for write, return fqn
+    def get_path_write(self, fn: str | Path) -> Path:
+        """Create dir if needed and return fqn for write
         Ensure the passed fn is snl.cleaned"""
         fqn = self.rootdir.joinpath(fn)
-        dr = fqn.parent
-        if not dr.is_dir():
-            raise FileNotFoundError(f"Required dir does not exist {str(dr.resolve())}")
+        fqn.parent.mkdir(parents=True, exist_ok=True)
         return fqn
 
 
