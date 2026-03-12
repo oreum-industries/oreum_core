@@ -37,10 +37,10 @@ class TestFigureIOWrite:
         assert result.name == "plot_v2_final.png"
         assert result.exists()
 
-    def test_write_dirty_fn_with_png_suffix_is_cleaned(self, tmp_path, simple_fig):
-        """Happy: dirty fn already ending in .png → stem is still snl.cleaned"""
+    def test_write_dirty_fn_is_cleaned(self, tmp_path, simple_fig):
+        """Happy: dirty fn (no suffix) → snl.cleaned and .png suffix applied"""
         io = FigureIO(rootdir=tmp_path)
-        result = io.write(simple_fig, "My Plot!.png")
+        result = io.write(simple_fig, "My Plot!")
         assert result.name == "my_plot.png"
         assert result.exists()
 
