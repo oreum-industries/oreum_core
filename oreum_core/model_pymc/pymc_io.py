@@ -44,11 +44,15 @@ class PYMCIO(BaseFileIO):
         self, mdl: BasePYMCModel | None = None, fn: str = "", **kwargs
     ) -> az.InferenceData:
         """Read InferenceData appropriate to a built model using
-        mdl.mdl_id_fn + txtadd, or from fn"""
+        mdl.mdl_id_dn + mdl.mdl_id_fn + txtadd, or from fn"""
         txtadd = kwargs.pop("txtadd", None)
         if mdl is not None:
             fn = "_".join(filter(None, ["idata", mdl.mdl_id_fn, txtadd]))
-        fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix(".netcdf"))
+            fqn = self.get_path_read(
+                Path(mdl.mdl_id_dn).joinpath(self.snl.clean(fn)).with_suffix(".netcdf")
+            )
+        else:
+            fqn = self.get_path_read(Path(self.snl.clean(fn)).with_suffix(".netcdf"))
         idata = az.from_netcdf(str(fqn.resolve()))
         _log.info(f"Read model idata from {str(fqn.resolve())}")
         return idata
@@ -61,13 +65,15 @@ class PYMCIO(BaseFileIO):
         **kwargs,
     ) -> Path:
         """Accept BasePYMCModel object with attached in-sample idata, and write
-        to netcdf file with name mdl.mdl_id_fn + txtadd. Optionally use this to
-        write out-of-sample InferenceData passed as idata kwarg. Can implicitly
-        use mdl.mdl_id_fn in either case"""
+        to netcdf file with name mdl.mdl_id_dn + mdl.mdl_id_fn + txtadd, or fn
+        Optionally use this to write out-of-sample InferenceData passed as
+        idata kwarg. Can implicitly use mdl.mdl_id_fn in either case"""
         txtadd = kwargs.pop("txtadd", None)
         if fn == "":
             fn = "_".join(filter(None, ["idata", mdl.mdl_id_fn, txtadd]))
-        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".netcdf"))
+        fqn = self.get_path_write(
+            Path(mdl.mdl_id_dn).joinpath(self.snl.clean(fn)).with_suffix(".netcdf")
+        )
 
         if idata is not None:
             idata.to_netcdf(str(fqn.resolve()))
@@ -92,7 +98,9 @@ class PYMCIO(BaseFileIO):
         txtadd = kwargs.pop("txtadd", None)
         if fn == "":
             fn = "_".join(filter(None, ["graph", mdl.mdl_id_fn, txtadd]))
-        fqn = self.get_path_write(f"{fn}.{fmt}")
+        fqn = self.get_path_write(
+            Path(mdl.mdl_id_dn).joinpath(f"{self.snl.clean(fn)}.{fmt}")
+        )
         gv = model_to_graphviz(mdl.model, formatting="plain")
         if not write:
             return gv

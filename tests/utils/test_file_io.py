@@ -50,11 +50,25 @@ class TestBaseFileIOGetPathWrite:
         result = bio.get_path_write("output.csv")
         assert result == tmp_path / "output.csv"
 
-    def test_missing_subdir_raises(self, tmp_path):
-        """Sad: parent subdir doesn't exist → FileNotFoundError"""
+    def test_accepts_path_input(self, tmp_path):
+        """Happy: fn as Path object → returns correct fqn"""
         bio = BaseFileIO(rootdir=tmp_path)
-        with pytest.raises(FileNotFoundError, match="does not exist"):
-            bio.get_path_write("no_such_dir/output.csv")
+        result = bio.get_path_write(Path("output.csv"))
+        assert result == tmp_path / "output.csv"
+
+    def test_missing_subdir_is_created(self, tmp_path):
+        """Happy: parent subdir doesn't exist → auto-created, returns fqn"""
+        bio = BaseFileIO(rootdir=tmp_path)
+        result = bio.get_path_write("new_dir/output.csv")
+        assert result == tmp_path / "new_dir" / "output.csv"
+        assert (tmp_path / "new_dir").is_dir()
+
+    def test_nested_missing_subdir_is_created(self, tmp_path):
+        """Happy: deeply nested missing subdirs → all created, returns fqn"""
+        bio = BaseFileIO(rootdir=tmp_path)
+        result = bio.get_path_write("a/b/c/output.csv")
+        assert result == tmp_path / "a" / "b" / "c" / "output.csv"
+        assert (tmp_path / "a" / "b" / "c").is_dir()
 
 
 class TestCheckFqnsExist:

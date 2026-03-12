@@ -96,7 +96,7 @@ class BasePYMCModel:
 
     @property
     def mdl_id(self) -> str:
-        """Get model id (name, version, obs name)
+        """Get full model id (name, version, obs name)
         NOTE: By convention we'll have a single name to cover all observation
         datasets included in the model (i.e several dfx)
         """
@@ -108,6 +108,13 @@ class BasePYMCModel:
         """Get model id (name, version, obs name) safe for filename"""
         snl = SnakeyLowercaser(allowed_punct="-")
         return snl.clean(re.sub(r"\.", "-", self.mdl_id))
+
+    @property
+    def mdl_id_dn(self) -> str:
+        """Get model id (name, version) safe for dirname"""
+        dn = f"{self.name}_v{self.version}"
+        snl = SnakeyLowercaser(allowed_punct="-")
+        return snl.clean(re.sub(r"\.", "-", dn))
 
     @property
     def posterior(self) -> xr.Dataset:
