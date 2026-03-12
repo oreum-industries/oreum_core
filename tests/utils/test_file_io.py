@@ -34,6 +34,13 @@ class TestBaseFileIOGetPathRead:
         bio = BaseFileIO(rootdir=tmp_path)
         assert bio.get_path_read("data.csv") == f
 
+    def test_accepts_path_input(self, tmp_path):
+        """Happy: fn as Path object → returns correct Path"""
+        f = tmp_path / "data.csv"
+        f.write_text("a,b\n1,2\n")
+        bio = BaseFileIO(rootdir=tmp_path)
+        assert bio.get_path_read(Path("data.csv")) == f
+
     def test_missing_file_raises(self, tmp_path):
         """Sad: file does not exist → FileNotFoundError"""
         bio = BaseFileIO(rootdir=tmp_path)
