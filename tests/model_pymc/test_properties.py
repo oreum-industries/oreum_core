@@ -1,4 +1,4 @@
-"""Tests for BasePYMCModel properties: mdl_id, mdl_id_fn, idata, posterior"""
+"""Tests for BasePYMCModel properties: mdl_id, mdl_id_fn, mdl_id_dn, idata, posterior"""
 
 import pytest
 
@@ -31,6 +31,26 @@ class TestProperties:
     def test_mdl_id_fn_replaces_dots(self, simple_model):
         """Happy: mdl_id_fn contains no dots (replaced with hyphens)"""
         assert "." not in simple_model.mdl_id_fn
+
+    def test_mdl_id_fn_with_set_attrs(self, simple_model):
+        """Happy: mdl_id_fn composed from name, version, obs_nm with dots replaced"""
+        assert simple_model.mdl_id_fn == "simple_v1-0_test_obs"
+
+    def test_mdl_id_fn_includes_obs_nm(self, simple_model):
+        """Happy: mdl_id_fn includes obs_nm to distinguish observation datasets"""
+        assert "test_obs" in simple_model.mdl_id_fn
+
+    def test_mdl_id_dn_excludes_obs_nm(self, simple_model):
+        """Happy: mdl_id_dn omits obs_nm — groups all obs under one model dir"""
+        assert "test_obs" not in simple_model.mdl_id_dn
+
+    def test_mdl_id_dn_replaces_dots(self, simple_model):
+        """Happy: mdl_id_dn contains no dots (replaced with hyphens)"""
+        assert "." not in simple_model.mdl_id_dn
+
+    def test_mdl_id_dn_with_set_attrs(self, simple_model):
+        """Happy: mdl_id_dn composed from name and version only"""
+        assert simple_model.mdl_id_dn == "simple_v1-0"
 
     def test_idata_and_posterior_raise_before_init(self, simple_model):
         """Sad: idata and posterior accessed before update/sampling → AssertionError or AttributeError"""
