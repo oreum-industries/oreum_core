@@ -46,8 +46,9 @@ class FigureIO(BaseFileIO):
     def write(self, f: figure.Figure, fn: str, *args, **kwargs) -> Path:
         """Accept figure.Figure & fn str incl. dots e.g. `plots/plot.2.png`,
         write to fqn"""
-        if Path(fn).suffix != ".png":  # either no suffix or there's dots in fn
-            fn = Path(self.snl.clean(fn)).with_suffix(".png")
+        p = Path(fn)
+        name_stem = p.stem if p.suffix == ".png" else p.name
+        fn = p.parent.joinpath(Path(self.snl.clean(name_stem)).with_suffix(".png"))
         fqn = self.get_path_write(fn)
         f.savefig(fname=fqn, format="png", bbox_inches="tight", *args, **kwargs)
         _log.info(f"Written to {str(fqn.resolve())}")
