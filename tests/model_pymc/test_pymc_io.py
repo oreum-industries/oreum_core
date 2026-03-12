@@ -123,6 +123,16 @@ class TestPYMCIOReadIdata:
 class TestPYMCIOWriteGraph:
     """Tests for PYMCIO.write_graph()"""
 
+    def test_write_graph_auto_fn_uses_mdl_id_fn(self, tmp_pymcio, mock_mdl):
+        """Happy: fn='' → filename derived from mdl.mdl_id_fn (not mdl_id_dn)"""
+        mock_gv = MagicMock()
+        with patch(
+            "oreum_core.model_pymc.pymc_io.model_to_graphviz", return_value=mock_gv
+        ):
+            result = tmp_pymcio.write_graph(mock_mdl)
+        assert mock_mdl.mdl_id_fn in result.stem
+        assert result.parent.name == mock_mdl.mdl_id_dn
+
     def test_write_graph_no_write_returns_graphviz(self, tmp_pymcio, mock_mdl):
         """Happy: write=False → returns graphviz object directly"""
         mock_gv = MagicMock()

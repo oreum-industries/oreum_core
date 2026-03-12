@@ -30,11 +30,18 @@ class TestFigureIOWrite:
         assert result.suffix == ".png"
         assert result.exists()
 
-    def test_write_fn_with_dots_gets_png_suffix(self, tmp_path, simple_fig):
-        """Happy: fn with embedded dots → .png suffix applied correctly"""
+    def test_write_fn_with_dots_gets_cleaned_and_png_suffix(self, tmp_path, simple_fig):
+        """Happy: fn with embedded dots and no .png → dots cleaned, .png suffix applied"""
         io = FigureIO(rootdir=tmp_path)
         result = io.write(simple_fig, "plot.v2.final")
-        assert result.suffix == ".png"
+        assert result.name == "plot_v2_final.png"
+        assert result.exists()
+
+    def test_write_dirty_fn_is_cleaned(self, tmp_path, simple_fig):
+        """Happy: dirty fn (no suffix) → snl.cleaned and .png suffix applied"""
+        io = FigureIO(rootdir=tmp_path)
+        result = io.write(simple_fig, "My Plot!")
+        assert result.name == "my_plot.png"
         assert result.exists()
 
 

@@ -44,11 +44,10 @@ class FigureIO(BaseFileIO):
         set_plot_theme()
 
     def write(self, f: figure.Figure, fn: str, *args, **kwargs) -> Path:
-        """Accept figure.Figure & fn str incl. dots e.g. `plots/plot.2.png`,
-        write to fqn"""
-        if Path(fn).suffix != ".png":  # either no suffix or there's dots in fn
-            fn = Path(self.snl.clean(fn)).with_suffix(".png")
-        fqn = self.get_path_write(fn)
+        """Accept figure.Figure & fn str e.g. `myplot` or `plot_v2`,
+        write to fqn. Do not include a suffix in fn."""
+        fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".png"))
+
         f.savefig(fname=fqn, format="png", bbox_inches="tight", *args, **kwargs)
         _log.info(f"Written to {str(fqn.resolve())}")
         return fqn
