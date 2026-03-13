@@ -53,6 +53,33 @@ class TestPandasCSVIO:
         with pytest.raises(FileNotFoundError):
             io.read("nonexistent")
 
+    def test_write_clean_str_replaces_control_chars(self, tmp_path):
+        """Happy: clean_str=True → \\r, \\n, \\t in string cols replaced with ':'"""
+        df = pd.DataFrame(
+            {"txt": ["hello\nworld", "foo\tbar", "baz\r\nqux"], "num": [1, 2, 3]}
+        )
+        io = PandasCSVIO(rootdir=tmp_path)
+        fqn = io.write(df, "dirty", clean_str=True)
+        df_read = pd.read_csv(fqn)
+        assert df_read["txt"].tolist() == ["hello:world", "foo:bar", "baz:qux"]
+        assert df_read["num"].tolist() == [1, 2, 3]
+
+    def test_write_clean_str_false_leaves_values_unchanged(self, tmp_path):
+        """Happy: clean_str=False (default) → string values written as-is"""
+        df = pd.DataFrame({"txt": ["hello world", "foo bar"], "num": [1, 2]})
+        io = PandasCSVIO(rootdir=tmp_path)
+        fqn = io.write(df, "clean", clean_str=False)
+        df_read = pd.read_csv(fqn)
+        assert df_read["txt"].tolist() == ["hello world", "foo bar"]
+
+    def test_write_clean_str_does_not_mutate_input(self, tmp_path):
+        """Happy: clean_str=True → original DataFrame not modified"""
+        df = pd.DataFrame({"txt": ["hello\nworld"], "num": [1]})
+        original_val = df["txt"].iloc[0]
+        io = PandasCSVIO(rootdir=tmp_path)
+        io.write(df, "nomod", clean_str=True)
+        assert df["txt"].iloc[0] == original_val
+
 
 class TestPandasParquetIO:
     """Tests for PandasParquetIO read/write"""
