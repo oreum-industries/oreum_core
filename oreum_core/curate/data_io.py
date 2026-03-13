@@ -79,15 +79,22 @@ class PandasCSVIO(BaseFileIO):
         _log.info(f"Read from {str(fqn.resolve())}")
         return pd.read_csv(fqn, *args, **kwargs)
 
-    def write(self, df: pd.DataFrame, fn: str, *args, **kwargs) -> Path:
+    def write(
+        self, df: pd.DataFrame, fn: str, *args, clean_str: bool = False, **kwargs
+    ) -> Path:
         """Accept pandas DataFrame and fn e.g. `df`, write to fn.csv
         Consider using kwarg: float_format='%.3f'
+        Set clean_str=True to replace \\r, \\n, \\t in string columns with ':'
         """
         fqn = self.get_path_write(Path(self.snl.clean(fn)).with_suffix(".csv"))
         kws = kwargs.copy()
         kws.update(quoting=csv.QUOTE_NONNUMERIC)
         if len(df.index.names) == 1 and df.index.names[0] is None:
             kws.update(index_label="rowid")
+        if clean_str:
+            str_cols = df.select_dtypes(include=["object", "string"]).columns
+            df = df.copy()
+            df[str_cols] = df[str_cols].replace(r"[\r\n\t]+", ":", regex=True)
         df.to_csv(fqn, *args, **kws)
         _log.info(f"Written to {str(fqn.resolve())}")
         return fqn

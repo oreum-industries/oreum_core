@@ -17,11 +17,20 @@ class TestBaseFileIOInit:
         bio_explicit = BaseFileIO(rootdir=tmp_path)
         assert bio_explicit.rootdir == tmp_path
 
-    def test_init_nonexistent_rootdir_raises(self, tmp_path):
-        """Sad: nonexistent dir → FileNotFoundError"""
-        bad = tmp_path / "no_such_dir"
-        with pytest.raises(FileNotFoundError, match="does not exist"):
-            BaseFileIO(rootdir=bad)
+    def test_init_nonexistent_rootdir_creates_it(self, tmp_path):
+        """Happy: nonexistent rootdir → auto-created on init"""
+        new_dir = tmp_path / "no_such_dir"
+        assert not new_dir.exists()
+        bio = BaseFileIO(rootdir=new_dir)
+        assert new_dir.is_dir()
+        assert bio.rootdir == new_dir
+
+    def test_init_nested_nonexistent_rootdir_creates_it(self, tmp_path):
+        """Happy: deeply nested nonexistent rootdir → all dirs auto-created"""
+        new_dir = tmp_path / "a" / "b" / "c"
+        assert not new_dir.exists()
+        BaseFileIO(rootdir=new_dir)
+        assert new_dir.is_dir()
 
 
 class TestBaseFileIOGetPathRead:
