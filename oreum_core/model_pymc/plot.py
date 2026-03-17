@@ -441,8 +441,14 @@ def plot_loo_pit(
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][0], **kwargs)
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][1], ecdf=True, **kwargs)
 
-        _ = axs[i][0].set_title(f"Predicted {yhat} LOO-PIT")
-        _ = axs[i][1].set_title(f"Predicted {yhat} LOO-PIT cumulative")
+        _ = axs[i][0].set(
+            title=f"Predicted {yhat} LOO-PIT", xlabel="PIT", ylabel="ECDF"
+        )
+        _ = axs[i][1].set(
+            title=f"Predicted {yhat} LOO-PIT cumulative",
+            xlabel="PIT",
+            ylabel="\u0394 ECDF",
+        )
 
     _ = f.suptitle(
         " - ".join(filter(None, ["In-sample LOO-PIT", txtadd])) + f"\n{mdl.mdl_id}"
