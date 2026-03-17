@@ -442,10 +442,10 @@ def plot_loo_pit(
         _ = az.plot_loo_pit(mdl.idata, **kws, ax=axs[i][1], ecdf=True, **kwargs)
 
         _ = axs[i][0].set(
-            title=f"Predicted {yhat} LOO-PIT", xlabel="PIT", ylabel="ECDF"
+            title=f"Predicted {yhat} LOO-PIT (KDE)", xlabel="PIT", ylabel="Density"
         )
         _ = axs[i][1].set(
-            title=f"Predicted {yhat} LOO-PIT cumulative",
+            title=f"Predicted {yhat} LOO-PIT (\u0394 ECDF)",
             xlabel="PIT",
             ylabel="\u0394 ECDF",
         )
