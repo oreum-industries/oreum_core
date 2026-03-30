@@ -19,7 +19,7 @@ et-xmlfile==2.0.0
     # via openpyxl
 fonttools==4.62.0
     # via matplotlib
-fsspec==2026.2.0
+fsspec==2026.3.0
     # via dask
 ftfy==6.3.1
     # via oreum-core
