@@ -1163,12 +1163,17 @@ def plot_smrystat_grp(
     kws_point = {**kws, **dict(estimator=est, errorbar=("ci", 94))}
     kws_box = {
         **kws,
-        **dict(showfliers=plot_outliers, whis=[3, 97], meanprops=sty["mn_pt_kws"]),
+        **dict(
+            showfliers=plot_outliers,
+            whis=[3, 97],
+            meanprops=sty["mn_pt_kws"],
+            showmeans=True,
+        ),
     }
 
     _ = sns.pointplot(**kws_point, x=val, ax=ax0)
-    _ = sns.boxplot(**kws_box, x=val, showmeans=True, ax=ax1)
-    _ = sns.countplot(**kws, ax=ax2)
+    _ = sns.boxplot(**kws_box, x=val, native_scale=False, ax=ax1)
+    _ = sns.countplot(**kws, native_scale=False, ax=ax2)
     _ = [
         ax2.annotate(
             f"{c} ({c / ct.sum():.0%})", xy=(c, i % len(ct)), **sty["count_txt_h_kws"]
@@ -1283,12 +1288,17 @@ def plot_smrystat_grp_year(
         kws_point = {**kws, **dict(estimator=est, errorbar=("ci", 94))}
         kws_box = {
             **kws,
-            **dict(showfliers=plot_outliers, whis=[3, 97], meanprops=sty["mn_pt_kws"]),
+            **dict(
+                showfliers=plot_outliers,
+                whis=[3, 97],
+                meanprops=sty["mn_pt_kws"],
+                showmeans=True,
+            ),
         }
 
         _ = sns.pointplot(**kws_point, x=val, linestyles="-", ax=ax0d[i])
-        _ = sns.boxplot(**kws_box, x=val, showmeans=True, ax=ax1d[i])
-        _ = sns.countplot(**kws, ax=ax2d[i])
+        _ = sns.boxplot(**kws_box, x=val, native_scale=False, ax=ax1d[i])
+        _ = sns.countplot(**kws, native_scale=False, ax=ax2d[i])
         _ = [
             ax2d[i].annotate(f"{v}", xy=(v, j % len(ct)), **sty["count_txt_h_kws"])
             for j, v in enumerate(ct)
