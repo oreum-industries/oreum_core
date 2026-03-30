@@ -807,7 +807,7 @@ def plot_bootstrap_lr_grp(
     )
     # add violinplot
     kws_vio = {**kws, **dict(cut=0, density_norm="count", width=0.6)}
-    _ = sns.violinplot(**kws_vio, x="lr", data=dfboot, ax=ax0)
+    _ = sns.violinplot(**kws_vio, x="lr", data=dfboot, native_scale=False, ax=ax0)
 
     _ = [ax0.plot(v, i % len(mn), **sty["mn_pt_kws"]) for i, v in enumerate(mn)]
     _ = [
@@ -834,7 +834,7 @@ def plot_bootstrap_lr_grp(
         _ = ax0.set(xlim=force_xlim)
 
     # add countplot
-    _ = sns.countplot(**kws, data=df, ax=ax1)
+    _ = sns.countplot(**kws, data=df, native_scale=False, ax=ax1)
     _ = [
         ax1.annotate(f"{v}", xy=(v, i % len(ct)), **sty["count_txt_h_kws"])
         for i, v in enumerate(ct)
@@ -914,6 +914,7 @@ def plot_bootstrap_grp(
         width=0.6,
         palette="cubehelix_r",
         legend=False,
+        native_scale=False,
         ax=ax0,
     )
 
@@ -941,7 +942,13 @@ def plot_bootstrap_grp(
         _ = ax0.set(xlim=force_xlim)
 
     _ = sns.countplot(
-        y=grp, hue=grp, data=df, ax=ax1, palette="cubehelix_r", legend=False
+        y=grp,
+        hue=grp,
+        data=df,
+        ax=ax1,
+        palette="cubehelix_r",
+        legend=False,
+        native_scale=False,
     )
     ct = df.groupby(grp, observed=True).size().tolist()
     _ = [
@@ -989,6 +996,7 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
         showmeans=True,
         notch=True,
         legend=False,
+        native_scale=False,
         ax=ax0,
     )
     _ = ax0.axvline(0, ls="--", lw=2, c="#555555", zorder=-1)
@@ -997,7 +1005,13 @@ def plot_bootstrap_delta_grp(dfboot, df, grp, force_xlim=None, title_add=""):
         _ = ax0.set(xlim=force_xlim)
 
     _ = sns.countplot(
-        y=grp, hue=grp, data=df, ax=ax1, palette="cubehelix_r", legend=False
+        y=grp,
+        hue=grp,
+        data=df,
+        ax=ax1,
+        palette="cubehelix_r",
+        legend=False,
+        native_scale=False,
     )
     ct = df.groupby(grp, observed=True).size().tolist()
     _ = [
