@@ -17,7 +17,7 @@ defusedxml==0.7.1
     # via odfpy
 et-xmlfile==2.0.0
     # via openpyxl
-fonttools==4.62.0
+fonttools==4.62.1
     # via matplotlib
 fsspec==2026.2.0
     # via dask
