@@ -60,7 +60,7 @@ partd==1.4.2
     # via dask
 patsy==1.0.2
     # via oreum-core
-pillow==12.1.1
+pillow==12.2.0
     # via matplotlib
 pyarrow==23.0.1
     # via pandas
