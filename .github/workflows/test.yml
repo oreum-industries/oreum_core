@@ -52,7 +52,7 @@ jobs:
           files: reports/test-report.xml
 
       - name: Publish coverage report to PR
-        uses: orgoro/coverage@v3.2
+        uses: orgoro/coverage@v3.3
         if: always() && github.event_name == 'pull_request'
         with:
           coverageFile: reports/coverage-report.xml
